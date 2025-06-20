@@ -1,13 +1,13 @@
 import requests
 import os
 
-BOT_TOKEN = os.getenv("BOT_TOKEN", "7100609549:AAHmeFe0RondzYyPKNuGTTp8HNAuT0PbNJs")
-CHAT_ID = os.getenv("CHAT_ID", "-1002857433223")
+BOT_TOKEN = "7100609549:AAHmeFe0RondzYyPKNuGTTp8HNAuT0PbNJs"  # Use your actual BOT token
+CHAT_ID = "-1002857433223"  # Use your actual chat ID
 
-def send_telegram_alert(symbol, signal_type, price, tf, score, passed):
+def send_telegram_alert(numbered_signal, symbol, signal_type, price, tf, score, passed):
     try:
         message = (
-            f"📊 <b>{symbol} ({tf})</b>\n"
+            f"{numbered_signal} 📊 <b>{symbol} ({tf})</b>\n"
             f"📈 <b>{signal_type} Signal</b>\n"
             f"💰 <code>{price}</code>\n"
             f"✅ <b>Score</b>: {score}\n"
