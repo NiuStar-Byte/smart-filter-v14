@@ -2,7 +2,7 @@ import os
 import time
 from kucoin_data import fetch_ohlcv
 from smart_filter import SmartFilter
-from telegram_alert import send_telegram_alert_grouped
+from telegram_alert import send_telegram_alert
 
 TOKENS = [
     "SPARK-USDT", "BID-USDT", "SKATE-USDT", "LA-USDT", "SPK-USDT",
@@ -11,22 +11,19 @@ TOKENS = [
     "REX-USDT", "EPT-USDT", "ELDE-USDT", "MAGIC-USDT", "ACT-USDT"
 ]
 
-TIMEFRAMES = ["3min", "5min"]  # Removed 2min as discussed
-
+TIMEFRAMES = ["2min", "3min", "5min"]
 COOLDOWN = {
+    "2min": 300,   # 5 minutes
     "3min": 720,   # 12 minutes
     "5min": 900    # 15 minutes
 }
-
 last_sent = {}
 
 def run():
-    all_signals = []
-    now = time.time()
-
     for symbol in TOKENS:
         for tf in TIMEFRAMES:
             key = f"{symbol}_{tf}"
+            now = time.time()
             if key in last_sent and (now - last_sent[key]) < COOLDOWN[tf]:
                 continue
 
@@ -37,13 +34,14 @@ def run():
                     result = filter.analyze()
                     if result and isinstance(result, tuple) and len(result) == 7:
                         signal_text, symbol, signal_type, price, tf, score, passed = result
-                        all_signals.append((symbol, signal_type, price, tf, score, passed))
+                        # Simplify score & passed format to "x/y" only
+                        score_short = score.split("/")[0] + "/" + score.split("/")[1]
+                        passed_short = passed.split("/")[0] + "/" + passed.split("/")[1]
+                        if os.getenv("DRY_RUN", "false").lower() != "true":
+                            send_telegram_alert(symbol, signal_type, price, tf, score_short, passed_short)
                         last_sent[key] = now
             except Exception as e:
                 print(f"[{symbol} {tf}] Unexpected error: {e}")
-
-    if all_signals and os.getenv("DRY_RUN", "false").lower() != "true":
-        send_telegram_alert_grouped(all_signals)
 
     print("✅ Cycle complete. Sleeping 3 minutes...\n")
 
