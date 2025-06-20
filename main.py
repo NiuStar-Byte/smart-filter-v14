@@ -1,49 +1,37 @@
-import os
 import time
 from kucoin_data import fetch_ohlcv
-from smart_filter import SmartFilter
+from smart_filter import analyze
 from telegram_alert import send_telegram_alert
 
-TOKENS = [
-    "SPARK-USDT", "BID-USDT", "SKATE-USDT", "LA-USDT", "SPK-USDT",
-    "ZKJ-USDT", "IP-USDT", "AERO-USDT", "BMT-USDT", "LQTY-USDT",
-    "FUN-USDT", "SNT-USDT", "X-USDT", "BANK-USDT", "RAY-USDT",
+TOKEN_LIST = [
+    "SPARK-USDT", "BID-USDT", "SKATE-USDT", "LA-USDT", "SPK-USDT", 
+    "ZKJ-USDT", "IP-USDT", "AERO-USDT", "BMT-USDT", "LQTY-USDT", 
+    "FUN-USDT", "SNT-USDT", "X-USDT", "BANK-USDT", "RAY-USDT", 
     "REX-USDT", "EPT-USDT", "ELDE-USDT", "MAGIC-USDT", "ACT-USDT"
 ]
 
-TIMEFRAMES = ["2min", "3min", "5min"]
-COOLDOWN = {
-    "2min": 300,   # 5 minutes
-    "3min": 720,   # 12 minutes
-    "5min": 900    # 15 minutes
-}
-last_sent = {}
+TIMEFRAMES = ["3min", "5min"]
 
-def run():
-    for symbol in TOKENS:
+def main():
+    while True:
         for tf in TIMEFRAMES:
-            key = f"{symbol}_{tf}"
-            now = time.time()
-            if key in last_sent and (now - last_sent[key]) < COOLDOWN[tf]:
-                continue
-
-            try:
-                df = fetch_ohlcv(symbol, tf)
-                if df is not None:
-                    filter = SmartFilter(symbol, df, tf=tf, min_score=9, required_passed=7)
-                    result = filter.analyze()
-                    if result and isinstance(result, tuple) and len(result) == 7:
-                        signal_text, symbol, signal_type, price, tf, score, passed = result
-                        # Simplify score & passed format to "x/y" only
-                        score_short = score.split("/")[0] + "/" + score.split("/")[1]
-                        passed_short = passed.split("/")[0] + "/" + passed.split("/")[1]
-                        if os.getenv("DRY_RUN", "false").lower() != "true":
-                            send_telegram_alert(symbol, signal_type, price, tf, score_short, passed_short)
-                        last_sent[key] = now
-            except Exception as e:
-                print(f"[{symbol} {tf}] Unexpected error: {e}")
-
-    print("✅ Cycle complete. Sleeping 3 minutes...\n")
+            alert_messages = []
+            for idx, token in enumerate(TOKEN_LIST, start=1):
+                ohlcv = fetch_ohlcv(token, tf)
+                if not ohlcv:
+                    continue
+                analysis_result = analyze(ohlcv)
+                if analysis_result["score"] >= 10:  # example threshold
+                    msg = (
+                        f"{idx}. {token} ({tf}) {analysis_result['signal']} Signal\n"
+                        f"💰 Price: {analysis_result['price']}\n"
+                        f"✅ Score: {analysis_result['score']}/18\n"
+                        f"📌 Passed: {analysis_result['passed']}/12"
+                    )
+                    alert_messages.append(msg)
+            for message in alert_messages:
+                send_telegram_alert(message)
+        time.sleep(60)  # check every 60 seconds
 
 if __name__ == "__main__":
-    run()
+    main()
