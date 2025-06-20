@@ -6,10 +6,9 @@ CHAT_ID = os.getenv("CHAT_ID", "-1002857433223")
 
 def send_telegram_alert(symbol, signal_type, price, tf, score, passed):
     try:
-        emoji = "📈" if signal_type == "LONG" else "📉"
         message = (
             f"📊 <b>{symbol} ({tf})</b>\n"
-            f"{emoji} <b>{signal_type} Signal</b>\n"
+            f"📈 <b>{signal_type} Signal</b>\n"
             f"💰 <code>{price}</code>\n"
             f"✅ <b>Score</b>: {score}\n"
             f"📌 <b>Passed</b>: {passed}"
