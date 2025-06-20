@@ -5,10 +5,10 @@ from smart_filter import SmartFilter
 from telegram_alert import send_telegram_alert
 
 TOKENS = [
-    "SPARKUSDTM", "BIDUSDTM", "SKATEUSDTM", "LAUSDTM", "SPKUSDTM",
-    "ZKJUSDTM", "IPUSDTM", "AEROUSDTM", "BMTUSDTM", "LQTYUSDTM",
-    "FUNUSDTM", "SNTUSDTM", "XUSDTM", "BANKUSDTM", "RAYUSDTM",
-    "REXUSDTM", "EPTUSDTM", "ELDEUSDTM", "MAGICUSDTM", "ACTUSDTM"
+    "SPARK-USDT", "BID-USDT", "SKATE-USDT", "LA-USDT", "SPK-USDT",
+    "ZKJ-USDT", "IP-USDT", "AERO-USDT", "BMT-USDT", "LQTY-USDT",
+    "FUN-USDT", "SNT-USDT", "X-USDT", "BANK-USDT", "RAY-USDT",
+    "REX-USDT", "EPT-USDT", "ELDE-USDT", "MAGIC-USDT", "ACT-USDT"
 ]
 
 TIMEFRAMES = ["2min", "3min", "5min"]
