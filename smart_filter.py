@@ -12,10 +12,9 @@ class SmartFilter:
         self.total_score = 0
         self.passed_required = True
 
-        # Precompute EMAs once to avoid recomputation
-        self.df["ema20"] = df["close"].ewm(span=20, adjust=False).mean()
-        self.df["ema50"] = df["close"].ewm(span=50, adjust=False).mean()
-        self.df["ema200"] = df["close"].ewm(span=200, adjust=False).mean()
+        self.df["ema20"] = df["close"].ewm(span=20).mean()
+        self.df["ema50"] = df["close"].ewm(span=50).mean()
+        self.df["ema200"] = df["close"].ewm(span=200).mean()
 
     def analyze(self):
         if self.df is None or self.df.empty or len(self.df.columns) < 6:
@@ -44,7 +43,6 @@ class SmartFilter:
                 "Spread Filter": self._check_dummy_volatility(),
             }
 
-            # First 12 stacks are required to pass counting
             required_items = list(self.stack_results.keys())[:12]
 
             score = 0
@@ -63,19 +61,11 @@ class SmartFilter:
                 print(f"[{name}] → {'✅' if passed_stack else '❌'}")
 
             if score >= self.min_score and self.passed_required:
-                last_close = self.df["ema20"].iloc[-1]  # Use ema20 as final reference price
-                trend_bias = "LONG" if last_close > self.df["open"].iloc[-1] else "SHORT"
-                signal_text = f"{trend_bias} Signal for {self.symbol} at {last_close:.6f}"
+                last_close = self.df['close'].iloc[-1]
+                trend_bias = "LONG" if last_close > self.df['open'].iloc[-1] else "SHORT"
+                signal_text = f"{trend_bias} Signal for {self.symbol} at {last_close}"
                 print(f"[{self.symbol}] ✅ FINAL SIGNAL → {signal_text}")
-                return (
-                    signal_text,
-                    self.symbol,
-                    trend_bias,
-                    last_close,
-                    self.tf,
-                    f"{score}/18",
-                    f"{passed}/12",
-                )
+                return signal_text, self.symbol, trend_bias, last_close, self.tf, f"{score}/18", f"{passed}/12"
             else:
                 print(f"[{self.symbol}] ❌ No Signal (Score too low or missing required)")
                 return None
@@ -84,63 +74,52 @@ class SmartFilter:
             print(f"[{self.symbol}] SmartFilter Error: {e}")
             return None
 
-    # --- SMART STACKS IMPLEMENTATION ---
-
     def _check_fractal_zone(self):
-        # Price > lowest low in last 20 bars
-        return self.df["close"].iloc[-1] > self.df["low"].rolling(20).min().iloc[-1]
+        return self.df['close'].iloc[-1] > self.df['low'].rolling(20).min().iloc[-1]
 
     def _check_ema_cloud(self):
-        # ema20 > ema50 means bullish cloud
         return self.df["ema20"].iloc[-1] > self.df["ema50"].iloc[-1]
 
     def _check_macd(self):
-        ema12 = self.df["close"].ewm(span=12, adjust=False).mean()
-        ema26 = self.df["close"].ewm(span=26, adjust=False).mean()
+        ema12 = self.df['close'].ewm(span=12).mean()
+        ema26 = self.df['close'].ewm(span=26).mean()
         macd_line = ema12 - ema26
-        signal = macd_line.ewm(span=9, adjust=False).mean()
+        signal = macd_line.ewm(span=9).mean()
         return macd_line.iloc[-1] > signal.iloc[-1]
 
     def _check_momentum(self):
-        mom = self.df["close"].diff()
+        mom = self.df['close'].diff()
         return mom.iloc[-1] > 0
 
     def _check_hats(self):
-        ha_close = (self.df["open"] + self.df["high"] + self.df["low"] + self.df["close"]) / 4
+        ha_close = (self.df['open'] + self.df['high'] + self.df['low'] + self.df['close']) / 4
         return ha_close.iloc[-1] > ha_close.iloc[-2]
 
     def _check_volume_spike(self):
-        avg_vol = self.df["volume"].rolling(10).mean()
-        return self.df["volume"].iloc[-1] > 1.5 * avg_vol.iloc[-1]
+        avg_vol = self.df['volume'].rolling(10).mean()
+        return self.df['volume'].iloc[-1] > 1.5 * avg_vol.iloc[-1]
 
     def _check_chop_zone(self):
-        rsi = self.df["close"].rolling(14).apply(lambda x: (x.diff() > 0).sum(), raw=False)
+        rsi = self.df['close'].rolling(14).apply(lambda x: (x.diff() > 0).sum(), raw=False)
         return rsi.iloc[-1] > 7
 
     def _check_candle_close(self):
-        body = abs(self.df["close"].iloc[-1] - self.df["open"].iloc[-1])
-        wick = abs(self.df["high"].iloc[-1] - self.df["low"].iloc[-1])
+        body = abs(self.df['close'].iloc[-1] - self.df['open'].iloc[-1])
+        wick = abs(self.df['high'].iloc[-1] - self.df['low'].iloc[-1])
         return body > 0.5 * wick
 
     def _check_hh_ll(self):
-        # Higher high and higher low compared to 3 bars ago
-        return (
-            self.df["high"].iloc[-1] > self.df["high"].iloc[-3]
-            and self.df["low"].iloc[-1] > self.df["low"].iloc[-3]
-        )
+        return self.df['high'].iloc[-1] > self.df['high'].iloc[-3] and self.df['low'].iloc[-1] > self.df['low'].iloc[-3]
 
     def _check_dummy_sr(self):
-        # Placeholder: always pass
         return True
 
     def _check_dummy_liquidity(self):
-        # Placeholder: always pass
         return True
 
     def _check_dummy_volatility(self):
-        spread = self.df["high"].iloc[-1] - self.df["low"].iloc[-1]
-        return spread < (self.df["close"].iloc[-1] * 0.02)
+        spread = self.df['high'].iloc[-1] - self.df['low'].iloc[-1]
+        return spread < (self.df['close'].iloc[-1] * 0.02)
 
     def _optional_dummy(self):
-        # Optional filters default to pass for now
         return True
