@@ -21,6 +21,7 @@ last_sent = {}
 def run():
     while True:
         now = time.time()
+        counter = 1  # Counter to number the signals
         for symbol in TOKENS:
             for tf in TIMEFRAMES:
                 key = f"{symbol}_{tf}"
@@ -35,18 +36,15 @@ def run():
                 result = filter.analyze()
 
                 if result and isinstance(result, tuple) and len(result) == 7:
-                    signal_text, symbol, signal_type, price, tf, score, passed
-                    msg = (
-                        f"{idx}. {token} ({tf}) {signal_type} Signal\n"
-                        f"💰 Price: {price}\n"
-                        f"✅ Score: {score}/18\n"
-                        f"📌 Passed: {passed}/12\n"
-                        f"⏰ Sent at: {time.strftime('%H:%M:%S', time.gmtime(now))}"
-                    )
+                    signal_text, symbol, signal_type, price, tf, score, passed = result
+
+                    # Add numbering to the signal for each token
+                    numbered_signal = f"{counter}. {symbol} ({tf}) - {signal_text}"
 
                     if os.getenv("DRY_RUN", "false").lower() != "true":
-                        send_telegram_alert(msg)
+                        send_telegram_alert(numbered_signal, symbol, signal_type, price, tf, score, passed)
                     last_sent[key] = now
+                    counter += 1  # Increment the counter for the next signal
 
         print("✅ Cycle complete. Sleeping 60 seconds...\n")
         time.sleep(60)
