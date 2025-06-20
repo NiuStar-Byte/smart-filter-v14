@@ -1,37 +1,47 @@
+import os
 import time
 from kucoin_data import fetch_ohlcv
-from smart_filter import analyze
+from smart_filter import SmartFilter
 from telegram_alert import send_telegram_alert
 
-TOKEN_LIST = [
-    "SPARK-USDT", "BID-USDT", "SKATE-USDT", "LA-USDT", "SPK-USDT", 
-    "ZKJ-USDT", "IP-USDT", "AERO-USDT", "BMT-USDT", "LQTY-USDT", 
-    "FUN-USDT", "SNT-USDT", "X-USDT", "BANK-USDT", "RAY-USDT", 
+TOKENS = [
+    "SPARK-USDT", "BID-USDT", "SKATE-USDT", "LA-USDT", "SPK-USDT",
+    "ZKJ-USDT", "IP-USDT", "AERO-USDT", "BMT-USDT", "LQTY-USDT",
+    "FUN-USDT", "SNT-USDT", "X-USDT", "BANK-USDT", "RAY-USDT",
     "REX-USDT", "EPT-USDT", "ELDE-USDT", "MAGIC-USDT", "ACT-USDT"
 ]
 
 TIMEFRAMES = ["3min", "5min"]
+COOLDOWN = {
+    "3min": 720,  # 12 minutes
+    "5min": 900   # 15 minutes
+}
+last_sent = {}
 
-def main():
+def run():
     while True:
-        for tf in TIMEFRAMES:
-            alert_messages = []
-            for idx, token in enumerate(TOKEN_LIST, start=1):
-                ohlcv = fetch_ohlcv(token, tf)
-                if not ohlcv:
+        now = time.time()
+        for symbol in TOKENS:
+            for tf in TIMEFRAMES:
+                key = f"{symbol}_{tf}"
+                if key in last_sent and (now - last_sent[key]) < COOLDOWN[tf]:
                     continue
-                analysis_result = analyze(ohlcv)
-                if analysis_result["score"] >= 10:  # example threshold
-                    msg = (
-                        f"{idx}. {token} ({tf}) {analysis_result['signal']} Signal\n"
-                        f"💰 Price: {analysis_result['price']}\n"
-                        f"✅ Score: {analysis_result['score']}/18\n"
-                        f"📌 Passed: {analysis_result['passed']}/12"
-                    )
-                    alert_messages.append(msg)
-            for message in alert_messages:
-                send_telegram_alert(message)
-        time.sleep(60)  # check every 60 seconds
+
+                df = fetch_ohlcv(symbol, tf)
+                if df is None:
+                    continue
+
+                filter = SmartFilter(symbol, df, tf=tf, min_score=9, required_passed=7)
+                result = filter.analyze()
+
+                if result and isinstance(result, tuple) and len(result) == 7:
+                    signal_text, symbol, signal_type, price, tf, score, passed = result
+                    if os.getenv("DRY_RUN", "false").lower() != "true":
+                        send_telegram_alert(symbol, signal_type, price, tf, score, passed)
+                    last_sent[key] = now
+
+        print("✅ Cycle complete. Sleeping 60 seconds...\n")
+        time.sleep(60)
 
 if __name__ == "__main__":
-    main()
+    run()
