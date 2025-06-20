@@ -35,10 +35,21 @@ def run():
                 result = filter.analyze()
 
                 if result and isinstance(result, tuple) and len(result) == 7:
-                    signal_text, symbol, signal_type, price, tf, score, passed = result
+                    signal_text, symbol, signal_type, price, tf, score, passed
+                    msg = (
+                        f"{idx}. {token} ({tf}) {signal_type} Signal\n"
+                        f"💰 Price: {price}\n"
+                        f"✅ Score: {score}/18\n"
+                        f"📌 Passed: {passed}/12\n"
+                        f"⏰ Sent at: {time.strftime('%H:%M:%S', time.gmtime(now))}"
+                    )
+
                     if os.getenv("DRY_RUN", "false").lower() != "true":
-                        send_telegram_alert(symbol, signal_type, price, tf, score, passed)
+                        send_telegram_alert(msg)
                     last_sent[key] = now
 
         print("✅ Cycle complete. Sleeping 60 seconds...\n")
         time.sleep(60)
+
+if __name__ == "__main__":
+    run()
