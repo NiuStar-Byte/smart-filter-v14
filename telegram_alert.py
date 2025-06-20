@@ -4,26 +4,48 @@ import os
 BOT_TOKEN = os.getenv("BOT_TOKEN", "7100609549:AAHmeFe0RondzYyPKNuGTTp8HNAuT0PbNJs")
 CHAT_ID = os.getenv("CHAT_ID", "-1002857433223")
 
-def send_telegram_alert(symbol, signal_type, price, tf, score, passed):
-    try:
-        message = (
-            f"📊 <b>{symbol} ({tf})</b>\n"
-            f"📈 <b>{signal_type} Signal</b>\n"
-            f"💰 <code>{price}</code>\n"
-            f"✅ <b>Score</b>: {score}\n"
-            f"📌 <b>Passed</b>: {passed}"
-        )
+def send_telegram_alert_grouped(signals, chat_id=CHAT_ID, bot_token=BOT_TOKEN):
+    """
+    Send grouped, numbered signals to Telegram.
 
-        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-        payload = {
-            "chat_id": CHAT_ID,
-            "text": message,
-            "parse_mode": "HTML"
-        }
+    signals: list of tuples (symbol, signal_type, price, timeframe, score, passed)
+    """
 
-        response = requests.post(url, json=payload)
-        if response.status_code != 200:
-            print(f"Telegram Error: {response.text}")
+    from collections import defaultdict
 
-    except Exception as e:
-        print(f"❌ Telegram alert error: {e}")
+    grouped = defaultdict(list)
+    for sig in signals:
+        symbol = sig[0]
+        grouped[symbol].append(sig)
+
+    message_lines = []
+    num = 1
+    for symbol, sigs in grouped.items():
+        # Sort by timeframe alphabetically (e.g., "3min", "5min")
+        sigs_sorted = sorted(sigs, key=lambda x: x[3])
+        for i, sig in enumerate(sigs_sorted):
+            letter = chr(ord('a') + i)
+            symbol, signal_type, price, timeframe, score, passed = sig
+            line = (
+                f"{num}.{letter} {symbol} ({timeframe}) {signal_type} Signal\n"
+                f"💰 Price: {price}\n"
+                f"✅ Score: {score}/18\n"
+                f"📌 Passed: {passed}/12\n"
+            )
+            message_lines.append(line)
+        num += 1
+
+    message = "\n".join(message_lines)
+
+    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    data = {
+        "chat_id": chat_id,
+        "text": message,
+        "parse_mode": "Markdown"
+    }
+
+    response = requests.post(url, data=data)
+    if response.status_code != 200:
+        print(f"Failed to send Telegram message: {response.text}")
+    else:
+        print("Grouped Telegram alert sent successfully.")
