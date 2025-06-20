@@ -21,7 +21,7 @@ last_sent = {}
 def run():
     while True:
         now = time.time()
-        for idx, symbol in enumerate(TOKENS, start=1):
+        for symbol in TOKENS:
             for tf in TIMEFRAMES:
                 key = f"{symbol}_{tf}"
                 if key in last_sent and (now - last_sent[key]) < COOLDOWN[tf]:
@@ -35,22 +35,10 @@ def run():
                 result = filter.analyze()
 
                 if result and isinstance(result, tuple) and len(result) == 7:
-                    signal_text, symbol, signal_type, price, tf, score, passed
-
-                    # Add the numbering with the idx and timeframe letter
-                    alert_message = (
-                        f"{idx}. {symbol} ({tf}) {signal_type} Signal\n"
-                        f"💰 Price: {price}\n"
-                        f"✅ Score: {score}/18\n"
-                        f"📌 Passed: {passed}/12"
-                    )
-
+                    signal_text, symbol, signal_type, price, tf, score, passed = result
                     if os.getenv("DRY_RUN", "false").lower() != "true":
-                        send_telegram_alert(alert_message)  # sending alert message
+                        send_telegram_alert(symbol, signal_type, price, tf, score, passed)
                     last_sent[key] = now
 
         print("✅ Cycle complete. Sleeping 60 seconds...\n")
         time.sleep(60)
-
-if __name__ == "__main__":
-    run()
