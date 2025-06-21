@@ -22,27 +22,33 @@ def run():
     while True:
         now = time.time()
         counter = 1  # Counter to number the signals
+
         for symbol in TOKENS:
             for tf in TIMEFRAMES:
                 key = f"{symbol}_{tf}"
                 if key in last_sent and (now - last_sent[key]) < COOLDOWN[tf]:
                     continue
 
-                df = fetch_ohlcv(symbol, tf)
+                # convert e.g. "SPARK-USDT" → "SPARK/USDT" for CCXT
+                symbol_ccxt = symbol.replace('-', '/')
+
+                df = fetch_ohlcv(symbol_ccxt, tf)
                 if df is None:
+                    print(f"[{symbol}] No OHLCV data fetched.")
                     continue
 
-                filter = SmartFilter(symbol, df, tf=tf, min_score=9, required_passed=7)
-                result = filter.analyze()
+                sf = SmartFilter(symbol, df, df3m=None, df5m=None, tf=tf, min_score=9, required_passed=7)
+                result = sf.analyze()
 
                 if result and isinstance(result, tuple) and len(result) == 7:
-                    signal_text, symbol, signal_type, price, tf, score, passed = result
+                    signal_text, _, signal_type, price, tf, score, passed = result
 
                     # Add numbering to the signal for each token
                     numbered_signal = f"{counter}. {symbol} ({tf}) - {signal_text}"
 
                     if os.getenv("DRY_RUN", "false").lower() != "true":
                         send_telegram_alert(numbered_signal, symbol, signal_type, price, tf, score, passed)
+
                     last_sent[key] = now
                     counter += 1  # Increment the counter for the next signal
 
