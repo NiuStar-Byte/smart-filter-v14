@@ -101,7 +101,7 @@ def run():
                     last_sent[key5] = now
                     counter += 1
 
-        print("✅ Cycle complete. Sleeping 60 seconds...
+        print("✅ Cycle complete. Sleeping 60 seconds...\n")
 ")
         time.sleep(60)
 
