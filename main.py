@@ -1,5 +1,6 @@
 import os
 import time
+import ccxt
 from kucoin_data import fetch_ohlcv
 from smart_filter import SmartFilter
 from telegram_alert import send_telegram_alert
@@ -18,6 +19,24 @@ COOLDOWN = {
 }
 last_sent = {}
 
+# -- Symbol availability check at startup --
+def check_symbol_availability():
+    ku = ccxt.kucoin()
+    bn = ccxt.binance()
+    ku_markets = set(ku.load_markets().keys())
+    bn_markets = set(bn.load_markets().keys())
+    print("--- Symbol Availability Check ---")
+    for tok in TOKENS:
+        slash = tok.replace('-', '/')
+        nobar = tok.replace('-', '')
+        ok_ku = (slash in ku_markets) or (tok in ku_markets)
+        ok_bn = nobar in bn_markets
+        print(f"{tok:12} → KuCoin? {ok_ku}  Binance? {ok_bn}")
+    print("---------------------------------")
+
+# Run availability check once
+check_symbol_availability()
+
 def run():
     while True:
         now = time.time()
@@ -29,7 +48,7 @@ def run():
                 if key in last_sent and (now - last_sent[key]) < COOLDOWN[tf]:
                     continue
 
-                # Call fetch_ohlcv with the hyphenated symbol; kucoin_data.py will retry slash-format if needed
+                # Fetch OHLCV; kucoin_data.py will retry formats if needed
                 df = fetch_ohlcv(symbol, tf)
                 if df is None:
                     print(f"[{symbol}] No OHLCV data fetched.")
