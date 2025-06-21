@@ -142,9 +142,9 @@ class SmartFilter:
             self.df['ema20'].iat[-1] > self.df['ema50'].iat[-1] > self.df['ema200'].iat[-1]
         )
         slope = (
-            self.df['ema20'].iat[-1] > self.df['ema20'].iat[-2]
-            and self.df['ema50'].iat[-1] > self.df['ema50'].iat[-2]
-            and self.df['ema200'].iat[-1] > self.df['ema200'].iat[-2]
+            self.df['ema20'].iat[-1] > self.df['ema20'].iat[-2] and
+            self.df['ema50'].iat[-1] > self.df['ema50'].iat[-2] and
+            self.df['ema200'].iat[-1] > self.df['ema200'].iat[-2]
         )
         return cond and slope
 
@@ -175,7 +175,7 @@ class SmartFilter:
 
     def _check_smart_money_bias(self):
         signed = self.df['volume'] * self.df['close'].diff().apply(lambda x: 1 if x > 0 else -1)
-        return signed.iat[-14:].sum() > 0
+        return signed.iloc[-14:].sum() > 0
 
     def _check_liquidity_pool(self):
         hi = self.df['high'].rolling(10).max().iat[-2]
