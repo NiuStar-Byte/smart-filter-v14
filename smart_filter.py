@@ -172,9 +172,9 @@ class SmartFilter:
         swing_low = self.df['low'].rolling(5).min().iat[-3]
         return abs(self.df['close'].iat[-1] - swing_low) / swing_low < 0.01
 
-        def _check_smart_money_bias(self):
+    def _check_smart_money_bias(self):
         # Sum of signed volume over the last 14 bars: +1 for up-close, -1 for down-close
         signed = self.df['volume'] * self.df['close'].diff().apply(lambda x: 1 if x > 0 else -1)
-        # Use iloc for slicing
-        recent = signed.iloc[-14:]
+        recent = signed.iloc[-14:]  # use iloc instead of iat
         return recent.sum() > 0
+
