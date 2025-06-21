@@ -29,10 +29,8 @@ def run():
                 if key in last_sent and (now - last_sent[key]) < COOLDOWN[tf]:
                     continue
 
-                # convert e.g. "SPARK-USDT" → "SPARK/USDT" for CCXT
-                symbol_ccxt = symbol.replace('-', '/')
-
-                df = fetch_ohlcv(symbol_ccxt, tf)
+                # Call fetch_ohlcv with the hyphenated symbol; kucoin_data.py will retry slash-format if needed
+                df = fetch_ohlcv(symbol, tf)
                 if df is None:
                     print(f"[{symbol}] No OHLCV data fetched.")
                     continue
@@ -43,14 +41,12 @@ def run():
                 if result and isinstance(result, tuple) and len(result) == 7:
                     signal_text, _, signal_type, price, tf, score, passed = result
 
-                    # Add numbering to the signal for each token
                     numbered_signal = f"{counter}. {symbol} ({tf}) - {signal_text}"
-
                     if os.getenv("DRY_RUN", "false").lower() != "true":
                         send_telegram_alert(numbered_signal, symbol, signal_type, price, tf, score, passed)
 
                     last_sent[key] = now
-                    counter += 1  # Increment the counter for the next signal
+                    counter += 1
 
         print("✅ Cycle complete. Sleeping 60 seconds...\n")
         time.sleep(60)
