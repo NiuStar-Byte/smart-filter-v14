@@ -102,7 +102,6 @@ def run():
                     counter += 1
 
         print("✅ Cycle complete. Sleeping 60 seconds...\n")
-")
         time.sleep(60)
 
 if __name__ == "__main__":
