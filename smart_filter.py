@@ -172,15 +172,9 @@ class SmartFilter:
         swing_low = self.df['low'].rolling(5).min().iat[-3]
         return abs(self.df['close'].iat[-1] - swing_low) / swing_low < 0.01
 
-    def _check_smart_money_bias(self):
+        def _check_smart_money_bias(self):
+        # Sum of signed volume over the last 14 bars: +1 for up-close, -1 for down-close
         signed = self.df['volume'] * self.df['close'].diff().apply(lambda x: 1 if x > 0 else -1)
-        return signed.iat[-14:].sum() > 0
-
-    def _check_liquidity_pool(self):
-        hi = self.df['high'].rolling(10).max().iat[-2]
-        lo = self.df['low'].rolling(10).min().iat[-2]
-        return (self.df['high'].iat[-1] > hi) or (self.df['low'].iat[-1] < lo)
-
-    def _check_spread_filter(self):
-        spread = self.df['high'].iat[-1] - self.df['low'].iat[-1]
-        return spread < 0.02 * self.df['close'].iat[-1]
+        # Use iloc for slicing
+        recent = signed.iloc[-14:]
+        return recent.sum() > 0
