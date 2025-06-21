@@ -39,8 +39,8 @@ class SmartFilter:
         """
         Evaluate all filters. Print and return a signal tuple if thresholds met, else None.
         """
-        if self.df is None or self.df.empty:
-            print(f"[{self.symbol}] Error: DataFrame is empty or missing.")
+        if self.df.empty:
+            print(f"[{self.symbol}] Error: DataFrame is empty.")
             return None
 
         # Run each filter and store boolean results
@@ -65,11 +65,10 @@ class SmartFilter:
             "Spread Filter":           self._check_spread_filter(),
         }
 
-        # Compute scores
+        # Compute score
         self.total_score = sum(self.stack_results.values())
-        # First 12 filters are 'required'
         required_keys = list(self.stack_results.keys())[:12]
-        passed_required = sum(1 for k in required_keys if self.stack_results[k])
+        passed_required = sum(self.stack_results[k] for k in required_keys)
         self.passed_required = passed_required >= self.required_passed
 
         # Print results
@@ -77,7 +76,7 @@ class SmartFilter:
         for name, passed in self.stack_results.items():
             print(f"{name:20} -> {'✅' if passed else '❌'}")
 
-        # Final signal logic
+        # Final signal
         if self.total_score >= self.min_score and self.passed_required:
             last_close = self.df['close'].iat[-1]
             bias = "LONG" if last_close > self.df['open'].iat[-1] else "SHORT"
@@ -92,9 +91,9 @@ class SmartFilter:
             )
             print(f"[{self.symbol}] ✅ FINAL SIGNAL: {signal[0]}")
             return signal
-        else:
-            print(f"[{self.symbol}] ❌ No signal: thresholds not met.")
-            return None
+
+        print(f"[{self.symbol}] ❌ No signal: thresholds not met.")
+        return None
 
     # -- Filter implementations --
     def _check_fractal_zone(self):
@@ -165,8 +164,8 @@ class SmartFilter:
 
     def _check_absorption(self):
         low_below_open = self.df['low'].iat[-1] < self.df['open'].iat[-1]
-        high_vol = self.df['volume'].iat[-1] > 1.5 * self.df['volume'].rolling(10).mean().iat[-1]
         closed_above = self.df['close'].iat[-1] > self.df['open'].iat[-1]
+        high_vol = self.df['volume'].iat[-1] > 1.5 * self.df['volume'].rolling(10).mean().iat[-1]
         return low_below_open and closed_above and high_vol
 
     def _check_support_resistance(self):
@@ -175,7 +174,7 @@ class SmartFilter:
 
     def _check_smart_money_bias(self):
         signed = self.df['volume'] * self.df['close'].diff().apply(lambda x: 1 if x > 0 else -1)
-        return signed.iloc[-14:].sum() > 0
+        return signed.iat[-14:].sum() > 0
 
     def _check_liquidity_pool(self):
         hi = self.df['high'].rolling(10).max().iat[-2]
