@@ -19,6 +19,8 @@ TOKENS = [
     "EPT-USDT",
     "ELDE-USDT",
     "MAGIC-USDT",
+    "FUN-USDT",       # newly added perpetual
+    "ACTSOL-USDT",    # corrected symbol for ActSol perpetual
 ]
 
 TIMEFRAMES = ["3min", "5min"]
