@@ -5,8 +5,7 @@ VOLUME_ACCELERATION_THRESHOLD = 1.2  # 5m volume must be 20% higher than average
 
 class SmartFilter:
     """
-    SmartFilter v14.1: Applies 18 technical filters on a primary timeframe DataFrame,
-    with optional 3m/5m data for multi-timeframe volume agreement and pre-checks.
+    SmartFilter v14.1 — Applies 18 technical filters + optional 5m volume pre-check on 3m timeframe.
     """
 
     def __init__(
@@ -35,7 +34,7 @@ class SmartFilter:
 
     def _volume_precheck_5m(self):
         if self.df5m is None or len(self.df5m) < 4:
-            print(f"[DEBUG] df5m is None or insufficient length — cannot run pre-check.")
+            print(f"[DEBUG] df5m is None or too short — cannot check 5m volume.")
             return False
         current_vol = self.df5m['volume'].iat[-1]
         avg_vol = self.df5m['volume'].iloc[-4:-1].mean()
@@ -48,7 +47,6 @@ class SmartFilter:
             return None
 
         print(f"[DEBUG] tf: {self.tf}, USE_VOLUME_PREFILTER: {USE_VOLUME_PREFILTER}")
-
         if self.tf == '3m' and USE_VOLUME_PREFILTER:
             if not self._volume_precheck_5m():
                 print(f"[{self.symbol}] ❌ BLOCKED: 3m signal skipped due to weak 5m volume.")
@@ -179,6 +177,4 @@ class SmartFilter:
         return recent.sum() > 0
 
     def _check_liquidity_pool(self):
-        hi = self.df['high'].rolling(10).max().iat[-2]
-        lo = self.df['low'].rolling(10).min().iat[-2]
-        return self.df['hi]()
+        hi = self.df['high'].rolling(10).max
