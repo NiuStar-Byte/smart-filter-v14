@@ -82,8 +82,8 @@ class SmartFilter:
                 print(f"[{self.symbol}] {name} ERROR: {e}")
                 results[name] = False
 
-        raw_score = sum(1 for v in results.values() if v)
         passed_filters = [k for k, v in results.items() if v]
+        raw_score = len(passed_filters)
         weighted_score = sum(self.filter_weights[k] for k in passed_filters)
         max_possible_score = sum(self.filter_weights.values())
         confidence = round(100 * weighted_score / max_possible_score, 1)
@@ -92,8 +92,10 @@ class SmartFilter:
         passed_req = sum(1 for k in required_keys if results[k])
 
         print(f"[{self.symbol}] Score: {raw_score}/18 | Passed Required: {passed_req}/12 | Confidence: {confidence}%")
-        for name, ok in results.items():
-            print(f"{name:20} -> {'✅' if ok else '❌'}")
+        for name in filters.keys():
+            status = '✅' if results[name] else '❌'
+            weight = self.filter_weights.get(name, 0)
+            print(f"{name:20} -> {status}  ({weight})")
 
         if raw_score >= self.min_score and passed_req >= self.required_passed:
             price = self.df['close'].iat[-1]
