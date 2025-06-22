@@ -26,15 +26,16 @@ class SmartFilter:
         self.df["ema200"] = self.df["close"].ewm(span=200).mean()
         self.df["vwap"] = (self.df["close"] * self.df["volume"]).cumsum() / self.df["volume"].cumsum()
 
+        # Filter Weights (Updated)
         self.filter_weights = {
             "Fractal Zone": 5,
             "EMA Cloud": 4,
             "MACD": 5,
             "Momentum": 3,
             "HATS": 4,
-            "Volume Spike": 3,
-            "VWAP Divergence": 2,
-            "MTF Volume Agreement": 3,
+            "Volume Spike": 4,
+            "VWAP Divergence": 3,
+            "MTF Volume Agreement": 3.5,
             "HH/LL Trend": 4,
             "EMA Structure": 4,
             "Chop Zone": 3,
@@ -44,7 +45,7 @@ class SmartFilter:
             "Support/Resistance": 3,
             "Smart Money Bias": 4,
             "Liquidity Pool": 2,
-            "Spread Filter": 2,
+            "Spread Filter": 2
         }
 
     def analyze(self):
@@ -74,6 +75,7 @@ class SmartFilter:
             "Spread Filter": self._check_spread_filter,
         }
 
+        # Run filters and evaluate results
         for name, fn in filters.items():
             try:
                 result = fn()
@@ -90,7 +92,7 @@ class SmartFilter:
         required_keys = list(results.keys())[:12]
         passed_req = sum(1 for k in required_keys if results[k])
 
-        print(f"[{self.symbol}] Score: {raw_score}/18 | Passed Required: {passed_req}/12")
+        print(f"[{self.symbol}] Score: {raw_score}/18 | Passed Required: {passed_req}/12 | Confidence: {confidence}%")
         for name, ok in results.items():
             print(f"{name:20} -> {'✅' if ok else '❌'}")
 
@@ -113,6 +115,7 @@ class SmartFilter:
 
         return None
 
+    # 🔧 Volume Logic Patch
     def volume_surge_confirmed(self):
         spike = self._check_volume_spike()
         trend = self._check_5m_volume_trend()
@@ -128,6 +131,7 @@ class SmartFilter:
             return False
         return self.df5m['volume'].iat[-1] > self.df5m['volume'].iat[-2]
 
+    # 🔍 Other Filters
     def _check_fractal_zone(self):
         return self.df['close'].iat[-1] > self.df['low'].rolling(20).min().iat[-1]
 
