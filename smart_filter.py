@@ -47,6 +47,12 @@ class SmartFilter:
             "Spread Filter": 2.2
         }
 
+        self.top_12_filters = [
+            "Fractal Zone", "EMA Cloud", "MACD", "Momentum", "HATS", "Volume Spike",
+            "VWAP Divergence", "MTF Volume Agreement", "HH/LL Trend", "EMA Structure",
+            "Chop Zone", "Candle Confirmation"
+        ]
+
     def analyze(self):
         if self.df.empty:
             print(f"[{self.symbol}] Error: DataFrame empty.")
@@ -76,51 +82,41 @@ class SmartFilter:
 
         for name, fn in filters.items():
             try:
-                result = fn()
-                results[name] = bool(result)
+                results[name] = bool(fn())
             except Exception as e:
                 print(f"[{self.symbol}] {name} ERROR: {e}")
                 results[name] = False
 
-        passed_filters = [k for k, v in results.items() if v]
-        raw_score = len(passed_filters)
+        passed_all = [k for k, v in results.items() if v]
+        score = len(passed_all)
 
-        required_keys = list(results.keys())[:12]
-        passed_req = sum(1 for k in required_keys if results[k])
+        passed_top = [k for k in self.top_12_filters if results.get(k, False)]
+        passed_count = len(passed_top)
+        top_weight_sum = sum(self.filter_weights[k] for k in self.top_12_filters)
+        passed_weight_sum = sum(self.filter_weights[k] for k in passed_top)
+        confidence = round(100 * passed_weight_sum / top_weight_sum, 1)
 
-        passed_required = [k for k in required_keys if results[k]]
-        weighted_score = sum(self.filter_weights[k] for k in passed_required)
-        max_possible_score = sum(self.filter_weights[k] for k in required_keys)
-        confidence = round(100 * weighted_score / max_possible_score, 1)
+        print(f"[{self.symbol}] Score: {score}/18 | Passed Top Filters: {passed_count}/12 | Confidence: {confidence}%")
+        for name in filters:
+            status = "✅" if results[name] else "❌"
+            print(f"{name:20} -> {status} ({self.filter_weights[name]})")
 
-        print(f"[{self.symbol}] Score: {raw_score}/18 | Passed Required: {passed_req}/12 | Confidence: {confidence}%")
-        for name in filters.keys():
-            status = '✅' if results[name] else '❌'
-            weight = self.filter_weights.get(name, 0)
-            print(f"{name:20} -> {status}  ({weight})")
-
-        if raw_score >= self.min_score and passed_req >= self.required_passed:
+        if score >= self.min_score and passed_count >= self.required_passed:
             price = self.df['close'].iat[-1]
             bias = "LONG" if price > self.df['open'].iat[-1] else "SHORT"
             signal = (
-                f"{bias} signal on {self.symbol} @ {price} | Confidence: {confidence}% (Weighted: {round(weighted_score,1)}/{max_possible_score})",
+                f"{bias} signal on {self.symbol} @ {price} | Confidence: {confidence}% (Weighted: {round(passed_weight_sum,1)}/{top_weight_sum})",
                 self.symbol, bias, price, self.tf,
-                f"{raw_score}/18", f"{passed_req}/12"
+                f"{score}/18", f"{passed_count}/12"
             )
             print(f"[{self.symbol}] ✅ FINAL SIGNAL: {signal[0]}")
             return signal
 
         print(f"[{self.symbol}] ❌ No signal: thresholds not met.")
-        failing_filters = [k for k, v in results.items() if not v]
-        top_fails = "\n".join(f"- {name}" for name in failing_filters[:5])
-        print(f"❗ Top Failing Filters for {self.symbol}:\n{top_fails}")
         return None
 
     def volume_surge_confirmed(self):
-        spike = self._check_volume_spike()
-        trend = self._check_5m_volume_trend()
-        print(f"[{self.symbol}] Volume Spike: {spike}, 5m Volume Trend: {trend}")
-        return spike and trend
+        return self._check_volume_spike() and self._check_5m_volume_trend()
 
     def _check_volume_spike(self):
         avg = self.df['volume'].rolling(10).mean().iat[-1]
@@ -153,8 +149,7 @@ class SmartFilter:
 
     def _check_vwap_divergence(self):
         diff = self.df['close'].iat[-1] - self.df['vwap'].iat[-1]
-        pct = diff / self.df['vwap'].iat[-1]
-        return diff > 0 and pct > 0.001
+        return diff > 0 and diff / self.df['vwap'].iat[-1] > 0.001
 
     def _check_mtf_volume_agreement(self):
         if self.df3m is None or self.df5m is None:
@@ -203,8 +198,7 @@ class SmartFilter:
 
     def _check_smart_money_bias(self):
         signed = self.df['volume'] * self.df['close'].diff().apply(lambda x: 1 if x > 0 else -1)
-        recent = signed.iloc[-14:]
-        return recent.sum() > 0
+        return signed.iloc[-14:].sum() > 0
 
     def _check_liquidity_pool(self):
         hi = self.df['high'].rolling(10).max().iat[-2]
