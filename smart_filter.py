@@ -26,6 +26,27 @@ class SmartFilter:
         self.df["ema200"] = self.df["close"].ewm(span=200).mean()
         self.df["vwap"] = (self.df["close"] * self.df["volume"]).cumsum() / self.df["volume"].cumsum()
 
+        self.filter_weights = {
+            "Fractal Zone": 5,
+            "EMA Cloud": 4,
+            "MACD": 5,
+            "Momentum": 3,
+            "HATS": 4,
+            "Volume Spike": 3,
+            "VWAP Divergence": 2,
+            "MTF Volume Agreement": 3,
+            "HH/LL Trend": 4,
+            "EMA Structure": 4,
+            "Chop Zone": 3,
+            "Candle Confirmation": 3,
+            "Wick Dominance": 2,
+            "Absorption": 2,
+            "Support/Resistance": 3,
+            "Smart Money Bias": 4,
+            "Liquidity Pool": 2,
+            "Spread Filter": 2,
+        }
+
     def analyze(self):
         if self.df.empty:
             print(f"[{self.symbol}] Error: DataFrame empty.")
@@ -61,40 +82,37 @@ class SmartFilter:
                 print(f"[{self.symbol}] {name} ERROR: {e}")
                 results[name] = False
 
-        total = sum(1 for v in results.values() if v)
+        raw_score = sum(1 for v in results.values() if v)
+        weighted_score = sum(self.filter_weights[k] for k, v in results.items() if v)
+        max_possible_score = sum(self.filter_weights.values())
+        confidence = round(100 * weighted_score / max_possible_score)
+
         required_keys = list(results.keys())[:12]
         passed_req = sum(1 for k in required_keys if results[k])
 
-        # 🚫 Hard Conflict Blocker: MACD & Momentum must not both fail
-        if not results.get("MACD", True) and not results.get("Momentum", True):
-            print(f"[{self.symbol}] ❌ BLOCKED: MACD & Momentum contradiction.")
-            return None
-
-        print(f"[{self.symbol}] Score: {total}/18 | Passed Required: {passed_req}/12")
+        print(f"[{self.symbol}] Score: {raw_score}/18 | Passed Required: {passed_req}/12")
         for name, ok in results.items():
             print(f"{name:20} -> {'✅' if ok else '❌'}")
 
-        if total >= self.min_score and passed_req >= self.required_passed:
+        if raw_score >= self.min_score and passed_req >= self.required_passed:
             price = self.df['close'].iat[-1]
             bias = "LONG" if price > self.df['open'].iat[-1] else "SHORT"
             signal = (
-                f"{bias} signal on {self.symbol} @ {price}",
+                f"{bias} signal on {self.symbol} @ {price} | Confidence: {confidence}% (Weighted: {weighted_score}/{max_possible_score})",
                 self.symbol, bias, price, self.tf,
-                f"{total}/18", f"{passed_req}/12"
+                f"{raw_score}/18", f"{passed_req}/12"
             )
             print(f"[{self.symbol}] ✅ FINAL SIGNAL: {signal[0]}")
             return signal
 
         print(f"[{self.symbol}] ❌ No signal: thresholds not met.")
 
-        # 🔍 Diagnostic: Top Failing Filters
         failing_filters = [k for k, v in results.items() if not v]
         top_fails = "\n".join(f"- {name}" for name in failing_filters[:5])
         print(f"❗ Top Failing Filters for {self.symbol}:\n{top_fails}")
 
         return None
 
-    # 🔧 Volume Logic Patch
     def volume_surge_confirmed(self):
         spike = self._check_volume_spike()
         trend = self._check_5m_volume_trend()
@@ -110,7 +128,6 @@ class SmartFilter:
             return False
         return self.df5m['volume'].iat[-1] > self.df5m['volume'].iat[-2]
 
-    # 🔍 Other Filters
     def _check_fractal_zone(self):
         return self.df['close'].iat[-1] > self.df['low'].rolling(20).min().iat[-1]
 
