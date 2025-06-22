@@ -73,12 +73,15 @@ class SmartFilter:
             "Spread Filter":           self._check_spread_filter(),
         }
 
-        total = sum(results.values())
-        required_keys = list(results.keys())[:12]
-        passed_req = sum(results[k] for k in required_keys)
+        # Clean all None values to avoid crashing sum()
+        results_cleaned = {k: (v if isinstance(v, bool) else False) for k, v in results.items()}
+
+        total = sum(results_cleaned.values())
+        required_keys = list(results_cleaned.keys())[:12]
+        passed_req = sum(results_cleaned[k] for k in required_keys)
 
         print(f"[{self.symbol}] Score: {total}/18 | Passed Required: {passed_req}/12")
-        for name, ok in results.items():
+        for name, ok in results_cleaned.items():
             print(f"{name:20} -> {'✅' if ok else '❌'}")
 
         if total >= self.min_score and passed_req >= self.required_passed:
@@ -95,94 +98,162 @@ class SmartFilter:
         print(f"[{self.symbol}] ❌ No signal: thresholds not met.")
         return None
 
-    # ==== Filter Definitions ====
-
     def _check_fractal_zone(self):
-        return self.df['close'].iat[-1] > self.df['low'].rolling(20).min().iat[-1]
+        try:
+            return self.df['close'].iat[-1] > self.df['low'].rolling(20).min().iat[-1]
+        except Exception as e:
+            print(f"[DEBUG] Fractal Zone error: {e}")
+            return False
 
     def _check_ema_cloud(self):
-        return self.df['ema20'].iat[-1] > self.df['ema50'].iat[-1]
+        try:
+            return self.df['ema20'].iat[-1] > self.df['ema50'].iat[-1]
+        except Exception as e:
+            print(f"[DEBUG] EMA Cloud error: {e}")
+            return False
 
     def _check_macd(self):
-        e12 = self.df['close'].ewm(span=12).mean()
-        e26 = self.df['close'].ewm(span=26).mean()
-        macd = e12 - e26
-        sig = macd.ewm(span=9).mean()
-        return macd.iat[-1] > sig.iat[-1]
+        try:
+            e12 = self.df['close'].ewm(span=12).mean()
+            e26 = self.df['close'].ewm(span=26).mean()
+            macd = e12 - e26
+            sig = macd.ewm(span=9).mean()
+            return macd.iat[-1] > sig.iat[-1]
+        except Exception as e:
+            print(f"[DEBUG] MACD error: {e}")
+            return False
 
     def _check_momentum(self):
-        return self.df['close'].diff().iat[-1] > 0
+        try:
+            return self.df['close'].diff().iat[-1] > 0
+        except Exception as e:
+            print(f"[DEBUG] Momentum error: {e}")
+            return False
 
     def _check_hats(self):
-        ha = self.df[['open','high','low','close']].sum(axis=1)/4
-        return ha.iat[-1] > ha.iat[-2]
+        try:
+            ha = self.df[['open','high','low','close']].sum(axis=1)/4
+            return ha.iat[-1] > ha.iat[-2]
+        except Exception as e:
+            print(f"[DEBUG] HATS error: {e}")
+            return False
 
     def _check_volume_spike(self):
-        avg = self.df['volume'].rolling(10).mean().iat[-1]
-        return self.df['volume'].iat[-1] > 1.5 * avg
+        try:
+            avg = self.df['volume'].rolling(10).mean().iat[-1]
+            return self.df['volume'].iat[-1] > 1.5 * avg
+        except Exception as e:
+            print(f"[DEBUG] Volume Spike error: {e}")
+            return False
 
     def _check_vwap_divergence(self):
-        diff = self.df['close'].iat[-1] - self.df['vwap'].iat[-1]
-        pct = diff / self.df['vwap'].iat[-1]
-        return diff > 0 and pct > 0.001
+        try:
+            diff = self.df['close'].iat[-1] - self.df['vwap'].iat[-1]
+            pct = diff / self.df['vwap'].iat[-1]
+            return diff > 0 and pct > 0.001
+        except Exception as e:
+            print(f"[DEBUG] VWAP Divergence error: {e}")
+            return False
 
     def _check_mtf_volume_agreement(self):
-        if self.df3m is None or self.df5m is None:
+        try:
+            if self.df3m is None or self.df5m is None:
+                return False
+            v3 = self.df3m['volume'].iat[-1] > self.df3m['volume'].rolling(20).mean().iat[-1]
+            v5 = self.df5m['volume'].iat[-1] > self.df5m['volume'].rolling(20).mean().iat[-1]
+            return v3 and v5
+        except Exception as e:
+            print(f"[DEBUG] MTF Volume Agreement error: {e}")
             return False
-        v3 = self.df3m['volume'].iat[-1] > self.df3m['volume'].rolling(20).mean().iat[-1]
-        v5 = self.df5m['volume'].iat[-1] > self.df5m['volume'].rolling(20).mean().iat[-1]
-        return v3 and v5
 
     def _check_hh_ll(self):
-        return (
-            self.df['high'].iat[-1] > self.df['high'].iat[-3] and
-            self.df['low'].iat[-1] > self.df['low'].iat[-3]
-        )
+        try:
+            return (
+                self.df['high'].iat[-1] > self.df['high'].iat[-3] and
+                self.df['low'].iat[-1] > self.df['low'].iat[-3]
+            )
+        except Exception as e:
+            print(f"[DEBUG] HH/LL Trend error: {e}")
+            return False
 
     def _check_ema_structure(self):
-        cond = self.df['ema20'].iat[-1] > self.df['ema50'].iat[-1] > self.df['ema200'].iat[-1]
-        slope = all(
-            self.df[f'ema{x}'].iat[-1] > self.df[f'ema{x}'].iat[-2]
-            for x in (20, 50, 200)
-        )
-        return cond and slope
+        try:
+            cond = self.df['ema20'].iat[-1] > self.df['ema50'].iat[-1] > self.df['ema200'].iat[-1]
+            slope = all(
+                self.df[f'ema{x}'].iat[-1] > self.df[f'ema{x}'].iat[-2]
+                for x in (20, 50, 200)
+            )
+            return cond and slope
+        except Exception as e:
+            print(f"[DEBUG] EMA Structure error: {e}")
+            return False
 
     def _check_chop_zone(self):
-        return (self.df['close'].diff() > 0).sum() > 7
+        try:
+            return (self.df['close'].diff() > 0).sum() > 7
+        except Exception as e:
+            print(f"[DEBUG] Chop Zone error: {e}")
+            return False
 
     def _check_candle_close(self):
-        body = abs(self.df['close'].iat[-1] - self.df['open'].iat[-1])
-        rng = self.df['high'].iat[-1] - self.df['low'].iat[-1]
-        return body > 0.5 * rng
+        try:
+            body = abs(self.df['close'].iat[-1] - self.df['open'].iat[-1])
+            rng = self.df['high'].iat[-1] - self.df['low'].iat[-1]
+            return body > 0.5 * rng
+        except Exception as e:
+            print(f"[DEBUG] Candle Confirmation error: {e}")
+            return False
 
     def _check_wick_dominance(self):
-        body = abs(self.df['close'].iat[-1] - self.df['open'].iat[-1])
-        rng = self.df['high'].iat[-1] - self.df['low'].iat[-1]
-        lower = min(self.df['close'].iat[-1], self.df['open'].iat[-1]) - self.df['low'].iat[-1]
-        return body > 0.6 * rng and lower < 0.2 * rng
+        try:
+            body = abs(self.df['close'].iat[-1] - self.df['open'].iat[-1])
+            rng = self.df['high'].iat[-1] - self.df['low'].iat[-1]
+            lower = min(self.df['close'].iat[-1], self.df['open'].iat[-1]) - self.df['low'].iat[-1]
+            return body > 0.6 * rng and lower < 0.2 * rng
+        except Exception as e:
+            print(f"[DEBUG] Wick Dominance error: {e}")
+            return False
 
     def _check_absorption(self):
-        low_under = self.df['low'].iat[-1] < self.df['open'].iat[-1]
-        close_up = self.df['close'].iat[-1] > self.df['open'].iat[-1]
-        vol_spike = self.df['volume'].iat[-1] > 1.5 * self.df['volume'].rolling(10).mean().iat[-1]
-        return low_under and close_up and vol_spike
+        try:
+            low_under = self.df['low'].iat[-1] < self.df['open'].iat[-1]
+            close_up = self.df['close'].iat[-1] > self.df['open'].iat[-1]
+            vol_spike = self.df['volume'].iat[-1] > 1.5 * self.df['volume'].rolling(10).mean().iat[-1]
+            return low_under and close_up and vol_spike
+        except Exception as e:
+            print(f"[DEBUG] Absorption error: {e}")
+            return False
 
     def _check_support_resistance(self):
-        swing = self.df['low'].rolling(5).min().iat[-3]
-        return abs(self.df['close'].iat[-1] - swing) / swing < 0.01
+        try:
+            swing = self.df['low'].rolling(5).min().iat[-3]
+            return abs(self.df['close'].iat[-1] - swing) / swing < 0.01
+        except Exception as e:
+            print(f"[DEBUG] Support/Resistance error: {e}")
+            return False
 
     def _check_smart_money_bias(self):
-        signed = self.df['volume'] * self.df['close'].diff().apply(lambda x: 1 if x > 0 else -1)
-        recent = signed.iloc[-14:]
-        return recent.sum() > 0
+        try:
+            signed = self.df['volume'] * self.df['close'].diff().apply(lambda x: 1 if x > 0 else -1)
+            recent = signed.iloc[-14:]
+            return recent.sum() > 0
+        except Exception as e:
+            print(f"[DEBUG] Smart Money Bias error: {e}")
+            return False
 
     def _check_liquidity_pool(self):
-        hi = self.df['high'].rolling(10).max
+        try:
+            hi = self.df['high'].rolling(10).max().iat[-2]
+            lo = self.df['low'].rolling(10).min().iat[-2]
+            return self.df['high'].iat[-1] > hi or self.df['low'].iat[-1] < lo
+        except Exception as e:
+            print(f"[DEBUG] Liquidity Pool error: {e}")
+            return False
 
     def _check_spread_filter(self):
         try:
             spread = self.df['high'].iat[-1] - self.df['low'].iat[-1]
             return spread < 0.02 * self.df['close'].iat[-1]
-        except:
-            print(f"[DEBUG] Spread Filter error on {self.symbol}")
+        except Exception as e:
+            print(f"[DEBUG] Spread Filter error: {e}")
             return False
