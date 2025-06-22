@@ -31,11 +31,6 @@ class SmartFilter:
             print(f"[{self.symbol}] Error: DataFrame empty.")
             return None
 
-        # ✅ Confirmed Volume Surge (gatekeeper-style) for 3min TF
-        if self.tf == "3min" and not self.volume_surge_confirmed():
-            print(f"[{self.symbol}] ⛔️ Volume Surge not confirmed. Skipping signal.")
-            return None
-
         results = {}
         filters = {
             "Fractal Zone": self._check_fractal_zone,
@@ -43,7 +38,7 @@ class SmartFilter:
             "MACD": self._check_macd,
             "Momentum": self._check_momentum,
             "HATS": self._check_hats,
-            "Volume Spike": self._check_volume_spike,
+            "Volume Spike": self.volume_surge_confirmed if self.tf == "3min" else self._check_volume_spike,
             "VWAP Divergence": self._check_vwap_divergence,
             "MTF Volume Agreement": self._check_mtf_volume_agreement,
             "HH/LL Trend": self._check_hh_ll,
@@ -88,9 +83,12 @@ class SmartFilter:
         print(f"[{self.symbol}] ❌ No signal: thresholds not met.")
         return None
 
-    # 🔧 Confirmed Volume Surge as gatekeeper
+    # 🔧 Volume Logic Patch with DEBUG
     def volume_surge_confirmed(self):
-        return self._check_volume_spike() and self._check_5m_volume_trend()
+        spike = self._check_volume_spike()
+        trend = self._check_5m_volume_trend()
+        print(f"[{self.symbol}] Volume Spike: {spike}, 5m Volume Trend: {trend}")
+        return spike and trend
 
     def _check_volume_spike(self):
         avg = self.df['volume'].rolling(10).mean().iat[-1]
@@ -101,6 +99,7 @@ class SmartFilter:
             return False
         return self.df5m['volume'].iat[-1] > self.df5m['volume'].iat[-2]
 
+    # 🔍 Other Filters
     def _check_fractal_zone(self):
         return self.df['close'].iat[-1] > self.df['low'].rolling(20).min().iat[-1]
 
