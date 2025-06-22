@@ -1,3 +1,7 @@
+# Re-implementing the patch to ensure proper weighted score calculation
+
+# Update to the full code of SmartFilter with corrected weighted score calculation
+
 import pandas as pd
 
 class SmartFilter:
@@ -84,11 +88,19 @@ class SmartFilter:
                 print(f"[{self.symbol}] {name} ERROR: {e}")
                 results[name] = False
 
+        # Raw score: Sum of filters passed (1 point per filter)
         raw_score = sum(1 for v in results.values() if v)
+
+        # Weighted score: Sum of filter weights for passed filters
         weighted_score = sum(self.filter_weights[k] for k, v in results.items() if v)
+
+        # Max possible score based on filter weights
         max_possible_score = sum(self.filter_weights.values())
+
+        # Confidence: percentage of weighted score
         confidence = round(100 * weighted_score / max_possible_score, 1)  # Round to 1 decimal place
 
+        # Evaluate the number of passed required filters
         required_keys = list(results.keys())[:12]
         passed_req = sum(1 for k in required_keys if results[k])
 
@@ -96,6 +108,7 @@ class SmartFilter:
         for name, ok in results.items():
             print(f"{name:20} -> {'✅' if ok else '❌'}")
 
+        # Generate final signal if criteria are met
         if raw_score >= self.min_score and passed_req >= self.required_passed:
             price = self.df['close'].iat[-1]
             bias = "LONG" if price > self.df['open'].iat[-1] else "SHORT"
@@ -109,6 +122,7 @@ class SmartFilter:
 
         print(f"[{self.symbol}] ❌ No signal: thresholds not met.")
 
+        # Diagnostic output: Top failing filters
         failing_filters = [k for k, v in results.items() if not v]
         top_fails = "\n".join(f"- {name}" for name in failing_filters[:5])
         print(f"❗ Top Failing Filters for {self.symbol}:\n{top_fails}")
