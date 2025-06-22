@@ -178,3 +178,8 @@ class SmartFilter:
 
     def _check_liquidity_pool(self):
         hi = self.df['high'].rolling(10).max
+
+    def _check_spread_filter(self):
+        spread = self.df['high'].iat[-1] - self.df['low'].iat[-1]
+        return spread < 0.02 * self.df['close'].iat[-1]
+
