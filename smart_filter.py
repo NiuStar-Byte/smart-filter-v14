@@ -19,13 +19,10 @@ class SmartFilter:
         self.min_score = min_score
         self.required_passed = required_passed
 
-        try:
-            self.df["ema20"] = self.df["close"].ewm(span=20).mean()
-            self.df["ema50"] = self.df["close"].ewm(span=50).mean()
-            self.df["ema200"] = self.df["close"].ewm(span=200).mean()
-            self.df["vwap"] = (self.df["close"] * self.df["volume"]).cumsum() / self.df["volume"].cumsum()
-        except Exception as e:
-            print(f"[{self.symbol}] ERROR during indicator pre-calc: {e}")
+        self.df["ema20"] = self.df["close"].ewm(span=20).mean()
+        self.df["ema50"] = self.df["close"].ewm(span=50).mean()
+        self.df["ema200"] = self.df["close"].ewm(span=200).mean()
+        self.df["vwap"] = (self.df["close"] * self.df["volume"]).cumsum() / self.df["volume"].cumsum()
 
     def analyze(self):
         if self.df.empty:
@@ -33,24 +30,38 @@ class SmartFilter:
             return None
 
         results = {}
-        filter_names = [
-            "Fractal Zone", "EMA Cloud", "MACD", "Momentum", "HATS", "Volume Spike",
-            "VWAP Divergence", "MTF Volume Agreement", "HH/LL Trend", "EMA Structure",
-            "Chop Zone", "Candle Confirmation", "Wick Dominance", "Absorption",
-            "Support/Resistance", "Smart Money Bias", "Liquidity Pool", "Spread Filter"
-        ]
+        filters = {
+            "Fractal Zone": self._check_fractal_zone,
+            "EMA Cloud": self._check_ema_cloud,
+            "MACD": self._check_macd,
+            "Momentum": self._check_momentum,
+            "HATS": self._check_hats,
+            "Volume Spike": self._check_volume_spike,
+            "VWAP Divergence": self._check_vwap_divergence,
+            "MTF Volume Agreement": self._check_mtf_volume_agreement,
+            "HH/LL Trend": self._check_hh_ll,
+            "EMA Structure": self._check_ema_structure,
+            "Chop Zone": self._check_chop_zone,
+            "Candle Confirmation": self._check_candle_close,
+            "Wick Dominance": self._check_wick_dominance,
+            "Absorption": self._check_absorption,
+            "Support/Resistance": self._check_support_resistance,
+            "Smart Money Bias": self._check_smart_money_bias,
+            "Liquidity Pool": self._check_liquidity_pool,
+            "Spread Filter": self._check_spread_filter,
+        }
 
-        for name in filter_names:
+        for name, fn in filters.items():
             try:
-                method = getattr(self, f"_check_{name.lower().replace(' ', '_')}")
-                results[name] = method()
+                result = fn()
+                results[name] = bool(result)
             except Exception as e:
                 print(f"[{self.symbol}] {name} ERROR: {e}")
                 results[name] = False
 
-        total = sum(v for v in results.values() if isinstance(v, bool))
+        total = sum(1 for v in results.values() if v)
         required_keys = list(results.keys())[:12]
-        passed_req = sum(results[k] for k in required_keys if isinstance(results[k], bool))
+        passed_req = sum(1 for k in required_keys if results[k])
 
         print(f"[{self.symbol}] Score: {total}/18 | Passed Required: {passed_req}/12")
         for name, ok in results.items():
@@ -87,7 +98,7 @@ class SmartFilter:
         return self.df['close'].diff().iat[-1] > 0
 
     def _check_hats(self):
-        ha = self.df[['open','high','low','close']].sum(axis=1)/4
+        ha = self.df[['open', 'high', 'low', 'close']].mean(axis=1)
         return ha.iat[-1] > ha.iat[-2]
 
     def _check_volume_spike(self):
@@ -123,7 +134,7 @@ class SmartFilter:
     def _check_chop_zone(self):
         return (self.df['close'].diff() > 0).sum() > 7
 
-    def _check_candle_confirmation(self):
+    def _check_candle_close(self):
         body = abs(self.df['close'].iat[-1] - self.df['open'].iat[-1])
         rng = self.df['high'].iat[-1] - self.df['low'].iat[-1]
         return body > 0.5 * rng
