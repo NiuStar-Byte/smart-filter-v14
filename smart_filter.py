@@ -59,9 +59,9 @@ class SmartFilter:
                 print(f"[{self.symbol}] {name} ERROR: {e}")
                 results[name] = False
 
-        total = sum(1 for v in results.values() if v)
+        total = sum(1 for v in results.values() if v is True)
         required_keys = list(results.keys())[:12]
-        passed_req = sum(1 for k in required_keys if results[k])
+        passed_req = sum(1 for k in required_keys if results.get(k))
 
         print(f"[{self.symbol}] Score: {total}/18 | Passed Required: {passed_req}/12")
         for name, ok in results.items():
