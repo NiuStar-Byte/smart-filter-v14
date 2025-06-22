@@ -65,6 +65,11 @@ class SmartFilter:
         required_keys = list(results.keys())[:12]
         passed_req = sum(1 for k in required_keys if results[k])
 
+        # 🚫 Hard Conflict Blocker: MACD & Momentum must not both fail
+        if not results.get("MACD", True) and not results.get("Momentum", True):
+            print(f"[{self.symbol}] ❌ BLOCKED: MACD & Momentum contradiction.")
+            return None
+
         print(f"[{self.symbol}] Score: {total}/18 | Passed Required: {passed_req}/12")
         for name, ok in results.items():
             print(f"{name:20} -> {'✅' if ok else '❌'}")
