@@ -77,18 +77,15 @@ class SmartFilter:
                 self.symbol, bias, price, self.tf,
                 f"{total}/18", f"{passed_req}/12"
             )
-            print(f"[{self.symbol}] ✅ FINAL SIGNAL: {signal[0]}")
+            print(f"[{self.symbol}] ✅ FINAL SIGNAL Ready to Send: {signal}")
             return signal
 
         print(f"[{self.symbol}] ❌ No signal: thresholds not met.")
         return None
 
-    # 🔧 Volume Logic Patch with DEBUG
+    # 🔧 Volume Logic Patch
     def volume_surge_confirmed(self):
-        spike = self._check_volume_spike()
-        trend = self._check_5m_volume_trend()
-        print(f"[{self.symbol}] Volume Spike: {spike}, 5m Volume Trend: {trend}")
-        return spike and trend
+        return self._check_volume_spike() and self._check_5m_volume_trend()
 
     def _check_volume_spike(self):
         avg = self.df['volume'].rolling(10).mean().iat[-1]
