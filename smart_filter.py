@@ -10,7 +10,7 @@ class SmartFilter:
         tf: str = None,
         min_score: int = 9,
         required_passed: int = 7,
-        volume_multiplier: float = 2.0
+        volume_multiplier: float = 2.0  # Dynamic volume multiplier
     ):
         self.symbol = symbol
         self.df = df.copy()
@@ -77,15 +77,24 @@ class SmartFilter:
                 self.symbol, bias, price, self.tf,
                 f"{total}/18", f"{passed_req}/12"
             )
-            print(f"[{self.symbol}] ✅ FINAL SIGNAL Ready to Send: {signal}")
+            print(f"[{self.symbol}] ✅ FINAL SIGNAL: {signal[0]}")
             return signal
 
         print(f"[{self.symbol}] ❌ No signal: thresholds not met.")
+
+        # 🔍 Diagnostic: Top Failing Filters
+        failing_filters = [k for k, v in results.items() if not v]
+        top_fails = "\n".join(f"- {name}" for name in failing_filters[:5])
+        print(f"❗ Top Failing Filters for {self.symbol}:\n{top_fails}")
+
         return None
 
     # 🔧 Volume Logic Patch
     def volume_surge_confirmed(self):
-        return self._check_volume_spike() and self._check_5m_volume_trend()
+        spike = self._check_volume_spike()
+        trend = self._check_5m_volume_trend()
+        print(f"[{self.symbol}] Volume Spike: {spike}, 5m Volume Trend: {trend}")
+        return spike and trend
 
     def _check_volume_spike(self):
         avg = self.df['volume'].rolling(10).mean().iat[-1]
