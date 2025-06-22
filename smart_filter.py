@@ -21,6 +21,7 @@ class SmartFilter:
         self.required_passed = required_passed
         self.volume_multiplier = volume_multiplier
 
+        # EMA and VWAP
         self.df["ema20"] = self.df["close"].ewm(span=20).mean()
         self.df["ema50"] = self.df["close"].ewm(span=50).mean()
         self.df["ema200"] = self.df["close"].ewm(span=200).mean()
@@ -28,24 +29,24 @@ class SmartFilter:
 
         # Filter Weights (Updated)
         self.filter_weights = {
-            "Fractal Zone": 5,
-            "EMA Cloud": 4,
-            "MACD": 5,
-            "Momentum": 3,
-            "HATS": 4,
-            "Volume Spike": 4,
-            "VWAP Divergence": 3,
-            "MTF Volume Agreement": 3.5,
-            "HH/LL Trend": 4,
-            "EMA Structure": 4,
-            "Chop Zone": 3,
-            "Candle Confirmation": 3,
-            "Wick Dominance": 2,
-            "Absorption": 2,
-            "Support/Resistance": 3,
-            "Smart Money Bias": 4,
-            "Liquidity Pool": 2,
-            "Spread Filter": 2
+            "MACD": 5.0,
+            "Volume Spike": 4.8,
+            "Fractal Zone": 4.5,
+            "EMA Cloud": 4.2,
+            "Momentum": 4.0,
+            "MTF Volume Agreement": 3.8,
+            "HATS": 3.6,
+            "HH/LL Trend": 3.5,
+            "EMA Structure": 3.3,
+            "Candle Confirmation": 3.0,
+            "VWAP Divergence": 2.8,
+            "Chop Zone": 2.6,
+            "Support/Resistance": 2.4,
+            "Spread Filter": 2.2,
+            "Liquidity Pool": 2.0,
+            "Smart Money Bias": 1.8,
+            "Absorption": 1.5,
+            "Wick Dominance": 1.2
         }
 
     def analyze(self):
