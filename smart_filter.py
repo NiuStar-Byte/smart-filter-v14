@@ -1,7 +1,3 @@
-# Re-implementing the patch to ensure proper weighted score calculation
-
-# Update to the full code of SmartFilter with corrected weighted score calculation
-
 import pandas as pd
 
 class SmartFilter:
@@ -14,7 +10,7 @@ class SmartFilter:
         tf: str = None,
         min_score: int = 9,
         required_passed: int = 7,
-        volume_multiplier: float = 2.0  # Dynamic volume multiplier
+        volume_multiplier: float = 2.0
     ):
         self.symbol = symbol
         self.df = df.copy()
@@ -30,7 +26,6 @@ class SmartFilter:
         self.df["ema200"] = self.df["close"].ewm(span=200).mean()
         self.df["vwap"] = (self.df["close"] * self.df["volume"]).cumsum() / self.df["volume"].cumsum()
 
-        # Filter Weights (Updated)
         self.filter_weights = {
             "Fractal Zone": 4.5,
             "EMA Cloud": 4.2,
@@ -79,7 +74,6 @@ class SmartFilter:
             "Spread Filter": self._check_spread_filter,
         }
 
-        # Run filters and evaluate results
         for name, fn in filters.items():
             try:
                 result = fn()
@@ -88,19 +82,12 @@ class SmartFilter:
                 print(f"[{self.symbol}] {name} ERROR: {e}")
                 results[name] = False
 
-        # Raw score: Sum of filters passed (1 point per filter)
         raw_score = sum(1 for v in results.values() if v)
-
-        # Weighted score: Sum of filter weights for passed filters
-        weighted_score = sum(self.filter_weights[k] for k, v in results.items() if v)
-
-        # Max possible score based on filter weights
+        passed_filters = [k for k, v in results.items() if v]
+        weighted_score = sum(self.filter_weights[k] for k in passed_filters)
         max_possible_score = sum(self.filter_weights.values())
+        confidence = round(100 * weighted_score / max_possible_score, 1)
 
-        # Confidence: percentage of weighted score
-        confidence = round(100 * weighted_score / max_possible_score, 1)  # Round to 1 decimal place
-
-        # Evaluate the number of passed required filters
         required_keys = list(results.keys())[:12]
         passed_req = sum(1 for k in required_keys if results[k])
 
@@ -108,12 +95,11 @@ class SmartFilter:
         for name, ok in results.items():
             print(f"{name:20} -> {'✅' if ok else '❌'}")
 
-        # Generate final signal if criteria are met
         if raw_score >= self.min_score and passed_req >= self.required_passed:
             price = self.df['close'].iat[-1]
             bias = "LONG" if price > self.df['open'].iat[-1] else "SHORT"
             signal = (
-                f"{bias} signal on {self.symbol} @ {price} | Confidence: {confidence}% (Weighted: {weighted_score}/{max_possible_score})",
+                f"{bias} signal on {self.symbol} @ {price} | Confidence: {confidence}% (Weighted: {round(weighted_score,1)}/{max_possible_score})",
                 self.symbol, bias, price, self.tf,
                 f"{raw_score}/18", f"{passed_req}/12"
             )
@@ -121,15 +107,11 @@ class SmartFilter:
             return signal
 
         print(f"[{self.symbol}] ❌ No signal: thresholds not met.")
-
-        # Diagnostic output: Top failing filters
         failing_filters = [k for k, v in results.items() if not v]
         top_fails = "\n".join(f"- {name}" for name in failing_filters[:5])
         print(f"❗ Top Failing Filters for {self.symbol}:\n{top_fails}")
-
         return None
 
-    # 🔧 Volume Logic Patch
     def volume_surge_confirmed(self):
         spike = self._check_volume_spike()
         trend = self._check_5m_volume_trend()
@@ -145,7 +127,6 @@ class SmartFilter:
             return False
         return self.df5m['volume'].iat[-1] > self.df5m['volume'].iat[-2]
 
-    # 🔍 Other Filters
     def _check_fractal_zone(self):
         return self.df['close'].iat[-1] > self.df['low'].rolling(20).min().iat[-1]
 
