@@ -1,5 +1,8 @@
 import pandas as pd
 
+USE_VOLUME_PREFILTER = True  # Toggle to disable during experiments
+VOLUME_ACCELERATION_THRESHOLD = 1.2  # 5m volume must be 20% higher than average
+
 class SmartFilter:
     """
     SmartFilter v14: Applies 18 technical filters on a primary timeframe DataFrame,
@@ -31,10 +34,23 @@ class SmartFilter:
         self.df["ema200"] = self.df["close"].ewm(span=200).mean()
         self.df["vwap"] = (self.df["close"] * self.df["volume"]).cumsum() / self.df["volume"].cumsum()
 
+    def _volume_precheck_5m(self):
+        if self.df5m is None or len(self.df5m) < 4:
+            return False
+        current_vol = self.df5m['volume'].iat[-1]
+        avg_vol = self.df5m['volume'].iloc[-4:-1].mean()
+        return current_vol > VOLUME_ACCELERATION_THRESHOLD * avg_vol
+
     def analyze(self):
         if self.df.empty:
             print(f"[{self.symbol}] Error: DataFrame empty.")
             return None
+
+        # Pre-check volume condition before running filters
+        if self.tf == '3m' and USE_VOLUME_PREFILTER:
+            if not self._volume_precheck_5m():
+                print(f"[{self.symbol}] ❌ Skipped: 5m volume not accelerating.")
+                return None
 
         results = {
             "Fractal Zone":            self._check_fractal_zone(),
