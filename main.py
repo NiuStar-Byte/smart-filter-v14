@@ -80,7 +80,7 @@ def run():
                         res5 = sf5.analyze()
                         if res5:
                             text, sym, bias, price, tf_out, score, passed = res5
-                            msg = f"{counter}. {sym} ({tf5}) [Confirmed] → {text}"
+                            msg = f"{counter}. {sym} ({tf5}) → {text}"
                             if os.getenv("DRY_RUN", "false").lower() != "true":
                                 send_telegram_alert(msg, sym, bias, price, tf_out, score, passed)
                             last_sent[conf5_key] = now
