@@ -11,9 +11,9 @@ TOKENS = [
     "EPT-USDT",   "ELDE-USDT","MAGIC-USDT","ACTSOL-USDT"
 ]
 
-TIMEFRAMES = ["3min", "5min"]
 COOLDOWN = {"3min": 720, "5min": 900}
 last_sent = {}
+pending_3min = set()
 
 def run():
     while True:
@@ -21,41 +21,54 @@ def run():
         counter = 1
 
         for symbol in TOKENS:
-            # --- PHASE 1: 3-minute check ---
             key3 = f"{symbol}_3min"
-            three_passed = False
+            # Phase 1: handle pending confirmation or initial 3-min pass
+            df3 = fetch_ohlcv(symbol, "3min")
+            if df3 is None:
+                continue
 
-            if not (key3 in last_sent and now - last_sent[key3] < COOLDOWN["3min"]):
-                df3 = fetch_ohlcv(symbol, "3min")
-                if df3 is not None:
+            # If previously flagged, confirm now
+            if symbol in pending_3min:
+                # check cooldown
+                if not (key3 in last_sent and now - last_sent[key3] < COOLDOWN["3min"]):
                     sf3 = SmartFilter(symbol, df3, df3m=df3, df5m=None, tf="3min")
                     res3 = sf3.analyze()
                     if res3:
                         text, sym, bias, price, tf_out, score, passed = res3
-                        msg = f"{counter}. {sym} (3min) → {text}"
-                        if os.getenv("DRY_RUN", "false").lower() != "true":
+                        msg = f"{counter}. {sym} (3min) [Confirmed] → {text}"
+                        if os.getenv("DRY_RUN","false").lower() != "true":
                             send_telegram_alert(msg, sym, bias, price, tf_out, score, passed)
                         last_sent[key3] = now
                         counter += 1
-                        three_passed = True
+                pending_3min.remove(symbol)
+            else:
+                # initial 3-min detection
+                if not (key3 in last_sent and now - last_sent[key3] < COOLDOWN["3min"]):
+                    sf3 = SmartFilter(symbol, df3, df3m=df3, df5m=None, tf="3min")
+                    res3 = sf3.analyze()
+                    if res3:
+                        pending_3min.add(symbol)
 
-            # --- PHASE 2: 5-minute check (only if 3-min passed) ---
-            if three_passed:
-                key5 = f"{symbol}_5min"
+            # Phase 2: 5-min confirmation after confirmed 3-min
+            key5 = f"{symbol}_5min"
+            # only if we just confirmed in this cycle
+            if key3 in last_sent:
                 if not (key5 in last_sent and now - last_sent[key5] < COOLDOWN["5min"]):
                     df5 = fetch_ohlcv(symbol, "5min")
-                    if df5 is not None:
-                        sf5 = SmartFilter(symbol, df5, df3m=df3, df5m=df5, tf="5min")
-                        res5 = sf5.analyze()
-                        if res5:
-                            text, sym, bias, price, tf_out, score, passed = res5
-                            msg = f"{counter}. {sym} (5min) → {text}"
-                            if os.getenv("DRY_RUN", "false").lower() != "true":
-                                send_telegram_alert(msg, sym, bias, price, tf_out, score, passed)
-                            last_sent[key5] = now
-                            counter += 1
+                    if df5 is None:
+                        continue
+                    sf5 = SmartFilter(symbol, df5, df3m=df3, df5m=df5, tf="5min")
+                    res5 = sf5.analyze()
+                    if res5:
+                        text, sym, bias, price, tf_out, score, passed = res5
+                        msg = f"{counter}. {sym} (5min) → {text}"
+                        if os.getenv("DRY_RUN","false").lower() != "true":
+                            send_telegram_alert(msg, sym, bias, price, tf_out, score, passed)
+                        last_sent[key5] = now
+                        counter += 1
 
-        print("✅ Cycle complete. Sleeping 60 seconds...\n")
+        print("✅ Cycle complete. Sleeping 60 seconds...
+")
         time.sleep(60)
 
 if __name__ == "__main__":
