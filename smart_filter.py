@@ -5,11 +5,10 @@ VOLUME_ACCELERATION_THRESHOLD = 1.2  # 5m volume must be 20% higher than average
 
 class SmartFilter:
     """
-    SmartFilter v14: Applies 18 technical filters on a primary timeframe DataFrame,
-    with optional 3m/5m data for multi-timeframe volume agreement.
-
-    Returns a boolean result per filter, total score, and a final signal tuple when thresholds are met.
+    SmartFilter v14.1: Applies 18 technical filters on a primary timeframe DataFrame,
+    with optional 3m/5m data for multi-timeframe volume agreement and pre-checks.
     """
+
     def __init__(
         self,
         symbol: str,
@@ -36,9 +35,11 @@ class SmartFilter:
 
     def _volume_precheck_5m(self):
         if self.df5m is None or len(self.df5m) < 4:
+            print(f"[DEBUG] df5m is None or insufficient length — cannot run pre-check.")
             return False
         current_vol = self.df5m['volume'].iat[-1]
         avg_vol = self.df5m['volume'].iloc[-4:-1].mean()
+        print(f"[DEBUG] 5m current vol: {current_vol:.2f}, avg vol: {avg_vol:.2f}")
         return current_vol > VOLUME_ACCELERATION_THRESHOLD * avg_vol
 
     def analyze(self):
@@ -46,10 +47,11 @@ class SmartFilter:
             print(f"[{self.symbol}] Error: DataFrame empty.")
             return None
 
-        # Pre-check volume condition before running filters
+        print(f"[DEBUG] tf: {self.tf}, USE_VOLUME_PREFILTER: {USE_VOLUME_PREFILTER}")
+
         if self.tf == '3m' and USE_VOLUME_PREFILTER:
             if not self._volume_precheck_5m():
-                print(f"[{self.symbol}] ❌ Skipped: 5m volume not accelerating.")
+                print(f"[{self.symbol}] ❌ BLOCKED: 3m signal skipped due to weak 5m volume.")
                 return None
 
         results = {
@@ -95,7 +97,8 @@ class SmartFilter:
         print(f"[{self.symbol}] ❌ No signal: thresholds not met.")
         return None
 
-    # Filter definitions:
+    # ==== Filter Definitions ====
+
     def _check_fractal_zone(self):
         return self.df['close'].iat[-1] > self.df['low'].rolling(20).min().iat[-1]
 
@@ -118,12 +121,12 @@ class SmartFilter:
 
     def _check_volume_spike(self):
         avg = self.df['volume'].rolling(10).mean().iat[-1]
-        return self.df['volume'].iat[-1] > 1.5*avg
+        return self.df['volume'].iat[-1] > 1.5 * avg
 
     def _check_vwap_divergence(self):
         diff = self.df['close'].iat[-1] - self.df['vwap'].iat[-1]
-        pct = diff/self.df['vwap'].iat[-1]
-        return diff>0 and pct>0.001
+        pct = diff / self.df['vwap'].iat[-1]
+        return diff > 0 and pct > 0.001
 
     def _check_mtf_volume_agreement(self):
         if self.df3m is None or self.df5m is None:
@@ -139,47 +142,43 @@ class SmartFilter:
         )
 
     def _check_ema_structure(self):
-        cond = self.df['ema20'].iat[-1]>self.df['ema50'].iat[-1]>self.df['ema200'].iat[-1]
+        cond = self.df['ema20'].iat[-1] > self.df['ema50'].iat[-1] > self.df['ema200'].iat[-1]
         slope = all(
-            self.df[f'ema{x}'].iat[-1]>self.df[f'ema{x}'].iat[-2]
-            for x in (20,50,200)
+            self.df[f'ema{x}'].iat[-1] > self.df[f'ema{x}'].iat[-2]
+            for x in (20, 50, 200)
         )
         return cond and slope
 
     def _check_chop_zone(self):
-        return (self.df['close'].diff()>0).sum()>7
+        return (self.df['close'].diff() > 0).sum() > 7
 
     def _check_candle_close(self):
-        body = abs(self.df['close'].iat[-1]-self.df['open'].iat[-1])
-        rng = self.df['high'].iat[-1]-self.df['low'].iat[-1]
-        return body>0.5*rng
+        body = abs(self.df['close'].iat[-1] - self.df['open'].iat[-1])
+        rng = self.df['high'].iat[-1] - self.df['low'].iat[-1]
+        return body > 0.5 * rng
 
     def _check_wick_dominance(self):
-        body = abs(self.df['close'].iat[-1]-self.df['open'].iat[-1])
-        rng = self.df['high'].iat[-1]-self.df['low'].iat[-1]
-        lower = min(self.df['close'].iat[-1],self.df['open'].iat[-1]) - self.df['low'].iat[-1]
-        return body>0.6*rng and lower<0.2*rng
+        body = abs(self.df['close'].iat[-1] - self.df['open'].iat[-1])
+        rng = self.df['high'].iat[-1] - self.df['low'].iat[-1]
+        lower = min(self.df['close'].iat[-1], self.df['open'].iat[-1]) - self.df['low'].iat[-1]
+        return body > 0.6 * rng and lower < 0.2 * rng
 
     def _check_absorption(self):
-        low_under = self.df['low'].iat[-1]<self.df['open'].iat[-1]
-        close_up = self.df['close'].iat[-1]>self.df['open'].iat[-1]
-        vol_spike = self.df['volume'].iat[-1]>1.5*self.df['volume'].rolling(10).mean().iat[-1]
+        low_under = self.df['low'].iat[-1] < self.df['open'].iat[-1]
+        close_up = self.df['close'].iat[-1] > self.df['open'].iat[-1]
+        vol_spike = self.df['volume'].iat[-1] > 1.5 * self.df['volume'].rolling(10).mean().iat[-1]
         return low_under and close_up and vol_spike
 
     def _check_support_resistance(self):
         swing = self.df['low'].rolling(5).min().iat[-3]
-        return abs(self.df['close'].iat[-1]-swing)/swing<0.01
+        return abs(self.df['close'].iat[-1] - swing) / swing < 0.01
 
     def _check_smart_money_bias(self):
-        signed = self.df['volume'] * self.df['close'].diff().apply(lambda x:1 if x>0 else -1)
+        signed = self.df['volume'] * self.df['close'].diff().apply(lambda x: 1 if x > 0 else -1)
         recent = signed.iloc[-14:]
-        return recent.sum()>0
+        return recent.sum() > 0
 
     def _check_liquidity_pool(self):
         hi = self.df['high'].rolling(10).max().iat[-2]
         lo = self.df['low'].rolling(10).min().iat[-2]
-        return self.df['high'].iat[-1]>hi or self.df['low'].iat[-1]<lo
-
-    def _check_spread_filter(self):
-        spread = self.df['high'].iat[-1]-self.df['low'].iat[-1]
-        return spread<0.02*self.df['close'].iat[-1]
+        return self.df['hi]()
