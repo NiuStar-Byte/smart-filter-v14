@@ -87,7 +87,7 @@ class SmartFilter:
         raw_score = sum(1 for v in results.values() if v)
         weighted_score = sum(self.filter_weights[k] for k, v in results.items() if v)
         max_possible_score = sum(self.filter_weights.values())
-        confidence = round(100 * weighted_score / max_possible_score)
+        confidence = round(100 * weighted_score / max_possible_score, 1)  # Round to 1 decimal place
 
         required_keys = list(results.keys())[:12]
         passed_req = sum(1 for k in required_keys if results[k])
