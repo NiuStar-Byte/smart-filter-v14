@@ -9,7 +9,8 @@ class SmartFilter:
         df5m: pd.DataFrame = None,
         tf: str = None,
         min_score: int = 9,
-        required_passed: int = 7
+        required_passed: int = 7,
+        volume_multiplier: float = 2.0  # Dynamic volume multiplier
     ):
         self.symbol = symbol
         self.df = df.copy()
@@ -18,6 +19,7 @@ class SmartFilter:
         self.tf = tf
         self.min_score = min_score
         self.required_passed = required_passed
+        self.volume_multiplier = volume_multiplier
 
         self.df["ema20"] = self.df["close"].ewm(span=20).mean()
         self.df["ema50"] = self.df["close"].ewm(span=50).mean()
@@ -36,7 +38,7 @@ class SmartFilter:
             "MACD": self._check_macd,
             "Momentum": self._check_momentum,
             "HATS": self._check_hats,
-            "Volume Spike": self._check_volume_spike,
+            "Volume Spike": self.volume_surge_confirmed if self.tf == "3min" else self._check_volume_spike,
             "VWAP Divergence": self._check_vwap_divergence,
             "MTF Volume Agreement": self._check_mtf_volume_agreement,
             "HH/LL Trend": self._check_hh_ll,
@@ -59,9 +61,9 @@ class SmartFilter:
                 print(f"[{self.symbol}] {name} ERROR: {e}")
                 results[name] = False
 
-        total = sum(1 for v in results.values() if v is True)
+        total = sum(1 for v in results.values() if v)
         required_keys = list(results.keys())[:12]
-        passed_req = sum(1 for k in required_keys if results.get(k))
+        passed_req = sum(1 for k in required_keys if results[k])
 
         print(f"[{self.symbol}] Score: {total}/18 | Passed Required: {passed_req}/12")
         for name, ok in results.items():
@@ -81,6 +83,20 @@ class SmartFilter:
         print(f"[{self.symbol}] ❌ No signal: thresholds not met.")
         return None
 
+    # 🔧 Volume Logic Patch
+    def volume_surge_confirmed(self):
+        return self._check_volume_spike() and self._check_5m_volume_trend()
+
+    def _check_volume_spike(self):
+        avg = self.df['volume'].rolling(10).mean().iat[-1]
+        return self.df['volume'].iat[-1] > self.volume_multiplier * avg
+
+    def _check_5m_volume_trend(self):
+        if self.df5m is None or len(self.df5m) < 3:
+            return False
+        return self.df5m['volume'].iat[-1] > self.df5m['volume'].iat[-2]
+
+    # 🔍 Other Filters
     def _check_fractal_zone(self):
         return self.df['close'].iat[-1] > self.df['low'].rolling(20).min().iat[-1]
 
@@ -100,10 +116,6 @@ class SmartFilter:
     def _check_hats(self):
         ha = self.df[['open', 'high', 'low', 'close']].mean(axis=1)
         return ha.iat[-1] > ha.iat[-2]
-
-    def _check_volume_spike(self):
-        avg = self.df['volume'].rolling(10).mean().iat[-1]
-        return self.df['volume'].iat[-1] > 1.5 * avg
 
     def _check_vwap_divergence(self):
         diff = self.df['close'].iat[-1] - self.df['vwap'].iat[-1]
@@ -148,7 +160,7 @@ class SmartFilter:
     def _check_absorption(self):
         low_under = self.df['low'].iat[-1] < self.df['open'].iat[-1]
         close_up = self.df['close'].iat[-1] > self.df['open'].iat[-1]
-        vol_spike = self.df['volume'].iat[-1] > 1.5 * self.df['volume'].rolling(10).mean().iat[-1]
+        vol_spike = self.df['volume'].iat[-1] > self.volume_multiplier * self.df['volume'].rolling(10).mean().iat[-1]
         return low_under and close_up and vol_spike
 
     def _check_support_resistance(self):
