@@ -28,7 +28,7 @@ class SmartFilter:
         self.df["ema200"] = self.df["close"].ewm(span=200).mean()
         self.df["vwap"] = (self.df["close"] * self.df["volume"]).cumsum() / self.df["volume"].cumsum()
 
-        # Weights for all filters (now including Liquidity Awareness)
+        # Weights for all filters (including Liquidity Awareness)
         self.filter_weights = {
             "Fractal Zone": 4.5,
             "EMA Cloud": 4.2,
@@ -48,12 +48,11 @@ class SmartFilter:
             "Smart Money Bias": 1.8,
             "Liquidity Pool": 2.5,
             "Spread Filter": 2.7,
-            # New Liquidity Awareness filter added
             "Liquidity Awareness": 3.2,
             "Trend Continuation": 3.7
         }
 
-        # Top filters used for passed_count & confidence
+        # Top filters for passed_count & confidence
         self.top_filters = [
             "Fractal Zone", "EMA Cloud", "MACD", "Momentum", "HATS",
             "Volume Spike", "VWAP Divergence", "MTF Volume Agreement",
@@ -89,7 +88,6 @@ class SmartFilter:
             "Smart Money Bias": self._check_smart_money_bias,
             "Liquidity Pool": self._check_liquidity_pool,
             "Spread Filter": self._check_spread_filter,
-            # New Liquidity Awareness check
             "Liquidity Awareness": self._check_liquidity_awareness,
             "Trend Continuation": self._check_trend_continuation
         }
@@ -102,7 +100,7 @@ class SmartFilter:
                 results[name] = False
 
         # Total score across all filters
-        passed_all = [name for name, ok in results.items() if ok]
+        passed_all = [n for n, ok in results.items() if ok]
         score = len(passed_all)
 
         # Passed among top filters
@@ -228,16 +226,7 @@ class SmartFilter:
         swing = self.df['low'].rolling(5).min().iat[-3]
         return abs(self.df['close'].iat[-1] - swing) / swing < 0.01
 
-    def _check_smart_money_bias(self):
-        signed = self.df['volume'] * self.df['close'].diff().apply(lambda x: 1 if x > 0 else -1)
-        return signed.iloc[-14:].sum() > 0
-
-    def _check_liquidity_pool(self):
-        hi = self.df['high'].rolling(10).max().iat[-2]
-        lo = self.df['low'].rolling(10).min().iat[-2]
-        return self.df['high'].iat[-1] > hi or self.df['low'].iat[-1] < lo
-
-        def _check_spread_filter(self):
+    def _check_spread_filter(self):
         spread = self.df['high'].iat[-1] - self.df['low'].iat[-1]
         return spread < 0.02 * self.df['close'].iat[-1]
 
@@ -270,12 +259,10 @@ class SmartFilter:
         last = self.df['close'].iat[-1]
         long = last > self.df['open'].iat[-1]
         opp = ask_depth if long else bid_depth
-        # rolling history of opposing depth
         if not hasattr(self, '_depth_history'):
             self._depth_history = []
         self._depth_history.append(opp)
         if len(self._depth_history) > history_len:
             self._depth_history.pop(0)
         avg = sum(self._depth_history) / len(self._depth_history)
-        # allow only if wall < wall_factor * average
         return opp / avg < wall_factor
