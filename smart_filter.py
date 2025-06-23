@@ -23,12 +23,13 @@ class SmartFilter:
         self.required_passed = required_passed
         self.volume_multiplier = volume_multiplier
 
+        # Calculate moving averages and VWAP
         self.df["ema20"] = self.df["close"].ewm(span=20).mean()
         self.df["ema50"] = self.df["close"].ewm(span=50).mean()
         self.df["ema200"] = self.df["close"].ewm(span=200).mean()
         self.df["vwap"] = (self.df["close"] * self.df["volume"]).cumsum() / self.df["volume"].cumsum()
 
-        # Weights for all filters (including Liquidity Awareness)
+        # Weights for all filters
         self.filter_weights = {
             "Fractal Zone": 4.5,
             "EMA Cloud": 4.2,
@@ -52,7 +53,7 @@ class SmartFilter:
             "Trend Continuation": 3.7
         }
 
-        # Top filters for passed_count & confidence
+        # Define which filters count towards the required_passed threshold
         self.top_filters = [
             "Fractal Zone", "EMA Cloud", "MACD", "Momentum", "HATS",
             "Volume Spike", "VWAP Divergence", "MTF Volume Agreement",
@@ -65,17 +66,14 @@ class SmartFilter:
             print(f"[{self.symbol}] Error: DataFrame empty.")
             return None
 
-        # Run every check
-        results = {}
+        # Map filter names to methods
         checks = {
             "Fractal Zone": self._check_fractal_zone,
             "EMA Cloud": self._check_ema_cloud,
             "MACD": self._check_macd,
             "Momentum": self._check_momentum,
             "HATS": self._check_hats,
-            "Volume Spike": (
-                self.volume_surge_confirmed if self.tf == "3min" else self._check_volume_spike
-            ),
+            "Volume Spike": self.volume_surge_confirmed if self.tf == "3min" else self._check_volume_spike,
             "VWAP Divergence": self._check_vwap_divergence,
             "MTF Volume Agreement": self._check_mtf_volume_agreement,
             "HH/LL Trend": self._check_hh_ll,
@@ -92,6 +90,7 @@ class SmartFilter:
             "Trend Continuation": self._check_trend_continuation
         }
 
+        results = {}
         for name, fn in checks.items():
             try:
                 results[name] = bool(fn())
@@ -99,35 +98,31 @@ class SmartFilter:
                 print(f"[{self.symbol}] {name} ERROR: {e}")
                 results[name] = False
 
-        # Total score across all filters
-        passed_all = [n for n, ok in results.items() if ok]
-        score = len(passed_all)
-
-        # Passed among top filters
+        # Calculate scores
+        total_passed = [n for n, ok in results.items() if ok]
+        score = len(total_passed)
         passed_top = [f for f in self.top_filters if results.get(f, False)]
         passed_count = len(passed_top)
 
-        # Confidence = passed weight / total top weight
+        # Weighted confidence
         total_top_weight = sum(self.filter_weights[n] for n in self.top_filters)
         passed_weight = sum(self.filter_weights[n] for n in passed_top)
-        confidence = round(100 * passed_weight / total_top_weight, 1)
+        confidence = round(100 * passed_weight / total_top_weight, 1) if total_top_weight else 0.0
 
-        # Print breakdown
+        # Log breakdown
         print(f"[{self.symbol}] Score: {score}/{len(self.filter_weights)} | "
-              f"Passed Top Filters: {passed_count}/{len(self.top_filters)} | "
+              f"Passed Top: {passed_count}/{len(self.top_filters)} | "
               f"Confidence: {confidence}%")
-        for n in checks:
-            mark = '✅' if results[n] else '❌'
-            print(f"{n:20} -> {mark} ({self.filter_weights[n]})")
+        for n, ok in results.items():
+            mark = '✅' if ok else '❌'
+            print(f"{n:20} -> {mark} ({self.filter_weights.get(n)})")
 
-        # Final signal decision
+        # Decision
         if score >= self.min_score and passed_count >= self.required_passed:
             price = self.df['close'].iat[-1]
             bias = "LONG" if price > self.df['open'].iat[-1] else "SHORT"
             msg = (
-                f"{bias} signal on {self.symbol} @ {price} | "
-                f"Confidence: {confidence}% "
-                f"(Weighted: {round(passed_weight,1)}/{total_top_weight})",
+                f"{bias} on {self.symbol} @ {price} | Confidence: {confidence}%", 
                 self.symbol, bias, price, self.tf,
                 f"{score}/{len(self.filter_weights)}",
                 f"{passed_count}/{len(self.top_filters)}"
@@ -135,14 +130,14 @@ class SmartFilter:
             print(f"[{self.symbol}] ✅ FINAL SIGNAL: {msg[0]}")
             return msg
 
-        print(f"[{self.symbol}] ❌ No signal: thresholds not met.")
+        print(f"[{self.symbol}] ❌ No signal.")
         return None
 
-    # --- Helper for Volume Surge Double-Check ---
+    # Volume helper
     def volume_surge_confirmed(self):
         return self._check_volume_spike() and self._check_5m_volume_trend()
 
-    # --- Filter implementations below ---
+    # Filter implementations
     def _check_volume_spike(self):
         avg = self.df['volume'].rolling(10).mean().iat[-1]
         return self.df['volume'].iat[-1] > self.volume_multiplier * avg
@@ -194,8 +189,7 @@ class SmartFilter:
             self.df['ema20'].iat[-1] > self.df['ema50'].iat[-1] > self.df['ema200'].iat[-1]
         )
         slope = all(
-            self.df[f'ema{x}'].iat[-1] > self.df[f'ema{x}'].iat[-2]
-            for x in (20, 50, 200)
+            self.df[f'ema{x}'].iat[-1] > self.df[f'ema{x}'].iat[-2] for x in (20, 50, 200)
         )
         return cond and slope
 
@@ -204,26 +198,28 @@ class SmartFilter:
 
     def _check_candle_close(self):
         body = abs(self.df['close'].iat[-1] - self.df['open'].iat[-1])
-        rng  = self.df['high'].iat[-1] - self.df['low'].iat[-1]
+        rng = self.df['high'].iat[-1] - self.df['low'].iat[-1]
         return body > 0.5 * rng
 
     def _check_wick_dominance(self):
         body = abs(self.df['close'].iat[-1] - self.df['open'].iat[-1])
-        rng  = self.df['high'].iat[-1] - self.df['low'].iat[-1]
-        lower = (
-            min(self.df['close'].iat[-1], self.df['open'].iat[-1])
-            - self.df
+        rng = self.df['high'].iat[-1] - self.df['low'].iat[-1]
+        lower = min(
+            self.df['close'].iat[-1], self.df['open'].iat[-1]
+        ) - self.df['low'].iat[-1]
+        return body > 0.6 * rng and lower < 0.2 * rng
 
-... (truncated for brevity) ...
+    def _check_absorption(self):
+        low_under = self.df['low'].iat[-1] < self.df['open'].iat[-1]
+        close_up = self.df['close'].iat[-1] > self.df['open'].iat[-1]
+        vol_spike = self.df['volume'].iat[-1] > self.volume_multiplier * self.df['volume'].rolling(10).mean().iat[-1]
+        return low_under and close_up and vol_spike
 
     def _check_support_resistance(self):
         swing = self.df['low'].rolling(5).min().iat[-3]
         return abs(self.df['close'].iat[-1] - swing) / swing < 0.01
 
     def _check_smart_money_bias(self):
-        """
-        Basic Smart Money Bias: bullish if last close is above open and VWAP.
-        """
         last = self.df['close'].iat[-1]
         open_ = self.df['open'].iat[-1]
         vwap = self.df['vwap'].iat[-1]
@@ -233,17 +229,7 @@ class SmartFilter:
         spread = self.df['high'].iat[-1] - self.df['low'].iat[-1]
         return spread < 0.02 * self.df['close'].iat[-1]
 
-    def _check_liquidity_pool(self):
-        """
-        Placeholder Liquidity Pool filter: always passes if order book is accessible.
-        """
-        bids, asks = self._fetch_order_book(depth=100)
-        if bids is None or asks is None:
-            return False
-        return True
-
     def _fetch_order_book(self, depth: int = 100):
-        """Helper to fetch top `depth` levels from KuCoin order book."""
         for sym in (self.symbol, self.symbol.replace('-', '/')):
             url = f"https://api.kucoin.com/api/v1/market/orderbook/level2_{depth}?symbol={sym}"
             try:
@@ -257,10 +243,11 @@ class SmartFilter:
                 continue
         return None, None
 
+    def _check_liquidity_pool(self):
+        bids, asks = self._fetch_order_book(depth=100)
+        return bids is not None and asks is not None
+
     def _check_liquidity_awareness(self, band_pct: float = 0.005, wall_factor: float = 5, history_len: int = 20):
-        """
-        Block signals if there's a large opposing wall within ±band_pct of mid-price.
-        """
         bids, asks = self._fetch_order_book(depth=100)
         if bids is None or asks is None:
             return True
@@ -280,7 +267,4 @@ class SmartFilter:
         return opp / avg < wall_factor
 
     def _check_trend_continuation(self):
-        """
-        Placeholder Trend Continuation: checks if EMA20 slope remains positive.
-        """
         return self.df['ema20'].iat[-1] > self.df['ema20'].iat[-2]
