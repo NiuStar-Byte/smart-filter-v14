@@ -1,70 +1,50 @@
 import os
 import time
-import logging
 import pandas as pd
-
 from kucoin_data import get_ohlcv
 from smart_filter import SmartFilter
 from telegram_alert import send_telegram_alert
 
-# === SETUP LOGGING ===
-log = logging.getLogger()
-log.setLevel(logging.INFO)
+# List of 15 tokens to scan (KuCoin Futures symbols)
+TOKENS = [
+    "SKATE-USDT", "LA-USDT",  "SPK-USDT", "ZKJ-USDT", "IP-USDT",
+    "AERO-USDT",  "BMT-USDT", "LQTY-USDT", "X-USDT",   "RAY-USDT",
+    "EPT-USDT",   "ELDE-USDT", "MAGIC-USDT", "ACTSOL-USDT", "FUN-USDT"
+]
 
-formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
+# Cooldown periods (in seconds) per timeframe
+COOLDOWN = {"3min": 720, "5min": 900}
+last_sent = {}  # Tracks last alert timestamp per symbol/timeframe
 
-file_handler = logging.FileHandler("logs.txt", mode="a")
-file_handler.setFormatter(formatter)
-log.addHandler(file_handler)
-
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(formatter)
-log.addHandler(console_handler)
-
-# === CONFIGURATION ===
-SYMBOLS = [
-    "SPARK-USDT", "BIDUSDT", "SKATEUSDT", "LAUSDT", "SPKUSDT",
-    "ZKJUSDT", "IPUSDT", "AEROUSDT", "BMTUSDT", "LQTYUSDT",
-    "FUNUSDT", "SNTUSDT", "XUSDT", "BANKUSDT", "RAYUSDT"
-]  # Only available tokens
-
-TIMEFRAMES = ["3m", "5m"]
-
-COOLDOWNS = {
-    "3m": 12 * 60,
-    "5m": 15 * 60
-}
-
-last_alert_times = {}
-
-# === MAIN LOGIC ===
 def run():
-    log.info("Smart Filter Bot starting...")
+    counter = 1
     while True:
-        for symbol in SYMBOLS:
-            for tf in TIMEFRAMES:
-                pair_key = f"{symbol}-{tf}"
-                last_time = last_alert_times.get(pair_key, 0)
-                if time.time() - last_time < COOLDOWNS[tf]:
-                    continue
+        now = time.time()
+        for symbol in TOKENS:
+            df3 = get_ohlcv(symbol, interval="3min", limit=100)
+            df5 = get_ohlcv(symbol, interval="5min", limit=100)
+            if df3 is None or df3.empty:
+                continue
 
-                try:
-                    df = get_ohlcv(symbol, tf)
-                    if df is None or df.empty:
-                        log.warning(f"No data for {symbol} ({tf})")
-                        continue
+            # Analyze 3-minute timeframe
+            key3 = f"{symbol}_3min"
+            sf3 = SmartFilter(symbol, df3, df3m=df3, df5m=df5, tf="3min")
+            res3 = sf3.analyze()
+            if res3:
+                last = last_sent.get(key3, 0)
+                if now - last >= COOLDOWN["3min"]:
+                    text, sym, bias, price, tf_out, score, passed = res3
+                    msg = f"{counter}. {sym} ({tf_out}) [V19 Confirmed] → {text}"
+                    print(f"[LOG] Sending alert for {sym}: {msg}")
+                    if os.getenv("DRY_RUN", "false").lower() != "true":
+                        send_telegram_alert(
+                            msg, sym, bias, price, tf_out, score, passed
+                        )
+                    last_sent[key3] = now
+                    counter += 1
 
-                    sf = SmartFilter(df, symbol=symbol, tf=tf)
-                    result = sf.analyze()
-                    if result:
-                        log.info(f"[LOG] Sending alert for {symbol}: {result['id']}. {result['message']}")
-                        send_telegram_alert(result)
-                        last_alert_times[pair_key] = time.time()
-
-                except Exception as e:
-                    log.error(f"Error while processing {symbol} ({tf}): {e}", exc_info=True)
-
-        time.sleep(10)
+        print("✅ Cycle complete. Sleeping 60 seconds...")
+        time.sleep(60)
 
 if __name__ == "__main__":
     run()
