@@ -120,7 +120,9 @@ class SmartFilter:
                 f"(Weighted: {passed_weight:.1f}/{total_top_weight:.1f})",
                 self.symbol, bias, price, self.tf,
                 f"{score}/{len(self.filter_weights)}",
-                f"{passed_count}/{len(self.top_filters)}"
+                f"{passed_count}/{len(self.top_filters)}",
+                confidence,
+                round(passed_weight, 1)
             )
             print(f"[{self.symbol}] ✅ FINAL SIGNAL: {msg[0]}")
             return msg
