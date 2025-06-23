@@ -9,10 +9,10 @@ from telegram_alert import send_telegram_alert
 TOKENS = [
     "SKATE-USDT", "LA-USDT",  "SPK-USDT", "ZKJ-USDT", "IP-USDT",
     "AERO-USDT",  "BMT-USDT", "LQTY-USDT", "X-USDT",   "RAY-USDT",
-    "EPT-USDT",   "ELDE-USDT", "MAGIC-USDT", "ACTSOL-USDT", "FUN-USDT"
+    "EPT-USDT",   "ELDEUSDT", "MAGIC-USDT", "ACTSOL-USDT", "FUN-USDT"
 ]
 
-# Cooldown periods (in seconds) to avoid spamming same symbol
+# Cooldown periods (in seconds) to avoid spamming same symbol/timeframe
 COOLDOWN = {"3min": 720, "5min": 900}
 last_sent = {}  # tracks last alert timestamp per symbol/timeframe
 
@@ -36,11 +36,16 @@ def run():
                 # enforce cooldown
                 last = last_sent.get(key3, 0)
                 if now - last >= COOLDOWN["3min"]:
-                    text, sym, bias, price, tf_out, score, passed = res3
+                    text, sym, bias, price, tf_out, score_str, passed_str = res3
                     msg = f"{counter}. {sym} ({tf_out}) [V19 Confirmed] → {text}"
                     # send Telegram alert (skip if DRY_RUN=true)
                     if os.getenv("DRY_RUN", "false").lower() != "true":
-                        send_telegram_alert(msg, sym, bias, price, tf_out, score, passed)
+                        # Extract numeric parts for templating
+                        score_num = int(score_str.split('/')[0])
+                        passed_num = int(passed_str.split('/')[0])
+                        send_telegram_alert(
+                            msg, sym, bias, price, tf_out, score_num, passed_num
+                        )
                     last_sent[key3] = now
                     counter += 1
 
