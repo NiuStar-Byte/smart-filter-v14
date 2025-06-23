@@ -105,3 +105,6 @@ def fetch_ohlcv(symbol: str, tf: str, limit: int = 50) -> pd.DataFrame | None:
 
     print(f"[{symbol}] No OHLCV data fetched for any endpoint.")
     return None
+
+# ✅ This makes sure you can use: from kucoin_data import get_ohlcv
+get_ohlcv = fetch_ohlcv
