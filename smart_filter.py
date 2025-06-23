@@ -104,6 +104,9 @@ class SmartFilter:
         # Compute confidence based on weights of top filters only
         total_top_weight = sum(self.filter_weights[f] for f in self.top_filters)
         passed_weight = sum(self.filter_weights[f] for f in passed_top)
+        # Round weights for display
+        display_top_weight = round(total_top_weight, 1)
+        display_passed_weight = round(passed_weight, 1)
         confidence = round(100 * passed_weight / total_top_weight, 1)
 
         # Print breakdown
@@ -112,13 +115,13 @@ class SmartFilter:
             mark = '✅' if results[name] else '❌'
             print(f"{name:20} -> {mark} ({self.filter_weights[name]})")
 
-        # Decide signal
+        # Construct signal message
         if score >= self.min_score and passed_count >= self.required_passed:
             price = self.df['close'].iat[-1]
             bias = "LONG" if price > self.df['open'].iat[-1] else "SHORT"
             msg = (
                 f"{bias} signal on {self.symbol} @ {price} | "
-                f"Confidence: {confidence}% (Weighted: {round(passed_weight,1)}/{total_top_weight})",
+                f"Confidence: {confidence}% (Weighted: {display_passed_weight}/{display_top_weight})",
                 self.symbol, bias, price, self.tf,
                 f"{score}/19", f"{passed_count}/13"
             )
@@ -129,7 +132,6 @@ class SmartFilter:
         return None
 
     # --- Filter implementations below ---
-
     def volume_surge_confirmed(self):
         return self._check_volume_spike() and self._check_5m_volume_trend()
 
@@ -215,23 +217,3 @@ class SmartFilter:
         return signed.iloc[-14:].sum() > 0
 
     def _check_liquidity_pool(self):
-        hi = self.df['high'].rolling(10).max().iat[-2]
-        lo = self.df['low'].rolling(10).min().iat[-2]
-        return self.df['high'].iat[-1] > hi or self.df['low'].iat[-1] < lo
-
-    def _check_spread_filter(self):
-        spread = self.df['high'].iat[-1] - self.df['low'].iat[-1]
-        return spread < 0.02 * self.df['close'].iat[-1]
-
-    def _check_trend_continuation(self):
-        # ADX + EMA slope
-        self.df['ema_diff'] = self.df['ema20'] - self.df['ema50']
-        ema_slope = self.df['ema_diff'].diff().iat[-1] > 0
-        tr  = self.df[['high','low','close']].max(axis=1) - self.df[['high','low','close']].min(axis=1)
-        dm_plus  = self.df['high'].diff().clip(lower=0)
-        dm_minus = -self.df['low'].diff().clip(upper=0)
-        di_plus  = 100*dm_plus.ewm(span=14).mean()/tr.ewm(span=14).mean()
-        di_minus = 100*dm_minus.ewm(span=14).mean()/tr.ewm(span=14).mean()
-        dx = abs(di_plus - di_minus)/(di_plus + di_minus) * 100
-        adx = dx.ewm(span=14).mean().iat[-1]
-        return ema_slope and adx > 20
