@@ -12,8 +12,8 @@ TOKENS = [
     "EPT-USDT",   "ELDEUSDT", "MAGIC-USDT", "ACTSOL-USDT", "FUN-USDT"
 ]
 
-# Set cooldown to 0 to disable
-COOLDOWN = {"3min": 0, "5min": 0}
+# Cooldown settings (seconds); 0 disables cooldown
+COOLDOWN = {"3min": 300, "5min": 600}
 last_sent = {}  # tracks last alert timestamp per symbol/timeframe
 
 
@@ -32,10 +32,18 @@ def run():
             key3 = f"{symbol}_3min"
             sf3 = SmartFilter(symbol, df3, df3m=df3, df5m=df5, tf="3min")
             res3 = sf3.analyze()
+
+            # --- Cooldown Check ---
             if res3:
+                last_time = last_sent.get(key3, 0)
+                cooldown = COOLDOWN.get("3min", 0)
+                if now - last_time < cooldown:
+                    print(f"[{symbol}] ⏳ Cooldown active. Skipping alert.")
+                    continue
+
+                # --- Send alert if passed ---
                 text, sym, bias, price, tf_out, score_str, passed_str = res3
                 msg = f"{counter}. {sym} ({tf_out}) [V19 Confirmed] → {text}"
-                # Log and send Telegram alert
                 print(f"[LOG] Sending alert for {sym}: {msg}")
                 send_telegram_alert(
                     msg, sym, bias, price, tf_out, score_str, passed_str
