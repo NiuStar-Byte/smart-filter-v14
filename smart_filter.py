@@ -237,6 +237,10 @@ class SmartFilter:
         lo = self.df['low'].rolling(10).min().iat[-2]
         return self.df['high'].iat[-1] > hi or self.df['low'].iat[-1] < lo
 
+        def _check_spread_filter(self):
+        spread = self.df['high'].iat[-1] - self.df['low'].iat[-1]
+        return spread < 0.02 * self.df['close'].iat[-1]
+
     def _fetch_order_book(self, depth: int = 100):
         """Helper to fetch top `depth` levels from KuCoin order book."""
         for sym in (self.symbol, self.symbol.replace('-', '/')):
