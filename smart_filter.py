@@ -41,10 +41,10 @@ class SmartFilter:
             "Candle Confirmation": 3.0,
             "Wick Dominance": 1.2,
             "Absorption": 1.5,
-            "Support/Resistance": 2.4,
+            "Support/Resistance": 1.9,
             "Smart Money Bias": 1.8,
-            "Liquidity Pool": 2.0,
-            "Spread Filter": 2.2,
+            "Liquidity Pool": 2.5,
+            "Spread Filter": 2.7,
             "Trend Continuation": 3.7
         }
 
@@ -98,7 +98,7 @@ class SmartFilter:
         passed_weight_sum = sum(self.filter_weights[k] for k in passed_top)
         confidence = round(100 * passed_weight_sum / top_weight_sum, 1)
 
-        print(f"[{self.symbol}] Score: {score}/18 | Passed Top Filters: {passed_count}/12 | Confidence: {confidence}%")
+        print(f"[{self.symbol}] Score: {score}/19 | Passed Top Filters: {passed_count}/12 | Confidence: {confidence}%")
         for name in filters:
             status = "✅" if results[name] else "❌"
             print(f"{name:20} -> {status} ({self.filter_weights[name]})")
@@ -109,7 +109,7 @@ class SmartFilter:
             signal = (
                 f"{bias} signal on {self.symbol} @ {price} | Confidence: {confidence}% (Weighted: {round(passed_weight_sum,1)}/{top_weight_sum})",
                 self.symbol, bias, price, self.tf,
-                f"{score}/18", f"{passed_count}/12"
+                f"{score}/19", f"{passed_count}/12"
             )
             print(f"[{self.symbol}] ✅ FINAL SIGNAL: {signal[0]}")
             return signal
@@ -212,7 +212,6 @@ class SmartFilter:
         return spread < 0.02 * self.df['close'].iat[-1]
 
     def _check_trend_continuation(self):
-        # EMA Slope + ADX Confirmation
         self.df['ema_diff'] = self.df['ema20'] - self.df['ema50']
         ema_slope = self.df['ema_diff'].diff().iat[-1] > 0
 
