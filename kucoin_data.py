@@ -15,7 +15,7 @@ FUTURES_GRAN = {
     "5min": 5
 }
 
-# Binance interval mapping
+# Binance interval mapping (fallback)
 BINANCE_INTERVAL = {
     "3min": "3m",
     "5min": "5m"
@@ -24,87 +24,82 @@ BINANCE_INTERVAL = {
 
 def fetch_ohlcv(symbol: str, tf: str, limit: int = 50) -> pd.DataFrame | None:
     """
-    Fetches OHLCV data for a given symbol and timeframe.
-    1. Tries KuCoin Spot API.
-    2. Falls back to KuCoin Futures API.
-    3. Falls back to Binance Spot API.
-
-    :param symbol: Token symbol, e.g. "SPARK-USDT"
-    :param tf: Timeframe key, one of TF_MAP/FUTURES_GRAN, e.g. "3min"
-    :param limit: number of bars to fetch (used by Binance)
-    :return: DataFrame with columns [open, high, low, close, volume] indexed by timestamp, or None if no data
+    Internal: Fetch OHLCV data for a given symbol & timeframe key (tf).
+    Tries (in order):
+      1) KuCoin Spot
+      2) KuCoin Futures
+      3) Binance Spot
+    Returns a DataFrame [open, high, low, close, volume] or None.
     """
-    # Validate timeframe
-    if tf not in TF_MAP:
-        print(f"[{symbol}] Unsupported timeframe: {tf}")
-        return None
-
-    # 1) Try KuCoin Spot API
-    for sym in (symbol, symbol.replace('-', '/')):
-        try:
-            url = f"https://api.kucoin.com/api/v1/market/candles?type={TF_MAP[tf]}&symbol={sym}"
-            res = requests.get(url, timeout=10)
-            res.raise_for_status()
-            bars = res.json().get('data') or []
-            if not bars:
+    # 1) Spot
+    if tf in TF_MAP:
+        for sym in (symbol, symbol.replace('-', '/')):
+            try:
+                url = f"https://api.kucoin.com/api/v1/market/candles?type={TF_MAP[tf]}&symbol={sym}"
+                r = requests.get(url, timeout=10); r.raise_for_status()
+                bars = r.json().get("data") or []
+                if not bars: continue
+                df = pd.DataFrame(bars, columns=[
+                    "timestamp","open","close","high","low","volume","turnover"
+                ]).iloc[::-1].reset_index(drop=True)
+                df[["open","high","low","close","volume"]] = df[["open","high","low","close","volume"]].astype(float)
+                df["timestamp"] = pd.to_datetime(df["timestamp"], unit="s")
+                df.set_index("timestamp", inplace=True)
+                return df[["open","high","low","close","volume"]]
+            except Exception:
                 continue
-            df = pd.DataFrame(bars, columns=["timestamp","open","close","high","low","volume","turnover"])
-            df = df.iloc[::-1].reset_index(drop=True)
-            df[["open","high","low","close","volume"]] = df[["open","high","low","close","volume"]].astype(float)
-            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')
-            df.set_index('timestamp', inplace=True)
-            return df[["open","high","low","close","volume"]]
-        except Exception:
-            continue
 
-    # 2) Try KuCoin Futures API
-    for sym in (symbol, symbol.replace('-', '/')):
-        try:
-            gran = FUTURES_GRAN.get(tf)
-            if gran is None:
+    # 2) Futures
+    if tf in FUTURES_GRAN:
+        for sym in (symbol, symbol.replace('-', '/')):
+            try:
+                gran = FUTURES_GRAN[tf]
+                url = f"https://api-futures.kucoin.com/api/v1/kline/query?symbol={sym}&granularity={gran}"
+                r = requests.get(url, timeout=10); r.raise_for_status()
+                bars = r.json().get("data") or []
+                if not bars: continue
+                df = pd.DataFrame(bars, columns=[
+                    "timestamp","open","close","high","low","volume"
+                ]).iloc[::-1].reset_index(drop=True)
+                df[["open","high","low","close","volume"]] = df[["open","high","low","close","volume"]].astype(float)
+                df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms")
+                df.set_index("timestamp", inplace=True)
+                return df[["open","high","low","close","volume"]]
+            except Exception:
                 continue
-            url = f"https://api-futures.kucoin.com/api/v1/kline/query?symbol={sym}&granularity={gran}" 
-            res = requests.get(url, timeout=10)
-            res.raise_for_status()
-            bars = res.json().get('data') or []
-            if not bars:
-                continue
-            df = pd.DataFrame(bars, columns=["timestamp","open","close","high","low","volume"])
-            df = df.iloc[::-1].reset_index(drop=True)
-            df[["open","high","low","close","volume"]] = df[["open","high","low","close","volume"]].astype(float)
-            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-            df.set_index('timestamp', inplace=True)
-            return df[["open","high","low","close","volume"]]
-        except Exception:
-            continue
 
-    # 3) Try Binance Spot API
+    # 3) Binance fallback
     b_interval = BINANCE_INTERVAL.get(tf)
     if b_interval:
         sym_b = symbol.replace('-', '')
         try:
-            url = f"https://api.binance.com/api/v3/klines?symbol={sym_b}&interval={b_interval}&limit={limit}"
-            res = requests.get(url, timeout=10)
-            res.raise_for_status()
-            bars = res.json() or []
+            url = (
+                f"https://api.binance.com/api/v3/klines"
+                f"?symbol={sym_b}&interval={b_interval}&limit={limit}"
+            )
+            r = requests.get(url, timeout=10); r.raise_for_status()
+            bars = r.json() or []
             if bars:
-                # Binance: [open_time, open, high, low, close, volume, ...]
                 df = pd.DataFrame(bars, columns=[
                     "timestamp","open","high","low","close","volume",
-                    "close_time","asset_volume","trades","taker_base_vol","taker_quote_vol","ignore"
-                ])
-                df = df.iloc[:, :6]  # keep timestamp->volume
+                    *([None] * (len(bars[0]) - 6))
+                ]).iloc[:, :6]
                 df.columns = ["timestamp","open","high","low","close","volume"]
-                df = df.reset_index(drop=True)
                 df[["open","high","low","close","volume"]] = df[["open","high","low","close","volume"]].astype(float)
-                df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-                df.set_index('timestamp', inplace=True)
-                return df[["open","high","low","close","volume"]]
+                df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms")
+                df.set_index("timestamp", inplace=True)
+                return df
         except Exception:
             pass
 
     print(f"[{symbol}] No OHLCV data fetched for any endpoint.")
     return None
 
-# ✅ This makes sure you can use: from kucoin_data import get_ohlcv
-get_ohlcv = fetch_ohlcv
+
+def get_ohlcv(symbol: str, interval: str, limit: int = 50) -> pd.DataFrame | None:
+    """
+    Public alias matching main.py signature.
+      interval: one of "2min","3min","5min"
+      limit: number of bars for Binance fallback
+    """
+    return fetch_ohlcv(symbol, tf=interval, limit=limit)
