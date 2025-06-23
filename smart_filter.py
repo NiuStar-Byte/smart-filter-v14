@@ -57,23 +57,7 @@ class SmartFilterV18:
     def analyze(self):
         return self._run_filters(version="V18")
 
-    # All other internal check methods (e.g., _check_fractal_zone, _check_ema_cloud, etc.) go here — same as current SmartFilterV18
-    # For brevity, they are identical and assumed to be present here.
-
-
-# === SMART FILTER V19 (EXPERIMENTAL VERSION WITH TREND CONTINUATION + ENHANCED LOGIC) ===
-class SmartFilterV19(SmartFilterV18):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # V19 changes:
-        self.filter_weights["Trend Continuation"] = 3.7
-        self.top_filters.append("Trend Continuation")
-
-    def analyze(self):
-        return self._run_filters(version="V19")
-
-    def _run_filters(self, version="Vxx"):
+    def _run_filters(self, version="V18"):
         if self.df.empty:
             print(f"[{self.symbol}] Error: DataFrame empty.")
             return None
@@ -99,7 +83,7 @@ class SmartFilterV19(SmartFilterV18):
             "Spread Filter": self._check_spread_filter
         }
 
-        if version == "V19":
+        if version == "V19" and hasattr(self, "_check_trend_continuation"):
             filters["Trend Continuation"] = self._check_trend_continuation
 
         results = {}
@@ -137,6 +121,18 @@ class SmartFilterV19(SmartFilterV18):
 
         print(f"[{self.symbol}] ❌ No signal: thresholds not met.")
         return None
+
+
+# === SMART FILTER V19 (EXPERIMENTAL VERSION WITH TREND CONTINUATION + ENHANCED LOGIC) ===
+class SmartFilterV19(SmartFilterV18):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.filter_weights["Trend Continuation"] = 3.7
+        self.top_filters.append("Trend Continuation")
+
+    def analyze(self):
+        return self._run_filters(version="V19")
 
     def _check_trend_continuation(self):
         self.df['ema_diff'] = self.df['ema20'] - self.df['ema50']
