@@ -12,8 +12,7 @@ TOKENS = [
     "EPT-USDT",   "ELDEUSDT", "MAGIC-USDT", "ACTSOL-USDT", "FUN-USDT"
 ]
 
-# Cooldown periods (in seconds) to avoid spamming same symbol/timeframe
-# Set to 0 to disable cooldown
+# Set cooldown to 0 to disable
 COOLDOWN = {"3min": 0, "5min": 0}
 last_sent = {}  # tracks last alert timestamp per symbol/timeframe
 
@@ -34,10 +33,9 @@ def run():
             sf3 = SmartFilter(symbol, df3, df3m=df3, df5m=df5, tf="3min")
             res3 = sf3.analyze()
             if res3:
-                # Always send if a signal is present
                 text, sym, bias, price, tf_out, score_str, passed_str = res3
                 msg = f"{counter}. {sym} ({tf_out}) [V19 Confirmed] → {text}"
-                # Send Telegram alert unconditionally
+                # Log and send Telegram alert
                 print(f"[LOG] Sending alert for {sym}: {msg}")
                 send_telegram_alert(
                     msg, sym, bias, price, tf_out, score_str, passed_str
@@ -45,11 +43,10 @@ def run():
                 last_sent[key3] = now
                 counter += 1
 
-        # Wait a minute before next cycle
+        # Wait before next cycle
         print("✅ Cycle complete. Sleeping 60 seconds...")
         time.sleep(60)
 
 
 if __name__ == "__main__":
-    run() "__main__":
     run()
