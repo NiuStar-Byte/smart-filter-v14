@@ -13,7 +13,8 @@ TOKENS = [
 ]
 
 # Cooldown periods (in seconds) to avoid spamming same symbol/timeframe
-COOLDOWN = {"3min": 720, "5min": 900}
+# Set to 0 to disable cooldown
+COOLDOWN = {"3min": 0, "5min": 0}
 last_sent = {}  # tracks last alert timestamp per symbol/timeframe
 
 
@@ -33,21 +34,16 @@ def run():
             sf3 = SmartFilter(symbol, df3, df3m=df3, df5m=df5, tf="3min")
             res3 = sf3.analyze()
             if res3:
-                # enforce cooldown
-                last = last_sent.get(key3, 0)
-                if now - last >= COOLDOWN["3min"]:
-                    text, sym, bias, price, tf_out, score_str, passed_str = res3
-                    msg = f"{counter}. {sym} ({tf_out}) [V19 Confirmed] → {text}"
-                    # send Telegram alert (skip if DRY_RUN=true)
-                    if os.getenv("DRY_RUN", "false").lower() != "true":
-                        # Extract numeric parts for templating
-                        score_num = int(score_str.split('/')[0])
-                        passed_num = int(passed_str.split('/')[0])
-                        send_telegram_alert(
-                            msg, sym, bias, price, tf_out, score_num, passed_num
-                        )
-                    last_sent[key3] = now
-                    counter += 1
+                # disable cooldown: always send if a signal is present
+                text, sym, bias, price, tf_out, score_str, passed_str = res3
+                msg = f"{counter}. {sym} ({tf_out}) [V19 Confirmed] → {text}"
+                # send Telegram alert (skip if DRY_RUN=true)
+                if os.getenv("DRY_RUN", "false").lower() != "true":
+                    send_telegram_alert(
+                        msg, sym, bias, price, tf_out, score_str, passed_str
+                    )
+                last_sent[key3] = now
+                counter += 1
 
         # Wait a minute before next cycle
         print("✅ Cycle complete. Sleeping 60 seconds...")
