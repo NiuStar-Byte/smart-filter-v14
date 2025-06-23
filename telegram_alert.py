@@ -6,7 +6,6 @@ BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "7100609549:AAHmeFe0RondzYyPKNuGTTp8
 CHAT_ID   = os.getenv("TELEGRAM_CHAT_ID",   "-1002857433223")
 SEND_URL  = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 
-
 def send_telegram_alert(
     numbered_signal: str,
     symbol: str,
@@ -14,18 +13,28 @@ def send_telegram_alert(
     price: float,
     tf: str,
     score: str,
-    passed: str
+    passed: str,
+    confidence: float = None,
+    weighted: float = None,
 ) -> None:
     """
     Sends a formatted Telegram message to your channel/group.
+    Format varies by timeframe (3min includes "[V19 Confirmed]")
     """
-    # Build message with HTML formatting
+    confirmed_tag = " [V19 Confirmed]" if tf == "3min" else ""
+    confidence_icon = (
+        "🟢" if confidence >= 75 else
+        "🟡" if confidence >= 60 else
+        "🔴"
+    )
+
     message = (
-        f"{numbered_signal} 📊 <b>{symbol} ({tf})</b>\n"
-        f"📈 <b>{signal_type} Signal</b>\n"
-        f"💰 <code>{price}</code>\n"
-        f"✅ <b>Score</b>: {score}\n"
-        f"📌 <b>Passed</b>: {passed}"
+        f"{numbered_signal}. {symbol} ({tf}){confirmed_tag}\n"
+        f"📈 {signal_type} Signal\n"
+        f"💰 {price}\n"
+        f"✅ Score: {score}\n"
+        f"📌 Passed: {passed}\n"
+        f"{confidence_icon} Confidence: {confidence}% (Weighted: {weighted})"
     )
 
     payload = {
