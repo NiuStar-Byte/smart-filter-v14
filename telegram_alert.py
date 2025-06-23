@@ -1,29 +1,42 @@
-import requests
 import os
+import requests
 
-BOT_TOKEN = "7100609549:AAHmeFe0RondzYyPKNuGTTp8HNAuT0PbNJs"  # Use your actual BOT token
-CHAT_ID = "-1002857433223"  # Use your actual chat ID
+# ——— CONFIG ——————————————————————————
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "7100609549:AAHmeFe0RondzYyPKNuGTTp8HNAuT0PbNJs")
+CHAT_ID   = os.getenv("TELEGRAM_CHAT_ID",   "-1002857433223")
+SEND_URL  = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 
-def send_telegram_alert(numbered_signal, symbol, signal_type, price, tf, score, passed):
+
+def send_telegram_alert(
+    numbered_signal: str,
+    symbol: str,
+    signal_type: str,
+    price: float,
+    tf: str,
+    score: str,
+    passed: str
+) -> None:
+    """
+    Sends a formatted Telegram message to your channel/group.
+    """
+    # Build message with HTML formatting
+    message = (
+        f"{numbered_signal} 📊 <b>{symbol} ({tf})</b>\n"
+        f"📈 <b>{signal_type} Signal</b>\n"
+        f"💰 <code>{price}</code>\n"
+        f"✅ <b>Score</b>: {score}\n"
+        f"📌 <b>Passed</b>: {passed}"
+    )
+
+    payload = {
+        "chat_id": CHAT_ID,
+        "text": message,
+        "parse_mode": "HTML"
+    }
+
     try:
-        message = (
-            f"{numbered_signal} 📊 <b>{symbol} ({tf})</b>\n"
-            f"📈 <b>{signal_type} Signal</b>\n"
-            f"💰 <code>{price}</code>\n"
-            f"✅ <b>Score</b>: {score}\n"
-            f"📌 <b>Passed</b>: {passed}"
-        )
-
-        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-        payload = {
-            "chat_id": CHAT_ID,
-            "text": message,
-            "parse_mode": "HTML"
-        }
-
-        response = requests.post(url, json=payload)
-        if response.status_code != 200:
-            print(f"Telegram Error: {response.text}")
-
-    except Exception as e:
-        print(f"❌ Telegram alert error: {e}")
+        resp = requests.post(SEND_URL, json=payload, timeout=10)
+        resp.raise_for_status()
+        print(f"📨 Telegram alert sent: {symbol} {signal_type} @ {price}")
+    except requests.RequestException as e:
+        print(f"❗ Telegram send error: {e} — response: {getattr(resp, 'text', '')}")
