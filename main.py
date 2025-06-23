@@ -45,7 +45,10 @@ def run():
                     )
                     print(f"[LOG] Sending 3min alert for {sym}: {msg}")
                     if os.getenv("DRY_RUN", "false").lower() != "true":
-                        send_telegram_alert(msg, sym, bias, price, tf_out, score, passed)
+                        send_telegram_alert(
+                            msg, sym, bias, price, tf_out, score, passed,
+                            confidence=confidence, weighted=weighted
+                        )
                     last_sent[key3] = now
                     counter += 1
 
@@ -68,7 +71,10 @@ def run():
                     )
                     print(f"[LOG] Sending 5min alert for {sym}: {msg}")
                     if os.getenv("DRY_RUN", "false").lower() != "true":
-                        send_telegram_alert(msg, sym, bias, price, tf_out, score, passed)
+                        send_telegram_alert(
+                            msg, sym, bias, price, tf_out, score, passed,
+                            confidence=confidence, weighted=weighted
+                        )
                     last_sent[key5] = now
                     counter += 1
 
