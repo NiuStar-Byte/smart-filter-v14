@@ -9,7 +9,7 @@ class SmartFilter:
         df5m: pd.DataFrame = None,
         tf: str = None,
         min_score: int = 9,
-        required_passed: int = 7,
+        required_passed: int = 8,
         volume_multiplier: float = 2.0
     ):
         self.symbol = symbol
@@ -48,10 +48,10 @@ class SmartFilter:
             "Trend Continuation": 3.7
         }
 
-        self.top_12_filters = [
+        self.top_filters = [
             "Fractal Zone", "EMA Cloud", "MACD", "Momentum", "HATS", "Volume Spike",
             "VWAP Divergence", "MTF Volume Agreement", "HH/LL Trend", "EMA Structure",
-            "Chop Zone", "Candle Confirmation"
+            "Chop Zone", "Candle Confirmation", "Trend Continuation"
         ]
 
     def analyze(self):
@@ -92,13 +92,13 @@ class SmartFilter:
         passed_all = [k for k, v in results.items() if v]
         score = len(passed_all)
 
-        passed_top = [k for k in self.top_12_filters if results.get(k, False)]
+        passed_top = [k for k in self.top_filters if results.get(k, False)]
         passed_count = len(passed_top)
-        top_weight_sum = sum(self.filter_weights[k] for k in self.top_12_filters)
+        top_weight_sum = sum(self.filter_weights[k] for k in self.top_filters)
         passed_weight_sum = sum(self.filter_weights[k] for k in passed_top)
         confidence = round(100 * passed_weight_sum / top_weight_sum, 1)
 
-        print(f"[{self.symbol}] Score: {score}/19 | Passed Top Filters: {passed_count}/12 | Confidence: {confidence}%")
+        print(f"[{self.symbol}] Score: {score}/19 | Passed Top Filters: {passed_count}/13 | Confidence: {confidence}%")
         for name in filters:
             status = "✅" if results[name] else "❌"
             print(f"{name:20} -> {status} ({self.filter_weights[name]})")
@@ -109,13 +109,15 @@ class SmartFilter:
             signal = (
                 f"{bias} signal on {self.symbol} @ {price} | Confidence: {confidence}% (Weighted: {round(passed_weight_sum,1)}/{top_weight_sum})",
                 self.symbol, bias, price, self.tf,
-                f"{score}/19", f"{passed_count}/12"
+                f"{score}/19", f"{passed_count}/13"
             )
             print(f"[{self.symbol}] ✅ FINAL SIGNAL: {signal[0]}")
             return signal
 
         print(f"[{self.symbol}] ❌ No signal: thresholds not met.")
         return None
+
+    # --- Filter Methods Below ---
 
     def volume_surge_confirmed(self):
         return self._check_volume_spike() and self._check_5m_volume_trend()
