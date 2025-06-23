@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from kucoin_data import get_ohlcv
+from kucoin_data import fetch_ohlcv
 from smart_filter import SmartFilter
 
 TOKENS = [
@@ -16,9 +16,9 @@ def run():
 
         try:
             # Get multi-timeframe data
-            df1 = get_ohlcv(symbol, interval="1min", limit=100)
-            df3 = get_ohlcv(symbol, interval="3min", limit=100)
-            df5 = get_ohlcv(symbol, interval="5min", limit=100)
+            df1 = fetch_ohlcv(symbol, tf="1min", limit=100)
+            df3 = fetch_ohlcv(symbol, tf="3min", limit=100)
+            df5 = fetch_ohlcv(symbol, tf="5min", limit=100)
 
             if df1 is None or df1.empty:
                 print(f"[{symbol}] No data.")
@@ -30,7 +30,7 @@ def run():
                 df=df1,
                 df3m=df3,
                 df5m=df5,
-                tf="1min",  # Change to "3min" or "5min" if you prefer different TF logic
+                tf="1min",
                 min_score=9,
                 required_passed=7,
                 volume_multiplier=2.0
@@ -38,9 +38,7 @@ def run():
 
             result = sf.analyze()
 
-            # Optional: process result further
             if result:
-                # Unpack and print signal details
                 signal_msg, sym, direction, price, tf, score, passed = result
                 print(f"✔️ Signal: {signal_msg}")
             else:
