@@ -34,14 +34,14 @@ def run():
             sf3 = SmartFilter(symbol, df3, df3m=df3, df5m=df5, tf="3min")
             res3 = sf3.analyze()
             if res3:
-                # disable cooldown: always send if a signal is present
+                # Always send if a signal is present
                 text, sym, bias, price, tf_out, score_str, passed_str = res3
                 msg = f"{counter}. {sym} ({tf_out}) [V19 Confirmed] → {text}"
-                # send Telegram alert (skip if DRY_RUN=true)
-                if os.getenv("DRY_RUN", "false").lower() != "true":
-                    send_telegram_alert(
-                        msg, sym, bias, price, tf_out, score_str, passed_str
-                    )
+                # Send Telegram alert unconditionally
+                print(f"[LOG] Sending alert for {sym}: {msg}")
+                send_telegram_alert(
+                    msg, sym, bias, price, tf_out, score_str, passed_str
+                )
                 last_sent[key3] = now
                 counter += 1
 
@@ -51,4 +51,5 @@ def run():
 
 
 if __name__ == "__main__":
+    run() "__main__":
     run()
