@@ -1,6 +1,5 @@
 import os
 import requests
-from smart_filter import SmartFilter
 
 # ——— CONFIG ——————————————————————————
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "7100609549:AAHmeFe0RondzYyPKNuGTTp8HNAuT0PbNJs")
@@ -14,23 +13,19 @@ def send_telegram_alert(
     signal_type: str,
     price: float,
     tf: str,
-    score_count: int,
-    passed_count: int
+    score_str: str,
+    passed_str: str
 ) -> None:
     """
-    Sends a formatted Telegram message to your channel/group with dynamic counts.
+    Sends a formatted Telegram message to your channel/group using provided score and passed strings.
     """
-    # Compute dynamic totals
-    total_filters = len(SmartFilter("", None).filter_weights)
-    total_gates   = len(SmartFilter("", None).top_filters)
-
     # Build message with HTML formatting
     message = (
         f"{numbered_signal} 📊 <b>{symbol} ({tf})</b>\n"
         f"📈 <b>{signal_type} Signal</b>\n"
         f"💰 <code>{price}</code>\n"
-        f"✅ <b>Score</b>: {score_count}/{total_filters}\n"
-        f"📌 <b>Passed</b>: {passed_count}/{total_gates}"
+        f"✅ <b>Score</b>: {score_str}\n"
+        f"📌 <b>Passed</b>: {passed_str}"
     )
 
     payload = {
