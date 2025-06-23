@@ -1,4 +1,3 @@
-```python
 import pandas as pd
 
 class SmartFilter:
@@ -13,7 +12,6 @@ class SmartFilter:
         required_passed: int = 8,
         volume_multiplier: float = 2.0
     ):
-        # Initialize state and compute EMAs/VWAP
         self.symbol = symbol
         self.df = df.copy()
         self.df3m = df3m.copy() if df3m is not None else None
@@ -23,6 +21,7 @@ class SmartFilter:
         self.required_passed = required_passed
         self.volume_multiplier = volume_multiplier
 
+        # Precompute EMAs and VWAP
         self.df["ema20"] = self.df["close"].ewm(span=20).mean()
         self.df["ema50"] = self.df["close"].ewm(span=50).mean()
         self.df["ema200"] = self.df["close"].ewm(span=200).mean()
@@ -51,11 +50,12 @@ class SmartFilter:
             "Trend Continuation": 3.7
         }
 
-        # Top filters include 13 checks (previous 12 + trend continuation)
+        # The “top” 13 filters used for passed_count & confidence
         self.top_filters = [
-            "Fractal Zone", "EMA Cloud", "MACD", "Momentum", "HATS", "Volume Spike",
-            "VWAP Divergence", "MTF Volume Agreement", "HH/LL Trend", "EMA Structure",
-            "Chop Zone", "Candle Confirmation", "Trend Continuation"
+            "Fractal Zone", "EMA Cloud", "MACD", "Momentum", "HATS",
+            "Volume Spike", "VWAP Divergence", "MTF Volume Agreement",
+            "HH/LL Trend", "EMA Structure", "Chop Zone",
+            "Candle Confirmation", "Trend Continuation"
         ]
 
     def analyze(self):
@@ -63,7 +63,7 @@ class SmartFilter:
             print(f"[{self.symbol}] Error: DataFrame empty.")
             return None
 
-        # Run all filters
+        # Run every check
         results = {}
         checks = {
             "Fractal Zone": self._check_fractal_zone,
@@ -71,7 +71,8 @@ class SmartFilter:
             "MACD": self._check_macd,
             "Momentum": self._check_momentum,
             "HATS": self._check_hats,
-            "Volume Spike": (self.volume_surge_confirmed if self.tf == "3min" else self._check_volume_spike),
+            "Volume Spike": (self.volume_surge_confirmed
+                             if self.tf == "3min" else self._check_volume_spike),
             "VWAP Divergence": self._check_vwap_divergence,
             "MTF Volume Agreement": self._check_mtf_volume_agreement,
             "HH/LL Trend": self._check_hh_ll,
@@ -94,32 +95,33 @@ class SmartFilter:
                 print(f"[{self.symbol}] {name} ERROR: {e}")
                 results[name] = False
 
-        # Overall score across all 19 filters
-        passed_all = [name for name, ok in results.items() if ok]
+        # Total score
+        passed_all = [n for n, ok in results.items() if ok]
         score = len(passed_all)
 
-        # Passed count among top 13 filters
-        passed_top = [f for f in self.top_filters if results.get(f, False)]
+        # Passed among top 13
+        passed_top = [n for n in self.top_filters if results.get(n, False)]
         passed_count = len(passed_top)
 
-        # Compute confidence based on weights of top filters only
-        total_top_weight = sum(self.filter_weights[f] for f in self.top_filters)
-        passed_weight = sum(self.filter_weights[f] for f in passed_top)
+        # Confidence = sum(weights of passed_top) / sum(weights of top_filters)
+        total_top_weight = sum(self.filter_weights[n] for n in self.top_filters)
+        passed_weight = sum(self.filter_weights[n] for n in passed_top)
         confidence = round(100 * passed_weight / total_top_weight, 1)
 
-        # Print breakdown
+        # Log breakdown
         print(f"[{self.symbol}] Score: {score}/19 | Passed Top Filters: {passed_count}/13 | Confidence: {confidence}%")
-        for name in checks:
-            mark = '✅' if results[name] else '❌'
-            print(f"{name:20} -> {mark} ({self.filter_weights[name]})")
+        for n in checks:
+            mark = '✅' if results[n] else '❌'
+            print(f"{n:20} -> {mark} ({self.filter_weights[n]})")
 
-        # Decide signal
+        # Final decision
         if score >= self.min_score and passed_count >= self.required_passed:
             price = self.df['close'].iat[-1]
             bias = "LONG" if price > self.df['open'].iat[-1] else "SHORT"
             msg = (
                 f"{bias} signal on {self.symbol} @ {price} | "
-                f"Confidence: {confidence}% (Weighted: {round(passed_weight,1)}/{total_top_weight})",
+                f"Confidence: {confidence}% "
+                f"(Weighted: {round(passed_weight,1)}/{total_top_weight})",
                 self.symbol, bias, price, self.tf,
                 f"{score}/19", f"{passed_count}/13"
             )
@@ -181,8 +183,13 @@ class SmartFilter:
         )
 
     def _check_ema_structure(self):
-        cond = self.df['ema20'].iat[-1] > self.df['ema50'].iat[-1] > self.df['ema200'].iat[-1]
-        slope = all(self.df[f'ema{x}'].iat[-1] > self.df[f'ema{x}'].iat[-2] for x in (20,50,200))
+        cond = (self.df['ema20'].iat[-1] >
+                self.df['ema50'].iat[-1] >
+                self.df['ema200'].iat[-1])
+        slope = all(
+            self.df[f'ema{x}'].iat[-1] > self.df[f'ema{x}'].iat[-2]
+            for x in (20, 50, 200)
+        )
         return cond and slope
 
     def _check_chop_zone(self):
@@ -196,7 +203,8 @@ class SmartFilter:
     def _check_wick_dominance(self):
         body = abs(self.df['close'].iat[-1] - self.df['open'].iat[-1])
         rng  = self.df['high'].iat[-1] - self.df['low'].iat[-1]
-        lower = min(self.df['close'].iat[-1], self.df['open'].iat[-1]) - self.df['low'].iat[-1]
+        lower = (min(self.df['close'].iat[-1], self.df['open'].iat[-1])
+                 - self.df['low'].iat[-1])
         return body > 0.6 * rng and lower < 0.2 * rng
 
     def _check_absorption(self):
@@ -207,10 +215,10 @@ class SmartFilter:
 
     def _check_support_resistance(self):
         swing = self.df['low'].rolling(5).min().iat[-3]
-        return abs(self.df['close'].iat[-1] - swing)/swing < 0.01
+        return abs(self.df['close'].iat[-1] - swing) / swing < 0.01
 
     def _check_smart_money_bias(self):
-        signed = self.df['volume'] * self.df['close'].diff().apply(lambda x: 1 if x>0 else -1)
+        signed = self.df['volume'] * self.df['close'].diff().apply(lambda x: 1 if x > 0 else -1)
         return signed.iloc[-14:].sum() > 0
 
     def _check_liquidity_pool(self):
@@ -226,12 +234,12 @@ class SmartFilter:
         # ADX + EMA slope
         self.df['ema_diff'] = self.df['ema20'] - self.df['ema50']
         ema_slope = self.df['ema_diff'].diff().iat[-1] > 0
-        tr  = self.df[['high','low','close']].max(axis=1) - self.df[['high','low','close']].min(axis=1)
+        tr  = (self.df[['high','low','close']].max(axis=1)
+               - self.df[['high','low','close']].min(axis=1))
         dm_plus  = self.df['high'].diff().clip(lower=0)
         dm_minus = -self.df['low'].diff().clip(upper=0)
-        di_plus  = 100*dm_plus.ewm(span=14).mean()/tr.ewm(span=14).mean()
-        di_minus = 100*dm_minus.ewm(span=14).mean()/tr.ewm(span=14).mean()
-        dx = abs(di_plus - di_minus)/(di_plus + di_minus) * 100
+        di_plus  = 100 * dm_plus.ewm(span=14).mean() / tr.ewm(span=14).mean()
+        di_minus = 100 * dm_minus.ewm(span=14).mean() / tr.ewm(span=14).mean()
+        dx = abs(di_plus - di_minus) / (di_plus + di_minus) * 100
         adx = dx.ewm(span=14).mean().iat[-1]
         return ema_slope and adx > 20
-```
