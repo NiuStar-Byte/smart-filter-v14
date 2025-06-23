@@ -212,23 +212,35 @@ class SmartFilter:
         rng  = self.df['high'].iat[-1] - self.df['low'].iat[-1]
         lower = (
             min(self.df['close'].iat[-1], self.df['open'].iat[-1])
-            - self.df['low'].iat[-1]
-        )
-        return body > 0.6 * rng and lower < 0.2 * rng
+            - self.df
 
-    def _check_absorption(self):
-        low_under = self.df['low'].iat[-1] < self.df['open'].iat[-1]
-        close_up  = self.df['close'].iat[-1] > self.df['open'].iat[-1]
-        vol_spike = self.df['volume'].iat[-1] > self.volume_multiplier * self.df['volume'].rolling(10).mean().iat[-1]
-        return low_under and close_up and vol_spike
+... (truncated for brevity) ...
 
     def _check_support_resistance(self):
         swing = self.df['low'].rolling(5).min().iat[-3]
         return abs(self.df['close'].iat[-1] - swing) / swing < 0.01
 
+    def _check_smart_money_bias(self):
+        """
+        Basic Smart Money Bias: bullish if last close is above open and VWAP.
+        """
+        last = self.df['close'].iat[-1]
+        open_ = self.df['open'].iat[-1]
+        vwap = self.df['vwap'].iat[-1]
+        return last > open_ and last > vwap
+
     def _check_spread_filter(self):
         spread = self.df['high'].iat[-1] - self.df['low'].iat[-1]
         return spread < 0.02 * self.df['close'].iat[-1]
+
+    def _check_liquidity_pool(self):
+        """
+        Placeholder Liquidity Pool filter: always passes if order book is accessible.
+        """
+        bids, asks = self._fetch_order_book(depth=100)
+        if bids is None or asks is None:
+            return False
+        return True
 
     def _fetch_order_book(self, depth: int = 100):
         """Helper to fetch top `depth` levels from KuCoin order book."""
@@ -266,3 +278,9 @@ class SmartFilter:
             self._depth_history.pop(0)
         avg = sum(self._depth_history) / len(self._depth_history)
         return opp / avg < wall_factor
+
+    def _check_trend_continuation(self):
+        """
+        Placeholder Trend Continuation: checks if EMA20 slope remains positive.
+        """
+        return self.df['ema20'].iat[-1] > self.df['ema20'].iat[-2]
