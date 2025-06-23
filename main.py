@@ -1,3 +1,7 @@
+import sys
+log_file = open("logs.txt", "a")
+sys.stdout = sys.stderr = log_file
+
 import os
 import time
 import pandas as pd
