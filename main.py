@@ -49,7 +49,7 @@ def run():
                 last5 = last_sent.get(key5, 0)
                 if now - last5 >= COOLDOWN["5min"]:
                     text, sym, bias, price, tf_out, score, passed = res5
-                    msg = f"{counter}. {sym} ({tf_out}) [V19 Confirmed] → {text}"
+                    msg = f"{counter}. {sym} ({tf_out}) → {text}"  # no [V19 Confirmed] for 5min
                     print(f"[LOG] Sending 5min alert for {sym}: {msg}")
                     if os.getenv("DRY_RUN", "false").lower() != "true":
                         send_telegram_alert(msg, sym, bias, price, tf_out, score, passed)
