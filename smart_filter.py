@@ -120,6 +120,9 @@ class SmartFilterV18:
         print(f"[{self.symbol}] ❌ No signal: thresholds not met.")
         return None
 
+    def volume_surge_confirmed(self):
+        return self._check_volume_spike()
+
     # Define placeholder methods for V18 filters
     def _check_fractal_zone(self): pass
     def _check_ema_cloud(self): pass
