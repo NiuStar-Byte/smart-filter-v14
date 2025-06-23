@@ -33,8 +33,12 @@ def run():
             if res3:
                 last3 = last_sent.get(key3, 0)
                 if now - last3 >= COOLDOWN["3min"]:
-                    text, sym, bias, price, tf_out, score, passed = res3
-                    msg = f"{counter}. {sym} ({tf_out}) [V19 Confirmed] → {text}"
+                    text, sym, bias, price, tf_out, score, passed, confidence, weighted = res3
+                    conf_icon = "💡" if confidence >= 70 else "🟡"
+                    msg = (
+                        f"{counter}. {sym} ({tf_out}) [V19 Confirmed] → {text}\n"
+                        f"{conf_icon} Confidence: {confidence:.1f}% (Weighted: {weighted:.1f})"
+                    )
                     print(f"[LOG] Sending 3min alert for {sym}: {msg}")
                     if os.getenv("DRY_RUN", "false").lower() != "true":
                         send_telegram_alert(msg, sym, bias, price, tf_out, score, passed)
@@ -48,8 +52,12 @@ def run():
             if res5:
                 last5 = last_sent.get(key5, 0)
                 if now - last5 >= COOLDOWN["5min"]:
-                    text, sym, bias, price, tf_out, score, passed = res5
-                    msg = f"{counter}. {sym} ({tf_out}) → {text}"  # no [V19 Confirmed] for 5min
+                    text, sym, bias, price, tf_out, score, passed, confidence, weighted = res5
+                    conf_icon = "💡" if confidence >= 70 else "🟡"
+                    msg = (
+                        f"{counter}. {sym} ({tf_out}) → {text}\n"
+                        f"{conf_icon} Confidence: {confidence:.1f}% (Weighted: {weighted:.1f})"
+                    )
                     print(f"[LOG] Sending 5min alert for {sym}: {msg}")
                     if os.getenv("DRY_RUN", "false").lower() != "true":
                         send_telegram_alert(msg, sym, bias, price, tf_out, score, passed)
