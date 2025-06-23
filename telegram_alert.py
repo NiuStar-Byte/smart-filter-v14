@@ -6,6 +6,8 @@ BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "7100609549:AAHmeFe0RondzYyPKNuGTTp8
 CHAT_ID   = os.getenv("TELEGRAM_CHAT_ID",   "-1002857433223")
 SEND_URL  = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 
+MAX_WEIGHT = 48.8
+
 def send_telegram_alert(
     numbered_signal: str,
     symbol: str,
@@ -19,31 +21,34 @@ def send_telegram_alert(
 ) -> None:
     """
     Sends a formatted Telegram message to your channel/group.
-    Format varies by timeframe (3min includes "[V19 Confirmed]")
+    Format varies by timeframe (3min includes "[V19 Confirmed]").
     """
     confirmed_tag = " [V19 Confirmed]" if tf == "3min" else ""
 
-    # Safely assign confidence icon
-    if confidence is not None:
-        if confidence >= 75:
-            confidence_icon = "🟢"
-        elif confidence >= 60:
-            confidence_icon = "🟡"
-        else:
-            confidence_icon = "🔴"
-        confidence_line = f"{confidence_icon} <b>Confidence</b>: {confidence:.1f}% (Weighted: {weighted:.1f})"
-    else:
-        confidence_line = ""
+    # --- Fix 1: Auto compute confidence if not passed ---
+    if confidence is None and weighted is not None:
+        confidence = (weighted / MAX_WEIGHT) * 100
+    confidence = round(confidence, 1) if confidence is not None else 0.0
 
-    # Format message
+    # --- Fix 2: Format weighted properly ---
+    weighted_str = f"{weighted:.1f}/{MAX_WEIGHT}" if weighted is not None else f"0.0/{MAX_WEIGHT}"
+
+    # --- Assign confidence icon ---
+    confidence_icon = (
+        "🟢" if confidence >= 75 else
+        "🟡" if confidence >= 60 else
+        "🔴"
+    )
+
+    # --- Build final message ---
     message = (
-        f"{numbered_signal}. <b>{symbol} ({tf}){confirmed_tag}</b>\n"
-        f"📈 <b>{signal_type} Signal</b>\n"
-        f"💰 <code>{price}</code>\n"
-        f"✅ <b>Score</b>: {score}\n"
-        f"📌 <b>Passed</b>: {passed}\n"
-        f"{confidence_line}"
-    ).strip()
+        f"{numbered_signal}. {symbol} ({tf}){confirmed_tag}\n"
+        f"📈 {signal_type} Signal\n"
+        f"💰 {price:.6f}\n"
+        f"✅ Score: {score}\n"
+        f"📌 Passed: {passed}\n"
+        f"{confidence_icon} Confidence: {confidence:.1f}% (Weighted: {weighted_str})"
+    )
 
     payload = {
         "chat_id": CHAT_ID,
