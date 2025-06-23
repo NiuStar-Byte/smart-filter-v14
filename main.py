@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from kucoin_data import fetch_ohlcv
+from kucoin_data import get_ohlcv
 from smart_filter import SmartFilter
 
 TOKENS = [
@@ -15,22 +15,21 @@ def run():
         print(f"\nChecking {symbol}...")
 
         try:
-            # Get multi-timeframe data
-            df1 = fetch_ohlcv(symbol, tf="1min", limit=100)
-            df3 = fetch_ohlcv(symbol, tf="3min", limit=100)
-            df5 = fetch_ohlcv(symbol, tf="5min", limit=100)
+            # Use 3min as primary TF
+            df3 = get_ohlcv(symbol, interval="3min", limit=100)
+            df5 = get_ohlcv(symbol, interval="5min", limit=100)
 
-            if df1 is None or df1.empty:
+            if df3 is None or df3.empty:
                 print(f"[{symbol}] No data.")
                 continue
 
-            # Apply Smart Filter
+            # Apply Smart Filter using 3min TF
             sf = SmartFilter(
                 symbol=symbol,
-                df=df1,
+                df=df3,
                 df3m=df3,
                 df5m=df5,
-                tf="1min",
+                tf="3min",
                 min_score=9,
                 required_passed=7,
                 volume_multiplier=2.0
