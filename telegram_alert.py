@@ -13,18 +13,19 @@ def send_telegram_alert(
     signal_type: str,
     price: float,
     tf: str,
-    score_str: str,
-    passed_str: str
+    score: str,
+    passed: str
 ) -> None:
     """
-    Sends a formatted Telegram message to your channel/group and logs full request/response.
+    Sends a formatted Telegram message to your channel/group.
     """
+    # Build message with HTML formatting
     message = (
         f"{numbered_signal} 📊 <b>{symbol} ({tf})</b>\n"
         f"📈 <b>{signal_type} Signal</b>\n"
         f"💰 <code>{price}</code>\n"
-        f"✅ <b>Score</b>: {score_str}\n"
-        f"📌 <b>Passed</b>: {passed_str}"
+        f"✅ <b>Score</b>: {score}\n"
+        f"📌 <b>Passed</b>: {passed}"
     )
 
     payload = {
@@ -33,15 +34,9 @@ def send_telegram_alert(
         "parse_mode": "HTML"
     }
 
-    # Debug: log HTTP request
-    print(f"[TELE-DEBUG] POST {SEND_URL} payload={payload}")
     try:
         resp = requests.post(SEND_URL, json=payload, timeout=10)
-        # Debug: log HTTP response
-        print(f"[TELE-DEBUG] RESPONSE status={resp.status_code}, body={resp.text}")
         resp.raise_for_status()
         print(f"📨 Telegram alert sent: {symbol} {signal_type} @ {price}")
     except requests.RequestException as e:
-        print(f"❗ Telegram send error: {e}")
-        if 'resp' in locals():
-            print(f"❗ Response body: {resp.text}")
+        print(f"❗ Telegram send error: {e} — response: {getattr(resp, 'text', '')}")
