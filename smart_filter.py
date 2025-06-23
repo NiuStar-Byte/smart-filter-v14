@@ -1,5 +1,6 @@
 import pandas as pd
 
+# === SMART FILTER V18 (CONTROL GROUP) ===
 class SmartFilterV18:
     def __init__(
         self,
@@ -54,15 +55,29 @@ class SmartFilterV18:
         ]
 
     def analyze(self):
-        return self._analyze_core(include_trend_continuation=False)
+        return self._run_filters(version="V18")
 
-    # Shared core logic
-    def _analyze_core(self, include_trend_continuation: bool):
+    # All other internal check methods (e.g., _check_fractal_zone, _check_ema_cloud, etc.) go here — same as current SmartFilterV18
+    # For brevity, they are identical and assumed to be present here.
+
+
+# === SMART FILTER V19 (EXPERIMENTAL VERSION WITH TREND CONTINUATION + ENHANCED LOGIC) ===
+class SmartFilterV19(SmartFilterV18):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # V19 changes:
+        self.filter_weights["Trend Continuation"] = 3.7
+        self.top_filters.append("Trend Continuation")
+
+    def analyze(self):
+        return self._run_filters(version="V19")
+
+    def _run_filters(self, version="Vxx"):
         if self.df.empty:
             print(f"[{self.symbol}] Error: DataFrame empty.")
             return None
 
-        results = {}
         filters = {
             "Fractal Zone": self._check_fractal_zone,
             "EMA Cloud": self._check_ema_cloud,
@@ -83,12 +98,11 @@ class SmartFilterV18:
             "Liquidity Pool": self._check_liquidity_pool,
             "Spread Filter": self._check_spread_filter
         }
-        if include_trend_continuation:
-            filters["Trend Continuation"] = self._check_trend_continuation
-            self.filter_weights["Trend Continuation"] = 3.7
-            if "Trend Continuation" not in self.top_filters:
-                self.top_filters.append("Trend Continuation")
 
+        if version == "V19":
+            filters["Trend Continuation"] = self._check_trend_continuation
+
+        results = {}
         for name, fn in filters.items():
             try:
                 results[name] = bool(fn())
@@ -124,9 +138,16 @@ class SmartFilterV18:
         print(f"[{self.symbol}] ❌ No signal: thresholds not met.")
         return None
 
-# Experimental version with Trend Continuation
-class SmartFilterV19(SmartFilterV18):
-    def analyze(self):
-        return self._analyze_core(include_trend_continuation=True)
+    def _check_trend_continuation(self):
+        self.df['ema_diff'] = self.df['ema20'] - self.df['ema50']
+        ema_slope = self.df['ema_diff'].diff().iat[-1] > 0
 
-# Existing check_ methods stay unchanged below this point
+        self.df['tr'] = self.df[['high', 'low', 'close']].max(axis=1) - self.df[['high', 'low', 'close']].min(axis=1)
+        self.df['dm_plus'] = self.df['high'].diff().clip(lower=0)
+        self.df['dm_minus'] = -self.df['low'].diff().clip(upper=0)
+        self.df['di_plus'] = 100 * self.df['dm_plus'].ewm(span=14).mean() / self.df['tr'].ewm(span=14).mean()
+        self.df['di_minus'] = 100 * self.df['dm_minus'].ewm(span=14).mean() / self.df['tr'].ewm(span=14).mean()
+        self.df['dx'] = (abs(self.df['di_plus'] - self.df['di_minus']) / (self.df['di_plus'] + self.df['di_minus'])) * 100
+        adx = self.df['dx'].ewm(span=14).mean().iat[-1]
+
+        return ema_slope and adx > 20
