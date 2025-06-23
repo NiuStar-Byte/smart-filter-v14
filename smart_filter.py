@@ -15,7 +15,6 @@ class SmartFilter:
         required_passed: int = 8,
         volume_multiplier: float = 2.0
     ):
-        # Initialize state and compute EMAs/VWAP
         self.symbol = symbol
         self.df = df.copy()
         self.df3m = df3m.copy() if df3m is not None else None
@@ -25,38 +24,20 @@ class SmartFilter:
         self.required_passed = required_passed
         self.volume_multiplier = volume_multiplier
 
-        # Calculate moving averages and VWAP
         self.df["ema20"] = self.df["close"].ewm(span=20).mean()
         self.df["ema50"] = self.df["close"].ewm(span=50).mean()
         self.df["ema200"] = self.df["close"].ewm(span=200).mean()
         self.df["vwap"] = (self.df["close"] * self.df["volume"]).cumsum() / self.df["volume"].cumsum()
 
-        # Weights for all filters (21 entries)
         self.filter_weights = {
-            "Fractal Zone": 4.5,
-            "EMA Cloud": 4.2,
-            "MACD": 5.0,
-            "Momentum": 4.0,
-            "HATS": 3.6,
-            "Volume Spike": 4.8,
-            "VWAP Divergence": 2.8,
-            "MTF Volume Agreement": 3.8,
-            "HH/LL Trend": 3.5,
-            "EMA Structure": 3.3,
-            "Chop Zone": 2.6,
-            "Candle Confirmation": 3.0,
-            "Wick Dominance": 1.2,
-            "Absorption": 1.5,
-            "Support/Resistance": 1.9,
-            "Smart Money Bias": 1.8,
-            "Liquidity Pool": 2.5,
-            "Spread Filter": 2.7,
-            "Liquidity Awareness": 3.2,
-            "Trend Continuation": 3.7,
-            "Volatility Model": 3.4
+            "Fractal Zone": 4.5, "EMA Cloud": 4.2, "MACD": 5.0, "Momentum": 4.0, "HATS": 3.6,
+            "Volume Spike": 4.8, "VWAP Divergence": 2.8, "MTF Volume Agreement": 3.8, "HH/LL Trend": 3.5,
+            "EMA Structure": 3.3, "Chop Zone": 2.6, "Candle Confirmation": 3.0, "Wick Dominance": 1.2,
+            "Absorption": 1.5, "Support/Resistance": 1.9, "Smart Money Bias": 1.8,
+            "Liquidity Pool": 2.5, "Spread Filter": 2.7, "Liquidity Awareness": 3.2,
+            "Trend Continuation": 3.7, "Volatility Model": 3.4
         }
 
-        # Define top filters (gates)
         self.top_filters = [
             "Fractal Zone", "EMA Cloud", "MACD", "Momentum", "HATS",
             "Volume Spike", "VWAP Divergence", "MTF Volume Agreement",
@@ -70,7 +51,6 @@ class SmartFilter:
             print(f"[{self.symbol}] Error: DataFrame empty.")
             return None
 
-        # Map filter names to methods
         checks = {
             "Fractal Zone": self._check_fractal_zone,
             "EMA Cloud": self._check_ema_cloud,
@@ -95,7 +75,6 @@ class SmartFilter:
             "Volatility Model": self._check_volatility_model
         }
 
-        # Evaluate all checks
         results = {}
         for name, fn in checks.items():
             try:
@@ -104,7 +83,6 @@ class SmartFilter:
                 print(f"[{self.symbol}] {name} ERROR: {e}")
                 results[name] = False
 
-        # Calculate score metrics
         total_passed = [f for f, ok in results.items() if ok]
         score = len(total_passed)
         passed_top = [f for f in self.top_filters if results.get(f, False)]
@@ -114,7 +92,6 @@ class SmartFilter:
         passed_weight = sum(self.filter_weights[n] for n in passed_top)
         confidence = round(100 * passed_weight / total_top_weight, 1) if total_top_weight else 0.0
 
-        # Log summary to console
         print(f"[{self.symbol}] Score: {score}/{len(self.filter_weights)} | "
               f"Passed Top: {passed_count}/{len(self.top_filters)} | "
               f"Confidence: {confidence}%")
@@ -122,7 +99,6 @@ class SmartFilter:
             mark = '✅' if ok else '❌'
             print(f"{n:20} -> {mark} ({self.filter_weights.get(n)})")
 
-        # Determine final signal
         signal_msg = None
         if score >= self.min_score and passed_count >= self.required_passed:
             price = self.df['close'].iat[-1]
@@ -137,7 +113,6 @@ class SmartFilter:
         else:
             print(f"[{self.symbol}] ❌ No signal.")
 
-        # --- BEGIN LOGGING BLOCK ---
         now = datetime.utcnow().isoformat()
         bias = signal_msg[2] if signal_msg else ("SHORT" if results.get("Fractal Zone") else "LONG")
         entry = self.df['close'].iat[-1]
@@ -163,15 +138,12 @@ class SmartFilter:
             if write_header:
                 writer.writerow(header)
             writer.writerow(row)
-        # --- END LOGGING BLOCK ---
 
-        return
+        return signal_msg
 
-    # --- Helper for Volume Surge Double-Check ---
     def volume_surge_confirmed(self):
         return self._check_volume_spike() and self._check_5m_volume_trend()
 
-    # --- Filter implementations below ---
     def _check_volume_spike(self):
         avg = self.df['volume'].rolling(10).mean().iat[-1]
         return self.df['volume'].iat[-1] > self.volume_multiplier * avg
