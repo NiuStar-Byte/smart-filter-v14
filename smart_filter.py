@@ -44,7 +44,8 @@ class SmartFilter:
             "Support/Resistance": 2.4,
             "Smart Money Bias": 1.8,
             "Liquidity Pool": 2.0,
-            "Spread Filter": 2.2
+            "Spread Filter": 2.2,
+            "Trend Continuation": 3.7
         }
 
         self.top_12_filters = [
@@ -78,6 +79,7 @@ class SmartFilter:
             "Smart Money Bias": self._check_smart_money_bias,
             "Liquidity Pool": self._check_liquidity_pool,
             "Spread Filter": self._check_spread_filter,
+            "Trend Continuation": self._check_trend_continuation
         }
 
         for name, fn in filters.items():
@@ -208,3 +210,18 @@ class SmartFilter:
     def _check_spread_filter(self):
         spread = self.df['high'].iat[-1] - self.df['low'].iat[-1]
         return spread < 0.02 * self.df['close'].iat[-1]
+
+    def _check_trend_continuation(self):
+        # EMA Slope + ADX Confirmation
+        self.df['ema_diff'] = self.df['ema20'] - self.df['ema50']
+        ema_slope = self.df['ema_diff'].diff().iat[-1] > 0
+
+        self.df['tr'] = self.df[['high', 'low', 'close']].max(axis=1) - self.df[['high', 'low', 'close']].min(axis=1)
+        self.df['dm_plus'] = self.df['high'].diff().clip(lower=0)
+        self.df['dm_minus'] = -self.df['low'].diff().clip(upper=0)
+        self.df['di_plus'] = 100 * self.df['dm_plus'].ewm(span=14).mean() / self.df['tr'].ewm(span=14).mean()
+        self.df['di_minus'] = 100 * self.df['dm_minus'].ewm(span=14).mean() / self.df['tr'].ewm(span=14).mean()
+        self.df['dx'] = (abs(self.df['di_plus'] - self.df['di_minus']) / (self.df['di_plus'] + self.df['di_minus'])) * 100
+        adx = self.df['dx'].ewm(span=14).mean().iat[-1]
+
+        return ema_slope and adx > 20
