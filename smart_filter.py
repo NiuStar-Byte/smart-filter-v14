@@ -83,10 +83,8 @@ class SmartFilterV18:
             "Spread Filter": self._check_spread_filter
         }
 
-        if version == "V19":
+        if version == "V19" and hasattr(self, "_check_trend_continuation"):
             filters["Trend Continuation"] = self._check_trend_continuation
-            if "Trend Continuation" not in self.top_filters:
-                self.top_filters.append("Trend Continuation")
 
         results = {}
         for name, fn in filters.items():
@@ -99,16 +97,13 @@ class SmartFilterV18:
         passed_all = [k for k, v in results.items() if v]
         score = len(passed_all)
 
-        active_top_filters = [k for k in self.top_filters if k in results]
-        passed_top = [k for k in active_top_filters if results.get(k, False)]
+        passed_top = [k for k in self.top_filters if results.get(k, False)]
         passed_count = len(passed_top)
-        top_weight_sum = sum(self.filter_weights[k] for k in active_top_filters)
+        top_weight_sum = sum(self.filter_weights[k] for k in self.top_filters)
         passed_weight_sum = sum(self.filter_weights[k] for k in passed_top)
+        confidence = round(min(99.9, 100 * passed_weight_sum / top_weight_sum), 1)
 
-        confidence = round(100 * passed_weight_sum / top_weight_sum, 1) if top_weight_sum else 0.0
-        confidence = min(confidence, 99.9) if confidence == 100.0 else confidence
-
-        print(f"[{self.symbol}] Score: {score}/{len(filters)} | Passed Top Filters: {passed_count}/{len(active_top_filters)} | Confidence: {confidence}%")
+        print(f"[{self.symbol}] Score: {score}/{len(filters)} | Passed Top Filters: {passed_count}/{len(self.top_filters)} | Confidence: {confidence}%")
         for name in filters:
             status = "✅" if results[name] else "❌"
             print(f"{name:20} -> {status} ({self.filter_weights.get(name, 0)})")
@@ -119,7 +114,7 @@ class SmartFilterV18:
             signal = (
                 f"{bias} signal on {self.symbol} @ {price} | Confidence: {confidence}% (Weighted: {round(passed_weight_sum,1)}/{top_weight_sum})",
                 self.symbol, bias, price, self.tf,
-                f"{score}/{len(filters)}", f"{passed_count}/{len(active_top_filters)}"
+                f"{score}/{len(filters)}", f"{passed_count}/{len(self.top_filters)}"
             )
             print(f"[{self.symbol}] ✅ FINAL SIGNAL: {signal[0]}")
             return signal
@@ -127,12 +122,74 @@ class SmartFilterV18:
         print(f"[{self.symbol}] ❌ No signal: thresholds not met.")
         return None
 
+    # === Filter Logic Below ===
+    def _check_fractal_zone(self):
+        return self.df['close'].iat[-1] > self.df['ema50'].iat[-1]
 
-# === SMART FILTER V19 (EXPERIMENTAL VERSION) ===
+    def _check_ema_cloud(self):
+        return self.df['ema20'].iat[-1] > self.df['ema50'].iat[-1] > self.df['ema200'].iat[-1]
+
+    def _check_macd(self):
+        return True
+
+    def _check_momentum(self):
+        return True
+
+    def _check_hats(self):
+        return True
+
+    def _check_volume_spike(self):
+        return self.df['volume'].iat[-1] > self.df['volume'].rolling(20).mean().iat[-1] * self.volume_multiplier
+
+    def volume_surge_confirmed(self):
+        return self.df['volume'].iloc[-2] > self.df['volume'].rolling(20).mean().iloc[-2] * self.volume_multiplier
+
+    def _check_vwap_divergence(self):
+        return self.df['close'].iat[-1] > self.df['vwap'].iat[-1]
+
+    def _check_mtf_volume_agreement(self):
+        if self.df3m is None or self.df5m is None:
+            return False
+        v3 = self.df3m['volume'].iloc[-1] > self.df3m['volume'].rolling(20).mean().iloc[-1] * 1.5
+        v5 = self.df5m['volume'].iloc[-1] > self.df5m['volume'].rolling(20).mean().iloc[-1] * 1.5
+        return v3 and v5
+
+    def _check_hh_ll(self):
+        return self.df['high'].iat[-1] > self.df['high'].iat[-4]
+
+    def _check_ema_structure(self):
+        return self.df['ema20'].iat[-1] > self.df['ema50'].iat[-1]
+
+    def _check_chop_zone(self):
+        return True
+
+    def _check_candle_close(self):
+        return self.df['close'].iat[-1] > self.df['open'].iat[-1]
+
+    def _check_wick_dominance(self):
+        return True
+
+    def _check_absorption(self):
+        return True
+
+    def _check_support_resistance(self):
+        return True
+
+    def _check_smart_money_bias(self):
+        return True
+
+    def _check_liquidity_pool(self):
+        return True
+
+    def _check_spread_filter(self):
+        return True
+
+# === SMART FILTER V19 (EXPERIMENTAL VERSION WITH TREND CONTINUATION + ENHANCED LOGIC) ===
 class SmartFilterV19(SmartFilterV18):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.filter_weights["Trend Continuation"] = 3.7
+        self.top_filters.append("Trend Continuation")
 
     def analyze(self):
         return self._run_filters(version="V19")
