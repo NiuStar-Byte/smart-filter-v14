@@ -1,6 +1,5 @@
 import os
-import pandas as pd
-from kucoin_data import get_ohlcv
+from kucoin_data import fetch_ohlcv
 from smart_filter import SmartFilter
 
 TOKENS = [
@@ -10,20 +9,22 @@ TOKENS = [
     "REX-USDT", "EPT-USDT", "ELDE-USDT", "MAGIC-USDT", "ACTSOL-USDT"
 ]
 
+# Main execution loop
+# Only uses 3min and 5min timeframes via fetch_ohlcv
+
 def run():
     for symbol in TOKENS:
         print(f"\nChecking {symbol}...")
-
         try:
-            # Use 3min as primary TF
-            df3 = get_ohlcv(symbol, interval="3min", limit=100)
-            df5 = get_ohlcv(symbol, interval="5min", limit=100)
+            # Fetch 3min and 5min OHLCV
+            df3 = fetch_ohlcv(symbol, "3min", limit=100)
+            df5 = fetch_ohlcv(symbol, "5min", limit=100)
 
             if df3 is None or df3.empty:
                 print(f"[{symbol}] No data.")
                 continue
 
-            # Apply Smart Filter using 3min TF
+            # Apply SmartFilter on 3min data
             sf = SmartFilter(
                 symbol=symbol,
                 df=df3,
@@ -36,9 +37,8 @@ def run():
             )
 
             result = sf.analyze()
-
             if result:
-                signal_msg, sym, direction, price, tf, score, passed = result
+                signal_msg, sym, direction, price, tf_out, score, passed = result
                 print(f"✔️ Signal: {signal_msg}")
             else:
                 print(f"❌ No valid signal for {symbol}")
