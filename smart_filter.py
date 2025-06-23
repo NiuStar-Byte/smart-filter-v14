@@ -29,10 +29,10 @@ class SmartFilter:
         self.df["ema200"] = self.df["close"].ewm(span=200).mean()
         self.df["vwap"] = (self.df["close"] * self.df["volume"]).cumsum() / self.df["volume"].cumsum()
 
-        # Weights for all filters
+        # Weights for all filters (now 21 entries)
         self.filter_weights = {
             "Fractal Zone": 4.5,
-            "EMA Cloud": 4.2,
+              "EMA Cloud": 4.2,
             "MACD": 5.0,
             "Momentum": 4.0,
             "HATS": 3.6,
@@ -50,7 +50,8 @@ class SmartFilter:
             "Liquidity Pool": 2.5,
             "Spread Filter": 2.7,
             "Liquidity Awareness": 3.2,
-            "Trend Continuation": 3.7
+            "Trend Continuation": 3.7,
+            "Volatility Model": 3.4
         }
 
         # Define which filters count towards the required_passed threshold
@@ -87,7 +88,8 @@ class SmartFilter:
             "Liquidity Pool": self._check_liquidity_pool,
             "Spread Filter": self._check_spread_filter,
             "Liquidity Awareness": self._check_liquidity_awareness,
-            "Trend Continuation": self._check_trend_continuation
+            "Trend Continuation": self._check_trend_continuation,
+            "Volatility Model": self._check_volatility_model
         }
 
         results = {}
@@ -204,9 +206,7 @@ class SmartFilter:
     def _check_wick_dominance(self):
         body = abs(self.df['close'].iat[-1] - self.df['open'].iat[-1])
         rng = self.df['high'].iat[-1] - self.df['low'].iat[-1]
-        lower = min(
-            self.df['close'].iat[-1], self.df['open'].iat[-1]
-        ) - self.df['low'].iat[-1]
+        lower = min(self.df['close'].iat[-1], self.df['open'].iat[-1]) - self.df['low'].iat[-1]
         return body > 0.6 * rng and lower < 0.2 * rng
 
     def _check_absorption(self):
@@ -229,20 +229,6 @@ class SmartFilter:
         spread = self.df['high'].iat[-1] - self.df['low'].iat[-1]
         return spread < 0.02 * self.df['close'].iat[-1]
 
-    def _fetch_order_book(self, depth: int = 100):
-        for sym in (self.symbol, self.symbol.replace('-', '/')):
-            url = f"https://api.kucoin.com/api/v1/market/orderbook/level2_{depth}?symbol={sym}"
-            try:
-                resp = requests.get(url, timeout=5)
-                resp.raise_for_status()
-                data = resp.json().get('data', {})
-                bids = pd.DataFrame(data.get('bids', []), columns=['price','size']).astype(float)
-                asks = pd.DataFrame(data.get('asks', []), columns=['price','size']).astype(float)
-                return bids, asks
-            except Exception:
-                continue
-        return None, None
-
     def _check_liquidity_pool(self):
         bids, asks = self._fetch_order_book(depth=100)
         return bids is not None and asks is not None
@@ -256,8 +242,7 @@ class SmartFilter:
         bid_depth = bids[bids['price'] >= low]['size'].sum()
         ask_depth = asks[asks['price'] <= high]['size'].sum()
         last = self.df['close'].iat[-1]
-        long = last > self.df['open'].iat[-1]
-        opp = ask_depth if long else bid_depth
+        opp = ask_depth if last > self.df['open'].iat[-1] else bid_depth
         if not hasattr(self, '_depth_history'):
             self._depth_history = []
         self._depth_history.append(opp)
@@ -268,3 +253,28 @@ class SmartFilter:
 
     def _check_trend_continuation(self):
         return self.df['ema20'].iat[-1] > self.df['ema20'].iat[-2]
+
+    def _check_volatility_model(self, low_pct: float = 0.01, high_pct: float = 0.05, period: int = 14):
+        # ATR-based volatility filter
+        high_low = self.df['high'] - self.df['low']
+        high_prev = (self.df['high'] - self.df['close'].shift()).abs()
+        low_prev  = (self.df['low'] - self.df['close'].shift()).abs()
+        tr = pd.concat([high_low, high_prev, low_prev], axis=1).max(axis=1)
+        atr = tr.rolling(period).mean().iat[-1]
+        last_price = self.df['close'].iat[-1]
+        atr_pct = atr / last_price if last_price else 0
+        return (low_pct <= atr_pct) and (atr_pct <= high_pct)
+
+    def _fetch_order_book(self, depth: int = 100):
+        for sym in (self.symbol, self.symbol.replace('-', '/')):
+            url = f"https://api.kucoin.com/api/v1/market/orderbook/level2_{depth}?symbol={sym}"
+            try:
+                resp = requests.get(url, timeout=5)
+                resp.raise_for_status()
+                data = resp.json().get('data', {})
+                bids = pd.DataFrame(data.get('bids', []), columns=['price','size']).astype(float)
+                asks = pd.DataFrame(data.get('asks', []), columns=['price','size']).astype(float)
+                return bids, asks
+            except Exception:
+                continue
+        return None, None
