@@ -1,96 +1,18 @@
 import pandas as pd
 
-# === BASE SMART FILTER (Shared logic) ===
-class BaseSmartFilter:
-    def _check_fractal_zone(self): return True
-    def _check_ema_cloud(self): return True
-    def _check_macd(self): return True
-    def _check_momentum(self): return True
-    def _check_hats(self): return True
-    def _check_volume_spike(self): return True
-    def volume_surge_confirmed(self): return True
-    def _check_vwap_divergence(self): return True
-    def _check_mtf_volume_agreement(self): return True
-    def _check_hh_ll(self): return True
-    def _check_ema_structure(self): return True
-    def _check_chop_zone(self): return True
-    def _check_candle_close(self): return True
-    def _check_wick_dominance(self): return True
-    def _check_absorption(self): return True
-    def _check_support_resistance(self): return True
-    def _check_smart_money_bias(self): return True
-    def _check_liquidity_pool(self): return True
-    def _check_spread_filter(self): return True
-
-    def _run_filters(self, version="Vxx"):
-        if self.df.empty:
-            print(f"[{self.symbol}] Error: DataFrame empty.")
-            return None
-
-        filters = {
-            "Fractal Zone": self._check_fractal_zone,
-            "EMA Cloud": self._check_ema_cloud,
-            "MACD": self._check_macd,
-            "Momentum": self._check_momentum,
-            "HATS": self._check_hats,
-            "Volume Spike": self.volume_surge_confirmed if self.tf == "3min" else self._check_volume_spike,
-            "VWAP Divergence": self._check_vwap_divergence,
-            "MTF Volume Agreement": self._check_mtf_volume_agreement,
-            "HH/LL Trend": self._check_hh_ll,
-            "EMA Structure": self._check_ema_structure,
-            "Chop Zone": self._check_chop_zone,
-            "Candle Confirmation": self._check_candle_close,
-            "Wick Dominance": self._check_wick_dominance,
-            "Absorption": self._check_absorption,
-            "Support/Resistance": self._check_support_resistance,
-            "Smart Money Bias": self._check_smart_money_bias,
-            "Liquidity Pool": self._check_liquidity_pool,
-            "Spread Filter": self._check_spread_filter
-        }
-
-        if version == "V19" and hasattr(self, '_check_trend_continuation'):
-            filters["Trend Continuation"] = self._check_trend_continuation
-
-        results = {}
-        for name, fn in filters.items():
-            try:
-                results[name] = bool(fn())
-            except Exception as e:
-                print(f"[{self.symbol}] {name} ERROR: {e}")
-                results[name] = False
-
-        passed_all = [k for k, v in results.items() if v]
-        score = len(passed_all)
-
-        passed_top = [k for k in self.top_filters if results.get(k, False)]
-        passed_count = len(passed_top)
-        top_weight_sum = sum(self.filter_weights[k] for k in self.top_filters)
-        passed_weight_sum = sum(self.filter_weights[k] for k in passed_top)
-        confidence = round(100 * passed_weight_sum / top_weight_sum, 1)
-
-        print(f"[{self.symbol}] Score: {score}/{len(filters)} | Passed Top Filters: {passed_count}/{len(self.top_filters)} | Confidence: {confidence}%")
-        for name in filters:
-            status = "✅" if results[name] else "❌"
-            print(f"{name:20} -> {status} ({self.filter_weights.get(name, 0)})")
-
-        if score >= self.min_score and passed_count >= self.required_passed:
-            price = self.df['close'].iat[-1]
-            bias = "LONG" if price > self.df['open'].iat[-1] else "SHORT"
-            signal = (
-                f"{bias} signal on {self.symbol} @ {price} | Confidence: {confidence}% (Weighted: {round(passed_weight_sum,1)}/{top_weight_sum})",
-                self.symbol, bias, price, self.tf,
-                f"{score}/{len(filters)}", f"{passed_count}/{len(self.top_filters)}"
-            )
-            print(f"[{self.symbol}] ✅ FINAL SIGNAL: {signal[0]}")
-            return signal
-
-        print(f"[{self.symbol}] ❌ No signal: thresholds not met.")
-        return None
-
-
 # === SMART FILTER V18 (CONTROL GROUP) ===
-class SmartFilterV18(BaseSmartFilter):
-    def __init__(self, symbol, df, df3m=None, df5m=None, tf=None, min_score=9, required_passed=8, volume_multiplier=2.0):
+class SmartFilterV18:
+    def __init__(
+        self,
+        symbol: str,
+        df: pd.DataFrame,
+        df3m: pd.DataFrame = None,
+        df5m: pd.DataFrame = None,
+        tf: str = None,
+        min_score: int = 9,
+        required_passed: int = 8,
+        volume_multiplier: float = 2.0
+    ):
         self.symbol = symbol
         self.df = df.copy()
         self.df3m = df3m.copy() if df3m is not None else None
@@ -135,13 +57,82 @@ class SmartFilterV18(BaseSmartFilter):
     def analyze(self):
         return self._run_filters(version="V18")
 
+    def _run_filters(self, version="Vxx"):
+        if self.df.empty:
+            print(f"[{self.symbol}] Error: DataFrame empty.")
+            return None
 
-# === SMART FILTER V19 (EXPERIMENTAL VERSION WITH TREND CONTINUATION + ENHANCED LOGIC) ===
+        filters = {
+            "Fractal Zone": self._check_fractal_zone,
+            "EMA Cloud": self._check_ema_cloud,
+            "MACD": self._check_macd,
+            "Momentum": self._check_momentum,
+            "HATS": self._check_hats,
+            "Volume Spike": self.volume_surge_confirmed if self.tf == "3min" else self._check_volume_spike,
+            "VWAP Divergence": self._check_vwap_divergence,
+            "MTF Volume Agreement": self._check_mtf_volume_agreement,
+            "HH/LL Trend": self._check_hh_ll,
+            "EMA Structure": self._check_ema_structure,
+            "Chop Zone": self._check_chop_zone,
+            "Candle Confirmation": self._check_candle_close,
+            "Wick Dominance": self._check_wick_dominance,
+            "Absorption": self._check_absorption,
+            "Support/Resistance": self._check_support_resistance,
+            "Smart Money Bias": self._check_smart_money_bias,
+            "Liquidity Pool": self._check_liquidity_pool,
+            "Spread Filter": self._check_spread_filter
+        }
+
+        if version == "V19":
+            filters["Trend Continuation"] = self._check_trend_continuation
+            if "Trend Continuation" not in self.top_filters:
+                self.top_filters.append("Trend Continuation")
+
+        results = {}
+        for name, fn in filters.items():
+            try:
+                results[name] = bool(fn())
+            except Exception as e:
+                print(f"[{self.symbol}] {name} ERROR: {e}")
+                results[name] = False
+
+        passed_all = [k for k, v in results.items() if v]
+        score = len(passed_all)
+
+        active_top_filters = [k for k in self.top_filters if k in results]
+        passed_top = [k for k in active_top_filters if results.get(k, False)]
+        passed_count = len(passed_top)
+        top_weight_sum = sum(self.filter_weights[k] for k in active_top_filters)
+        passed_weight_sum = sum(self.filter_weights[k] for k in passed_top)
+
+        confidence = round(100 * passed_weight_sum / top_weight_sum, 1) if top_weight_sum else 0.0
+        confidence = min(confidence, 99.9) if confidence == 100.0 else confidence
+
+        print(f"[{self.symbol}] Score: {score}/{len(filters)} | Passed Top Filters: {passed_count}/{len(active_top_filters)} | Confidence: {confidence}%")
+        for name in filters:
+            status = "✅" if results[name] else "❌"
+            print(f"{name:20} -> {status} ({self.filter_weights.get(name, 0)})")
+
+        if score >= self.min_score and passed_count >= self.required_passed:
+            price = self.df['close'].iat[-1]
+            bias = "LONG" if price > self.df['open'].iat[-1] else "SHORT"
+            signal = (
+                f"{bias} signal on {self.symbol} @ {price} | Confidence: {confidence}% (Weighted: {round(passed_weight_sum,1)}/{top_weight_sum})",
+                self.symbol, bias, price, self.tf,
+                f"{score}/{len(filters)}", f"{passed_count}/{len(active_top_filters)}"
+            )
+            print(f"[{self.symbol}] ✅ FINAL SIGNAL: {signal[0]}")
+            return signal
+
+        print(f"[{self.symbol}] ❌ No signal: thresholds not met.")
+        return None
+
+
+# === SMART FILTER V19 (EXPERIMENTAL VERSION) ===
 class SmartFilterV19(SmartFilterV18):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.filter_weights["Trend Continuation"] = 3.7
-        self.top_filters.append("Trend Continuation")
 
     def analyze(self):
         return self._run_filters(version="V19")
