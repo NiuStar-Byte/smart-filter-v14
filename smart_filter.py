@@ -10,7 +10,9 @@ class SmartFilter:
         tf: str = None,
         min_score: int = 9,
         required_passed: int = 8,
-        volume_multiplier: float = 2.0
+        volume_multiplier: float = 2.0,
+        atr_period: int = 14,
+        atr_threshold: float = 0.005
     ):
         self.symbol = symbol
         self.df = df.copy()
@@ -20,14 +22,17 @@ class SmartFilter:
         self.min_score = min_score
         self.required_passed = required_passed
         self.volume_multiplier = volume_multiplier
+        self.atr_period = atr_period
+        self.atr_threshold = atr_threshold
 
-        # Precompute EMAs and VWAP
+        # Precompute indicators
         self.df["ema20"] = self.df["close"].ewm(span=20).mean()
         self.df["ema50"] = self.df["close"].ewm(span=50).mean()
         self.df["ema200"] = self.df["close"].ewm(span=200).mean()
         self.df["vwap"] = (self.df["close"] * self.df["volume"]).cumsum() / self.df["volume"].cumsum()
+        self._compute_atr()
 
-        # Weights for all 19 filters
+        # Weights for all filters (now 20 total)
         self.filter_weights = {
             "Fractal Zone": 4.5,
             "EMA Cloud": 4.2,
@@ -47,10 +52,11 @@ class SmartFilter:
             "Smart Money Bias": 1.8,
             "Liquidity Pool": 2.5,
             "Spread Filter": 2.7,
-            "Trend Continuation": 3.7
+            "Trend Continuation": 3.7,
+            "Volatility Filter": 2.4
         }
 
-        # The “top” 13 filters used for passed_count & confidence
+        # Top filters for confidence (13 remains unchanged)
         self.top_filters = [
             "Fractal Zone", "EMA Cloud", "MACD", "Momentum", "HATS",
             "Volume Spike", "VWAP Divergence", "MTF Volume Agreement",
@@ -58,12 +64,24 @@ class SmartFilter:
             "Candle Confirmation", "Trend Continuation"
         ]
 
+    def _compute_atr(self):
+        # True Range
+        high = self.df['high']
+        low = self.df['low']
+        prev_close = self.df['close'].shift(1)
+        tr = pd.concat([
+            high - low,
+            (high - prev_close).abs(),
+            (low - prev_close).abs()
+        ], axis=1).max(axis=1)
+        # ATR = rolling mean of TR
+        self.df['atr'] = tr.rolling(self.atr_period).mean()
+
     def analyze(self):
         if self.df.empty:
             print(f"[{self.symbol}] Error: DataFrame empty.")
             return None
 
-        # Run every check
         results = {}
         checks = {
             "Fractal Zone": self._check_fractal_zone,
@@ -72,7 +90,7 @@ class SmartFilter:
             "Momentum": self._check_momentum,
             "HATS": self._check_hats,
             "Volume Spike": (self.volume_surge_confirmed
-                             if self.tf == "3min" else self._check_volume_spike),
+                                if self.tf == "3min" else self._check_volume_spike),
             "VWAP Divergence": self._check_vwap_divergence,
             "MTF Volume Agreement": self._check_mtf_volume_agreement,
             "HH/LL Trend": self._check_hh_ll,
@@ -85,7 +103,8 @@ class SmartFilter:
             "Smart Money Bias": self._check_smart_money_bias,
             "Liquidity Pool": self._check_liquidity_pool,
             "Spread Filter": self._check_spread_filter,
-            "Trend Continuation": self._check_trend_continuation
+            "Trend Continuation": self._check_trend_continuation,
+            "Volatility Filter": self._check_volatility
         }
 
         for name, fn in checks.items():
@@ -95,26 +114,21 @@ class SmartFilter:
                 print(f"[{self.symbol}] {name} ERROR: {e}")
                 results[name] = False
 
-        # Total score
-        passed_all = [n for n, ok in results.items() if ok]
-        score = len(passed_all)
-
-        # Passed among top 13
+        # Compute scores
+        score = sum(results.values())
         passed_top = [n for n in self.top_filters if results.get(n, False)]
         passed_count = len(passed_top)
-
-        # Confidence = sum(weights of passed_top) / sum(weights of top_filters)
         total_top_weight = sum(self.filter_weights[n] for n in self.top_filters)
         passed_weight = sum(self.filter_weights[n] for n in passed_top)
         confidence = round(100 * passed_weight / total_top_weight, 1)
 
-        # Log breakdown
-        print(f"[{self.symbol}] Score: {score}/19 | Passed Top Filters: {passed_count}/13 | Confidence: {confidence}%")
+        # Log
+        print(f"[{self.symbol}] Score: {score}/20 | Passed Top Filters: {passed_count}/{len(self.top_filters)} | Confidence: {confidence}%")
         for n in checks:
             mark = '✅' if results[n] else '❌'
             print(f"{n:20} -> {mark} ({self.filter_weights[n]})")
 
-        # Final decision
+        # Signal decision
         if score >= self.min_score and passed_count >= self.required_passed:
             price = self.df['close'].iat[-1]
             bias = "LONG" if price > self.df['open'].iat[-1] else "SHORT"
@@ -123,7 +137,7 @@ class SmartFilter:
                 f"Confidence: {confidence}% "
                 f"(Weighted: {round(passed_weight,1)}/{total_top_weight})",
                 self.symbol, bias, price, self.tf,
-                f"{score}/19", f"{passed_count}/13"
+                f"{score}/20", f"{passed_count}/{len(self.top_filters)}"
             )
             print(f"[{self.symbol}] ✅ FINAL SIGNAL: {msg[0]}")
             return msg
@@ -131,8 +145,7 @@ class SmartFilter:
         print(f"[{self.symbol}] ❌ No signal: thresholds not met.")
         return None
 
-    # --- Filter implementations below ---
-
+    # --- Filters ---
     def volume_surge_confirmed(self):
         return self._check_volume_spike() and self._check_5m_volume_trend()
 
@@ -243,3 +256,9 @@ class SmartFilter:
         dx = abs(di_plus - di_minus) / (di_plus + di_minus) * 100
         adx = dx.ewm(span=14).mean().iat[-1]
         return ema_slope and adx > 20
+
+    def _check_volatility(self):
+        # ATR relative to price: True if ATR is below threshold
+        atr = self.df['atr'].iat[-1]
+        price = self.df['close'].iat[-1]
+        return (atr / price) < self.atr_threshold
