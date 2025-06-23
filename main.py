@@ -34,20 +34,18 @@ def run():
                 last3 = last_sent.get(key3, 0)
                 if now - last3 >= COOLDOWN["3min"]:
                     text, sym, bias, price, tf_out, score, passed, confidence, weighted = res3
-                    conf_icon = "🟢" if confidence >= 75 else "🟡" if confidence >= 60 else "🔴"
-                    msg = (
-                        f"{counter}. {sym} ({tf_out}) [V19 Confirmed]\n"
-                        f"📈 {bias} Signal\n"
-                        f"💰 {price:.6f}\n"
-                        f"✅ Score: {score}\n"
-                        f"📌 Passed: {passed}\n"
-                        f"{conf_icon} Confidence: {confidence:.1f}% (Weighted: {weighted:.1f}/48.8)"
-                    )
-                    print(f"[LOG] Sending 3min alert for {sym}: {msg}")
+                    print(f"[LOG] Sending 3min alert for {sym}")
                     if os.getenv("DRY_RUN", "false").lower() != "true":
                         send_telegram_alert(
-                            msg, sym, bias, price, tf_out, score, passed,
-                            confidence=confidence, weighted=weighted
+                            numbered_signal=str(counter),
+                            symbol=sym,
+                            signal_type=bias,
+                            price=price,
+                            tf=tf_out,
+                            score=score,
+                            passed=passed,
+                            confidence=confidence,
+                            weighted=weighted
                         )
                     last_sent[key3] = now
                     counter += 1
@@ -60,20 +58,18 @@ def run():
                 last5 = last_sent.get(key5, 0)
                 if now - last5 >= COOLDOWN["5min"]:
                     text, sym, bias, price, tf_out, score, passed, confidence, weighted = res5
-                    conf_icon = "🟢" if confidence >= 75 else "🟡" if confidence >= 60 else "🔴"
-                    msg = (
-                        f"{counter}. {sym} ({tf_out})\n"
-                        f"📈 {bias} Signal\n"
-                        f"💰 {price:.6f}\n"
-                        f"✅ Score: {score}\n"
-                        f"📌 Passed: {passed}\n"
-                        f"{conf_icon} Confidence: {confidence:.1f}% (Weighted: {weighted:.1f}/48.8)"
-                    )
-                    print(f"[LOG] Sending 5min alert for {sym}: {msg}")
+                    print(f"[LOG] Sending 5min alert for {sym}")
                     if os.getenv("DRY_RUN", "false").lower() != "true":
                         send_telegram_alert(
-                            msg, sym, bias, price, tf_out, score, passed,
-                            confidence=confidence, weighted=weighted
+                            numbered_signal=str(counter),
+                            symbol=sym,
+                            signal_type=bias,
+                            price=price,
+                            tf=tf_out,
+                            score=score,
+                            passed=passed,
+                            confidence=confidence,
+                            weighted=weighted
                         )
                     last_sent[key5] = now
                     counter += 1
