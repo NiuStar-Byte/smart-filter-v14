@@ -14,41 +14,38 @@ def send_telegram_alert(
     tf: str,
     score: int,
     passed: int,
-    confidence: float = None,
-    weighted: float = None,
-    total_score: int = 21,
-    total_passed: int = 13,
-    max_weight: float = 48.8
+    confidence: float,
+    weighted: float,
+    score_max: int,
+    gatekeepers_total: int,
+    total_weight: float,
 ) -> None:
     """
     Sends a formatted Telegram message to your channel/group.
+    Format varies by timeframe (3min includes "[V19 Confirmed]").
     """
     confirmed_tag = " [V19 Confirmed]" if tf == "3min" else ""
 
-    # Auto compute confidence
-    if confidence is None and weighted is not None:
-        confidence = (weighted / max_weight) * 100
-    confidence = round(confidence, 1) if confidence is not None else 0.0
+    # --- Recalculate confidence (for safety) ---
+    confidence = round((weighted / total_weight) * 100, 1) if total_weight else 0.0
 
-    # Format strings
-    score_str = f"{score}/{total_score}"
-    passed_str = f"{passed}/{total_passed}"
-    weighted_str = f"{weighted:.1f}/{max_weight:.1f}" if weighted is not None else f"0.0/{max_weight:.1f}"
+    # --- Format weighted display ---
+    weighted_str = f"{weighted:.1f}/{total_weight:.1f}" if total_weight else "0.0/0.0"
 
-    # Confidence icon
+    # --- Confidence icon ---
     confidence_icon = (
         "🟢" if confidence >= 75 else
         "🟡" if confidence >= 60 else
         "🔴"
     )
 
-    # Final message
+    # --- Final message format ---
     message = (
         f"{numbered_signal}. {symbol} ({tf}){confirmed_tag}\n"
         f"📈 {signal_type} Signal\n"
         f"💰 {price:.6f}\n"
-        f"✅ Score: {score_str}\n"
-        f"📌 Passed: {passed_str}\n"
+        f"✅ Score: {score}/{score_max}\n"
+        f"📌 Passed: {passed}/{gatekeepers_total}\n"
         f"{confidence_icon} Confidence: {confidence:.1f}% (Weighted: {weighted_str})"
     )
 
