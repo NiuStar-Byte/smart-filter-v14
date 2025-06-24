@@ -4,6 +4,7 @@ import pandas as pd
 from kucoin_data import get_ohlcv
 from smart_filter import SmartFilter
 from telegram_alert import send_telegram_alert
+from signal_debug_log import dump_signal_debug_txt  # <--- DEBUG LOG IMPORT
 
 # List of tokens to scan (KuCoin Futures symbols)
 TOKENS = [
@@ -38,6 +39,15 @@ def run():
                     if now - last3 >= COOLDOWN["3min"]:
                         numbered_signal = f"{idx}.A"
                         print(f"[LOG] Sending 3min alert for {res3['symbol']}")
+                        # --- Dump debug log for this signal (temp file) ---
+                        dump_signal_debug_txt(
+                            symbol=res3["symbol"],
+                            tf=res3["tf"],
+                            bias=res3["bias"],
+                            filter_weights=sf3.filter_weights,
+                            gatekeepers=sf3.gatekeepers,
+                            results=res3["filter_results"]
+                        )
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             send_telegram_alert(
                                 numbered_signal=numbered_signal,
@@ -69,6 +79,15 @@ def run():
                     if now - last5 >= COOLDOWN["5min"]:
                         numbered_signal = f"{idx}.B"
                         print(f"[LOG] Sending 5min alert for {res5['symbol']}")
+                        # --- Dump debug log for this signal (temp file) ---
+                        dump_signal_debug_txt(
+                            symbol=res5["symbol"],
+                            tf=res5["tf"],
+                            bias=res5["bias"],
+                            filter_weights=sf5.filter_weights,
+                            gatekeepers=sf5.gatekeepers,
+                            results=res5["filter_results"]
+                        )
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             send_telegram_alert(
                                 numbered_signal=numbered_signal,
