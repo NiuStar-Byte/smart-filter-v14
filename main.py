@@ -14,21 +14,19 @@ TOKENS = [
 
 # Cooldown periods per timeframe (in seconds)
 COOLDOWN = {"3min": 720, "5min": 900}
-last_sent = {}  # Track last alert per symbol-timeframe
+last_sent = {}
 
 def run():
     print("🚀 Starting Smart Filter engine...\n")
     while True:
         now = time.time()
         for idx, symbol in enumerate(TOKENS, start=1):
-            try:
-                print(f"[INFO] Checking {symbol}...\n")
+            print(f"[INFO] Checking {symbol}...\n")
 
+            try:
                 df3 = get_ohlcv(symbol, interval="3min", limit=100)
                 df5 = get_ohlcv(symbol, interval="5min", limit=100)
-
                 if df3 is None or df3.empty or df5 is None or df5.empty:
-                    print(f"[WARN] No OHLCV data for {symbol}. Skipping...\n")
                     continue
 
                 # --- Analyze 3-minute ---
@@ -38,9 +36,9 @@ def run():
                 if res3:
                     last3 = last_sent.get(key3, 0)
                     if now - last3 >= COOLDOWN["3min"]:
-                        text, sym, bias, price, tf_out, score, passed, confidence, weighted = res3
+                        text, sym, bias, price, tf_out, score, passed, confidence, weighted, _ = res3
                         numbered_signal = f"{idx}.A"
-                        print(f"[LOG] Sending 3min alert for {sym}...\n")
+                        print(f"[LOG] Sending 3min alert for {sym}")
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             send_telegram_alert(
                                 numbered_signal=numbered_signal,
@@ -62,9 +60,9 @@ def run():
                 if res5:
                     last5 = last_sent.get(key5, 0)
                     if now - last5 >= COOLDOWN["5min"]:
-                        text, sym, bias, price, tf_out, score, passed, confidence, weighted = res5
+                        text, sym, bias, price, tf_out, score, passed, confidence, weighted, _ = res5
                         numbered_signal = f"{idx}.B"
-                        print(f"[LOG] Sending 5min alert for {sym}...\n")
+                        print(f"[LOG] Sending 5min alert for {sym}")
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             send_telegram_alert(
                                 numbered_signal=numbered_signal,
