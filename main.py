@@ -17,7 +17,7 @@ COOLDOWN = {"3min": 720, "5min": 900}
 last_sent = {}  # Track last alert per symbol-timeframe
 
 def run():
-    print("\ud83d\ude80 Starting Smart Filter engine...\n")
+    print("[INFO] Starting Smart Filter engine...\n")
     while True:
         now = time.time()
         for idx, symbol in enumerate(TOKENS, start=1):
@@ -84,7 +84,7 @@ def run():
             except Exception as e:
                 print(f"[ERROR] Exception in processing 5min for {symbol}: {e}")
 
-        print("\u2705 Cycle complete. Sleeping 60 seconds...\n")
+        print("[INFO] ✅ Cycle complete. Sleeping 60 seconds...\n")
         time.sleep(60)
 
 if __name__ == "__main__":
