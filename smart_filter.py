@@ -59,80 +59,77 @@ class SmartFilter:
         ]
 
     def analyze(self):
-    if self.df.empty:
-        print(f"[{self.symbol}] Error: DataFrame empty.")
+        if self.df.empty:
+            print(f"[{self.symbol}] Error: DataFrame empty.")
+            return None
+
+        checks = {
+            "Fractal Zone": self._check_fractal_zone,
+            "EMA Cloud": self._check_ema_cloud,
+            "MACD": self._check_macd,
+            "Momentum": self._check_momentum,
+            "HATS": self._check_hats,
+            "Volume Spike": self.volume_surge_confirmed if self.tf == "3min" else self._check_volume_spike,
+            "VWAP Divergence": self._check_vwap_divergence,
+            "MTF Volume Agreement": self._check_mtf_volume_agreement,
+            "HH/LL Trend": self._check_hh_ll,
+            "EMA Structure": self._check_ema_structure,
+            "Chop Zone": self._check_chop_zone,
+            "Candle Confirmation": self._check_candle_close,
+            "Wick Dominance": self._check_wick_dominance,
+            "Absorption": self._check_absorption,
+            "Support/Resistance": self._check_support_resistance,
+            "Smart Money Bias": self._check_smart_money_bias,
+            "Liquidity Pool": self._check_liquidity_pool,
+            "Spread Filter": self._check_spread_filter,
+            "Liquidity Awareness": self._check_liquidity_awareness,
+            "Trend Continuation": self._check_trend_continuation,
+            "Volatility Model": self._check_volatility_model
+        }
+
+        results = {}
+        for name, fn in checks.items():
+            try:
+                results[name] = bool(fn())
+            except Exception as e:
+                print(f"[{self.symbol}] {name} ERROR: {e}")
+                results[name] = False
+
+        total_passed = [n for n, ok in results.items() if ok]
+        score = len(total_passed)
+
+        passed_gatekeepers = [n for n in self.top_filters if results.get(n, False)]
+        passed_count = len(passed_gatekeepers)
+
+        total_top_weight = sum(self.filter_weights[n] for n in self.top_filters)
+        passed_weight = sum(self.filter_weights[n] for n in passed_gatekeepers)
+        confidence = round(100 * passed_weight / total_top_weight, 1) if total_top_weight else 0.0
+
+        print(f"[{self.symbol}] Score: {score}/{len(self.filter_weights)} | "
+              f"Passed Gate Keepers: {passed_count}/{len(self.top_filters)} | "
+              f"Confidence: {confidence}% (Weighted: {passed_weight:.1f}/{total_top_weight:.1f})")
+
+        for n, ok in results.items():
+            mark = '✅' if ok else '❌'
+            print(f"{n:25} -> {mark} ({self.filter_weights.get(n)})")
+
+        if score >= self.min_score and passed_count >= self.required_passed:
+            price = self.df['close'].iat[-1]
+            bias = "LONG" if price > self.df['open'].iat[-1] else "SHORT"
+            msg = (
+                f"{bias} on {self.symbol} @ {price} | Confidence: {confidence}% "
+                f"(Weighted: {passed_weight:.1f}/{total_top_weight:.1f})",
+                self.symbol, bias, price, self.tf,
+                f"{score}/{len(self.filter_weights)}",
+                f"{passed_count}/{len(self.top_filters)}",
+                confidence,
+                round(passed_weight, 1)
+            )
+            print(f"[{self.symbol}] ✅ FINAL SIGNAL: {msg[0]}")
+            return msg
+
+        print(f"[{self.symbol}] ❌ No signal.")
         return None
-
-    checks = {
-        "Fractal Zone": self._check_fractal_zone,
-        "EMA Cloud": self._check_ema_cloud,
-        "MACD": self._check_macd,
-        "Momentum": self._check_momentum,
-        "HATS": self._check_hats,
-        "Volume Spike": self.volume_surge_confirmed if self.tf == "3min" else self._check_volume_spike,
-        "VWAP Divergence": self._check_vwap_divergence,
-        "MTF Volume Agreement": self._check_mtf_volume_agreement,
-        "HH/LL Trend": self._check_hh_ll,
-        "EMA Structure": self._check_ema_structure,
-        "Chop Zone": self._check_chop_zone,
-        "Candle Confirmation": self._check_candle_close,
-        "Wick Dominance": self._check_wick_dominance,
-        "Absorption": self._check_absorption,
-        "Support/Resistance": self._check_support_resistance,
-        "Smart Money Bias": self._check_smart_money_bias,
-        "Liquidity Pool": self._check_liquidity_pool,
-        "Spread Filter": self._check_spread_filter,
-        "Liquidity Awareness": self._check_liquidity_awareness,
-        "Trend Continuation": self._check_trend_continuation,
-        "Volatility Model": self._check_volatility_model
-    }
-
-    results = {}
-    for name, fn in checks.items():
-        try:
-            results[name] = bool(fn())
-        except Exception as e:
-            print(f"[{self.symbol}] {name} ERROR: {e}")
-            results[name] = False
-
-    # === SCORE: total filters passed ===
-    total_passed = [n for n, ok in results.items() if ok]
-    score = len(total_passed)
-
-    # === PASSES: only Gate Keepers (Top Filters) that passed ===
-    passed_gatekeepers = [n for n in self.top_filters if results.get(n, False)]
-    passed_count = len(passed_gatekeepers)
-
-    # === Confidence: based only on Gate Keeper weights ===
-    total_top_weight = sum(self.filter_weights[n] for n in self.top_filters)
-    passed_weight = sum(self.filter_weights[n] for n in passed_gatekeepers)
-    confidence = round(100 * passed_weight / total_top_weight, 1) if total_top_weight else 0.0
-
-    print(f"[{self.symbol}] Score: {score}/{len(self.filter_weights)} | "
-          f"Passed Gate Keepers: {passed_count}/{len(self.top_filters)} | "
-          f"Confidence: {confidence}% (Weighted: {passed_weight:.1f}/{total_top_weight:.1f})")
-
-    for n, ok in results.items():
-        mark = '✅' if ok else '❌'
-        print(f"{n:25} -> {mark} ({self.filter_weights.get(n)})")
-
-    if score >= self.min_score and passed_count >= self.required_passed:
-        price = self.df['close'].iat[-1]
-        bias = "LONG" if price > self.df['open'].iat[-1] else "SHORT"
-        msg = (
-            f"{bias} on {self.symbol} @ {price} | Confidence: {confidence}% "
-            f"(Weighted: {passed_weight:.1f}/{total_top_weight:.1f})",
-            self.symbol, bias, price, self.tf,
-            f"{score}/{len(self.filter_weights)}",
-            f"{passed_count}/{len(self.top_filters)}",
-            confidence,
-            round(passed_weight, 1)
-        )
-        print(f"[{self.symbol}] ✅ FINAL SIGNAL: {msg[0]}")
-        return msg
-
-    print(f"[{self.symbol}] ❌ No signal.")
-    return None
 
     def volume_surge_confirmed(self):
         return self._check_volume_spike() and self._check_5m_volume_trend()
@@ -252,7 +249,7 @@ class SmartFilter:
     def _check_volatility_model(self, low_pct: float = 0.01, high_pct: float = 0.05, period: int = 14):
         high_low = self.df['high'] - self.df['low']
         high_prev = (self.df['high'] - self.df['close'].shift()).abs()
-        low_prev  = (self.df['low'] - self.df['close'].shift()).abs()
+        low_prev = (self.df['low'] - self.df['close'].shift()).abs()
         tr = pd.concat([high_low, high_prev, low_prev], axis=1).max(axis=1)
         atr = tr.rolling(period).mean().iat[-1]
         last_price = self.df['close'].iat[-1]
