@@ -17,7 +17,7 @@ COOLDOWN = {"3min": 720, "5min": 900}
 last_sent = {}  # Track last alert per symbol-timeframe
 
 def run():
-    print("🚀 Starting Smart Filter engine...\n")
+    print("\ud83d\ude80 Starting Smart Filter engine...\n")
     while True:
         now = time.time()
         for idx, symbol in enumerate(TOKENS, start=1):
@@ -33,7 +33,7 @@ def run():
                 key3 = f"{symbol}_3min"
                 sf3 = SmartFilter(symbol, df3, df3m=df3, df5m=df5, tf="3min")
                 res3 = sf3.analyze()
-                if isinstance(res3, dict) and res3.get("valid_signal"):
+                if isinstance(res3, dict) and res3.get("valid_signal") is True:
                     last3 = last_sent.get(key3, 0)
                     if now - last3 >= COOLDOWN["3min"]:
                         numbered_signal = f"{idx}.A"
@@ -41,14 +41,14 @@ def run():
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             send_telegram_alert(
                                 numbered_signal=numbered_signal,
-                                symbol=res3["symbol"],
-                                signal_type=res3["bias"],
-                                price=res3["price"],
-                                tf=res3["tf"],
-                                score=res3["score"],
-                                passed=res3["passes"],
-                                confidence=res3["confidence"],
-                                weighted=res3["passed_weight"]
+                                symbol=res3.get("symbol"),
+                                signal_type=res3.get("bias"),
+                                price=res3.get("price"),
+                                tf=res3.get("tf"),
+                                score=res3.get("score"),
+                                passed=res3.get("passes"),
+                                confidence=res3.get("confidence"),
+                                weighted=res3.get("passed_weight")
                             )
                         last_sent[key3] = now
                 else:
@@ -61,7 +61,7 @@ def run():
                 key5 = f"{symbol}_5min"
                 sf5 = SmartFilter(symbol, df5, df3m=df3, df5m=df5, tf="5min")
                 res5 = sf5.analyze()
-                if isinstance(res5, dict) and res5.get("valid_signal"):
+                if isinstance(res5, dict) and res5.get("valid_signal") is True:
                     last5 = last_sent.get(key5, 0)
                     if now - last5 >= COOLDOWN["5min"]:
                         numbered_signal = f"{idx}.B"
@@ -69,14 +69,14 @@ def run():
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             send_telegram_alert(
                                 numbered_signal=numbered_signal,
-                                symbol=res5["symbol"],
-                                signal_type=res5["bias"],
-                                price=res5["price"],
-                                tf=res5["tf"],
-                                score=res5["score"],
-                                passed=res5["passes"],
-                                confidence=res5["confidence"],
-                                weighted=res5["passed_weight"]
+                                symbol=res5.get("symbol"),
+                                signal_type=res5.get("bias"),
+                                price=res5.get("price"),
+                                tf=res5.get("tf"),
+                                score=res5.get("score"),
+                                passed=res5.get("passes"),
+                                confidence=res5.get("confidence"),
+                                weighted=res5.get("passed_weight")
                             )
                         last_sent[key5] = now
                 else:
@@ -84,7 +84,7 @@ def run():
             except Exception as e:
                 print(f"[ERROR] Exception in processing 5min for {symbol}: {e}")
 
-        print("✅ Cycle complete. Sleeping 60 seconds...\n")
+        print("\u2705 Cycle complete. Sleeping 60 seconds...\n")
         time.sleep(60)
 
 if __name__ == "__main__":
