@@ -22,7 +22,6 @@ def run():
     print("[INFO] Starting Smart Filter engine...\n")
     while True:
         now = time.time()
-        valid_debugs = []  # <--- Collect valid signals for debug file
 
         for idx, symbol in enumerate(TOKENS, start=1):
             print(f"[INFO] Checking {symbol}...\n")
@@ -42,16 +41,6 @@ def run():
                     if now - last3 >= COOLDOWN["3min"]:
                         numbered_signal = f"{idx}.A"
                         print(f"[LOG] Sending 3min alert for {res3['symbol']}")
-                        # --- Add to debug list but DO NOT send file yet
-                        valid_debugs.append({
-                            "symbol": res3["symbol"],
-                            "tf": res3["tf"],
-                            "bias": res3["bias"],
-                            "filter_weights": sf3.filter_weights,
-                            "gatekeepers": sf3.gatekeepers,
-                            "results": res3["filter_results"],
-                            "caption": f"Signal debug log for {res3.get('symbol')} {res3.get('tf')}"
-                        })
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             send_telegram_alert(
                                 numbered_signal=numbered_signal,
@@ -66,6 +55,19 @@ def run():
                                 confidence=res3.get("confidence"),
                                 weighted=res3.get("passed_weight"),
                                 total_weight=res3.get("total_weight")
+                            )
+                            # Only send debug log for ACTUALLY ALERTED signals
+                            dump_signal_debug_txt(
+                                symbol=res3["symbol"],
+                                tf=res3["tf"],
+                                bias=res3["bias"],
+                                filter_weights=sf3.filter_weights,
+                                gatekeepers=sf3.gatekeepers,
+                                results=res3["filter_results"]
+                            )
+                            send_telegram_file(
+                                "signal_debug_temp.txt",
+                                caption=f"Signal debug log for {res3.get('symbol')} {res3.get('tf')}"
                             )
                         last_sent[key3] = now
                 else:
@@ -83,16 +85,6 @@ def run():
                     if now - last5 >= COOLDOWN["5min"]:
                         numbered_signal = f"{idx}.B"
                         print(f"[LOG] Sending 5min alert for {res5['symbol']}")
-                        # --- Add to debug list but DO NOT send file yet
-                        valid_debugs.append({
-                            "symbol": res5["symbol"],
-                            "tf": res5["tf"],
-                            "bias": res5["bias"],
-                            "filter_weights": sf5.filter_weights,
-                            "gatekeepers": sf5.gatekeepers,
-                            "results": res5["filter_results"],
-                            "caption": f"Signal debug log for {res5.get('symbol')} {res5.get('tf')}"
-                        })
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             send_telegram_alert(
                                 numbered_signal=numbered_signal,
@@ -108,31 +100,24 @@ def run():
                                 weighted=res5.get("passed_weight"),
                                 total_weight=res5.get("total_weight")
                             )
+                            # Only send debug log for ACTUALLY ALERTED signals
+                            dump_signal_debug_txt(
+                                symbol=res5["symbol"],
+                                tf=res5["tf"],
+                                bias=res5["bias"],
+                                filter_weights=sf5.filter_weights,
+                                gatekeepers=sf5.gatekeepers,
+                                results=res5["filter_results"]
+                            )
+                            send_telegram_file(
+                                "signal_debug_temp.txt",
+                                caption=f"Signal debug log for {res5.get('symbol')} {res5.get('tf')}"
+                            )
                         last_sent[key5] = now
                 else:
                     print(f"[INFO] No valid 5min signal for {symbol}.")
             except Exception as e:
                 print(f"[ERROR] Exception in processing 5min for {symbol}: {e}")
 
-        # --- After scanning all tokens, randomly select 2 signals to send debug file
-        if valid_debugs:
-            num = min(len(valid_debugs), 2)
-            for debug_info in random.sample(valid_debugs, num):
-                dump_signal_debug_txt(
-                    symbol=debug_info["symbol"],
-                    tf=debug_info["tf"],
-                    bias=debug_info["bias"],
-                    filter_weights=debug_info["filter_weights"],
-                    gatekeepers=debug_info["gatekeepers"],
-                    results=debug_info["results"]
-                )
-                send_telegram_file(
-                    "signal_debug_temp.txt",
-                    caption=debug_info["caption"]
-                )
-
         print("[INFO] ✅ Cycle complete. Sleeping 60 seconds...\n")
         time.sleep(60)
-
-if __name__ == "__main__":
-    run()
