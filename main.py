@@ -3,8 +3,8 @@ import time
 import pandas as pd
 from kucoin_data import get_ohlcv
 from smart_filter import SmartFilter
-from telegram_alert import send_telegram_alert
-from signal_debug_log import dump_signal_debug_txt  # <--- DEBUG LOG IMPORT
+from telegram_alert import send_telegram_alert, send_telegram_file
+from signal_debug_log import dump_signal_debug_txt
 
 # List of tokens to scan (KuCoin Futures symbols)
 TOKENS = [
@@ -63,6 +63,11 @@ def run():
                                 weighted=res3.get("passed_weight"),
                                 total_weight=res3.get("total_weight")
                             )
+                            # Immediately send the temp debug file to Telegram group
+                            send_telegram_file(
+                                "signal_debug_temp.txt",
+                                caption=f"Signal debug log for {res3.get('symbol')} {res3.get('tf')}"
+                            )
                         last_sent[key3] = now
                 else:
                     print(f"[INFO] No valid 3min signal for {symbol}.")
@@ -102,6 +107,11 @@ def run():
                                 confidence=res5.get("confidence"),
                                 weighted=res5.get("passed_weight"),
                                 total_weight=res5.get("total_weight")
+                            )
+                            # Immediately send the temp debug file to Telegram group
+                            send_telegram_file(
+                                "signal_debug_temp.txt",
+                                caption=f"Signal debug log for {res5.get('symbol')} {res5.get('tf')}"
                             )
                         last_sent[key5] = now
                 else:
