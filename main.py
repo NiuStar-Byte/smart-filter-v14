@@ -55,7 +55,7 @@ def run():
                             )
                         last_sent[key3] = now
                 else:
-                    print(f"[ERROR] Invalid 3min signal format or no signal for {symbol}.")
+                    print(f"[INFO] No valid 3min signal for {symbol}.")
             except Exception as e:
                 print(f"[ERROR] Exception in processing 3min for {symbol}: {e}")
 
@@ -86,7 +86,7 @@ def run():
                             )
                         last_sent[key5] = now
                 else:
-                    print(f"[ERROR] Invalid 5min signal format or no signal for {symbol}.")
+                    print(f"[INFO] No valid 5min signal for {symbol}.")
             except Exception as e:
                 print(f"[ERROR] Exception in processing 5min for {symbol}: {e}")
 
