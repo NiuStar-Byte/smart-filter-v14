@@ -26,8 +26,19 @@ def send_telegram_alert(
     """
     confirmed_tag = " [V19 Confirmed]" if tf == "3min" else ""
 
+    # --- Fix values if accidentally tuple/str ---
+    if isinstance(score, (tuple, list)): score = score[0]
+    if isinstance(passed, (tuple, list)): passed = passed[0]
+    if isinstance(score_max, (tuple, list)): score_max = score_max[0]
+    if isinstance(gatekeepers_total, (tuple, list)): gatekeepers_total = gatekeepers_total[0]
+    if isinstance(weighted, (tuple, list)): weighted = weighted[0]
+    if isinstance(total_weight, (tuple, list)): total_weight = total_weight[0]
+
     # --- Recalculate confidence (for safety) ---
-    confidence = round((weighted / total_weight) * 100, 1) if total_weight else 0.0
+    try:
+        confidence = round((weighted / total_weight) * 100, 1) if total_weight else 0.0
+    except Exception:
+        confidence = 0.0
 
     # --- Format weighted display ---
     weighted_str = f"{weighted:.1f}/{total_weight:.1f}" if total_weight else "0.0/0.0"
@@ -39,7 +50,7 @@ def send_telegram_alert(
         "🔴"
     )
 
-    # --- Final message format ---
+    # --- Final message format (ALWAYS English, clear X/Y only) ---
     message = (
         f"{numbered_signal}. {symbol} ({tf}){confirmed_tag}\n"
         f"📈 {signal_type} Signal\n"
