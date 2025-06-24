@@ -5,6 +5,7 @@ import requests
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "7100609549:AAHmeFe0RondzYyPKNuGTTp8HNAuT0PbNJs")
 CHAT_ID   = os.getenv("TELEGRAM_CHAT_ID",   "-1002857433223")
 SEND_URL  = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+SEND_FILE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendDocument"
 
 def send_telegram_alert(
     numbered_signal: str,
@@ -72,3 +73,22 @@ def send_telegram_alert(
         print(f"📨 Telegram alert sent: {symbol} {signal_type} @ {price}")
     except requests.RequestException as e:
         print(f"❗ Telegram send error: {e} — response: {getattr(resp, 'text', '')}")
+
+def send_telegram_file(filepath, caption=None):
+    """
+    Send a local file to the Telegram group as a document.
+    """
+    if not os.path.exists(filepath):
+        print(f"[ERROR] File not found: {filepath}")
+        return
+    files = {'document': open(filepath, 'rb')}
+    data = {
+        'chat_id': CHAT_ID,
+        'caption': caption or "Signal debug log"
+    }
+    try:
+        resp = requests.post(SEND_FILE_URL, data=data, files=files, timeout=20)
+        resp.raise_for_status()
+        print(f"📄 File sent to Telegram: {filepath}")
+    except requests.RequestException as e:
+        print(f"❗ Telegram file send error: {e} — response: {getattr(resp, 'text', '')}")
