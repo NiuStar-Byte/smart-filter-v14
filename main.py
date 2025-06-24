@@ -45,12 +45,12 @@ def run():
                                 signal_type=res3.get("bias"),
                                 price=res3.get("price"),
                                 tf=res3.get("tf"),
-                                score=f"{res3.get('score')}/{res3.get('score_max')}",
-                                passed=f"{res3.get('passes')}/{res3.get('gatekeepers_total')}",
+                                score=res3.get("score"),
+                                score_max=res3.get("score_max"),
+                                passed=res3.get("passes"),
+                                gatekeepers_total=res3.get("gatekeepers_total"),
                                 confidence=res3.get("confidence"),
                                 weighted=res3.get("passed_weight"),
-                                score_max=res3.get("score_max"),
-                                gatekeepers_total=res3.get("gatekeepers_total"),
                                 total_weight=res3.get("total_weight")
                             )
                         last_sent[key3] = now
@@ -76,12 +76,12 @@ def run():
                                 signal_type=res5.get("bias"),
                                 price=res5.get("price"),
                                 tf=res5.get("tf"),
-                                score=f"{res5.get('score')}/{res5.get('score_max')}",
-                                passed=f"{res5.get('passes')}/{res5.get('gatekeepers_total')}",
+                                score=res5.get("score"),
+                                score_max=res5.get("score_max"),
+                                passed=res5.get("passes"),
+                                gatekeepers_total=res5.get("gatekeepers_total"),
                                 confidence=res5.get("confidence"),
                                 weighted=res5.get("passed_weight"),
-                                score_max=res5.get("score_max"),
-                                gatekeepers_total=res5.get("gatekeepers_total"),
                                 total_weight=res5.get("total_weight")
                             )
                         last_sent[key5] = now
