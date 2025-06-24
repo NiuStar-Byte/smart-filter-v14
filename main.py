@@ -33,11 +33,11 @@ def run():
                 key3 = f"{symbol}_3min"
                 sf3 = SmartFilter(symbol, df3, df3m=df3, df5m=df5, tf="3min")
                 res3 = sf3.analyze()
-                if isinstance(res3, dict) and res3.get("valid_signal", False):
+                if res3 and res3.get("valid_signal"):
                     last3 = last_sent.get(key3, 0)
                     if now - last3 >= COOLDOWN["3min"]:
                         numbered_signal = f"{idx}.A"
-                        print(f"[LOG] Sending 3min alert for {symbol}")
+                        print(f"[ALERT] ✅ 3min signal for {symbol}")
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             send_telegram_alert(
                                 numbered_signal=numbered_signal,
@@ -48,24 +48,24 @@ def run():
                                 score=res3["score"],
                                 passed=res3["passes"],
                                 confidence=res3["confidence"],
-                                weighted=res3["passed_weight"]
+                                weighted=f"{res3['passed_weight']}/{res3['total_weight']}"
                             )
                         last_sent[key3] = now
                 else:
-                    print(f"[ERROR] Invalid 3min signal format or no signal for {symbol}.")
+                    print(f"[SKIP] No valid 3min signal for {symbol}.")
             except Exception as e:
-                print(f"[ERROR] Exception in processing 3min for {symbol}: {e}")
+                print(f"[ERROR] 3min error for {symbol}: {e}")
 
             # --- Analyze 5-minute ---
             try:
                 key5 = f"{symbol}_5min"
                 sf5 = SmartFilter(symbol, df5, df3m=df3, df5m=df5, tf="5min")
                 res5 = sf5.analyze()
-                if isinstance(res5, dict) and res5.get("valid_signal", False):
+                if res5 and res5.get("valid_signal"):
                     last5 = last_sent.get(key5, 0)
                     if now - last5 >= COOLDOWN["5min"]:
                         numbered_signal = f"{idx}.B"
-                        print(f"[LOG] Sending 5min alert for {symbol}")
+                        print(f"[ALERT] ✅ 5min signal for {symbol}")
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             send_telegram_alert(
                                 numbered_signal=numbered_signal,
@@ -76,13 +76,13 @@ def run():
                                 score=res5["score"],
                                 passed=res5["passes"],
                                 confidence=res5["confidence"],
-                                weighted=res5["passed_weight"]
+                                weighted=f"{res5['passed_weight']}/{res5['total_weight']}"
                             )
                         last_sent[key5] = now
                 else:
-                    print(f"[ERROR] Invalid 5min signal format or no signal for {symbol}.")
+                    print(f"[SKIP] No valid 5min signal for {symbol}.")
             except Exception as e:
-                print(f"[ERROR] Exception in processing 5min for {symbol}: {e}")
+                print(f"[ERROR] 5min error for {symbol}: {e}")
 
         print("✅ Cycle complete. Sleeping 60 seconds...\n")
         time.sleep(60)
