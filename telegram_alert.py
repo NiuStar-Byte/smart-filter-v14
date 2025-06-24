@@ -6,47 +6,49 @@ BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "7100609549:AAHmeFe0RondzYyPKNuGTTp8
 CHAT_ID   = os.getenv("TELEGRAM_CHAT_ID",   "-1002857433223")
 SEND_URL  = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 
-MAX_WEIGHT = 48.8
-
 def send_telegram_alert(
     numbered_signal: str,
     symbol: str,
     signal_type: str,
     price: float,
     tf: str,
-    score: str,
-    passed: str,
+    score: int,
+    passed: int,
     confidence: float = None,
     weighted: float = None,
+    total_score: int = 21,
+    total_passed: int = 13,
+    max_weight: float = 48.8
 ) -> None:
     """
     Sends a formatted Telegram message to your channel/group.
-    Format varies by timeframe (3min includes "[V19 Confirmed]").
     """
     confirmed_tag = " [V19 Confirmed]" if tf == "3min" else ""
 
-    # --- Fix 1: Auto compute confidence if not passed ---
+    # Auto compute confidence
     if confidence is None and weighted is not None:
-        confidence = (weighted / MAX_WEIGHT) * 100
+        confidence = (weighted / max_weight) * 100
     confidence = round(confidence, 1) if confidence is not None else 0.0
 
-    # --- Fix 2: Format weighted properly ---
-    weighted_str = f"{weighted:.1f}/{MAX_WEIGHT}" if weighted is not None else f"0.0/{MAX_WEIGHT}"
+    # Format strings
+    score_str = f"{score}/{total_score}"
+    passed_str = f"{passed}/{total_passed}"
+    weighted_str = f"{weighted:.1f}/{max_weight:.1f}" if weighted is not None else f"0.0/{max_weight:.1f}"
 
-    # --- Assign confidence icon ---
+    # Confidence icon
     confidence_icon = (
         "🟢" if confidence >= 75 else
         "🟡" if confidence >= 60 else
         "🔴"
     )
 
-    # --- Build final message ---
+    # Final message
     message = (
         f"{numbered_signal}. {symbol} ({tf}){confirmed_tag}\n"
         f"📈 {signal_type} Signal\n"
         f"💰 {price:.6f}\n"
-        f"✅ Score: {score}\n"
-        f"📌 Passed: {passed}\n"
+        f"✅ Score: {score_str}\n"
+        f"📌 Passed: {passed_str}\n"
         f"{confidence_icon} Confidence: {confidence:.1f}% (Weighted: {weighted_str})"
     )
 
