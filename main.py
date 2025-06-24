@@ -33,26 +33,31 @@ def run():
                 key3 = f"{symbol}_3min"
                 sf3 = SmartFilter(symbol, df3, df3m=df3, df5m=df5, tf="3min")
                 res3 = sf3.analyze()
-                if res3 and res3.get("valid_signal"):
+                if isinstance(res3, tuple) and len(res3) == 9:
                     last3 = last_sent.get(key3, 0)
                     if now - last3 >= COOLDOWN["3min"]:
+                        text, sym, bias, price, tf_out, score, passed, confidence, weighted = res3
+                        # Cast types safely
+                        price = float(price)
+                        confidence = float(confidence)
+                        weighted = float(weighted)
                         numbered_signal = f"{idx}.A"
-                        print(f"[ALERT] ✅ 3min signal for {symbol}")
+                        print(f"[ALERT] ✅ 3min signal for {sym}")
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             send_telegram_alert(
                                 numbered_signal=numbered_signal,
-                                symbol=res3["symbol"],
-                                signal_type=res3["bias"],
-                                price=res3["price"],
-                                tf=res3["tf"],
-                                score=res3["score"],
-                                passed=res3["passes"],
-                                confidence=res3["confidence"],
-                                weighted=f"{res3['passed_weight']}/{res3['total_weight']}"
+                                symbol=sym,
+                                signal_type=bias,
+                                price=price,
+                                tf=tf_out,
+                                score=score,
+                                passed=passed,
+                                confidence=confidence,
+                                weighted=weighted
                             )
                         last_sent[key3] = now
                 else:
-                    print(f"[SKIP] No valid 3min signal for {symbol}.")
+                    print(f"[ERROR] Invalid 3min signal format or no signal for {symbol}.")
             except Exception as e:
                 print(f"[ERROR] 3min error for {symbol}: {e}")
 
@@ -61,26 +66,31 @@ def run():
                 key5 = f"{symbol}_5min"
                 sf5 = SmartFilter(symbol, df5, df3m=df3, df5m=df5, tf="5min")
                 res5 = sf5.analyze()
-                if res5 and res5.get("valid_signal"):
+                if isinstance(res5, tuple) and len(res5) == 9:
                     last5 = last_sent.get(key5, 0)
                     if now - last5 >= COOLDOWN["5min"]:
+                        text, sym, bias, price, tf_out, score, passed, confidence, weighted = res5
+                        # Cast types safely
+                        price = float(price)
+                        confidence = float(confidence)
+                        weighted = float(weighted)
                         numbered_signal = f"{idx}.B"
-                        print(f"[ALERT] ✅ 5min signal for {symbol}")
+                        print(f"[ALERT] ✅ 5min signal for {sym}")
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             send_telegram_alert(
                                 numbered_signal=numbered_signal,
-                                symbol=res5["symbol"],
-                                signal_type=res5["bias"],
-                                price=res5["price"],
-                                tf=res5["tf"],
-                                score=res5["score"],
-                                passed=res5["passes"],
-                                confidence=res5["confidence"],
-                                weighted=f"{res5['passed_weight']}/{res5['total_weight']}"
+                                symbol=sym,
+                                signal_type=bias,
+                                price=price,
+                                tf=tf_out,
+                                score=score,
+                                passed=passed,
+                                confidence=confidence,
+                                weighted=weighted
                             )
                         last_sent[key5] = now
                 else:
-                    print(f"[SKIP] No valid 5min signal for {symbol}.")
+                    print(f"[ERROR] Invalid 5min signal format or no signal for {symbol}.")
             except Exception as e:
                 print(f"[ERROR] 5min error for {symbol}: {e}")
 
