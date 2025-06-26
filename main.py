@@ -145,10 +145,10 @@ def backtest_pec_simulation():
                 else:
                     short_results.append(pec_block)
 
-                # Also send file immediately to Telegram
-                with open("pec_debug_temp.txt", "w") as f:
-                    f.write(pec_block)
-                send_telegram_file("pec_debug_temp.txt", caption=f"PEC result log for {symbol} {tf} [BACKTEST]")
+                # --- INDIVIDUAL PEC DEBUG TXT DISABLED IN BACKTEST MODE ---
+                # with open("pec_debug_temp.txt", "w") as f:
+                #     f.write(pec_block)
+                # send_telegram_file("pec_debug_temp.txt", caption=f"PEC result log for {symbol} {tf} [BACKTEST]")
 
                 pec_counter += 1
         print(f"[BACKTEST PEC] Done for {symbol} {tf}.")
