@@ -89,14 +89,18 @@ def backtest_pec_simulation():
             times = pd.to_datetime(df.index)
             window_start = times[-1] - pd.Timedelta(minutes=PEC_WINDOW_MINUTES)
 
-            # Find first index in the window, ensure enough bars left for PEC_BARS lookahead
+            # Only check indices where enough bars remain ahead for PEC
             for i in range(len(df) - PEC_BARS):
                 if times[i] < window_start:
                     continue
+                # Only let SmartFilter see up to and including i
                 df_slice = df.iloc[:i+1]
                 sf = SmartFilter(symbol, df_slice, df3m=df_slice, df5m=df_slice, tf=tf)
                 res = sf.analyze()
                 if isinstance(res, dict) and res.get("valid_signal") is True:
+                    # Ensure at least PEC_BARS+1 bars ahead for PEC simulation
+                    if i + PEC_BARS >= len(df):
+                        continue  # not enough data ahead, skip this
                     entry_idx = i
                     entry_price = df["close"].iloc[i]
                     signal_type = res.get("bias", "LONG")
