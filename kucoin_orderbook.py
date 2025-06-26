@@ -87,6 +87,6 @@ def get_order_wall_delta(
 
 # Example usage/test (remove or comment this out in production)
 if __name__ == "__main__":
-    symbol = "SKATE-USDT"
+    symbol = "FUN-USDT"
     result = get_order_wall_delta(symbol)
     print("Order Wall Delta:", result)
