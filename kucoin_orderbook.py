@@ -15,7 +15,7 @@ def fetch_orderbook(symbol: str, depth: int = 100) -> tuple[pd.DataFrame, pd.Dat
             bids = pd.DataFrame(data.get('bids', []), columns=['price', 'size']).astype(float)
             asks = pd.DataFrame(data.get('asks', []), columns=['price', 'size']).astype(float)
             return bids, asks
-        except Exception as e:
+        except Exception:
             continue
     return None, None
 
@@ -85,6 +85,50 @@ def get_order_wall_delta(
         'sell_top_levels': sell_top.values.tolist()
     }
 
+def get_resting_order_density(
+    symbol: str,
+    top_n: int = 3,
+    depth: int = 100
+) -> dict:
+    """
+    Calculate resting order density as % of total book at top N levels.
+    Returns:
+        {
+            'bid_density': %,
+            'ask_density': %,
+            'top_n': int,
+            'depth': int,
+            'bid_total': float,
+            'ask_total': float,
+            'bid_top': float,
+            'ask_top': float,
+        }
+    """
+    bids, asks = fetch_orderbook(symbol, depth=depth)
+    if bids is None or asks is None or len(bids) < top_n or len(asks) < top_n:
+        return {
+            'bid_density': 0.0, 'ask_density': 0.0,
+            'top_n': top_n, 'depth': depth,
+            'bid_total': 0.0, 'ask_total': 0.0,
+            'bid_top': 0.0, 'ask_top': 0.0
+        }
+    bid_top = bids.sort_values("price", ascending=False)['size'].head(top_n).sum()
+    ask_top = asks.sort_values("price", ascending=True)['size'].head(top_n).sum()
+    bid_total = bids['size'].sum()
+    ask_total = asks['size'].sum()
+    bid_density = 100 * bid_top / bid_total if bid_total > 0 else 0.0
+    ask_density = 100 * ask_top / ask_total if ask_total > 0 else 0.0
+    return {
+        'bid_density': round(bid_density, 2),
+        'ask_density': round(ask_density, 2),
+        'top_n': top_n,
+        'depth': depth,
+        'bid_total': float(bid_total),
+        'ask_total': float(ask_total),
+        'bid_top': float(bid_top),
+        'ask_top': float(ask_top),
+    }
+
 # --- Force print for ALL 15 tokens on EVERY import/run ---
 TOKENS = [
     "SKATE-USDT", "LA-USDT", "SPK-USDT", "ZKJ-USDT", "IP-USDT",
@@ -100,4 +144,14 @@ for symbol in TOKENS:
         f"sell_wall={result['sell_wall']} | "
         f"wall_delta={result['wall_delta']} | "
         f"midprice={result['midprice']}"
+    )
+
+for symbol in TOKENS:
+    res = get_resting_order_density(symbol)
+    print(
+        f"[RestingOrderDensityLog] {symbol} | "
+        f"bid_density={res['bid_density']}% | "
+        f"ask_density={res['ask_density']}% | "
+        f"bid_top={res['bid_top']} | ask_top={res['ask_top']} | "
+        f"bid_total={res['bid_total']} | ask_total={res['ask_total']}"
     )
