@@ -20,7 +20,7 @@ COOLDOWN = {"3min": 720, "5min": 900}
 last_sent = {}
 
 PEC_BARS = 5
-PEC_WINDOW_MINUTES = 25  # Backtest window size in minutes
+PEC_WINDOW_MINUTES = 500  # Backtest window size in minutes
 OHLCV_LIMIT = 1000        # <---- ADJUSTABLE LIMIT for ALL fetches (max 1500 for KuCoin)
 
 def get_resting_order_density(symbol, depth=100, band_pct=0.005):
