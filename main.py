@@ -1,5 +1,5 @@
 import os
-os.environ["PEC_BACKTEST_ONLY"] = "true"  # <--- FORCE BACKTEST MODE for all runs
+os.environ["PEC_BACKTEST_ONLY"] = "false"  # <--- LIVE MODE for all runs
 
 import time
 import pandas as pd
