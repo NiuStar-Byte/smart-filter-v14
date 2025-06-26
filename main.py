@@ -18,7 +18,8 @@ COOLDOWN = {"3min": 720, "5min": 900}
 last_sent = {}
 
 PEC_BARS = 5
-PEC_WINDOW_MINUTES = 25  # Set window size in minutes for backtest
+PEC_WINDOW_MINUTES = 25  # Backtest window size in minutes
+OHLCV_LIMIT = 500        # <---- ADJUSTABLE LIMIT for ALL fetches (max 1500 for KuCoin)
 
 def get_resting_order_density(symbol, depth=100, band_pct=0.005):
     try:
@@ -77,11 +78,11 @@ def backtest_pec_simulation():
     Runs PEC backtest on historical signals within the most recent 25 minutes for all tokens and both timeframes.
     Appends all results to pec_debug_temp.txt.
     """
-    print("[BACKTEST PEC] Running PEC simulation for last 25 minutes on all tokens & timeframes...")
+    print(f"[BACKTEST PEC] Running PEC simulation for last {PEC_WINDOW_MINUTES} minutes on all tokens & timeframes...")
     for symbol in TOKENS:
         for tf, tf_minutes in [("3min", 3), ("5min", 5)]:
             print(f"[BACKTEST PEC] {symbol} {tf} ...")
-            df = get_ohlcv(symbol, interval=tf, limit=120)
+            df = get_ohlcv(symbol, interval=tf, limit=OHLCV_LIMIT)
             if df is None or df.empty or len(df) < PEC_BARS + 2:
                 print(f"[BACKTEST PEC] No data for {symbol} {tf}. Skipping.")
                 continue
@@ -93,14 +94,12 @@ def backtest_pec_simulation():
             for i in range(len(df) - PEC_BARS):
                 if times[i] < window_start:
                     continue
-                # Only let SmartFilter see up to and including i
                 df_slice = df.iloc[:i+1]
                 sf = SmartFilter(symbol, df_slice, df3m=df_slice, df5m=df_slice, tf=tf)
                 res = sf.analyze()
                 if isinstance(res, dict) and res.get("valid_signal") is True:
-                    # Ensure at least PEC_BARS+1 bars ahead for PEC simulation
                     if i + PEC_BARS >= len(df):
-                        continue  # not enough data ahead, skip this
+                        continue  # not enough data ahead
                     entry_idx = i
                     entry_price = df["close"].iloc[i]
                     signal_type = res.get("bias", "LONG")
@@ -130,8 +129,8 @@ def run():
 
         for idx, symbol in enumerate(TOKENS, start=1):
             print(f"[INFO] Checking {symbol}...\n")
-            df3 = get_ohlcv(symbol, interval="3min", limit=100)
-            df5 = get_ohlcv(symbol, interval="5min", limit=100)
+            df3 = get_ohlcv(symbol, interval="3min", limit=OHLCV_LIMIT)
+            df5 = get_ohlcv(symbol, interval="5min", limit=OHLCV_LIMIT)
             if df3 is None or df3.empty or df5 is None or df5.empty:
                 continue
 
