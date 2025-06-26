@@ -17,9 +17,8 @@ TOKENS = [
 COOLDOWN = {"3min": 720, "5min": 900}
 last_sent = {}
 
-BACKTEST_MODE = os.getenv("BACKTEST_MODE", "false").lower() == "true"
-BACKTEST_BARS = 100  # how many bars back to run (adjust as needed)
 PEC_BARS = 5
+PEC_WINDOW_MINUTES = 25  # Set window size in minutes for backtest
 
 def get_resting_order_density(symbol, depth=100, band_pct=0.005):
     try:
@@ -73,41 +72,52 @@ def super_gk_aligned(bias, orderbook_result, density_result):
     if orderbook_bias == "NEUTRAL" or density_bias == "NEUTRAL": return False
     return True
 
+def backtest_pec_simulation():
+    """
+    Runs PEC backtest on historical signals within the most recent 25 minutes for all tokens and both timeframes.
+    Appends all results to pec_debug_temp.txt.
+    """
+    print("[BACKTEST PEC] Running PEC simulation for last 25 minutes on all tokens & timeframes...")
+    for symbol in TOKENS:
+        for tf, tf_minutes in [("3min", 3), ("5min", 5)]:
+            print(f"[BACKTEST PEC] {symbol} {tf} ...")
+            df = get_ohlcv(symbol, interval=tf, limit=120)
+            if df is None or df.empty or len(df) < PEC_BARS + 2:
+                print(f"[BACKTEST PEC] No data for {symbol} {tf}. Skipping.")
+                continue
+
+            # Determine "window start" by timestamp (last bar - 25 min)
+            last_time = pd.to_datetime(df.index[-1])
+            window_start = last_time - pd.Timedelta(minutes=PEC_WINDOW_MINUTES)
+            window_idx = df.index.get_loc(df[df.index >= str(window_start)].index[0]) if any(df.index >= str(window_start)) else len(df) - PEC_BARS - 1
+
+            # Start from window_idx up to the end minus PEC_BARS
+            for i in range(window_idx, len(df) - PEC_BARS - 1):
+                sf = SmartFilter(symbol, df.iloc[:i+1], df3m=df.iloc[:i+1], df5m=df.iloc[:i+1], tf=tf)
+                res = sf.analyze()
+                if isinstance(res, dict) and res.get("valid_signal") is True:
+                    entry_idx = i
+                    entry_price = res.get("price", df["close"].iloc[i])
+                    signal_type = res.get("bias", "LONG")
+                    pec_result = run_pec_check(
+                        symbol=symbol,
+                        entry_idx=entry_idx,
+                        tf=tf,
+                        signal_type=signal_type,
+                        entry_price=entry_price,
+                        ohlcv_df=df,
+                        pec_bars=PEC_BARS
+                    )
+                    export_pec_log(pec_result, filename="pec_debug_temp.txt")
+            print(f"[BACKTEST PEC] Done for {symbol} {tf}.")
+    print("[BACKTEST PEC] All done. PEC logs in pec_debug_temp.txt")
+
 def run():
-    print("[INFO] Starting Smart Filter engine...\n")
-    if BACKTEST_MODE:
-        # FULL HISTORICAL BACKTEST MODE
-        print("[BACKTEST MODE] Running PEC on historical signals...")
-        for symbol in TOKENS:
-            for tf, tf_minutes in [("3min", 3), ("5min", 5)]:
-                print(f"[BACKTEST] {symbol} {tf} ...")
-                df = get_ohlcv(symbol, interval=tf, limit=BACKTEST_BARS + PEC_BARS + 1)
-                if df is None or df.empty:
-                    print(f"[BACKTEST] No data for {symbol} {tf}. Skipping.")
-                    continue
-                for i in range(len(df) - PEC_BARS - 1):  # leave PEC_BARS for look-forward
-                    sf = SmartFilter(symbol, df.iloc[:i+1], df3m=df.iloc[:i+1], df5m=df.iloc[:i+1], tf=tf)
-                    res = sf.analyze()
-                    if isinstance(res, dict) and res.get("valid_signal") is True:
-                        # Emulate as if signal fired at this bar
-                        entry_idx = i
-                        entry_price = res.get("price", df["close"].iloc[i])
-                        signal_type = res.get("bias", "LONG")
-                        pec_result = run_pec_check(
-                            symbol=symbol,
-                            entry_idx=entry_idx,
-                            tf=tf,
-                            signal_type=signal_type,
-                            entry_price=entry_price,
-                            ohlcv_df=df,
-                            pec_bars=PEC_BARS
-                        )
-                        export_pec_log(pec_result, filename="pec_debug_temp.txt")
-                print(f"[BACKTEST] Done for {symbol} {tf}.")
-        print("[BACKTEST] All done. PEC logs in pec_debug_temp.txt")
+    if os.getenv("PEC_BACKTEST_ONLY", "false").lower() == "true":
+        backtest_pec_simulation()
         return
 
-    # ==== REAL-TIME/LIVE MODE ====
+    print("[INFO] Starting Smart Filter engine...\n")
     while True:
         now = time.time()
         valid_debugs = []
@@ -268,4 +278,8 @@ def run():
         time.sleep(60)
 
 if __name__ == "__main__":
-    run()
+    # To run ONLY backtest, set env: PEC_BACKTEST_ONLY=true
+    if os.getenv("PEC_BACKTEST_ONLY", "false").lower() == "true":
+        backtest_pec_simulation()
+    else:
+        run()
