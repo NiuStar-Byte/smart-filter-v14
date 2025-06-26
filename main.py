@@ -86,18 +86,21 @@ def backtest_pec_simulation():
                 print(f"[BACKTEST PEC] No data for {symbol} {tf}. Skipping.")
                 continue
 
-            # Determine "window start" by timestamp (last bar - 25 min)
-            last_time = pd.to_datetime(df.index[-1])
-            window_start = last_time - pd.Timedelta(minutes=PEC_WINDOW_MINUTES)
-            window_idx = df.index.get_loc(df[df.index >= str(window_start)].index[0]) if any(df.index >= str(window_start)) else len(df) - PEC_BARS - 1
+            # Robust timestamp array
+            times = pd.to_datetime(df.index)
+            window_start = times[-1] - pd.Timedelta(minutes=PEC_WINDOW_MINUTES)
 
-            # Start from window_idx up to the end minus PEC_BARS
-            for i in range(window_idx, len(df) - PEC_BARS - 1):
-                sf = SmartFilter(symbol, df.iloc[:i+1], df3m=df.iloc[:i+1], df5m=df.iloc[:i+1], tf=tf)
+            # Find first index in the window (ensure enough bars left for PEC_BARS lookahead)
+            for i in range(len(df) - PEC_BARS):
+                if times[i] < window_start:
+                    continue
+                # Only let SmartFilter see up to and including i
+                df_slice = df.iloc[:i+1]
+                sf = SmartFilter(symbol, df_slice, df3m=df_slice, df5m=df_slice, tf=tf)
                 res = sf.analyze()
                 if isinstance(res, dict) and res.get("valid_signal") is True:
                     entry_idx = i
-                    entry_price = res.get("price", df["close"].iloc[i])
+                    entry_price = df["close"].iloc[i]
                     signal_type = res.get("bias", "LONG")
                     pec_result = run_pec_check(
                         symbol=symbol,
