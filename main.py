@@ -1,4 +1,6 @@
 import os
+os.environ["PEC_BACKTEST_ONLY"] = "true"  # <--- FORCE BACKTEST MODE for all runs
+
 import time
 import pandas as pd
 import random
@@ -101,6 +103,7 @@ def backtest_pec_simulation():
                 res = sf.analyze()
                 if isinstance(res, dict) and res.get("valid_signal") is True:
                     if i + PEC_BARS >= len(df):
+                        print(f"    [DEBUG] Skipping idx={i}, not enough future bars for PEC evaluation.")
                         continue  # not enough data ahead
                     entry_idx = i
                     entry_price = df["close"].iloc[i]
