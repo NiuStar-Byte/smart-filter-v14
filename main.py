@@ -202,13 +202,18 @@ def run():
         if valid_debugs:
             num = min(len(valid_debugs), 2)
             for debug_info in random.sample(valid_debugs, num):
+                # --- PATCH: Pass actual SuperGK results ---
+                orderbook_result = get_order_wall_delta(debug_info["symbol"])
+                density_result = get_resting_order_density(debug_info["symbol"])
                 dump_signal_debug_txt(
                     symbol=debug_info["symbol"],
                     tf=debug_info["tf"],
                     bias=debug_info["bias"],
                     filter_weights=debug_info["filter_weights"],
                     gatekeepers=debug_info["gatekeepers"],
-                    results=debug_info["results"]
+                    results=debug_info["results"],
+                    orderbook_result=orderbook_result,
+                    density_result=density_result
                 )
                 send_telegram_file(
                     "signal_debug_temp.txt",
