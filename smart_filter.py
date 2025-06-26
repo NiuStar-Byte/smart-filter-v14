@@ -1,9 +1,10 @@
 import requests
 import pandas as pd
+import numpy as np
 
 class SmartFilter:
     """
-    Core scanner that evaluates 21 technical / order-flow filters,
+    Core scanner that evaluates 21+ technical / order-flow filters,
     then decides whether a valid LONG / SHORT signal exists.
     """
 
@@ -53,7 +54,9 @@ class SmartFilter:
             "Spread Filter": 2.7,
             "Liquidity Awareness": 3.2,
             "Trend Continuation": 3.7,
-            "Volatility Model": 3.4
+            "Volatility Model": 3.4,
+            "ATR Momentum Burst": 3.9,
+            "Volatility Squeeze": 3.1
         }
 
         self.gatekeepers = [
@@ -89,7 +92,9 @@ class SmartFilter:
             "Spread Filter": self._check_spread_filter,
             "Liquidity Awareness": self._check_liquidity_awareness,
             "Trend Continuation": self._check_trend_continuation,
-            "Volatility Model": self._check_volatility_model
+            "Volatility Model": self._check_volatility_model,
+            "ATR Momentum Burst": self._check_atr_momentum_burst,
+            "Volatility Squeeze": self._check_volatility_squeeze
         }
 
         results = {}
@@ -108,7 +113,7 @@ class SmartFilter:
         passed_weight = sum(self.filter_weights[f] for f in passed_gk)
         confidence = round(self._safe_divide(100 * passed_weight, total_gk_weight), 1)
 
-        print(f"[{self.symbol}] Score: {score}/21 | "
+        print(f"[{self.symbol}] Score: {score}/23 | "
               f"Passed GK: {passes}/{len(self.gatekeepers)} | "
               f"Confidence: {confidence}% (Weighted: {passed_weight:.1f}/{total_gk_weight:.1f})")
 
@@ -121,7 +126,7 @@ class SmartFilter:
 
         message = (
             f"{bias} on {self.symbol} @ {price:.6f} "
-            f"| Score: {score}/21 | Passed: {passes}/{len(self.gatekeepers)} "
+            f"| Score: {score}/23 | Passed: {passes}/{len(self.gatekeepers)} "
             f"| Confidence: {confidence}% (Weighted: {passed_weight:.1f}/{total_gk_weight:.1f})"
         )
 
@@ -134,7 +139,7 @@ class SmartFilter:
             "symbol": self.symbol,
             "tf": self.tf,
             "score": score,
-            "score_max": 21,
+            "score_max": 23,
             "passes": passes,
             "gatekeepers_total": len(self.gatekeepers),
             "passed_weight": round(passed_weight, 1),
@@ -277,6 +282,22 @@ class SmartFilter:
         last = self.df['close'].iat[-1]
         atr_pct = self._safe_divide(atr, last)
         return low_pct <= atr_pct <= high_pct
+
+    def _check_atr_momentum_burst(self, atr_period=14, burst_threshold=1.5):
+        high_low = self.df['high'] - self.df['low']
+        high_prev = (self.df['high'] - self.df['close'].shift()).abs()
+        low_prev = (self.df['low'] - self.df['close'].shift()).abs()
+        tr = pd.concat([high_low, high_prev, low_prev], axis=1).max(axis=1)
+        atr = tr.rolling(atr_period).mean()
+        momentum = self.df['close'].diff()
+        burst = (momentum.abs() / atr).iat[-1]
+        return burst > burst_threshold
+
+    def _check_volatility_squeeze(self, window=20):
+        rolling_high = self.df['high'].rolling(window).max()
+        rolling_low = self.df['low'].rolling(window).min()
+        range_pct = (rolling_high - rolling_low) / self.df['close']
+        return range_pct.iat[-1] < 0.02
 
     def _fetch_order_book(self, depth=100):
         for sym in (self.symbol, self.symbol.replace('-', '/')):
