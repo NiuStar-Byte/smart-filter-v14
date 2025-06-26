@@ -6,7 +6,57 @@ from kucoin_data import get_ohlcv
 from smart_filter import SmartFilter
 from telegram_alert import send_telegram_alert, send_telegram_file
 from signal_debug_log import dump_signal_debug_txt
-from kucoin_orderbook import get_order_wall_delta   # <--- NEW: import orderbook logic
+from kucoin_orderbook import get_order_wall_delta   # <--- import orderbook logic
+
+# --------- RESTING ORDER DENSITY LOGIC ----------
+def get_resting_order_density(symbol, depth=100, band_pct=0.005):
+    """
+    Computes resting order density for both bid and ask side within a price band.
+    Returns:
+        {
+            'bid_density': float,
+            'ask_density': float,
+            'bid_levels': int,
+            'ask_levels': int,
+            'midprice': float
+        }
+    """
+    try:
+        from kucoin_orderbook import fetch_orderbook
+        bids, asks = fetch_orderbook(symbol, depth)
+        if bids is None or asks is None or len(bids) == 0 or len(asks) == 0:
+            return {
+                'bid_density': 0.0,
+                'ask_density': 0.0,
+                'bid_levels': 0,
+                'ask_levels': 0,
+                'midprice': None
+            }
+        best_bid = bids['price'].iloc[0]
+        best_ask = asks['price'].iloc[0]
+        midprice = (best_bid + best_ask) / 2
+
+        low, high = midprice * (1 - band_pct), midprice * (1 + band_pct)
+        bids_in_band = bids[bids['price'] >= low]
+        asks_in_band = asks[asks['price'] <= high]
+
+        bid_density = bids_in_band['size'].sum() / max(len(bids_in_band), 1)
+        ask_density = asks_in_band['size'].sum() / max(len(asks_in_band), 1)
+        return {
+            'bid_density': float(bid_density),
+            'ask_density': float(ask_density),
+            'bid_levels': len(bids_in_band),
+            'ask_levels': len(asks_in_band),
+            'midprice': float(midprice)
+        }
+    except Exception as e:
+        return {
+            'bid_density': 0.0,
+            'ask_density': 0.0,
+            'bid_levels': 0,
+            'ask_levels': 0,
+            'midprice': None
+        }
 
 # List of tokens to scan (KuCoin Futures symbols)
 TOKENS = [
@@ -19,7 +69,8 @@ TOKENS = [
 COOLDOWN = {"3min": 720, "5min": 900}
 last_sent = {}  # Track last alert per symbol-timeframe
 
-def log_orderbook_delta(symbol):
+def log_orderbook_and_density(symbol):
+    # Log orderbook delta
     try:
         result = get_order_wall_delta(symbol)
         print(
@@ -31,6 +82,17 @@ def log_orderbook_delta(symbol):
         )
     except Exception as e:
         print(f"[OrderBookDeltaLog] {symbol} ERROR: {e}")
+
+    # Log resting order density
+    try:
+        dens = get_resting_order_density(symbol)
+        print(
+            f"[RestingOrderDensityLog] {symbol} | "
+            f"bid_density={dens['bid_density']:.2f} | ask_density={dens['ask_density']:.2f} | "
+            f"bid_levels={dens['bid_levels']} | ask_levels={dens['ask_levels']} | midprice={dens['midprice']}"
+        )
+    except Exception as e:
+        print(f"[RestingOrderDensityLog] {symbol} ERROR: {e}")
 
 def run():
     print("[INFO] Starting Smart Filter engine...\n")
@@ -56,8 +118,8 @@ def run():
                     if now - last3 >= COOLDOWN["3min"]:
                         numbered_signal = f"{idx}.A"
 
-                        # --- ORDERBOOK DELTA LOG (NEW) ---
-                        log_orderbook_delta(symbol)
+                        # --- ORDERBOOK DELTA & RESTING DENSITY LOG (NEW) ---
+                        log_orderbook_and_density(symbol)
 
                         print(f"[LOG] Sending 3min alert for {res3['symbol']}")
                         # --- Add to debug list but DO NOT send file yet
@@ -101,8 +163,8 @@ def run():
                     if now - last5 >= COOLDOWN["5min"]:
                         numbered_signal = f"{idx}.B"
 
-                        # --- ORDERBOOK DELTA LOG (NEW) ---
-                        log_orderbook_delta(symbol)
+                        # --- ORDERBOOK DELTA & RESTING DENSITY LOG (NEW) ---
+                        log_orderbook_and_density(symbol)
 
                         print(f"[LOG] Sending 5min alert for {res5['symbol']}")
                         # --- Add to debug list but DO NOT send file yet
