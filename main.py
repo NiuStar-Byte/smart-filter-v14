@@ -7,21 +7,10 @@ from smart_filter import SmartFilter
 from telegram_alert import send_telegram_alert, send_telegram_file
 from signal_debug_log import dump_signal_debug_txt
 from kucoin_orderbook import get_order_wall_delta   # <--- import orderbook logic
-from pec_engine import run_pec_check                # <--- NEW: PEC engine
+from pec_engine import run_pec_check, export_pec_log  # <--- NEW: PEC engine
 
 # --------- RESTING ORDER DENSITY LOGIC ----------
 def get_resting_order_density(symbol, depth=100, band_pct=0.005):
-    """
-    Computes resting order density for both bid and ask side within a price band.
-    Returns:
-        {
-            'bid_density': float,
-            'ask_density': float,
-            'bid_levels': int,
-            'ask_levels': int,
-            'midprice': float
-        }
-    """
     try:
         from kucoin_orderbook import fetch_orderbook
         bids, asks = fetch_orderbook(symbol, depth)
@@ -59,19 +48,16 @@ def get_resting_order_density(symbol, depth=100, band_pct=0.005):
             'midprice': None
         }
 
-# List of tokens to scan (KuCoin Futures symbols)
 TOKENS = [
     "SKATE-USDT", "LA-USDT", "SPK-USDT", "ZKJ-USDT", "IP-USDT",
     "AERO-USDT", "BMT-USDT", "LQTY-USDT", "X-USDT", "RAY-USDT",
     "EPT-USDT", "ELDE-USDT", "MAGIC-USDT", "ACTSOL-USDT", "FUN-USDT"
 ]
 
-# Cooldown periods per timeframe (in seconds)
 COOLDOWN = {"3min": 720, "5min": 900}
 last_sent = {}  # Track last alert per symbol-timeframe
 
 def log_orderbook_and_density(symbol):
-    # Log orderbook delta
     try:
         result = get_order_wall_delta(symbol)
         print(
@@ -84,7 +70,6 @@ def log_orderbook_and_density(symbol):
     except Exception as e:
         print(f"[OrderBookDeltaLog] {symbol} ERROR: {e}")
 
-    # Log resting order density
     try:
         dens = get_resting_order_density(symbol)
         print(
@@ -96,18 +81,15 @@ def log_orderbook_and_density(symbol):
         print(f"[RestingOrderDensityLog] {symbol} ERROR: {e}")
 
 def super_gk_aligned(bias, orderbook_result, density_result):
-    """Returns True ONLY if both SuperGK are aligned (not just not contradictory)."""
     wall_delta = orderbook_result.get('wall_delta', 0) if orderbook_result else 0
     orderbook_bias = "LONG" if wall_delta > 0 else "SHORT" if wall_delta < 0 else "NEUTRAL"
     bid_density = density_result.get('bid_density', 0) if density_result else 0
     ask_density = density_result.get('ask_density', 0) if density_result else 0
     density_bias = "LONG" if bid_density > ask_density else "SHORT" if ask_density > bid_density else "NEUTRAL"
-    # Both SuperGK must be not neutral and must align with bias
     if (orderbook_bias != "NEUTRAL" and bias != orderbook_bias):
         return False
     if (density_bias != "NEUTRAL" and bias != density_bias):
         return False
-    # If both are neutral, treat as NOT aligned (do not fire signal)
     if orderbook_bias == "NEUTRAL" or density_bias == "NEUTRAL":
         return False
     return True
@@ -117,6 +99,8 @@ def run():
     while True:
         now = time.time()
         valid_debugs = []  # Only append signals that actually fire
+
+        pec_candidates = []  # Store (symbol, tf, entry_price, signal_type, df, entry_idx) for PEC
 
         for idx, symbol in enumerate(TOKENS, start=1):
             print(f"[INFO] Checking {symbol}...\n")
@@ -135,22 +119,14 @@ def run():
                     last3 = last_sent.get(key3, 0)
                     if now - last3 >= COOLDOWN["3min"]:
                         numbered_signal = f"{idx}.A"
-
-                        # --- ORDERBOOK DELTA & RESTING DENSITY LOG (NEW) ---
                         log_orderbook_and_density(symbol)
-
-                        # Get SuperGK data
                         orderbook_result = get_order_wall_delta(symbol)
                         density_result = get_resting_order_density(symbol)
                         bias = res3.get("bias", "NEUTRAL")
-
-                        # --- ENFORCE GOLDEN RULE (only ALIGNED signals fire) ---
                         if not super_gk_aligned(bias, orderbook_result, density_result):
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT")
-                            continue  # SKIP alert AND skip debug.txt
-
+                            continue
                         print(f"[LOG] Sending 3min alert for {res3['symbol']}")
-                        # --- Add to debug list only for successfully fired signals
                         valid_debugs.append({
                             "symbol": res3["symbol"],
                             "tf": res3["tf"],
@@ -161,9 +137,13 @@ def run():
                             "caption": f"Signal debug log for {res3.get('symbol')} {res3.get('tf')}",
                             "orderbook_result": orderbook_result,
                             "density_result": density_result,
-                            "entry_price": res3.get("price"),
-                            "tf_minutes": 3, # for PEC
+                            "entry_price": res3.get("price")
                         })
+                        # Prepare for PEC (find entry_idx: the latest bar index)
+                        entry_idx = df3.index.get_loc(df3.index[-1])
+                        pec_candidates.append(
+                            ("3min", symbol, res3.get("price"), bias, df3, entry_idx)
+                        )
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             send_telegram_alert(
                                 numbered_signal=numbered_signal,
@@ -194,22 +174,14 @@ def run():
                     last5 = last_sent.get(key5, 0)
                     if now - last5 >= COOLDOWN["5min"]:
                         numbered_signal = f"{idx}.B"
-
-                        # --- ORDERBOOK DELTA & RESTING DENSITY LOG (NEW) ---
                         log_orderbook_and_density(symbol)
-
-                        # Get SuperGK data
                         orderbook_result = get_order_wall_delta(symbol)
                         density_result = get_resting_order_density(symbol)
                         bias = res5.get("bias", "NEUTRAL")
-
-                        # --- ENFORCE GOLDEN RULE (only ALIGNED signals fire) ---
                         if not super_gk_aligned(bias, orderbook_result, density_result):
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT")
-                            continue  # SKIP alert AND skip debug.txt
-
+                            continue
                         print(f"[LOG] Sending 5min alert for {res5['symbol']}")
-                        # --- Add to debug list only for successfully fired signals
                         valid_debugs.append({
                             "symbol": res5["symbol"],
                             "tf": res5["tf"],
@@ -220,9 +192,13 @@ def run():
                             "caption": f"Signal debug log for {res5.get('symbol')} {res5.get('tf')}",
                             "orderbook_result": orderbook_result,
                             "density_result": density_result,
-                            "entry_price": res5.get("price"),
-                            "tf_minutes": 5, # for PEC
+                            "entry_price": res5.get("price")
                         })
+                        # Prepare for PEC (find entry_idx: the latest bar index)
+                        entry_idx = df5.index.get_loc(df5.index[-1])
+                        pec_candidates.append(
+                            ("5min", symbol, res5.get("price"), bias, df5, entry_idx)
+                        )
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             send_telegram_alert(
                                 numbered_signal=numbered_signal,
@@ -244,11 +220,10 @@ def run():
             except Exception as e:
                 print(f"[ERROR] Exception in processing 5min for {symbol}: {e}")
 
-        # --- After scanning all tokens, randomly select 2 signals to send debug file and run PEC
+        # --- After scanning all tokens, randomly select 2 signals to send debug file
         if valid_debugs:
             num = min(len(valid_debugs), 2)
             for debug_info in random.sample(valid_debugs, num):
-                # --- PATCH: Pass actual SuperGK results ---
                 dump_signal_debug_txt(
                     symbol=debug_info["symbol"],
                     tf=debug_info["tf"],
@@ -263,22 +238,26 @@ def run():
                     "signal_debug_temp.txt",
                     caption=debug_info["caption"]
                 )
-                # --- RUN POST-ENTRY QUALITY CONTROL (PEC) CHECK ---
-                # Only run if pec_engine is available, and after firing signal!
+        # --- Run PEC checks for all valid fired signals (max 2, matching debug files) ---
+        if pec_candidates:
+            for tf, symbol, entry_price, signal_type, ohlcv_df, entry_idx in pec_candidates[:2]:
                 try:
-                    pec_result_file, pec_caption = run_pec_check(
-                        symbol=debug_info["symbol"],
-                        entry_price=debug_info.get("entry_price"),
-                        tf_minutes=debug_info.get("tf_minutes"),
-                        bias=debug_info.get("bias")
+                    pec_result = run_pec_check(
+                        symbol=symbol,
+                        entry_idx=entry_idx,
+                        tf=tf,
+                        signal_type=signal_type,
+                        entry_price=entry_price,
+                        ohlcv_df=ohlcv_df,
+                        pec_bars=5
                     )
-                    send_telegram_file(pec_result_file, caption=pec_caption)
+                    export_pec_log(pec_result, filename="pec_debug_temp.txt")
+                    send_telegram_file("pec_debug_temp.txt", caption=f"PEC result log for {symbol} {tf}")
                 except Exception as e:
-                    print(f"[PEC] Error running post-entry check for {debug_info['symbol']} {debug_info['tf']}: {e}")
+                    print(f"[PEC] Error running post-entry check for {symbol} {tf}: {e}")
 
         print("[INFO] ✅ Cycle complete. Sleeping 60 seconds...\n")
         time.sleep(60)
 
 if __name__ == "__main__":
     run()
-
