@@ -132,8 +132,11 @@ def backtest_pec_simulation():
                 # Compose one block: header + result as string
                 from io import StringIO
                 temp_io = StringIO()
-                temp_io.write(pec_header + "\n")
-                export_pec_log(pec_result, fileobj=temp_io, custom_header=None)
+                if pec_header:
+                    temp_io.write("\n" + pec_header + "\n")
+                summary = pec_result.get("summary", str(pec_result))
+                temp_io.write(summary)
+                temp_io.write("\n" + "="*32 + "\n")
                 pec_block = temp_io.getvalue()
 
                 # Group by LONG/SHORT
