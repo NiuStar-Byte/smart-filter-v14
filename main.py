@@ -94,6 +94,22 @@ def log_orderbook_and_density(symbol):
     except Exception as e:
         print(f"[RestingOrderDensityLog] {symbol} ERROR: {e}")
 
+def super_gk_conflict(bias, orderbook_result, density_result):
+    """Returns True if there's a conflict with SuperGK rules, else False."""
+    wall_delta = orderbook_result.get('wall_delta', 0) if orderbook_result else 0
+    orderbook_bias = "LONG" if wall_delta > 0 else "SHORT" if wall_delta < 0 else "NEUTRAL"
+
+    bid_density = density_result.get('bid_density', 0) if density_result else 0
+    ask_density = density_result.get('ask_density', 0) if density_result else 0
+    density_bias = "LONG" if bid_density > ask_density else "SHORT" if ask_density > bid_density else "NEUTRAL"
+
+    # If either SuperGK is not neutral AND not aligned with signal, it's a conflict.
+    if orderbook_bias != "NEUTRAL" and bias != orderbook_bias:
+        return True
+    if density_bias != "NEUTRAL" and bias != density_bias:
+        return True
+    return False
+
 def run():
     print("[INFO] Starting Smart Filter engine...\n")
     while True:
@@ -121,8 +137,29 @@ def run():
                         # --- ORDERBOOK DELTA & RESTING DENSITY LOG (NEW) ---
                         log_orderbook_and_density(symbol)
 
+                        # Get SuperGK data
+                        orderbook_result = get_order_wall_delta(symbol)
+                        density_result = get_resting_order_density(symbol)
+                        bias = res3.get("bias", "NEUTRAL")
+
+                        # --- ENFORCE GOLDEN RULE (SuperGK block) ---
+                        if super_gk_conflict(bias, orderbook_result, density_result):
+                            print(f"[BLOCKED] SuperGK Conflict: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT")
+                            # Optionally: still add to debug, do NOT send alert/file
+                            valid_debugs.append({
+                                "symbol": res3["symbol"],
+                                "tf": res3["tf"],
+                                "bias": res3["bias"],
+                                "filter_weights": sf3.filter_weights,
+                                "gatekeepers": sf3.gatekeepers,
+                                "results": res3["filter_results"],
+                                "caption": f"Signal debug log for {res3.get('symbol')} {res3.get('tf')}",
+                                "orderbook_result": orderbook_result,
+                                "density_result": density_result
+                            })
+                            continue  # SKIP sending signal
                         print(f"[LOG] Sending 3min alert for {res3['symbol']}")
-                        # --- Add to debug list but DO NOT send file yet
+                        # --- Add to debug list
                         valid_debugs.append({
                             "symbol": res3["symbol"],
                             "tf": res3["tf"],
@@ -130,7 +167,9 @@ def run():
                             "filter_weights": sf3.filter_weights,
                             "gatekeepers": sf3.gatekeepers,
                             "results": res3["filter_results"],
-                            "caption": f"Signal debug log for {res3.get('symbol')} {res3.get('tf')}"
+                            "caption": f"Signal debug log for {res3.get('symbol')} {res3.get('tf')}",
+                            "orderbook_result": orderbook_result,
+                            "density_result": density_result
                         })
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             send_telegram_alert(
@@ -166,8 +205,29 @@ def run():
                         # --- ORDERBOOK DELTA & RESTING DENSITY LOG (NEW) ---
                         log_orderbook_and_density(symbol)
 
+                        # Get SuperGK data
+                        orderbook_result = get_order_wall_delta(symbol)
+                        density_result = get_resting_order_density(symbol)
+                        bias = res5.get("bias", "NEUTRAL")
+
+                        # --- ENFORCE GOLDEN RULE (SuperGK block) ---
+                        if super_gk_conflict(bias, orderbook_result, density_result):
+                            print(f"[BLOCKED] SuperGK Conflict: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT")
+                            # Optionally: still add to debug, do NOT send alert/file
+                            valid_debugs.append({
+                                "symbol": res5["symbol"],
+                                "tf": res5["tf"],
+                                "bias": res5["bias"],
+                                "filter_weights": sf5.filter_weights,
+                                "gatekeepers": sf5.gatekeepers,
+                                "results": res5["filter_results"],
+                                "caption": f"Signal debug log for {res5.get('symbol')} {res5.get('tf')}",
+                                "orderbook_result": orderbook_result,
+                                "density_result": density_result
+                            })
+                            continue  # SKIP sending signal
                         print(f"[LOG] Sending 5min alert for {res5['symbol']}")
-                        # --- Add to debug list but DO NOT send file yet
+                        # --- Add to debug list
                         valid_debugs.append({
                             "symbol": res5["symbol"],
                             "tf": res5["tf"],
@@ -175,7 +235,9 @@ def run():
                             "filter_weights": sf5.filter_weights,
                             "gatekeepers": sf5.gatekeepers,
                             "results": res5["filter_results"],
-                            "caption": f"Signal debug log for {res5.get('symbol')} {res5.get('tf')}"
+                            "caption": f"Signal debug log for {res5.get('symbol')} {res5.get('tf')}",
+                            "orderbook_result": orderbook_result,
+                            "density_result": density_result
                         })
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             send_telegram_alert(
@@ -203,8 +265,6 @@ def run():
             num = min(len(valid_debugs), 2)
             for debug_info in random.sample(valid_debugs, num):
                 # --- PATCH: Pass actual SuperGK results ---
-                orderbook_result = get_order_wall_delta(debug_info["symbol"])
-                density_result = get_resting_order_density(debug_info["symbol"])
                 dump_signal_debug_txt(
                     symbol=debug_info["symbol"],
                     tf=debug_info["tf"],
@@ -212,8 +272,8 @@ def run():
                     filter_weights=debug_info["filter_weights"],
                     gatekeepers=debug_info["gatekeepers"],
                     results=debug_info["results"],
-                    orderbook_result=orderbook_result,
-                    density_result=density_result
+                    orderbook_result=debug_info.get("orderbook_result"),
+                    density_result=debug_info.get("density_result")
                 )
                 send_telegram_file(
                     "signal_debug_temp.txt",
