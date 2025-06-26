@@ -88,12 +88,14 @@ def backtest_pec_simulation():
                 continue
 
             times = pd.to_datetime(df.index)
+            print(f"  [DEBUG] Fetched {len(df)} bars for {symbol} {tf}. First: {times[0]}, Last: {times[-1]}")
             window_start = times[-1] - pd.Timedelta(minutes=PEC_WINDOW_MINUTES)
 
             # Only check indices where enough bars remain ahead for PEC
-            for i in range(len(df) - PEC_BARS):
-                if times[i] < window_start:
-                    continue
+            candidate_indices = [i for i in range(len(df) - PEC_BARS) if times[i] >= window_start]
+            print(f"  [DEBUG] {symbol} {tf}: {len(candidate_indices)} candidate bars in window (from {window_start} to {times[-1]})")
+
+            for i in candidate_indices:
                 df_slice = df.iloc[:i+1]
                 sf = SmartFilter(symbol, df_slice, df3m=df_slice, df5m=df_slice, tf=tf)
                 res = sf.analyze()
@@ -103,6 +105,7 @@ def backtest_pec_simulation():
                     entry_idx = i
                     entry_price = df["close"].iloc[i]
                     signal_type = res.get("bias", "LONG")
+                    print(f"    [DEBUG] Found valid signal at idx={i}, time={times[i]}, price={entry_price}")
                     pec_result = run_pec_check(
                         symbol=symbol,
                         entry_idx=entry_idx,
