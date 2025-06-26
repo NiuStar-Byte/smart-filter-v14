@@ -85,7 +85,15 @@ def get_order_wall_delta(
         'sell_top_levels': sell_top.values.tolist()
     }
 
-# Example usage/test (remove or comment this out in production)
+# --- ALWAYS PRINT TO LOGS ON IMPORT/RUN ---
+try:
+    symbol = "RAY-USDT"  # Change this to any token you want to observe in logs
+    result = get_order_wall_delta(symbol)
+    print(f"[OrderBookDeltaLog] {symbol}: {result}")
+except Exception as e:
+    print(f"[OrderBookDeltaLog] ERROR: {e}")
+
+# You may still keep the main block for manual local test if desired
 if __name__ == "__main__":
     symbol = "RAY-USDT"
     result = get_order_wall_delta(symbol)
