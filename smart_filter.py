@@ -16,7 +16,7 @@ class SmartFilter:
         df5m: pd.DataFrame = None,
         tf: str = None,
         min_score: int = 9,
-        required_passed: int = 8,
+        required_passed: int = 10,      # NEW: now 10 (for 17 gatekeepers)
         volume_multiplier: float = 2.0
     ):
         self.symbol = symbol
@@ -59,11 +59,14 @@ class SmartFilter:
             "Volatility Squeeze": 3.1
         }
 
+        # --- Expanded gatekeeper list ---
         self.gatekeepers = [
             "Fractal Zone", "EMA Cloud", "MACD", "Momentum", "HATS",
             "Volume Spike", "VWAP Divergence", "MTF Volume Agreement",
             "HH/LL Trend", "EMA Structure", "Chop Zone",
-            "Candle Confirmation", "Trend Continuation"
+            "Candle Confirmation", "Trend Continuation",
+            "Volatility Model", "Liquidity Awareness",
+            "ATR Momentum Burst", "Volatility Squeeze"
         ]
 
     def analyze(self):
@@ -108,21 +111,33 @@ class SmartFilter:
 
         score = sum(results.values())
 
-        # -- FIXED PASSED + WEIGHTS CALCULATION --
+        # PASSES + WEIGHTS CALCULATION (for new GK set)
         passed_gk = [f for f in self.gatekeepers if results.get(f, False)]
         passes = len(passed_gk)
         total_gk_weight = sum(self.filter_weights[f] for f in self.gatekeepers)
         passed_weight = sum(self.filter_weights[f] for f in passed_gk)
         confidence = round(self._safe_divide(100 * passed_weight, total_gk_weight), 1)
 
+        # === Super-GK Hard Blockers: Order Book Wall + Resting Order Density ===
+        orderbook_ok = self._order_book_wall_passed()
+        resting_density_ok = self._resting_order_density_passed()
+
         print(f"[{self.symbol}] Score: {score}/23 | "
               f"Passed GK: {passes}/{len(self.gatekeepers)} | "
               f"Confidence: {confidence}% (Weighted: {passed_weight:.1f}/{total_gk_weight:.1f})")
+        print(f"[{self.symbol}] OrderBookWall Super-GK: {'✅' if orderbook_ok else '❌'} | "
+              f"RestingDensity Super-GK: {'✅' if resting_density_ok else '❌'}")
 
         for n, ok in results.items():
             print(f"{n:25} -> {'✅' if ok else '❌'} ({self.filter_weights.get(n)})")
 
-        valid_signal = (score >= self.min_score) and (passes >= self.required_passed)
+        # Signal logic: must meet score, passes, *and* both super-GKs
+        valid_signal = (
+            (score >= self.min_score)
+            and (passes >= self.required_passed)
+            and orderbook_ok
+            and resting_density_ok
+        )
         price = self.df['close'].iat[-1]
         bias = "LONG" if price > self.df['open'].iat[-1] else "SHORT"
 
@@ -154,7 +169,18 @@ class SmartFilter:
             "filter_results": results
         }
 
-    # All filter logic remains unchanged
+    # === Super-GK logic stubs ===
+    def _order_book_wall_passed(self):
+        # Placeholder: plug your order book logic here!
+        # Return True (pass) or False (fail)
+        return True
+
+    def _resting_order_density_passed(self):
+        # Placeholder: plug your resting order density logic here!
+        # Return True (pass) or False (fail)
+        return True
+
+    # --- All filter logic unchanged ---
     def _safe_divide(self, a, b):
         try:
             return a / b if b else 0.0
