@@ -6,6 +6,7 @@ from kucoin_data import get_ohlcv
 from smart_filter import SmartFilter
 from telegram_alert import send_telegram_alert, send_telegram_file
 from signal_debug_log import dump_signal_debug_txt
+from kucoin_orderbook import get_order_wall_delta   # <--- NEW: import orderbook logic
 
 # List of tokens to scan (KuCoin Futures symbols)
 TOKENS = [
@@ -17,6 +18,19 @@ TOKENS = [
 # Cooldown periods per timeframe (in seconds)
 COOLDOWN = {"3min": 720, "5min": 900}
 last_sent = {}  # Track last alert per symbol-timeframe
+
+def log_orderbook_delta(symbol):
+    try:
+        result = get_order_wall_delta(symbol)
+        print(
+            f"[OrderBookDeltaLog] {symbol} | "
+            f"buy_wall={result['buy_wall']} | "
+            f"sell_wall={result['sell_wall']} | "
+            f"wall_delta={result['wall_delta']} | "
+            f"midprice={result['midprice']}"
+        )
+    except Exception as e:
+        print(f"[OrderBookDeltaLog] {symbol} ERROR: {e}")
 
 def run():
     print("[INFO] Starting Smart Filter engine...\n")
@@ -41,6 +55,10 @@ def run():
                     last3 = last_sent.get(key3, 0)
                     if now - last3 >= COOLDOWN["3min"]:
                         numbered_signal = f"{idx}.A"
+
+                        # --- ORDERBOOK DELTA LOG (NEW) ---
+                        log_orderbook_delta(symbol)
+
                         print(f"[LOG] Sending 3min alert for {res3['symbol']}")
                         # --- Add to debug list but DO NOT send file yet
                         valid_debugs.append({
@@ -82,6 +100,10 @@ def run():
                     last5 = last_sent.get(key5, 0)
                     if now - last5 >= COOLDOWN["5min"]:
                         numbered_signal = f"{idx}.B"
+
+                        # --- ORDERBOOK DELTA LOG (NEW) ---
+                        log_orderbook_delta(symbol)
+
                         print(f"[LOG] Sending 5min alert for {res5['symbol']}")
                         # --- Add to debug list but DO NOT send file yet
                         valid_debugs.append({
