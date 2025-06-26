@@ -15,7 +15,7 @@ def fetch_orderbook(symbol: str, depth: int = 100) -> tuple[pd.DataFrame, pd.Dat
             bids = pd.DataFrame(data.get('bids', []), columns=['price', 'size']).astype(float)
             asks = pd.DataFrame(data.get('asks', []), columns=['price', 'size']).astype(float)
             return bids, asks
-        except Exception as e:
+        except Exception:
             continue
     return None, None
 
@@ -28,9 +28,6 @@ def get_order_wall_delta(
 ) -> dict:
     """
     Computes order book wall delta for a given symbol.
-    - wall_levels: number of top levels to consider as "walls"
-    - min_wall_size: minimum wall size to consider (0 disables filter)
-    - band_pct: +/- % band around midprice to look for walls (optional)
     Returns:
         {
             'buy_wall': float (sum of top N bid sizes),
@@ -51,31 +48,22 @@ def get_order_wall_delta(
             'buy_top_levels': [],
             'sell_top_levels': []
         }
-    # Sort by price descending (bids) and ascending (asks)
     bids = bids.sort_values("price", ascending=False).reset_index(drop=True)
     asks = asks.sort_values("price", ascending=True).reset_index(drop=True)
-
-    # Midprice (for banding)
     best_bid = bids['price'].iloc[0]
     best_ask = asks['price'].iloc[0]
     midprice = (best_bid + best_ask) / 2
-
-    # Optional: Only consider walls within a price band
     low, high = midprice * (1 - band_pct), midprice * (1 + band_pct)
     bids_in_band = bids[bids['price'] >= low]
     asks_in_band = asks[asks['price'] <= high]
-
     buy_top = bids_in_band.head(wall_levels)
     sell_top = asks_in_band.head(wall_levels)
-
     if min_wall_size > 0:
         buy_top = buy_top[buy_top['size'] >= min_wall_size]
         sell_top = sell_top[sell_top['size'] >= min_wall_size]
-
     buy_wall = buy_top['size'].sum()
     sell_wall = sell_top['size'].sum()
     wall_delta = buy_wall - sell_wall
-
     return {
         'buy_wall': float(buy_wall),
         'sell_wall': float(sell_wall),
@@ -85,16 +73,18 @@ def get_order_wall_delta(
         'sell_top_levels': sell_top.values.tolist()
     }
 
-# --- ALWAYS PRINT TO LOGS ON IMPORT/RUN ---
-try:
-    symbol = "RAY-USDT"  # Change this to any token you want to observe in logs
-    result = get_order_wall_delta(symbol)
-    print(f"[OrderBookDeltaLog] {symbol}: {result}")
-except Exception as e:
-    print(f"[OrderBookDeltaLog] ERROR: {e}")
+# --------- Print OrderBookDeltaLog for all tokens every run ---------
+TOKEN_LIST = [
+    "SKATE-USDT", "LA-USDT", "SPK-USDT", "ZKJ-USDT", "IP-USDT",
+    "AERO-USDT", "BMT-USDT", "LQTY-USDT", "X-USDT", "RAY-USDT",
+    "EPT-USDT", "ELDE-USDT", "MAGIC-USDT", "ACTSOL-USDT", "FUN-USDT"
+]
 
-# You may still keep the main block for manual local test if desired
-if __name__ == "__main__":
-    symbol = "RAY-USDT"
-    result = get_order_wall_delta(symbol)
-    print("Order Wall Delta:", result)
+for token in TOKEN_LIST:
+    try:
+        result = get_order_wall_delta(token)
+        print(f"[OrderBookDeltaLog] {token} | buy_wall={result['buy_wall']} | sell_wall={result['sell_wall']} | wall_delta={result['wall_delta']} | midprice={result['midprice']}")
+    except Exception as e:
+        print(f"[OrderBookDeltaLog] {token} | ERROR: {e}")
+
+# -- End of file --
