@@ -77,8 +77,8 @@ def super_gk_aligned(bias, orderbook_result, density_result):
 
 def backtest_pec_simulation():
     """
-    Runs PEC backtest on historical signals within the most recent 25 minutes for all tokens and both timeframes.
-    Appends all results to pec_debug_temp.txt and sends to Telegram for validation.
+    Runs PEC backtest on historical signals within the most recent window for all tokens and both timeframes.
+    Appends all results to pec_debug_temp.txt and sends all logs to Telegram for validation.
     """
     print(f"[BACKTEST PEC] Running PEC simulation for last {PEC_WINDOW_MINUTES} minutes on all tokens & timeframes...")
     for symbol in TOKENS:
@@ -108,6 +108,40 @@ def backtest_pec_simulation():
                     entry_price = df["close"].iloc[i]
                     signal_type = res.get("bias", "LONG")
                     print(f"    [DEBUG] Found valid signal at idx={i}, time={times[i]}, price={entry_price}")
+
+                    # 1. Send signal notification (simulate real alert)
+                    send_telegram_alert(
+                        numbered_signal=f"[BTST:{symbol}-{tf}:{i}]",
+                        symbol=res.get("symbol"),
+                        signal_type=res.get("bias"),
+                        price=res.get("price"),
+                        tf=tf,
+                        score=res.get("score"),
+                        score_max=res.get("score_max"),
+                        passed=res.get("passes"),
+                        gatekeepers_total=res.get("gatekeepers_total"),
+                        confidence=res.get("confidence"),
+                        weighted=res.get("passed_weight"),
+                        total_weight=res.get("total_weight")
+                    )
+
+                    # 2. Dump & send signal debug log
+                    dump_signal_debug_txt(
+                        symbol=res["symbol"],
+                        tf=res["tf"],
+                        bias=res["bias"],
+                        filter_weights=sf.filter_weights,
+                        gatekeepers=sf.gatekeepers,
+                        results=res["filter_results"],
+                        orderbook_result=None,    # orderbook/density not available in backtest loop
+                        density_result=None
+                    )
+                    send_telegram_file(
+                        "signal_debug_temp.txt",
+                        caption=f"Signal debug log for {res.get('symbol')} {res.get('tf')} [BTST]"
+                    )
+
+                    # 3. Run PEC & send PEC result log
                     pec_result = run_pec_check(
                         symbol=symbol,
                         entry_idx=entry_idx,
@@ -118,7 +152,6 @@ def backtest_pec_simulation():
                         pec_bars=PEC_BARS
                     )
                     export_pec_log(pec_result, filename="pec_debug_temp.txt")
-                    # --- SEND THE PEC LOG TO TELEGRAM FOR EACH SIGNAL ---
                     send_telegram_file("pec_debug_temp.txt", caption=f"PEC result log for {symbol} {tf} [BACKTEST]")
             print(f"[BACKTEST PEC] Done for {symbol} {tf}.")
     print("[BACKTEST PEC] All done. PEC logs in pec_debug_temp.txt")
