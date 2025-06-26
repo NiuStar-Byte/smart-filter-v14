@@ -7,6 +7,7 @@ from smart_filter import SmartFilter
 from telegram_alert import send_telegram_alert, send_telegram_file
 from signal_debug_log import dump_signal_debug_txt
 from kucoin_orderbook import get_order_wall_delta   # <--- import orderbook logic
+from pec_engine import run_pec_check                # <--- NEW: PEC engine
 
 # --------- RESTING ORDER DENSITY LOGIC ----------
 def get_resting_order_density(symbol, depth=100, band_pct=0.005):
@@ -159,7 +160,9 @@ def run():
                             "results": res3["filter_results"],
                             "caption": f"Signal debug log for {res3.get('symbol')} {res3.get('tf')}",
                             "orderbook_result": orderbook_result,
-                            "density_result": density_result
+                            "density_result": density_result,
+                            "entry_price": res3.get("price"),
+                            "tf_minutes": 3, # for PEC
                         })
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             send_telegram_alert(
@@ -216,7 +219,9 @@ def run():
                             "results": res5["filter_results"],
                             "caption": f"Signal debug log for {res5.get('symbol')} {res5.get('tf')}",
                             "orderbook_result": orderbook_result,
-                            "density_result": density_result
+                            "density_result": density_result,
+                            "entry_price": res5.get("price"),
+                            "tf_minutes": 5, # for PEC
                         })
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             send_telegram_alert(
@@ -239,7 +244,7 @@ def run():
             except Exception as e:
                 print(f"[ERROR] Exception in processing 5min for {symbol}: {e}")
 
-        # --- After scanning all tokens, randomly select 2 signals to send debug file
+        # --- After scanning all tokens, randomly select 2 signals to send debug file and run PEC
         if valid_debugs:
             num = min(len(valid_debugs), 2)
             for debug_info in random.sample(valid_debugs, num):
@@ -258,9 +263,22 @@ def run():
                     "signal_debug_temp.txt",
                     caption=debug_info["caption"]
                 )
+                # --- RUN POST-ENTRY QUALITY CONTROL (PEC) CHECK ---
+                # Only run if pec_engine is available, and after firing signal!
+                try:
+                    pec_result_file, pec_caption = run_pec_check(
+                        symbol=debug_info["symbol"],
+                        entry_price=debug_info.get("entry_price"),
+                        tf_minutes=debug_info.get("tf_minutes"),
+                        bias=debug_info.get("bias")
+                    )
+                    send_telegram_file(pec_result_file, caption=pec_caption)
+                except Exception as e:
+                    print(f"[PEC] Error running post-entry check for {debug_info['symbol']} {debug_info['tf']}: {e}")
 
         print("[INFO] ✅ Cycle complete. Sleeping 60 seconds...\n")
         time.sleep(60)
 
 if __name__ == "__main__":
     run()
+
