@@ -1,11 +1,15 @@
 import pandas as pd
+from datetime import datetime
 
 def dump_signal_debug_txt(symbol, tf, bias, filter_weights, gatekeepers, results,
                          orderbook_result=None, density_result=None):
     """
     Dumps per-filter debug info for a single signal, sorted by weight descending,
-    to 'signal_debug_temp.txt' (tab-separated), and appends validation verdict.
+    to 'signal_debug_temp.txt' (tab-separated), and appends validation verdict & timestamp.
     """
+    # --- Timestamp section ---
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
     rows = []
     for fname, res in results.items():
         rows.append({
@@ -20,11 +24,15 @@ def dump_signal_debug_txt(symbol, tf, bias, filter_weights, gatekeepers, results
         })
     df = pd.DataFrame(rows)
     df = df.sort_values("Weight", ascending=False)
-    df.to_csv("signal_debug_temp.txt", sep="\t", index=False)
+
+    # --- Write DataFrame + timestamp at the top ---
+    with open("signal_debug_temp.txt", "w") as f:
+        f.write(f"# Signal Debug Export (created: {timestamp})\n")
+    df.to_csv("signal_debug_temp.txt", sep="\t", index=False, mode="a")
 
     # ---- Automated Validation Verdict Section ----
     verdict_lines = []
-    verdict_lines.append("\n==== VALIDATION VERDICT ====")
+    verdict_lines.append(f"\n==== VALIDATION VERDICT ({timestamp}) ====")
     verdict_lines.append(f"Signal: {bias} on {symbol} @ {tf}")
 
     # OrderBook logic
@@ -68,7 +76,7 @@ def dump_signal_debug_txt(symbol, tf, bias, filter_weights, gatekeepers, results
     verdict_lines.append(f"FINAL VERDICT:      {final_verdict}")
     verdict_lines.append("==== END ====")
 
-    # Append to file
+    # Append verdict section to file
     with open("signal_debug_temp.txt", "a") as f:
         for line in verdict_lines:
             f.write("\n" + line)
