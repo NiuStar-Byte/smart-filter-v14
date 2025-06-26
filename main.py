@@ -114,7 +114,8 @@ def run():
     print("[INFO] Starting Smart Filter engine...\n")
     while True:
         now = time.time()
-        valid_debugs = []  # <--- Collect valid signals for debug file
+        valid_debugs = []  # Only append signals that actually fire
+        # diagnostics_debugs = []  # If you want to log blocked ones for your own research
 
         for idx, symbol in enumerate(TOKENS, start=1):
             print(f"[INFO] Checking {symbol}...\n")
@@ -145,21 +146,10 @@ def run():
                         # --- ENFORCE GOLDEN RULE (SuperGK block) ---
                         if super_gk_conflict(bias, orderbook_result, density_result):
                             print(f"[BLOCKED] SuperGK Conflict: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT")
-                            # Optionally: still add to debug, do NOT send alert/file
-                            valid_debugs.append({
-                                "symbol": res3["symbol"],
-                                "tf": res3["tf"],
-                                "bias": res3["bias"],
-                                "filter_weights": sf3.filter_weights,
-                                "gatekeepers": sf3.gatekeepers,
-                                "results": res3["filter_results"],
-                                "caption": f"Signal debug log for {res3.get('symbol')} {res3.get('tf')}",
-                                "orderbook_result": orderbook_result,
-                                "density_result": density_result
-                            })
-                            continue  # SKIP sending signal
+                            # Optionally: diagnostics_debugs.append(...) here for diagnostics
+                            continue  # SKIP alert AND skip debug.txt
                         print(f"[LOG] Sending 3min alert for {res3['symbol']}")
-                        # --- Add to debug list
+                        # --- Add to debug list only for successfully fired signals
                         valid_debugs.append({
                             "symbol": res3["symbol"],
                             "tf": res3["tf"],
@@ -213,21 +203,10 @@ def run():
                         # --- ENFORCE GOLDEN RULE (SuperGK block) ---
                         if super_gk_conflict(bias, orderbook_result, density_result):
                             print(f"[BLOCKED] SuperGK Conflict: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT")
-                            # Optionally: still add to debug, do NOT send alert/file
-                            valid_debugs.append({
-                                "symbol": res5["symbol"],
-                                "tf": res5["tf"],
-                                "bias": res5["bias"],
-                                "filter_weights": sf5.filter_weights,
-                                "gatekeepers": sf5.gatekeepers,
-                                "results": res5["filter_results"],
-                                "caption": f"Signal debug log for {res5.get('symbol')} {res5.get('tf')}",
-                                "orderbook_result": orderbook_result,
-                                "density_result": density_result
-                            })
-                            continue  # SKIP sending signal
+                            # Optionally: diagnostics_debugs.append(...) here for diagnostics
+                            continue  # SKIP alert AND skip debug.txt
                         print(f"[LOG] Sending 5min alert for {res5['symbol']}")
-                        # --- Add to debug list
+                        # --- Add to debug list only for successfully fired signals
                         valid_debugs.append({
                             "symbol": res5["symbol"],
                             "tf": res5["tf"],
