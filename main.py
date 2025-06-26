@@ -78,7 +78,7 @@ def super_gk_aligned(bias, orderbook_result, density_result):
 def backtest_pec_simulation():
     """
     Runs PEC backtest on historical signals within the most recent 25 minutes for all tokens and both timeframes.
-    Appends all results to pec_debug_temp.txt.
+    Appends all results to pec_debug_temp.txt and sends to Telegram for validation.
     """
     print(f"[BACKTEST PEC] Running PEC simulation for last {PEC_WINDOW_MINUTES} minutes on all tokens & timeframes...")
     for symbol in TOKENS:
@@ -103,7 +103,6 @@ def backtest_pec_simulation():
                 res = sf.analyze()
                 if isinstance(res, dict) and res.get("valid_signal") is True:
                     if i + PEC_BARS >= len(df):
-                        print(f"    [DEBUG] Skipping idx={i}, not enough future bars for PEC evaluation.")
                         continue  # not enough data ahead
                     entry_idx = i
                     entry_price = df["close"].iloc[i]
@@ -119,8 +118,11 @@ def backtest_pec_simulation():
                         pec_bars=PEC_BARS
                     )
                     export_pec_log(pec_result, filename="pec_debug_temp.txt")
+                    # --- SEND THE PEC LOG TO TELEGRAM FOR EACH SIGNAL ---
+                    send_telegram_file("pec_debug_temp.txt", caption=f"PEC result log for {symbol} {tf} [BACKTEST]")
             print(f"[BACKTEST PEC] Done for {symbol} {tf}.")
     print("[BACKTEST PEC] All done. PEC logs in pec_debug_temp.txt")
+
 
 def run():
     if os.getenv("PEC_BACKTEST_ONLY", "false").lower() == "true":
