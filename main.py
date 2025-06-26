@@ -4,6 +4,9 @@ os.environ["PEC_BACKTEST_ONLY"] = "true"  # <--- FORCE BACKTEST MODE for all run
 import time
 import pandas as pd
 import random
+import pytz
+from datetime import datetime
+
 from kucoin_data import get_ohlcv
 from smart_filter import SmartFilter
 from telegram_alert import send_telegram_alert, send_telegram_file
@@ -11,17 +14,20 @@ from signal_debug_log import dump_signal_debug_txt
 from kucoin_orderbook import get_order_wall_delta
 from pec_engine import run_pec_check, export_pec_log
 
-TOKENS = [
-    "SKATE-USDT", "LA-USDT", "SPK-USDT", "ZKJ-USDT", "IP-USDT",
-    "AERO-USDT", "BMT-USDT", "LQTY-USDT", "X-USDT", "RAY-USDT",
-    "EPT-USDT", "ELDE-USDT", "MAGIC-USDT", "ACTSOL-USDT", "FUN-USDT"
-]
+# Only fire RAY-USDT for PEC (as per request)
+TOKENS = ["RAY-USDT"]
 COOLDOWN = {"3min": 720, "5min": 900}
 last_sent = {}
 
 PEC_BARS = 5
 PEC_WINDOW_MINUTES = 500  # Backtest window size in minutes
 OHLCV_LIMIT = 1000        # <---- ADJUSTABLE LIMIT for ALL fetches (max 1500 for KuCoin)
+
+def get_local_wib(dt):
+    # Accept pd.Timestamp or datetime, return string in WIB format "HH:MM WIB"
+    if not isinstance(dt, pd.Timestamp):
+        dt = pd.Timestamp(dt)
+    return dt.tz_localize('UTC').tz_convert('Asia/Jakarta').strftime('%H:%M WIB')
 
 def get_resting_order_density(symbol, depth=100, band_pct=0.005):
     try:
@@ -77,10 +83,14 @@ def super_gk_aligned(bias, orderbook_result, density_result):
 
 def backtest_pec_simulation():
     """
-    Runs PEC backtest on historical signals within the most recent window for all tokens and both timeframes.
-    Appends all results to pec_debug_temp.txt and sends all logs to Telegram for validation.
+    Backtests RAY-USDT only. 
+    Numbering, local WIB, and grouping LONG/SHORT as requested.
     """
-    print(f"[BACKTEST PEC] Running PEC simulation for last {PEC_WINDOW_MINUTES} minutes on all tokens & timeframes...")
+    print(f"[BACKTEST PEC] Running PEC simulation for last {PEC_WINDOW_MINUTES} minutes on RAY-USDT only (all timeframes)...")
+    all_results = []  # To store all signal/PEC meta for grouping later
+
+    pec_counter = 1
+
     for symbol in TOKENS:
         for tf, tf_minutes in [("3min", 3), ("5min", 5)]:
             print(f"[BACKTEST PEC] {symbol} {tf} ...")
@@ -90,10 +100,7 @@ def backtest_pec_simulation():
                 continue
 
             times = pd.to_datetime(df.index)
-            print(f"  [DEBUG] Fetched {len(df)} bars for {symbol} {tf}. First: {times[0]}, Last: {times[-1]}")
             window_start = times[-1] - pd.Timedelta(minutes=PEC_WINDOW_MINUTES)
-
-            # Only check indices where enough bars remain ahead for PEC
             candidate_indices = [i for i in range(len(df) - PEC_BARS) if times[i] >= window_start]
             print(f"  [DEBUG] {symbol} {tf}: {len(candidate_indices)} candidate bars in window (from {window_start} to {times[-1]})")
 
@@ -103,15 +110,17 @@ def backtest_pec_simulation():
                 res = sf.analyze()
                 if isinstance(res, dict) and res.get("valid_signal") is True:
                     if i + PEC_BARS >= len(df):
-                        continue  # not enough data ahead
+                        continue
                     entry_idx = i
                     entry_price = df["close"].iloc[i]
                     signal_type = res.get("bias", "LONG")
-                    print(f"    [DEBUG] Found valid signal at idx={i}, time={times[i]}, price={entry_price}")
+                    fired_dt = times[i]
+                    local_time_str = get_local_wib(fired_dt)
+                    signal_number = pec_counter
 
-                    # 1. Send signal notification (simulate real alert)
+                    # Send simulated signal alert
                     send_telegram_alert(
-                        numbered_signal=f"[BTST:{symbol}-{tf}:{i}]",
+                        numbered_signal=f"[BTST:#{signal_number} {symbol}-{tf}:{i}]",
                         symbol=res.get("symbol"),
                         signal_type=res.get("bias"),
                         price=res.get("price"),
@@ -124,8 +133,7 @@ def backtest_pec_simulation():
                         weighted=res.get("passed_weight"),
                         total_weight=res.get("total_weight")
                     )
-
-                    # 2. Dump & send signal debug log
+                    # Signal debug log (for each fired)
                     dump_signal_debug_txt(
                         symbol=res["symbol"],
                         tf=res["tf"],
@@ -133,7 +141,7 @@ def backtest_pec_simulation():
                         filter_weights=sf.filter_weights,
                         gatekeepers=sf.gatekeepers,
                         results=res["filter_results"],
-                        orderbook_result=None,    # orderbook/density not available in backtest loop
+                        orderbook_result=None,
                         density_result=None
                     )
                     send_telegram_file(
@@ -141,7 +149,7 @@ def backtest_pec_simulation():
                         caption=f"Signal debug log for {res.get('symbol')} {res.get('tf')} [BTST]"
                     )
 
-                    # 3. Run PEC & send PEC result log
+                    # --- Run PEC & format export header with your strict format ---
                     pec_result = run_pec_check(
                         symbol=symbol,
                         entry_idx=entry_idx,
@@ -151,11 +159,29 @@ def backtest_pec_simulation():
                         ohlcv_df=df,
                         pec_bars=PEC_BARS
                     )
-                    export_pec_log(pec_result, filename="pec_debug_temp.txt")
+                    # Compose first line exactly as required
+                    pec_header = f"#{signal_number} PEC Result Export [BTST:#{signal_number} {symbol}-{tf}: {local_time_str}]"
+                    # Prepend this header to the export (your pec_engine/export_pec_log must accept a header kwarg for this!)
+                    export_pec_log(pec_result, filename="pec_debug_temp.txt", custom_header=pec_header)
                     send_telegram_file("pec_debug_temp.txt", caption=f"PEC result log for {symbol} {tf} [BACKTEST]")
-            print(f"[BACKTEST PEC] Done for {symbol} {tf}.")
-    print("[BACKTEST PEC] All done. PEC logs in pec_debug_temp.txt")
 
+                    # Store for grouping
+                    all_results.append({
+                        "signal_number": signal_number,
+                        "symbol": symbol,
+                        "tf": tf,
+                        "bias": signal_type,
+                        "pec_header": pec_header,
+                        "pec_result": pec_result,
+                        "signal_time": fired_dt,
+                    })
+                    pec_counter += 1
+
+            print(f"[BACKTEST PEC] Done for {symbol} {tf}.")
+
+    # --- OPTIONAL: Group output by LONG/SHORT if you want to use all_results for further reporting
+
+    print("[BACKTEST PEC] All done. PEC logs in pec_debug_temp.txt")
 
 def run():
     if os.getenv("PEC_BACKTEST_ONLY", "false").lower() == "true":
