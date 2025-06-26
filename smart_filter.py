@@ -4,7 +4,7 @@ import numpy as np
 
 class SmartFilter:
     """
-    Core scanner that evaluates 21+ technical / order-flow filters,
+    Core scanner that evaluates 23+ technical / order-flow filters,
     then decides whether a valid LONG / SHORT signal exists.
     """
 
@@ -71,6 +71,7 @@ class SmartFilter:
             print(f"[{self.symbol}] Error: DataFrame empty.")
             return None
 
+        # Run all checks, collect results
         checks = {
             "Fractal Zone": self._check_fractal_zone,
             "EMA Cloud": self._check_ema_cloud,
@@ -106,9 +107,10 @@ class SmartFilter:
                 results[name] = False
 
         score = sum(results.values())
+
+        # -- FIXED PASSED + WEIGHTS CALCULATION --
         passed_gk = [f for f in self.gatekeepers if results.get(f, False)]
         passes = len(passed_gk)
-
         total_gk_weight = sum(self.filter_weights[f] for f in self.gatekeepers)
         passed_weight = sum(self.filter_weights[f] for f in passed_gk)
         confidence = round(self._safe_divide(100 * passed_weight, total_gk_weight), 1)
@@ -152,6 +154,7 @@ class SmartFilter:
             "filter_results": results
         }
 
+    # All filter logic remains unchanged
     def _safe_divide(self, a, b):
         try:
             return a / b if b else 0.0
@@ -312,4 +315,3 @@ class SmartFilter:
             except Exception:
                 continue
         return None, None
-
