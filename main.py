@@ -94,28 +94,28 @@ def log_orderbook_and_density(symbol):
     except Exception as e:
         print(f"[RestingOrderDensityLog] {symbol} ERROR: {e}")
 
-def super_gk_conflict(bias, orderbook_result, density_result):
-    """Returns True if there's a conflict with SuperGK rules, else False."""
+def super_gk_aligned(bias, orderbook_result, density_result):
+    """Returns True ONLY if both SuperGK are aligned (not just not contradictory)."""
     wall_delta = orderbook_result.get('wall_delta', 0) if orderbook_result else 0
     orderbook_bias = "LONG" if wall_delta > 0 else "SHORT" if wall_delta < 0 else "NEUTRAL"
-
     bid_density = density_result.get('bid_density', 0) if density_result else 0
     ask_density = density_result.get('ask_density', 0) if density_result else 0
     density_bias = "LONG" if bid_density > ask_density else "SHORT" if ask_density > bid_density else "NEUTRAL"
-
-    # If either SuperGK is not neutral AND not aligned with signal, it's a conflict.
-    if orderbook_bias != "NEUTRAL" and bias != orderbook_bias:
-        return True
-    if density_bias != "NEUTRAL" and bias != density_bias:
-        return True
-    return False
+    # Both SuperGK must be not neutral and must align with bias
+    if (orderbook_bias != "NEUTRAL" and bias != orderbook_bias):
+        return False
+    if (density_bias != "NEUTRAL" and bias != density_bias):
+        return False
+    # If both are neutral, treat as NOT aligned (do not fire signal)
+    if orderbook_bias == "NEUTRAL" or density_bias == "NEUTRAL":
+        return False
+    return True
 
 def run():
     print("[INFO] Starting Smart Filter engine...\n")
     while True:
         now = time.time()
         valid_debugs = []  # Only append signals that actually fire
-        # diagnostics_debugs = []  # If you want to log blocked ones for your own research
 
         for idx, symbol in enumerate(TOKENS, start=1):
             print(f"[INFO] Checking {symbol}...\n")
@@ -143,11 +143,11 @@ def run():
                         density_result = get_resting_order_density(symbol)
                         bias = res3.get("bias", "NEUTRAL")
 
-                        # --- ENFORCE GOLDEN RULE (SuperGK block) ---
-                        if super_gk_conflict(bias, orderbook_result, density_result):
-                            print(f"[BLOCKED] SuperGK Conflict: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT")
-                            # Optionally: diagnostics_debugs.append(...) here for diagnostics
+                        # --- ENFORCE GOLDEN RULE (only ALIGNED signals fire) ---
+                        if not super_gk_aligned(bias, orderbook_result, density_result):
+                            print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT")
                             continue  # SKIP alert AND skip debug.txt
+
                         print(f"[LOG] Sending 3min alert for {res3['symbol']}")
                         # --- Add to debug list only for successfully fired signals
                         valid_debugs.append({
@@ -200,11 +200,11 @@ def run():
                         density_result = get_resting_order_density(symbol)
                         bias = res5.get("bias", "NEUTRAL")
 
-                        # --- ENFORCE GOLDEN RULE (SuperGK block) ---
-                        if super_gk_conflict(bias, orderbook_result, density_result):
-                            print(f"[BLOCKED] SuperGK Conflict: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT")
-                            # Optionally: diagnostics_debugs.append(...) here for diagnostics
+                        # --- ENFORCE GOLDEN RULE (only ALIGNED signals fire) ---
+                        if not super_gk_aligned(bias, orderbook_result, density_result):
+                            print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT")
                             continue  # SKIP alert AND skip debug.txt
+
                         print(f"[LOG] Sending 5min alert for {res5['symbol']}")
                         # --- Add to debug list only for successfully fired signals
                         valid_debugs.append({
