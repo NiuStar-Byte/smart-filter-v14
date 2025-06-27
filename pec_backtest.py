@@ -1,3 +1,5 @@
+import pandas as pd
+
 def run_pec_backtest(
     TOKENS,
     get_ohlcv,
