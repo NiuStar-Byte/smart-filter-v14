@@ -2,6 +2,7 @@ import pandas as pd
 from smart_filter import SmartFilter
 from pec_engine import run_pec_check
 from telegram_alert import send_telegram_file
+import os
 
 def run_pec_backtest(
     TOKENS,
@@ -71,14 +72,22 @@ def run_pec_backtest(
     # Dump grouped blocks for review
     with open("pec_long_results.txt", "w") as f:
         f.write("\n================================\n".join(long_results))
-        print(f"[DEBUG] pec_long_results.txt written, {len(long_results)} signals.")
     with open("pec_short_results.txt", "w") as f:
         f.write("\n================================\n".join(short_results))
-        print(f"[DEBUG] pec_short_results.txt written, {len(short_results)} signals.")
+
+    print(f"[DEBUG] pec_long_results.txt written, {len(long_results)} signals, size={os.path.getsize('pec_long_results.txt')} bytes.")
+    print(f"[DEBUG] pec_short_results.txt written, {len(short_results)} signals, size={os.path.getsize('pec_short_results.txt')} bytes.")
 
     print("[DEBUG] Sending PEC long file to Telegram...")
     send_telegram_file("pec_long_results.txt", caption=f"All PEC LONG results for ALL tokens")
     print("[DEBUG] Sending PEC short file to Telegram...")
     send_telegram_file("pec_short_results.txt", caption=f"All PEC SHORT results for ALL tokens")
+
+    # Dummy file test (this should ALWAYS show up in Telegram)
+    with open("test_telegram_send.txt", "w") as f:
+        f.write("This is a Telegram test file.")
+    print(f"[DEBUG] Dummy test file written, size={os.path.getsize('test_telegram_send.txt')} bytes.")
+    print("[DEBUG] Sending dummy test file to Telegram...")
+    send_telegram_file("test_telegram_send.txt", caption="Test Telegram File Send")
 
     print("[BACKTEST PEC] All done. PEC logs grouped in pec_long_results.txt and pec_short_results.txt")
