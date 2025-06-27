@@ -290,43 +290,42 @@ def run():
             except Exception as e:
                 print(f"[ERROR] Exception in processing 5min for {symbol}: {e}")
 
-        # --- INDIVIDUAL PEC DEBUG TXT DISABLED IN LIVE MODE ---
-        # --- Send up to 2 debug files to Telegram
-        # if valid_debugs:
-        #     num = min(len(valid_debugs), 2)
-        #     for debug_info in random.sample(valid_debugs, num):
-        #         dump_signal_debug_txt(
-        #             symbol=debug_info["symbol"],
-        #             tf=debug_info["tf"],
-        #             bias=debug_info["bias"],
-        #             filter_weights=debug_info["filter_weights"],
-        #             gatekeepers=debug_info["gatekeepers"],
-        #             results=debug_info["results"],
-        #             orderbook_result=debug_info.get("orderbook_result"),
-        #             density_result=debug_info.get("density_result")
-        #         )
-        #         send_telegram_file(
-        #             "signal_debug_temp.txt",
-        #             caption=debug_info["caption"]
-        #         )
+        # --- Send up to 2 debug files to Telegram (Signal Debug txt sampling) ---
+        if valid_debugs:
+            num = min(len(valid_debugs), 2)
+            for debug_info in random.sample(valid_debugs, num):
+                dump_signal_debug_txt(
+                    symbol=debug_info["symbol"],
+                    tf=debug_info["tf"],
+                    bias=debug_info["bias"],
+                    filter_weights=debug_info["filter_weights"],
+                    gatekeepers=debug_info["gatekeepers"],
+                    results=debug_info["results"],
+                    orderbook_result=debug_info.get("orderbook_result"),
+                    density_result=debug_info.get("density_result")
+                )
+                send_telegram_file(
+                    "signal_debug_temp.txt",
+                    caption=debug_info["caption"]
+                )
 
-        # --- Run PEC checks for up to 2 live-fired signals ---
-        if pec_candidates:
-            for tf, symbol, entry_price, signal_type, ohlcv_df, entry_idx in pec_candidates[:2]:
-                try:
-                    pec_result = run_pec_check(
-                        symbol=symbol,
-                        entry_idx=entry_idx,
-                        tf=tf,
-                        signal_type=signal_type,
-                        entry_price=entry_price,
-                        ohlcv_df=ohlcv_df,
-                        pec_bars=PEC_BARS
-                    )
-                    export_pec_log(pec_result, filename="pec_debug_temp.txt")
-                    send_telegram_file("pec_debug_temp.txt", caption=f"PEC result log for {symbol} {tf}")
-                except Exception as e:
-                    print(f"[PEC] Error running post-entry check for {symbol} {tf}: {e}")
+        # --- INDIVIDUAL PEC DEBUG TXT DISABLED IN LIVE MODE ---
+        # if pec_candidates:
+        #     for tf, symbol, entry_price, signal_type, ohlcv_df, entry_idx in pec_candidates[:2]:
+        #         try:
+        #             pec_result = run_pec_check(
+        #                 symbol=symbol,
+        #                 entry_idx=entry_idx,
+        #                 tf=tf,
+        #                 signal_type=signal_type,
+        #                 entry_price=entry_price,
+        #                 ohlcv_df=ohlcv_df,
+        #                 pec_bars=PEC_BARS
+        #             )
+        #             export_pec_log(pec_result, filename="pec_debug_temp.txt")
+        #             send_telegram_file("pec_debug_temp.txt", caption=f"PEC result log for {symbol} {tf}")
+        #         except Exception as e:
+        #             print(f"[PEC] Error running post-entry check for {symbol} {tf}: {e}")
 
         print("[INFO] ✅ Cycle complete. Sleeping 60 seconds...\n")
         time.sleep(60)
