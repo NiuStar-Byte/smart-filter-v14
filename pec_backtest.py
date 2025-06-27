@@ -15,7 +15,8 @@ def run_pec_backtest(
 ):
     """
     Runs PEC backtest on ALL tokens from TOKENS.
-    Uses $100 per trade, 5-bar fixed exit. Exports clean block with all detail.
+    Uses $100 per trade, 5-bar fixed exit. Exports clean block with all detail,
+    including filter pass/fail, GK pass, total score, confidence, etc.
     Output filenames are timestamped for version tracking.
     """
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
@@ -52,6 +53,22 @@ def run_pec_backtest(
                     fired_dt = times[entry_idx]
                     local_time_str = get_local_wib(fired_dt)
                     signal_type = res.get("bias", "LONG").upper()
+                    score = res.get("score")
+                    score_max = res.get("score_max")
+                    passes = res.get("passes")
+                    gk_total = res.get("gatekeepers_total")
+                    confidence = res.get("confidence")
+                    weighted = res.get("passed_weight")
+                    total_weight = res.get("total_weight")
+
+                    # Filter-level pass/fail export
+                    filter_results = res.get("filter_results", {})
+                    filter_passes = {k: ("✅" if v else "❌") for k, v in filter_results.items()}
+                    filter_pass_str = ", ".join(f"{k}:{v}" for k, v in filter_passes.items())
+
+                    # GK-level pass/fail export
+                    gk_flags = getattr(sf, "gatekeepers", [])
+                    gk_pass_str = ", ".join(str(gk) for gk in gk_flags)
 
                     # $100 notional logic
                     if signal_type == "LONG":
@@ -72,6 +89,11 @@ def run_pec_backtest(
                         f"Exit Price: {exit_price:.6f}\n"
                         f"PnL ($): {pnl_abs:.2f}\n"
                         f"PnL (%): {pnl_pct:.2f}\n"
+                        f"Score: {score}/{score_max}\n"
+                        f"Confidence: {confidence:.1f}% (Weighted: {weighted:.1f}/{total_weight:.1f})\n"
+                        f"Passed GK: {passes}/{gk_total}\n"
+                        f"Filter Results: {filter_pass_str}\n"
+                        f"GK Flags: {gk_pass_str}\n"
                         f"Drawdown (%): -\n"
                         f"Volume Pass (%): -\n"
                         f"Result: {win_loss}\n"
@@ -101,4 +123,3 @@ def run_pec_backtest(
     send_telegram_file(short_file, caption=f"All PEC SHORT results for ALL tokens [{timestamp}]")
 
     print("[BACKTEST PEC] All done. PEC logs grouped in", long_file, "and", short_file)
-
