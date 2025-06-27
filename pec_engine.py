@@ -3,7 +3,19 @@
 import pandas as pd
 from datetime import datetime
 
-def run_pec_check(symbol, entry_idx, tf, signal_type, entry_price, ohlcv_df, pec_bars=5):
+def run_pec_check(
+    symbol,
+    entry_idx,
+    tf,
+    signal_type,
+    entry_price,
+    ohlcv_df,
+    pec_bars=5,
+    filter_result=None,          # NEW: expects a dict of filter pass/fail per signal
+    score=None,                  # NEW: total score (int or float)
+    confidence=None,             # NEW: confidence (float or pct)
+    passed_gk_count=None,        # NEW: count of passed GK filters
+):
     """
     Perform post-entry quality control (PEC) simulation for a fired signal.
     Args:
@@ -14,8 +26,12 @@ def run_pec_check(symbol, entry_idx, tf, signal_type, entry_price, ohlcv_df, pec
         entry_price: float, actual entry price
         ohlcv_df: pd.DataFrame with columns: ["open", "high", "low", "close", ...]
         pec_bars: int, how many bars ahead to check (default 5)
+        filter_result: dict, key=filter name, value=True/False (pass/fail)
+        score: int/float, total SmartFilter score
+        confidence: float, SmartFilter confidence
+        passed_gk_count: int, number of passed GK filters
     Returns:
-        result: dict with key stats & verdicts
+        result: dict with key stats & verdicts, PLUS diagnostics
     """
     try:
         pec_data = ohlcv_df.iloc[entry_idx : entry_idx + pec_bars + 1].copy()
@@ -53,7 +69,13 @@ def run_pec_check(symbol, entry_idx, tf, signal_type, entry_price, ohlcv_df, pec
         avg_vol = ohlcv_df["volume"].iloc[max(0, entry_idx-30):entry_idx].mean()
         vol_pass = (pec_data["volume"].iloc[1:] > avg_vol).sum() >= 3
 
-        # Prepare summary for logging/telegram/txt
+        # Format diagnostics for filter-level pass/fail
+        filter_diag_str = ""
+        if filter_result is not None and isinstance(filter_result, dict):
+            filter_diag_str = "\n- Filter Diagnostics:"
+            for fname, fval in filter_result.items():
+                filter_diag_str += f"\n    {fname}: {'✅' if fval else '❌'}"
+
         summary = f"""# PEC for {symbol} {tf} {signal_type} @ {entry_price:.5f} (Fired: {ohlcv_df.index[entry_idx]})
 - Follow-Through: {'✅' if follow_through else '❌'} (MaxFavorable={max_up:.2f}%)
 - Max Adverse Excursion: {max_dn:.2f}%
@@ -61,6 +83,9 @@ def run_pec_check(symbol, entry_idx, tf, signal_type, entry_price, ohlcv_df, pec
 - Trailing Stop (0.5%): {'Survived' if survived else 'Stopped'}
 - Volume Confirmation: {'PASS' if vol_pass else 'FAIL'}
 - Signal Persistence: {up_bars}/{pec_bars} bars favorable
+- SmartFilter Score: {score if score is not None else '-'}
+- Confidence: {confidence if confidence is not None else '-'}
+- GK Passed: {passed_gk_count if passed_gk_count is not None else '-'}{filter_diag_str}
 """
 
         result = {
@@ -76,6 +101,10 @@ def run_pec_check(symbol, entry_idx, tf, signal_type, entry_price, ohlcv_df, pec
             "trailing_stop_survived": survived,
             "volume_confirmation": vol_pass,
             "signal_persistence": up_bars,
+            "smartfilter_score": score,
+            "confidence": confidence,
+            "passed_gk_count": passed_gk_count,
+            "filter_level_results": filter_result,
             "summary": summary
         }
         return result
