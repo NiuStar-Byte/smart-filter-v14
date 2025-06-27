@@ -1,7 +1,4 @@
 import os
-# REMOVE or COMMENT OUT this line if present:
-# os.environ["PEC_BACKTEST_ONLY"] = "false"  # <--- LIVE MODE for all runs
-
 import time
 import pandas as pd
 import random
@@ -15,13 +12,12 @@ from signal_debug_log import dump_signal_debug_txt
 from kucoin_orderbook import get_order_wall_delta
 from pec_engine import run_pec_check, export_pec_log
 
-# PEC backtest fires ONLY for RAY-USDT; forward mode uses all tokens as usual.
+# PEC backtest fires ONLY when backtest mode is enabled.
 TOKENS = [
     "SKATE-USDT", "LA-USDT", "SPK-USDT", "ZKJ-USDT", "IP-USDT",
     "AERO-USDT", "BMT-USDT", "LQTY-USDT", "X-USDT", "RAY-USDT",
     "EPT-USDT", "ELDE-USDT", "MAGIC-USDT", "ACTSOL-USDT", "FUN-USDT"
 ]
-PEC_ONLY_TOKEN = "RAY-USDT"  # Only RAY-USDT for PEC logs
 COOLDOWN = {"3min": 720, "5min": 900}
 last_sent = {}
 
@@ -86,91 +82,8 @@ def super_gk_aligned(bias, orderbook_result, density_result):
     if orderbook_bias == "NEUTRAL" or density_bias == "NEUTRAL": return False
     return True
 
-def backtest_pec_simulation():
-    """
-    Runs PEC backtest on RAY-USDT only.
-    Numbered, WIB time, grouped by LONG/SHORT with custom export header.
-    """
-    print(f"[BACKTEST PEC] Running PEC simulation for last {PEC_WINDOW_MINUTES} minutes on {PEC_ONLY_TOKEN}...")
-    pec_counter = 1
-    long_results = []
-    short_results = []
-
-    for tf, tf_minutes in [("3min", 3), ("5min", 5)]:
-        symbol = PEC_ONLY_TOKEN
-        print(f"[BACKTEST PEC] {symbol} {tf} ...")
-        df = get_ohlcv(symbol, interval=tf, limit=OHLCV_LIMIT)
-        if df is None or df.empty or len(df) < PEC_BARS + 2:
-            print(f"[BACKTEST PEC] No data for {symbol} {tf}. Skipping.")
-            continue
-
-        times = pd.to_datetime(df.index)
-        window_start = times[-1] - pd.Timedelta(minutes=PEC_WINDOW_MINUTES)
-        candidate_indices = [i for i in range(len(df) - PEC_BARS) if times[i] >= window_start]
-
-        for i in candidate_indices:
-            df_slice = df.iloc[:i+1]
-            sf = SmartFilter(symbol, df_slice, df3m=df_slice, df5m=df_slice, tf=tf)
-            res = sf.analyze()
-            if isinstance(res, dict) and res.get("valid_signal") is True:
-                if i + PEC_BARS >= len(df):
-                    continue
-                entry_idx = i
-                entry_price = df["close"].iloc[i]
-                signal_type = res.get("bias", "LONG")
-                fired_dt = times[i]
-                local_time_str = get_local_wib(fired_dt)
-                pec_header = f"#{pec_counter} PEC Result Export [BTST:#{pec_counter} {symbol}-{tf}: {local_time_str}]"
-                pec_result = run_pec_check(
-                    symbol=symbol,
-                    entry_idx=entry_idx,
-                    tf=tf,
-                    signal_type=signal_type,
-                    entry_price=entry_price,
-                    ohlcv_df=df,
-                    pec_bars=PEC_BARS
-                )
-                # Compose one block: header + result as string
-                from io import StringIO
-                temp_io = StringIO()
-                if pec_header:
-                    temp_io.write("\n" + pec_header + "\n")
-                summary = pec_result.get("summary", str(pec_result))
-                temp_io.write(summary)
-                temp_io.write("\n" + "="*32 + "\n")
-                pec_block = temp_io.getvalue()
-
-                # Group by LONG/SHORT
-                if signal_type.upper() == "LONG":
-                    long_results.append(pec_block)
-                else:
-                    short_results.append(pec_block)
-
-                # --- INDIVIDUAL PEC DEBUG TXT DISABLED IN BACKTEST MODE ---
-                # with open("pec_debug_temp.txt", "w") as f:
-                #     f.write(pec_block)
-                # send_telegram_file("pec_debug_temp.txt", caption=f"PEC result log for {symbol} {tf} [BACKTEST]")
-
-                pec_counter += 1
-        print(f"[BACKTEST PEC] Done for {symbol} {tf}.")
-
-    # Dump grouped blocks for review
-    with open("pec_long_results.txt", "w") as f:
-        f.write("\n================================\n".join(long_results))
-    with open("pec_short_results.txt", "w") as f:
-        f.write("\n================================\n".join(short_results))
-    send_telegram_file("pec_long_results.txt", caption=f"All PEC LONG results for {PEC_ONLY_TOKEN}")
-    send_telegram_file("pec_short_results.txt", caption=f"All PEC SHORT results for {PEC_ONLY_TOKEN}")
-
-    print("[BACKTEST PEC] All done. PEC logs grouped in pec_long_results.txt and pec_short_results.txt")
-
 def run():
-    # Forward mode: all tokens, all timeframes, all alerts/debugs
-    if os.getenv("PEC_BACKTEST_ONLY", "false").lower() == "true":
-        backtest_pec_simulation()
-        return
-
-    print("[INFO] Starting Smart Filter engine...\n")
+    print("[INFO] Starting Smart Filter engine (LIVE MODE)...\n")
     while True:
         now = time.time()
         valid_debugs = []
@@ -310,30 +223,16 @@ def run():
                     caption=debug_info["caption"]
                 )
 
-        # --- INDIVIDUAL PEC DEBUG TXT DISABLED IN LIVE MODE ---
-        # if pec_candidates:
-        #     for tf, symbol, entry_price, signal_type, ohlcv_df, entry_idx in pec_candidates[:2]:
-        #         try:
-        #             pec_result = run_pec_check(
-        #                 symbol=symbol,
-        #                 entry_idx=entry_idx,
-        #                 tf=tf,
-        #                 signal_type=signal_type,
-        #                 entry_price=entry_price,
-        #                 ohlcv_df=ohlcv_df,
-        #                 pec_bars=PEC_BARS
-        #             )
-        #             export_pec_log(pec_result, filename="pec_debug_temp.txt")
-        #             send_telegram_file("pec_debug_temp.txt", caption=f"PEC result log for {symbol} {tf}")
-        #         except Exception as e:
-        #             print(f"[PEC] Error running post-entry check for {symbol} {tf}: {e}")
-
         print("[INFO] ✅ Cycle complete. Sleeping 60 seconds...\n")
         time.sleep(60)
 
 if __name__ == "__main__":
-    # To run ONLY backtest, set env: PEC_BACKTEST_ONLY=true
+    # Mode switch based on Railway variable
     if os.getenv("PEC_BACKTEST_ONLY", "false").lower() == "true":
-        backtest_pec_simulation()
+        from pec_backtest import run_pec_backtest
+        run_pec_backtest(
+            TOKENS, get_ohlcv, get_local_wib,
+            PEC_WINDOW_MINUTES, PEC_BARS, OHLCV_LIMIT
+        )
     else:
         run()
