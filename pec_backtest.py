@@ -71,9 +71,14 @@ def run_pec_backtest(
     # Dump grouped blocks for review
     with open("pec_long_results.txt", "w") as f:
         f.write("\n================================\n".join(long_results))
+        print(f"[DEBUG] pec_long_results.txt written, {len(long_results)} signals.")
     with open("pec_short_results.txt", "w") as f:
         f.write("\n================================\n".join(short_results))
+        print(f"[DEBUG] pec_short_results.txt written, {len(short_results)} signals.")
+
+    print("[DEBUG] Sending PEC long file to Telegram...")
     send_telegram_file("pec_long_results.txt", caption=f"All PEC LONG results for ALL tokens")
+    print("[DEBUG] Sending PEC short file to Telegram...")
     send_telegram_file("pec_short_results.txt", caption=f"All PEC SHORT results for ALL tokens")
 
     print("[BACKTEST PEC] All done. PEC logs grouped in pec_long_results.txt and pec_short_results.txt")
