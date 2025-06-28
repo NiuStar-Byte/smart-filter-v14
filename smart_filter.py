@@ -125,14 +125,14 @@ class SmartFilter:
         passes = len(passed_gk)
 
         # Dynamically adjust weights for LONG or SHORT signals
-        filter_weights = self.get_adjusted_weights('LONG')  # For LONG signal (this will be dynamically passed as required)
+        final_bias = self._directional_decision(results)
+        if final_bias is None:
+            final_bias = 'VETO'
+
+        # Adjusting weights dynamically
+        filter_weights = self.get_adjusted_weights(final_bias)  # For LONG or SHORT signal (this will be dynamically passed as required)
         total_gk_weight = sum(filter_weights[f] for f in self.gatekeepers)
         
-        # Adjust for SHORT Signal
-        if final_bias == 'SHORT':
-            filter_weights = self.get_adjusted_weights('SHORT')  # Dynamically pass SHORT weights
-            total_gk_weight = sum(filter_weights[f] for f in self.gatekeepers)  # Ensure total for SHORT is 40
-
         passed_weight = sum(filter_weights[f] for f in passed_gk)
         confidence = round(self._safe_divide(100 * passed_weight, total_gk_weight), 1)
 
@@ -141,13 +141,12 @@ class SmartFilter:
         resting_density_ok = self._resting_order_density_passed()
 
         # New: Direction decided by 4+4 vote (no bias proposal)
-        final_bias = self._directional_decision(results)
         print(f"[{self.symbol}] Directional Votes: LONG={sum(results.get(f, False) for f in ['EMA Cloud', 'Momentum', 'Liquidity Pool', 'VWAP Divergence'])} "
               f"SHORT={sum(results.get(f, False) for f in ['MACD', 'Candle Confirmation', 'Fractal Zone', 'ATR Momentum Burst'])} "
               f"| Final Bias: {final_bias or 'VETO'}")
 
         valid_signal = (
-            final_bias is not None
+            final_bias != 'VETO'  # Signal is only valid if it's not 'VETO'
             and score >= self.min_score
             and passes >= self.required_passed
             and orderbook_ok
