@@ -5,7 +5,8 @@ import numpy as np
 class SmartFilter:
     """
     Core scanner that evaluates 23+ technical / order-flow filters,
-    then decides whether a valid LONG / SHORT signal exists.
+    then decides whether a valid LONG / SHORT signal exists,
+    with a Hybrid Directional Override & Veto logic as per June 2025 Golden Rules.
     """
 
     def __init__(
@@ -69,6 +70,33 @@ class SmartFilter:
             "ATR Momentum Burst", "Volatility Squeeze"
         ]
 
+    # ===== Hybrid Directional Override/Veto Engine =====
+
+    def suggest_direction(self, results):
+        # Use a composite of trend-following filters to suggest base bias.
+        trend_filters = ["EMA Cloud", "HH/LL Trend", "Trend Continuation", "EMA Structure"]
+        trend_votes = sum(results.get(f, False) for f in trend_filters)
+        return "LONG" if trend_votes >= 3 else "SHORT"
+
+    def evaluate_directional_scores(self, results):
+        # Group filters by their typical edge in LONG vs SHORT
+        long_favoring = ["EMA Cloud", "Momentum", "Liquidity Pool", "VWAP Divergence"]
+        short_favoring = ["MACD", "Candle Confirmation", "Fractal Zone", "ATR Momentum Burst"]
+        score_long = sum(results.get(f, False) for f in long_favoring)
+        score_short = sum(results.get(f, False) for f in short_favoring)
+        return score_long, score_short
+
+    def resolve_final_signal(self, proposed, score_long, score_short):
+        # Strong advantage (>=2) required to confirm or override.
+        if abs(score_long - score_short) < 2:
+            return None  # VETO (neutral: no directional edge)
+        if score_long > score_short:
+            return "LONG"
+        else:
+            return "SHORT"
+
+    # ===== Main signal method with hybrid logic =====
+
     def analyze(self):
         if self.df.empty:
             print(f"[{self.symbol}] Error: DataFrame empty.")
@@ -122,27 +150,24 @@ class SmartFilter:
         orderbook_ok = self._order_book_wall_passed()
         resting_density_ok = self._resting_order_density_passed()
 
-        print(f"[{self.symbol}] Score: {score}/23 | "
-              f"Passed GK: {passes}/{len(self.gatekeepers)} | "
-              f"Confidence: {confidence}% (Weighted: {passed_weight:.1f}/{total_gk_weight:.1f})")
-        print(f"[{self.symbol}] OrderBookWall Super-GK: {'✅' if orderbook_ok else '❌'} | "
-              f"RestingDensity Super-GK: {'✅' if resting_density_ok else '❌'}")
+        # Hybrid logic: override signal type if directional filters contradict
+        proposed_bias = self.suggest_direction(results)
+        score_long, score_short = self.evaluate_directional_scores(results)
+        final_bias = self.resolve_final_signal(proposed_bias, score_long, score_short)
 
-        for n, ok in results.items():
-            print(f"{n:25} -> {'✅' if ok else '❌'} ({self.filter_weights.get(n)})")
+        print(f"[{self.symbol}] Bias Proposal: {proposed_bias} | Final Bias: {final_bias or 'VETO'}")
 
-        # Signal logic: must meet score, passes, *and* both super-GKs
         valid_signal = (
-            (score >= self.min_score)
-            and (passes >= self.required_passed)
+            final_bias is not None
+            and score >= self.min_score
+            and passes >= self.required_passed
             and orderbook_ok
             and resting_density_ok
         )
         price = self.df['close'].iat[-1]
-        bias = "LONG" if price > self.df['open'].iat[-1] else "SHORT"
 
         message = (
-            f"{bias} on {self.symbol} @ {price:.6f} "
+            f"{final_bias or 'NO-SIGNAL'} on {self.symbol} @ {price:.6f} "
             f"| Score: {score}/23 | Passed: {passes}/{len(self.gatekeepers)} "
             f"| Confidence: {confidence}% (Weighted: {passed_weight:.1f}/{total_gk_weight:.1f})"
         )
@@ -162,7 +187,7 @@ class SmartFilter:
             "passed_weight": round(passed_weight, 1),
             "total_weight": round(total_gk_weight, 1),
             "confidence": confidence,
-            "bias": bias,
+            "bias": final_bias,
             "price": price,
             "valid_signal": valid_signal,
             "message": message,
@@ -180,7 +205,8 @@ class SmartFilter:
         # Return True (pass) or False (fail)
         return True
 
-    # --- All filter logic unchanged ---
+    # --- All filter logic below ---
+
     def _safe_divide(self, a, b):
         try:
             return a / b if b else 0.0
@@ -341,3 +367,4 @@ class SmartFilter:
             except Exception:
                 continue
         return None, None
+
