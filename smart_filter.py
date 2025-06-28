@@ -6,7 +6,7 @@ class SmartFilter:
     """
     Core scanner that evaluates 23+ technical / order-flow filters,
     then decides whether a valid LONG / SHORT signal exists,
-    using pure directional logic from 4 filters per side (June 2025 Golden Rules, Balancing Enhanced).
+    using pure directional logic from 4 filters per side (June 2025 Golden Rules).
     """
 
     def __init__(
@@ -16,8 +16,8 @@ class SmartFilter:
         df3m: pd.DataFrame = None,
         df5m: pd.DataFrame = None,
         tf: str = None,
-        min_score: int = 12,    # UPDATED: min_score 12 (LONG & SHORT)
-        required_passed: int = 9,  # UPDATED: min_passes 9 (LONG & SHORT)
+        min_score: int = 12,    # Updated to 12 for both LONG and SHORT
+        required_passed: int = 9,  # Updated to 9 for both LONG and SHORT
         volume_multiplier: float = 2.0
     ):
         self.symbol = symbol
@@ -34,59 +34,47 @@ class SmartFilter:
         self.df["ema200"] = self.df["close"].ewm(span=200).mean()
         self.df["vwap"] = (self.df["close"] * self.df["volume"]).cumsum() / self.df["volume"].cumsum()
 
-        # === BALANCED FILTER WEIGHTS ===
+        # --- Updated filter weights ---
         self.filter_weights = {
-            # Use proposed balanced weights (same for LONG & SHORT unless further customized later)
-            "MACD": 1,
-            "Volume Spike": 5,
-            "Fractal Zone": 1,
-            "EMA Cloud": 2,
-            "Momentum": 1,
-            "ATR Momentum Burst": 0,
-            "MTF Volume Agreement": 4,
-            "Trend Continuation": 2,
-            "HATS": 2,
-            "HH/LL Trend": 2,
-            "Volatility Model": 0,
-            "EMA Structure": 1,
-            "Liquidity Awareness": 2,
-            "Volatility Squeeze": 2,
-            "Candle Confirmation": 5,
-            "VWAP Divergence": 0,
-            "Spread Filter": 2,
-            "Chop Zone": 2,
-            "Liquidity Pool": 1,
-            "Support/Resistance": 1,
-            "Smart Money Bias": 1,
-            "Absorption": 0,
-            "Wick Dominance": 1,
+            "Fractal Zone": 4.5,
+            "EMA Cloud": 4.2,
+            "MACD": 5.0,
+            "Momentum": 4.0,
+            "HATS": 3.6,
+            "Volume Spike": 4.8,
+            "VWAP Divergence": 2.8,
+            "MTF Volume Agreement": 3.8,
+            "HH/LL Trend": 3.5,
+            "EMA Structure": 3.3,
+            "Chop Zone": 2.6,
+            "Candle Confirmation": 3.0,
+            "Wick Dominance": 1.2,
+            "Absorption": 1.5,
+            "Support/Resistance": 1.9,
+            "Smart Money Bias": 1.8,
+            "Liquidity Pool": 2.5,
+            "Spread Filter": 2.7,
+            "Liquidity Awareness": 3.2,
+            "Trend Continuation": 3.7,
+            "Volatility Model": 3.4,
+            "ATR Momentum Burst": 3.9,
+            "Volatility Squeeze": 3.1
         }
 
-        # --- Gatekeeper (GK) filters, total = 17 (locked) ---
+        # --- Expanded gatekeeper list ---
         self.gatekeepers = [
-            "MACD",
-            "Volume Spike",
-            "Fractal Zone",
-            "EMA Cloud",
-            "Momentum",
-            "MTF Volume Agreement",
-            "Trend Continuation",
-            "HATS",
-            "HH/LL Trend",
-            "EMA Structure",
-            "Liquidity Awareness",
-            "Volatility Squeeze",
-            "Candle Confirmation",
-            "Spread Filter",
-            "Chop Zone",
-            "ATR Momentum Burst",
-            "VWAP Divergence",
+            "Fractal Zone", "EMA Cloud", "MACD", "Momentum", "HATS",
+            "Volume Spike", "VWAP Divergence", "MTF Volume Agreement",
+            "HH/LL Trend", "EMA Structure", "Chop Zone",
+            "Candle Confirmation", "Trend Continuation",
+            "Volatility Model", "Liquidity Awareness",
+            "ATR Momentum Burst", "Volatility Squeeze"
         ]
 
     # ===== Pure Directional Decision Engine (4+4 logic) =====
 
     def _directional_decision(self, results):
-        # 4 for LONG, 4 for SHORT
+        # 4 for LONG, 4 for SHORT (all based on latest audit)
         long_filters = ["EMA Cloud", "Momentum", "Liquidity Pool", "VWAP Divergence"]
         short_filters = ["MACD", "Candle Confirmation", "Fractal Zone", "ATR Momentum Burst"]
         long_votes = sum(results.get(f, False) for f in long_filters)
@@ -140,6 +128,10 @@ class SmartFilter:
                 print(f"[{self.symbol}] {name} ERROR: {e}")
                 results[name] = False
 
+        # === Print per-filter results for full transparency ===
+        filter_status = [f"{name}: {'PASS' if results.get(name, False) else 'FAIL'}" for name in checks]
+        print(f"[{self.symbol}] Filter Results: {' | '.join(filter_status)}")
+
         score = sum(results.values())
 
         # PASSES + WEIGHTS CALCULATION (for new GK set)
@@ -153,7 +145,7 @@ class SmartFilter:
         orderbook_ok = self._order_book_wall_passed()
         resting_density_ok = self._resting_order_density_passed()
 
-        # New: Direction decided by 4+4 vote
+        # New: Direction decided by 4+4 vote (no bias proposal)
         final_bias = self._directional_decision(results)
         print(f"[{self.symbol}] Directional Votes: LONG={sum(results.get(f, False) for f in ['EMA Cloud', 'Momentum', 'Liquidity Pool', 'VWAP Divergence'])} "
               f"SHORT={sum(results.get(f, False) for f in ['MACD', 'Candle Confirmation', 'Fractal Zone', 'ATR Momentum Burst'])} "
@@ -196,16 +188,15 @@ class SmartFilter:
             "filter_results": results
         }
 
-    # === Super-GK logic stubs (INSIDE CLASS!) ===
+    # === Super-GK logic stubs ===
     def _order_book_wall_passed(self):
-        # Placeholder for Order Book Wall logic (override as needed)
         return True
 
     def _resting_order_density_passed(self):
-        # Placeholder for Resting Order Density logic (override as needed)
         return True
 
-    # --- All filter logic below ---
+    # --- All filter logic below (unchanged) ---
+
     def _safe_divide(self, a, b):
         try:
             return a / b if b else 0.0
