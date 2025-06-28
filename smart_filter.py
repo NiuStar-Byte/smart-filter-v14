@@ -34,30 +34,21 @@ class SmartFilter:
         self.df["ema200"] = self.df["close"].ewm(span=200).mean()
         self.df["vwap"] = (self.df["close"] * self.df["volume"]).cumsum() / self.df["volume"].cumsum()
 
-        self.filter_weights = {
-            "Fractal Zone": 4.5,
-            "EMA Cloud": 4.2,
-            "MACD": 5.0,
-            "Momentum": 4.0,
-            "HATS": 3.6,
-            "Volume Spike": 4.8,
-            "VWAP Divergence": 2.8,
-            "MTF Volume Agreement": 3.8,
-            "HH/LL Trend": 3.5,
-            "EMA Structure": 3.3,
-            "Chop Zone": 2.6,
-            "Candle Confirmation": 3.0,
-            "Wick Dominance": 1.2,
-            "Absorption": 1.5,
-            "Support/Resistance": 1.9,
-            "Smart Money Bias": 1.8,
-            "Liquidity Pool": 2.5,
-            "Spread Filter": 2.7,
-            "Liquidity Awareness": 3.2,
-            "Trend Continuation": 3.7,
-            "Volatility Model": 3.4,
-            "ATR Momentum Burst": 3.9,
-            "Volatility Squeeze": 3.1
+        # Separate filter weights for LONG and SHORT signals
+        self.filter_weights_long = {
+            "Fractal Zone": 1, "EMA Cloud": 2, "MACD": 1, "Momentum": 1, "HATS": 2, "Volume Spike": 5,
+            "VWAP Divergence": 0, "MTF Volume Agreement": 4, "HH/LL Trend": 2, "EMA Structure": 1, "Chop Zone": 2,
+            "Candle Confirmation": 5, "Wick Dominance": 1, "Absorption": 0, "Support/Resistance": 1, "Smart Money Bias": 1,
+            "Liquidity Pool": 1, "Spread Filter": 2, "Liquidity Awareness": 2, "Trend Continuation": 2, "Volatility Model": 0,
+            "ATR Momentum Burst": 0, "Volatility Squeeze": 2
+        }
+
+        self.filter_weights_short = {
+            "Fractal Zone": 1, "EMA Cloud": 1, "MACD": 1, "Momentum": 1, "HATS": 4, "Volume Spike": 5,
+            "VWAP Divergence": 0, "MTF Volume Agreement": 4, "HH/LL Trend": 4, "EMA Structure": 1, "Chop Zone": 2,
+            "Candle Confirmation": 5, "Wick Dominance": 1, "Absorption": 0, "Support/Resistance": 1, "Smart Money Bias": 1,
+            "Liquidity Pool": 1, "Spread Filter": 2, "Liquidity Awareness": 2, "Trend Continuation": 2, "Volatility Model": 0,
+            "ATR Momentum Burst": 5, "Volatility Squeeze": 2
         }
 
         # --- Expanded gatekeeper list ---
@@ -85,7 +76,7 @@ class SmartFilter:
         else:
             return None  # VETO
 
-    # ===== Main signal method =====
+    # ===== Main signal method with adjusted weights for LONG and SHORT =====
 
     def analyze(self):
         if self.df.empty:
@@ -132,8 +123,12 @@ class SmartFilter:
         # PASSES + WEIGHTS CALCULATION (for new GK set)
         passed_gk = [f for f in self.gatekeepers if results.get(f, False)]
         passes = len(passed_gk)
-        total_gk_weight = sum(self.filter_weights[f] for f in self.gatekeepers)
-        passed_weight = sum(self.filter_weights[f] for f in passed_gk)
+
+        # Dynamically adjust weights for LONG or SHORT signals
+        filter_weights = self.get_adjusted_weights('LONG')  # For LONG signal (this will be dynamically passed as required)
+        total_gk_weight = sum(filter_weights[f] for f in self.gatekeepers)
+        passed_weight = sum(filter_weights[f] for f in passed_gk)
+
         confidence = round(self._safe_divide(100 * passed_weight, total_gk_weight), 1)
 
         # === Super-GK Hard Blockers: Order Book Wall + Resting Order Density ===
@@ -182,6 +177,14 @@ class SmartFilter:
             "message": message,
             "filter_results": results
         }
+
+    # === Adjusted Weights for LONG and SHORT signals ===
+    def get_adjusted_weights(self, signal_type):
+        """ This method will return the adjusted weights based on signal type (LONG/SHORT) """
+        if signal_type == 'LONG':
+            return self.filter_weights_long
+        else:  # SHORT signal
+            return self.filter_weights_short
 
     # === Super-GK logic stubs ===
     def _order_book_wall_passed(self):
