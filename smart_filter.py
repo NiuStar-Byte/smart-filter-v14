@@ -126,13 +126,12 @@ class SmartFilter:
 
         # Dynamically adjust weights for LONG or SHORT signals
         final_bias = self._directional_decision(results)
-        if final_bias is None:
-            final_bias = 'VETO'
+        if final_bias == 'LONG':
+            filter_weights = self.filter_weights_long
+        else:  # SHORT signal
+            filter_weights = self.filter_weights_short
 
-        # Adjusting weights dynamically
-        filter_weights = self.get_adjusted_weights(final_bias)  # For LONG or SHORT signal (this will be dynamically passed as required)
         total_gk_weight = sum(filter_weights[f] for f in self.gatekeepers)
-        
         passed_weight = sum(filter_weights[f] for f in passed_gk)
         confidence = round(self._safe_divide(100 * passed_weight, total_gk_weight), 1)
 
@@ -146,7 +145,7 @@ class SmartFilter:
               f"| Final Bias: {final_bias or 'VETO'}")
 
         valid_signal = (
-            final_bias != 'VETO'  # Signal is only valid if it's not 'VETO'
+            final_bias is not None
             and score >= self.min_score
             and passes >= self.required_passed
             and orderbook_ok
@@ -182,14 +181,6 @@ class SmartFilter:
             "filter_results": results
         }
 
-    # === Adjusted Weights for LONG and SHORT signals ===
-    def get_adjusted_weights(self, signal_type):
-        """ This method will return the adjusted weights based on signal type (LONG/SHORT) """
-        if signal_type == 'LONG':
-            return self.filter_weights_long
-        else:  # SHORT signal
-            return self.filter_weights_short
-
     # === Super-GK logic stubs ===
     def _order_book_wall_passed(self):
         return True
@@ -198,7 +189,6 @@ class SmartFilter:
         return True
 
     # --- All filter logic below ---
-
     def _safe_divide(self, a, b):
         try:
             return a / b if b else 0.0
