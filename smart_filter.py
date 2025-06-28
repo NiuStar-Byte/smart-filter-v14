@@ -6,7 +6,7 @@ class SmartFilter:
     """
     Core scanner that evaluates 23+ technical / order-flow filters,
     then decides whether a valid LONG / SHORT signal exists,
-    with a Hybrid Directional Override & Veto logic as per June 2025 Golden Rules.
+    using pure directional logic from 4 filters per side (June 2025 Golden Rules).
     """
 
     def __init__(
@@ -70,32 +70,22 @@ class SmartFilter:
             "ATR Momentum Burst", "Volatility Squeeze"
         ]
 
-    # ===== Hybrid Directional Override/Veto Engine =====
+    # ===== Pure Directional Decision Engine (4+4 logic) =====
 
-    def suggest_direction(self, results):
-        # Use a composite of trend-following filters to suggest base bias.
-        trend_filters = ["EMA Cloud", "HH/LL Trend", "Trend Continuation", "EMA Structure"]
-        trend_votes = sum(results.get(f, False) for f in trend_filters)
-        return "LONG" if trend_votes >= 3 else "SHORT"
-
-    def evaluate_directional_scores(self, results):
-        # Group filters by their typical edge in LONG vs SHORT
-        long_favoring = ["EMA Cloud", "Momentum", "Liquidity Pool", "VWAP Divergence"]
-        short_favoring = ["MACD", "Candle Confirmation", "Fractal Zone", "ATR Momentum Burst"]
-        score_long = sum(results.get(f, False) for f in long_favoring)
-        score_short = sum(results.get(f, False) for f in short_favoring)
-        return score_long, score_short
-
-    def resolve_final_signal(self, proposed, score_long, score_short):
-        # Strong advantage (>=2) required to confirm or override.
-        if abs(score_long - score_short) < 2:
-            return None  # VETO (neutral: no directional edge)
-        if score_long > score_short:
+    def _directional_decision(self, results):
+        # 4 for LONG, 4 for SHORT (all based on latest audit)
+        long_filters = ["EMA Cloud", "Momentum", "Liquidity Pool", "VWAP Divergence"]
+        short_filters = ["MACD", "Candle Confirmation", "Fractal Zone", "ATR Momentum Burst"]
+        long_votes = sum(results.get(f, False) for f in long_filters)
+        short_votes = sum(results.get(f, False) for f in short_filters)
+        if long_votes - short_votes >= 2:
             return "LONG"
-        else:
+        elif short_votes - long_votes >= 2:
             return "SHORT"
+        else:
+            return None  # VETO
 
-    # ===== Main signal method with hybrid logic =====
+    # ===== Main signal method =====
 
     def analyze(self):
         if self.df.empty:
@@ -150,12 +140,11 @@ class SmartFilter:
         orderbook_ok = self._order_book_wall_passed()
         resting_density_ok = self._resting_order_density_passed()
 
-        # Hybrid logic: override signal type if directional filters contradict
-        proposed_bias = self.suggest_direction(results)
-        score_long, score_short = self.evaluate_directional_scores(results)
-        final_bias = self.resolve_final_signal(proposed_bias, score_long, score_short)
-
-        print(f"[{self.symbol}] Bias Proposal: {proposed_bias} | Final Bias: {final_bias or 'VETO'}")
+        # New: Direction decided by 4+4 vote (no bias proposal)
+        final_bias = self._directional_decision(results)
+        print(f"[{self.symbol}] Directional Votes: LONG={sum(results.get(f, False) for f in ['EMA Cloud', 'Momentum', 'Liquidity Pool', 'VWAP Divergence'])} "
+              f"SHORT={sum(results.get(f, False) for f in ['MACD', 'Candle Confirmation', 'Fractal Zone', 'ATR Momentum Burst'])} "
+              f"| Final Bias: {final_bias or 'VETO'}")
 
         valid_signal = (
             final_bias is not None
@@ -196,13 +185,9 @@ class SmartFilter:
 
     # === Super-GK logic stubs ===
     def _order_book_wall_passed(self):
-        # Placeholder: plug your order book logic here!
-        # Return True (pass) or False (fail)
         return True
 
     def _resting_order_density_passed(self):
-        # Placeholder: plug your resting order density logic here!
-        # Return True (pass) or False (fail)
         return True
 
     # --- All filter logic below ---
@@ -367,4 +352,3 @@ class SmartFilter:
             except Exception:
                 continue
         return None, None
-
