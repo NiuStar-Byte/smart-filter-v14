@@ -105,7 +105,7 @@ class SmartFilter:
         # Note: these lists should be tuned to match your balancing config (adjust as needed).
 
         # For backward compatibility
-        self.gatekeepers = sorted(list(set(self.gatekeepers_long + self.gatekeepers_short)), key=lambda k: list(self.filter_weights.keys()).index(k))
+        self.gatekeepers = sorted(list(set(self.gatekeepers_long + self.gatekeepers_short)), key=lambda k: list(self.filter_weights_long.keys()).index(k))
 
     def _directional_decision(self, results):
         # 4 for LONG, 4 for SHORT (all based on latest audit)
