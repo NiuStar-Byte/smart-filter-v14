@@ -33,6 +33,22 @@ def calculate_passes(results, direction):
             passes += 1
     return passes
 
+# Confidence Rate Calculation - Dynamic for LONG and SHORT
+def calculate_confidence(score, results, direction):
+    # Dynamically calculate the total weight based on the direction (LONG/SHORT)
+    filter_weights = filter_weights_long if direction == 'LONG' else filter_weights_short
+    total_weight = 32 if direction == 'LONG' else 40  # max total weight for LONG and SHORT
+    
+    # Calculate passed weight based on passed filters (gatekeepers)
+    passed_weight = 0
+    for filter_name, passed in results.items():
+        if passed:
+            passed_weight += filter_weights.get(filter_name, 0)
+
+    # Calculate confidence based on passed weights and total weights for the signal
+    confidence = (passed_weight / total_weight) * 100 if total_weight > 0 else 0
+    return confidence
+
 # Final Signal Validation - Considering thresholds for both directions
 def validate_signal(score, passes, direction):
     min_score = 12  # example threshold for LONG
@@ -56,6 +72,7 @@ def apply_balancing_logic(results, directional_decision_func):
     # Calculate score, passes, and confidence based on the direction
     score = calculate_score(results, direction)
     passes = calculate_passes(results, direction)
+    confidence = calculate_confidence(score, results, direction)
     
     # Validate signal based on thresholds
     is_valid = validate_signal(score, passes, direction)
@@ -65,5 +82,6 @@ def apply_balancing_logic(results, directional_decision_func):
         "direction": direction,
         "score": score,
         "passes": passes,
+        "confidence": confidence,
         "valid_signal": is_valid
     }
