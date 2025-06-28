@@ -16,8 +16,8 @@ class SmartFilter:
         df3m: pd.DataFrame = None,
         df5m: pd.DataFrame = None,
         tf: str = None,
-        min_score: int = 9,
-        required_passed: int = 10,      # NEW: now 10 (for 17 gatekeepers)
+        min_score: int = 12,    # Updated to 12 for both LONG and SHORT
+        required_passed: int = 9,  # Updated to 9 for both LONG and SHORT
         volume_multiplier: float = 2.0
     ):
         self.symbol = symbol
@@ -34,6 +34,7 @@ class SmartFilter:
         self.df["ema200"] = self.df["close"].ewm(span=200).mean()
         self.df["vwap"] = (self.df["close"] * self.df["volume"]).cumsum() / self.df["volume"].cumsum()
 
+        # --- Updated filter weights ---
         self.filter_weights = {
             "Fractal Zone": 4.5,
             "EMA Cloud": 4.2,
@@ -183,12 +184,12 @@ class SmartFilter:
             "filter_results": results
         }
 
-    # === Super-GK logic stubs ===
-    def _order_book_wall_passed(self):
-        return True
+# === Super-GK logic stubs ===
+def _order_book_wall_passed(self):
+    return True
 
-    def _resting_order_density_passed(self):
-        return True
+def _resting_order_density_passed(self):
+    return True
 
     # --- All filter logic below ---
 
