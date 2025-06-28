@@ -61,17 +61,25 @@ class SmartFilter:
             "Volatility Squeeze": 3.1
         }
 
-        # --- Expanded gatekeeper list ---
-        self.gatekeepers = [
-            "Fractal Zone", "EMA Cloud", "MACD", "Momentum", "HATS",
-            "Volume Spike", "VWAP Divergence", "MTF Volume Agreement",
+        # --- Directional GK setup ---
+        self.gatekeepers_long = [
+            "EMA Cloud", "Momentum", "Liquidity Pool", "VWAP Divergence",
+            "Fractal Zone", "HATS", "MTF Volume Agreement", "Trend Continuation",
             "HH/LL Trend", "EMA Structure", "Chop Zone",
-            "Candle Confirmation", "Trend Continuation",
-            "Volatility Model", "Liquidity Awareness",
-            "ATR Momentum Burst", "Volatility Squeeze"
+            "Candle Confirmation", "Volatility Model", "Liquidity Awareness",
+            "ATR Momentum Burst", "Volatility Squeeze", "Volume Spike"
         ]
+        self.gatekeepers_short = [
+            "MACD", "Candle Confirmation", "Fractal Zone", "ATR Momentum Burst",
+            "EMA Cloud", "Momentum", "VWAP Divergence", "HATS",
+            "MTF Volume Agreement", "Trend Continuation", "HH/LL Trend",
+            "EMA Structure", "Chop Zone", "Volatility Model", "Liquidity Awareness",
+            "Volatility Squeeze", "Volume Spike"
+        ]
+        # Note: these lists should be tuned to match your balancing config (adjust as needed).
 
-    # ===== Pure Directional Decision Engine (4+4 logic) =====
+        # For backward compatibility
+        self.gatekeepers = sorted(list(set(self.gatekeepers_long + self.gatekeepers_short)), key=lambda k: list(self.filter_weights.keys()).index(k))
 
     def _directional_decision(self, results):
         # 4 for LONG, 4 for SHORT (all based on latest audit)
@@ -85,8 +93,6 @@ class SmartFilter:
             return "SHORT"
         else:
             return None  # VETO
-
-    # ===== Main signal method =====
 
     def analyze(self):
         if self.df.empty:
@@ -128,28 +134,35 @@ class SmartFilter:
                 print(f"[{self.symbol}] {name} ERROR: {e}")
                 results[name] = False
 
-        # === Print per-filter results for full transparency ===
+        # Print per-filter results for transparency
         filter_status = [f"{name}: {'PASS' if results.get(name, False) else 'FAIL'}" for name in checks]
         print(f"[{self.symbol}] Filter Results: {' | '.join(filter_status)}")
 
         score = sum(results.values())
 
-        # PASSES + WEIGHTS CALCULATION (for new GK set)
-        passed_gk = [f for f in self.gatekeepers if results.get(f, False)]
-        passes = len(passed_gk)
-        total_gk_weight = sum(self.filter_weights[f] for f in self.gatekeepers)
-        passed_weight = sum(self.filter_weights[f] for f in passed_gk)
-        confidence = round(self._safe_divide(100 * passed_weight, total_gk_weight), 1)
-
-        # === Super-GK Hard Blockers: Order Book Wall + Resting Order Density ===
-        orderbook_ok = self._order_book_wall_passed()
-        resting_density_ok = self._resting_order_density_passed()
-
-        # New: Direction decided by 4+4 vote (no bias proposal)
+        # --- Directional decision (Golden Rules 4+4) ---
         final_bias = self._directional_decision(results)
         print(f"[{self.symbol}] Directional Votes: LONG={sum(results.get(f, False) for f in ['EMA Cloud', 'Momentum', 'Liquidity Pool', 'VWAP Divergence'])} "
               f"SHORT={sum(results.get(f, False) for f in ['MACD', 'Candle Confirmation', 'Fractal Zone', 'ATR Momentum Burst'])} "
               f"| Final Bias: {final_bias or 'VETO'}")
+
+        # --- Directional PASSES and GK weighting ---
+        if final_bias == "LONG":
+            gk_list = self.gatekeepers_long
+        elif final_bias == "SHORT":
+            gk_list = self.gatekeepers_short
+        else:
+            gk_list = self.gatekeepers  # fallback for VETO/no signal
+
+        passed_gk = [f for f in gk_list if results.get(f, False)]
+        passes = len(passed_gk)
+        total_gk_weight = sum(self.filter_weights[f] for f in gk_list)
+        passed_weight = sum(self.filter_weights[f] for f in passed_gk)
+        confidence = round(self._safe_divide(100 * passed_weight, total_gk_weight), 1) if total_gk_weight > 0 else 0.0
+
+        # === Super-GK Hard Blockers: Order Book Wall + Resting Order Density ===
+        orderbook_ok = self._order_book_wall_passed()
+        resting_density_ok = self._resting_order_density_passed()
 
         valid_signal = (
             final_bias is not None
@@ -162,7 +175,7 @@ class SmartFilter:
 
         message = (
             f"{final_bias or 'NO-SIGNAL'} on {self.symbol} @ {price:.6f} "
-            f"| Score: {score}/23 | Passed: {passes}/{len(self.gatekeepers)} "
+            f"| Score: {score}/23 | Passed: {passes}/{len(gk_list)} "
             f"| Confidence: {confidence}% (Weighted: {passed_weight:.1f}/{total_gk_weight:.1f})"
         )
 
@@ -177,7 +190,7 @@ class SmartFilter:
             "score": score,
             "score_max": 23,
             "passes": passes,
-            "gatekeepers_total": len(self.gatekeepers),
+            "gatekeepers_total": len(gk_list),
             "passed_weight": round(passed_weight, 1),
             "total_weight": round(total_gk_weight, 1),
             "confidence": confidence,
@@ -326,7 +339,7 @@ class SmartFilter:
         atr = tr.rolling(period).mean().iat[-1]
         last = self.df['close'].iat[-1]
         atr_pct = self._safe_divide(atr, last)
-        return low_pct <= atr_pct <= high_pct
+        return 0.01 <= atr_pct <= 0.05
 
     def _check_atr_momentum_burst(self, atr_period=14, burst_threshold=1.5):
         high_low = self.df['high'] - self.df['low']
