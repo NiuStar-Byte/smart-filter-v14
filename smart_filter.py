@@ -127,8 +127,13 @@ class SmartFilter:
         # Dynamically adjust weights for LONG or SHORT signals
         filter_weights = self.get_adjusted_weights('LONG')  # For LONG signal (this will be dynamically passed as required)
         total_gk_weight = sum(filter_weights[f] for f in self.gatekeepers)
-        passed_weight = sum(filter_weights[f] for f in passed_gk)
+        
+        # Adjust for SHORT Signal
+        if final_bias == 'SHORT':
+            filter_weights = self.get_adjusted_weights('SHORT')  # Dynamically pass SHORT weights
+            total_gk_weight = sum(filter_weights[f] for f in self.gatekeepers)  # Ensure total for SHORT is 40
 
+        passed_weight = sum(filter_weights[f] for f in passed_gk)
         confidence = round(self._safe_divide(100 * passed_weight, total_gk_weight), 1)
 
         # === Super-GK Hard Blockers: Order Book Wall + Resting Order Density ===
