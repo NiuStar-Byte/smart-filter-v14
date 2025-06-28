@@ -34,86 +34,81 @@ class SmartFilter:
         self.df["ema200"] = self.df["close"].ewm(span=200).mean()
         self.df["vwap"] = (self.df["close"] * self.df["volume"]).cumsum() / self.df["volume"].cumsum()
 
-        # --- Updated filter weights (from your latest images/tables) ---
+        # --- Updated filter weights (rebalanced) ---
         self.filter_weights_long = {
-            "MACD": 1,
-            "Volume Spike": 5,
             "Fractal Zone": 1,
             "EMA Cloud": 2,
+            "MACD": 1,
             "Momentum": 1,
-            "ATR Momentum Burst": 0,
-            "MTF Volume Agreement": 4,
-            "Trend Continuation": 2,
             "HATS": 2,
-            "HH/LL Trend": 2,
-            "Volatility Model": 0,
-            "EMA Structure": 1,
-            "Liquidity Awareness": 2,
-            "Volatility Squeeze": 2,
-            "Candle Confirmation": 5,
+            "Volume Spike": 5,
             "VWAP Divergence": 0,
-            "Spread Filter": 2,
+            "MTF Volume Agreement": 4,
+            "HH/LL Trend": 2,
+            "EMA Structure": 1,
             "Chop Zone": 2,
-            "Liquidity Pool": 1,
+            "Candle Confirmation": 5,
+            "Wick Dominance": 1,
+            "Absorption": 0,
             "Support/Resistance": 1,
             "Smart Money Bias": 1,
-            "Absorption": 0,
-            "Wick Dominance": 1
+            "Liquidity Pool": 1,
+            "Spread Filter": 2,
+            "Liquidity Awareness": 2,
+            "Trend Continuation": 2,
+            "Volatility Model": 0,
+            "ATR Momentum Burst": 0,
+            "Volatility Squeeze": 2
         }
+
         self.filter_weights_short = {
-            "MACD": 1,
-            "Volume Spike": 5,
             "Fractal Zone": 1,
             "EMA Cloud": 1,
+            "MACD": 1,
             "Momentum": 1,
-            "ATR Momentum Burst": 5,
-            "MTF Volume Agreement": 4,
-            "Trend Continuation": 2,
             "HATS": 4,
-            "HH/LL Trend": 4,
-            "Volatility Model": 0,
-            "EMA Structure": 1,
-            "Liquidity Awareness": 2,
-            "Volatility Squeeze": 2,
-            "Candle Confirmation": 5,
+            "Volume Spike": 5,
             "VWAP Divergence": 0,
-            "Spread Filter": 2,
+            "MTF Volume Agreement": 4,
+            "HH/LL Trend": 4,
+            "EMA Structure": 1,
             "Chop Zone": 2,
-            "Liquidity Pool": 1,
+            "Candle Confirmation": 5,
+            "Wick Dominance": 1,
+            "Absorption": 0,
             "Support/Resistance": 1,
             "Smart Money Bias": 1,
-            "Absorption": 0,
-            "Wick Dominance": 1
+            "Liquidity Pool": 1,
+            "Spread Filter": 2,
+            "Liquidity Awareness": 2,
+            "Trend Continuation": 2,
+            "Volatility Model": 0,
+            "ATR Momentum Burst": 5,
+            "Volatility Squeeze": 2
         }
 
-        # --- Directional GK setup (as per your latest images/tables) ---
+        # --- Directional GK setup ---
         self.gatekeepers_long = [
-            "MACD", "Volume Spike", "Fractal Zone", "EMA Cloud", "Momentum",
-            "ATR Momentum Burst", "MTF Volume Agreement", "Trend Continuation",
-            "HATS", "HH/LL Trend", "Volatility Model", "EMA Structure",
-            "Liquidity Awareness", "Volatility Squeeze", "Candle Confirmation",
-            "VWAP Divergence", "Chop Zone"
+            "EMA Cloud", "Momentum", "Liquidity Pool", "VWAP Divergence",
+            "Fractal Zone", "HATS", "MTF Volume Agreement", "Trend Continuation",
+            "HH/LL Trend", "EMA Structure", "Chop Zone",
+            "Candle Confirmation", "Volatility Model", "Liquidity Awareness",
+            "ATR Momentum Burst", "Volatility Squeeze", "Volume Spike"
         ]
         self.gatekeepers_short = [
-            "MACD", "Volume Spike", "Fractal Zone", "EMA Cloud", "Momentum",
-            "ATR Momentum Burst", "MTF Volume Agreement", "Trend Continuation",
-            "HATS", "HH/LL Trend", "Volatility Model", "EMA Structure",
-            "Liquidity Awareness", "Volatility Squeeze", "Candle Confirmation",
-            "VWAP Divergence", "Chop Zone"
+            "MACD", "Candle Confirmation", "Fractal Zone", "ATR Momentum Burst",
+            "EMA Cloud", "Momentum", "VWAP Divergence", "HATS",
+            "MTF Volume Agreement", "Trend Continuation", "HH/LL Trend",
+            "EMA Structure", "Chop Zone", "Volatility Model", "Liquidity Awareness",
+            "Volatility Squeeze", "Volume Spike"
         ]
-        # For strict matching, both directions have the same GK list based on your tables above.
+        # Note: these lists should be tuned to match your balancing config (adjust as needed).
 
-        self.all_filters = [
-            "MACD", "Volume Spike", "Fractal Zone", "EMA Cloud", "Momentum",
-            "ATR Momentum Burst", "MTF Volume Agreement", "Trend Continuation",
-            "HATS", "HH/LL Trend", "Volatility Model", "EMA Structure",
-            "Liquidity Awareness", "Volatility Squeeze", "Candle Confirmation",
-            "VWAP Divergence", "Spread Filter", "Chop Zone", "Liquidity Pool",
-            "Support/Resistance", "Smart Money Bias", "Absorption", "Wick Dominance"
-        ]
+        # For backward compatibility
+        self.gatekeepers = sorted(list(set(self.gatekeepers_long + self.gatekeepers_short)), key=lambda k: list(self.filter_weights.keys()).index(k))
 
     def _directional_decision(self, results):
-        # 4 for LONG, 4 for SHORT (audit config)
+        # 4 for LONG, 4 for SHORT (all based on latest audit)
         long_filters = ["EMA Cloud", "Momentum", "Liquidity Pool", "VWAP Divergence"]
         short_filters = ["MACD", "Candle Confirmation", "Fractal Zone", "ATR Momentum Burst"]
         long_votes = sum(results.get(f, False) for f in long_filters)
@@ -132,41 +127,41 @@ class SmartFilter:
 
         # Run all checks, collect results
         checks = {
-            "MACD": self._check_macd,
-            "Volume Spike": self.volume_surge_confirmed if self.tf == "3min" else self._check_volume_spike,
             "Fractal Zone": self._check_fractal_zone,
             "EMA Cloud": self._check_ema_cloud,
+            "MACD": self._check_macd,
             "Momentum": self._check_momentum,
-            "ATR Momentum Burst": self._check_atr_momentum_burst,
-            "MTF Volume Agreement": self._check_mtf_volume_agreement,
-            "Trend Continuation": self._check_trend_continuation,
             "HATS": self._check_hats,
-            "HH/LL Trend": self._check_hh_ll,
-            "Volatility Model": self._check_volatility_model,
-            "EMA Structure": self._check_ema_structure,
-            "Liquidity Awareness": self._check_liquidity_awareness,
-            "Volatility Squeeze": self._check_volatility_squeeze,
-            "Candle Confirmation": self._check_candle_close,
+            "Volume Spike": self.volume_surge_confirmed if self.tf == "3min" else self._check_volume_spike,
             "VWAP Divergence": self._check_vwap_divergence,
-            "Spread Filter": self._check_spread_filter,
+            "MTF Volume Agreement": self._check_mtf_volume_agreement,
+            "HH/LL Trend": self._check_hh_ll,
+            "EMA Structure": self._check_ema_structure,
             "Chop Zone": self._check_chop_zone,
-            "Liquidity Pool": self._check_liquidity_pool,
+            "Candle Confirmation": self._check_candle_close,
+            "Wick Dominance": self._check_wick_dominance,
+            "Absorption": self._check_absorption,
             "Support/Resistance": self._check_support_resistance,
             "Smart Money Bias": self._check_smart_money_bias,
-            "Absorption": self._check_absorption,
-            "Wick Dominance": self._check_wick_dominance
+            "Liquidity Pool": self._check_liquidity_pool,
+            "Spread Filter": self._check_spread_filter,
+            "Liquidity Awareness": self._check_liquidity_awareness,
+            "Trend Continuation": self._check_trend_continuation,
+            "Volatility Model": self._check_volatility_model,
+            "ATR Momentum Burst": self._check_atr_momentum_burst,
+            "Volatility Squeeze": self._check_volatility_squeeze
         }
 
         results = {}
-        for name in self.all_filters:
+        for name, fn in checks.items():
             try:
-                results[name] = bool(checks[name]())
+                results[name] = bool(fn())
             except Exception as e:
                 print(f"[{self.symbol}] {name} ERROR: {e}")
                 results[name] = False
 
         # Print per-filter results for transparency
-        filter_status = [f"{name}: {'PASS' if results.get(name, False) else 'FAIL'}" for name in self.all_filters]
+        filter_status = [f"{name}: {'PASS' if results.get(name, False) else 'FAIL'}" for name in checks]
         print(f"[{self.symbol}] Filter Results: {' | '.join(filter_status)}")
 
         score = sum(results.values())
@@ -180,19 +175,15 @@ class SmartFilter:
         # --- Directional PASSES and GK weighting ---
         if final_bias == "LONG":
             gk_list = self.gatekeepers_long
-            filter_weights = self.filter_weights_long
         elif final_bias == "SHORT":
             gk_list = self.gatekeepers_short
-            filter_weights = self.filter_weights_short
         else:
-            # For VETO/no signal, default to LONG config
-            gk_list = self.gatekeepers_long
-            filter_weights = self.filter_weights_long
+            gk_list = self.gatekeepers  # fallback for VETO/no signal
 
         passed_gk = [f for f in gk_list if results.get(f, False)]
         passes = len(passed_gk)
-        total_gk_weight = sum(filter_weights[f] for f in gk_list)
-        passed_weight = sum(filter_weights[f] for f in passed_gk)
+        total_gk_weight = sum(self.filter_weights_long[f] if final_bias == "LONG" else self.filter_weights_short[f] for f in gk_list)
+        passed_weight = sum(self.filter_weights_long[f] if final_bias == "LONG" else self.filter_weights_short[f] for f in passed_gk)
         confidence = round(self._safe_divide(100 * passed_weight, total_gk_weight), 1) if total_gk_weight > 0 else 0.0
 
         # === Super-GK Hard Blockers: Order Book Wall + Resting Order Density ===
@@ -244,6 +235,7 @@ class SmartFilter:
         return True
 
     # --- All filter logic below (unchanged) ---
+
     def _safe_divide(self, a, b):
         try:
             return a / b if b else 0.0
