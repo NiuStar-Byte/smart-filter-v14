@@ -1,4 +1,4 @@
-# balance_logic.py
+# Revised balance_logic.py to dynamically calculate Confidence Rate based on passed weights
 
 # Dictionary for filter weights for LONG and SHORT signals
 filter_weights_long = {
@@ -71,7 +71,7 @@ def calculate_passes(results, direction):
             passes += 1
     return passes
 
-# Confidence Rate Calculation - Flexible calculation for LONG and SHORT
+# Confidence Rate Calculation - Dynamic for LONG and SHORT
 def calculate_confidence(score, results, direction):
     # Dynamically calculate the total weight based on the direction (LONG/SHORT)
     filter_weights = filter_weights_long if direction == 'LONG' else filter_weights_short
@@ -83,6 +83,7 @@ def calculate_confidence(score, results, direction):
         if passed:
             passed_weight += filter_weights.get(filter_name, 0)
 
+    # Calculate confidence based on passed weights and total weights for the signal
     confidence = (passed_weight / total_weight) * 100 if total_weight > 0 else 0
     return confidence
 
