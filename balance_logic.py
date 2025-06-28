@@ -1,4 +1,4 @@
-# Revised version of balance_logic.py after applying golden rules.
+# balance_logic.py
 
 # Dictionary for filter weights for LONG and SHORT signals
 filter_weights_long = {
@@ -71,10 +71,19 @@ def calculate_passes(results, direction):
             passes += 1
     return passes
 
-# Confidence Rate Calculation - Different for LONG and SHORT
-def calculate_confidence(score, direction):
-    total_weight = sum(filter_weights_long.values()) if direction == 'LONG' else sum(filter_weights_short.values())
-    confidence = (score / total_weight) * 100 if total_weight > 0 else 0
+# Confidence Rate Calculation - Flexible calculation for LONG and SHORT
+def calculate_confidence(score, results, direction):
+    # Dynamically calculate the total weight based on the direction (LONG/SHORT)
+    filter_weights = filter_weights_long if direction == 'LONG' else filter_weights_short
+    total_weight = sum(filter_weights.values())
+    
+    # Calculate passed weight based on passed filters (gatekeepers)
+    passed_weight = 0
+    for filter_name, passed in results.items():
+        if passed:
+            passed_weight += filter_weights.get(filter_name, 0)
+
+    confidence = (passed_weight / total_weight) * 100 if total_weight > 0 else 0
     return confidence
 
 # Directional Decision Logic - Adjusted for LONG vs SHORT
@@ -132,7 +141,7 @@ def apply_balancing_logic(results):
     # Calculate score, passes, and confidence based on the direction
     score = calculate_score(results, direction)
     passes = calculate_passes(results, direction)
-    confidence = calculate_confidence(score, direction)
+    confidence = calculate_confidence(score, results, direction)
     
     # Validate signal based on thresholds
     is_valid = validate_signal(score, passes, direction)
@@ -145,6 +154,3 @@ def apply_balancing_logic(results):
         "confidence": confidence,
         "valid_signal": is_valid
     }
-
-# Save the revised balance_logic.py file (code updated according to the golden rules).
-# File ready for integration into your system!
