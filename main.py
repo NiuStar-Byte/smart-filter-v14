@@ -23,7 +23,7 @@ from pec_engine import run_pec_check, export_pec_log
 # Importing indicators from the 'indicators.py' module
 from indicators import (
     calculate_rsi_04,
-    calculate_bollinger_bands_05,
+    # calculate_bollinger_bands_05,
     calculate_stochastic_oscillator_06,
     calculate_supertrend_07,
     calculate_atr_08,
@@ -105,7 +105,7 @@ def log_orderbook_and_density(symbol):  # Function_ID_03_v1
         if df is not None and not df.empty:
             print(f"[IndicatorsLog] {symbol} | Latest Indicators:")
             print(f"  RSI: {calculate_rsi_04(df)['RSI'].iloc[-1]:.2f}")
-            print(f"  Bollinger Bands: Upper: {df['upper_band'].iloc[-1]:.2f}, Lower: {df['lower_band'].iloc[-1]:.2f}")
+            # print(f"  Bollinger Bands: Upper: {df['upper_band'].iloc[-1]:.2f}, Lower: {df['lower_band'].iloc[-1]:.2f}")
             print(f"  Stochastic Oscillator: {df['stochastic'].iloc[-1]:.2f}")
             print(f"  Supertrend: Upper: {df['upper_band'].iloc[-1]:.2f}, Lower: {df['lower_band'].iloc[-1]:.2f}")
             print(f"  ATR: {df['ATR'].iloc[-1]:.2f}")
@@ -142,17 +142,17 @@ def calculate_rsi_04(df, period=14):
     return df
 
 # --- Function_ID_05_v1: Calculate Bollinger Bands ---
-def calculate_bollinger_bands_05(df, window=20):
-    df['rolling_mean'] = df['close'].rolling(window=window).mean()
-    df['rolling_std'] = df['close'].rolling(window=window).std()
-    df['upper_band'] = df['rolling_mean'] + (df['rolling_std'] * 2)
-    df['lower_band'] = df['rolling_mean'] - (df['rolling_std'] * 2)
-    
+# def calculate_bollinger_bands_05(df, window=20):
+    # df['rolling_mean'] = df['close'].rolling(window=window).mean()
+    # df['rolling_std'] = df['close'].rolling(window=window).std()
+    # df['upper_band'] = df['rolling_mean'] + (df['rolling_std'] * 2)
+    # df['lower_band'] = df['rolling_mean'] - (df['rolling_std'] * 2)
+    #
     # Debugging print statements to check the values of the bands
-    print(f"upper_band values: {df['upper_band']}")
-    print(f"lower_band values: {df['lower_band']}")
-    
-    return df
+    # print(f"upper_band values: {df['upper_band']}")
+    # print(f"lower_band values: {df['lower_band']}")
+    # 
+    # return df
 
 # --- Function_ID_06_v1: Calculate Stochastic Oscillator ---
 def calculate_stochastic_oscillator_06(df, window=14):  # Function_ID_06_v1
@@ -296,7 +296,7 @@ def run_16():  # Function_ID_16_v1
                         # Log the indicators for the last row (latest data point)
                         print(f"[INFO] {symbol} 3min Indicator Values:")
                         print(f"RSI: {df3['RSI'].iloc[-1]}")
-                        print(f"Bollinger Bands: Upper: {df3['upper_band'].iloc[-1]}, Lower: {df3['lower_band'].iloc[-1]}")
+                        # print(f"Bollinger Bands: Upper: {df3['upper_band'].iloc[-1]}, Lower: {df3['lower_band'].iloc[-1]}")
                         print(f"Stochastic Oscillator: {df3['stochastic'].iloc[-1]}")
                         print(f"SuperTrend: {df3['upper_band'].iloc[-1]} / {df3['lower_band'].iloc[-1]}")
                         print(f"ATR: {df3['ATR'].iloc[-1]}")
@@ -365,7 +365,7 @@ def run_16():  # Function_ID_16_v1
                         # Log the indicators for the last row (latest data point)
                         print(f"[INFO] {symbol} 5min Indicator Values:")
                         print(f"RSI: {df5['RSI'].iloc[-1]}")
-                        print(f"Bollinger Bands: Upper: {df5['upper_band'].iloc[-1]}, Lower: {df5['lower_band'].iloc[-1]}")
+                        # print(f"Bollinger Bands: Upper: {df5['upper_band'].iloc[-1]}, Lower: {df5['lower_band'].iloc[-1]}")
                         print(f"Stochastic Oscillator: {df5['stochastic'].iloc[-1]}")
                         print(f"SuperTrend: {df5['upper_band'].iloc[-1]} / {df5['lower_band'].iloc[-1]}")
                         print(f"ATR: {df5['ATR'].iloc[-1]}")
