@@ -65,6 +65,9 @@ def get_order_wall_delta(
     bids_in_band = bids[bids['price'] >= low]
     asks_in_band = asks[asks['price'] <= high]
 
+    # Debugging print statement
+    print(f"bid_levels={len(bids_in_band)}, ask_levels={len(asks_in_band)}")
+
     buy_top = bids_in_band.head(wall_levels)
     sell_top = asks_in_band.head(wall_levels)
 
