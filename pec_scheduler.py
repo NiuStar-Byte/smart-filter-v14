@@ -1,11 +1,10 @@
 import time
 import os
+from datetime import datetime
 from pec_backtest import run_pec_backtest
 from kucoin_data import get_ohlcv
-# If you have a utils.py or similar, adjust import accordingly.
-# Otherwise, place your get_local_wib definition here.
-from main import get_local_wib  # If not in utils, import from main
-from datetime import datetime
+from telegram_alert import send_telegram_file
+from main import get_local_wib
 
 # === CONFIGURATION ===
 TOKENS = [
@@ -26,18 +25,20 @@ def main():
     print(f"[{datetime.now()}] [SCHEDULER] Starting PEC Backtest Scheduler (1-minute interval).")
     first_run = True
     while True:
+        # Log scheduler status
         print(f"[{datetime.now()}] [SCHEDULER] Checking if backtest mode is on...")
 
         if is_backtest_mode():
             print(f"[{datetime.now()}] [SCHEDULER] Backtest mode is active.")
-
+            
             if first_run:
                 print(f"[{datetime.now()}] [SCHEDULER] First run after switching to backtest mode!")
             else:
                 print(f"[{datetime.now()}] [SCHEDULER] Scheduled run (1 minute interval).")
 
-            # Run PEC backtest output
+            # Execute PEC backtest
             try:
+                print(f"[{datetime.now()}] [SCHEDULER] Running PEC backtest for all tokens...")
                 run_pec_backtest(TOKENS, get_ohlcv, get_local_wib, PEC_WINDOW_MINUTES, PEC_BARS, OHLCV_LIMIT)
                 print(f"[{datetime.now()}] [SCHEDULER] PEC backtest completed successfully.")
             except Exception as e:
@@ -48,7 +49,7 @@ def main():
             print(f"[{datetime.now()}] [SCHEDULER] Not in backtest mode. Waiting for mode switch...")
             time.sleep(5)  # Check every 5 seconds if backtest mode is on
 
-        # Sleep for 1 minute (for testing purposes)
+        # Sleep for 1 minute and log
         print(f"[{datetime.now()}] [SCHEDULER] Sleeping for {INTERVAL_SECONDS/60:.1f} minutes...")
         time.sleep(INTERVAL_SECONDS)
 
