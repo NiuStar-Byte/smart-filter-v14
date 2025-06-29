@@ -56,7 +56,7 @@ def calculate_rsi_04(df, period=14):
     return 100 - (100 / (1 + rs))
 
 # Function_ID_05_v1: calculate_bollinger_bands
-def calculate_bollinger_bands(df, window=20):
+def calculate_bollinger_bands_05(df, window=20):
     df['rolling_mean'] = df['close'].rolling(window=window).mean()
     df['rolling_std'] = df['close'].rolling(window=window).std()
     df['upper_band'] = df['rolling_mean'] + (df['rolling_std'] * 2)
