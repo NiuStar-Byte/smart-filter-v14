@@ -48,7 +48,7 @@ def log_orderbook_and_density(symbol):
         print(f"[RestingOrderDensityLog] {symbol} ERROR: {e}")
 
 # Function_ID_04_v1: calculate_rsi
-def calculate_rsi(df, period=14):
+def calculate_rsi_04(df, period=14):
     delta = df['close'].diff()
     gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
     loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
