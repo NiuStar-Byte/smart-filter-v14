@@ -4,48 +4,12 @@ def get_local_wib(dt):
         dt = pd.Timestamp(dt)
     return dt.tz_localize('UTC').tz_convert('Asia/Jakarta').strftime('%H:%M WIB')
 
-# Function_ID_02_v1: get_resting_order_density
-def get_resting_order_density(symbol, depth=100, band_pct=0.005):
-    try:
-        from kucoin_orderbook import fetch_orderbook
-        bids, asks = fetch_orderbook(symbol, depth)
-        if bids is None or asks is None or len(bids) == 0 or len(asks) == 0:
-            return {'bid_density': 0.0, 'ask_density': 0.0, 'bid_levels': 0, 'ask_levels': 0, 'midprice': None}
-        best_bid = bids['price'].iloc[0]
-        best_ask = asks['price'].iloc[0]
-        midprice = (best_bid + best_ask) / 2
-        low, high = midprice * (1 - band_pct), midprice * (1 + band_pct)
-        bids_in_band = bids[bids['price'] >= low]
-        asks_in_band = asks[asks['price'] <= high]
-        bid_density = bids_in_band['size'].sum() / max(len(bids_in_band), 1)
-        ask_density = asks_in_band['size'].sum() / max(len(asks_in_band), 1)
-        return {'bid_density': float(bid_density), 'ask_density': float(ask_density),
-                'bid_levels': len(bids_in_band), 'ask_levels': len(asks_in_band), 'midprice': float(midprice)}
-    except Exception:
-        return {'bid_density': 0.0, 'ask_density': 0.0, 'bid_levels': 0, 'ask_levels': 0, 'midprice': None}
+# Function_ID_02_v1: get_resting_order_density - REMOVE or refactor as per main.py's logic.
+# Already handled in main.py, if needed only log here.
+# Refactored logging mechanism can be moved to main.py.
 
-# Function_ID_03_v1: log_orderbook_and_density
-def log_orderbook_and_density(symbol):
-    try:
-        result = get_order_wall_delta(symbol)
-        print(
-            f"[OrderBookDeltaLog] {symbol} | "
-            f"buy_wall={result['buy_wall']} | "
-            f"sell_wall={result['sell_wall']} | "
-            f"wall_delta={result['wall_delta']} | "
-            f"midprice={result['midprice']}"
-        )
-    except Exception as e:
-        print(f"[OrderBookDeltaLog] {symbol} ERROR: {e}")
-    try:
-        dens = get_resting_order_density(symbol)
-        print(
-            f"[RestingOrderDensityLog] {symbol} | "
-            f"bid_density={dens['bid_density']:.2f} | ask_density={dens['ask_density']:.2f} | "
-            f"bid_levels={dens['bid_levels']} | ask_levels={dens['ask_levels']} | midprice={dens['midprice']}"
-        )
-    except Exception as e:
-        print(f"[RestingOrderDensityLog] {symbol} ERROR: {e}")
+# Function_ID_03_v1: log_orderbook_and_density - REMOVE
+# The functionality is now incorporated directly into main.py, specifically after signal analysis.
 
 # Function_ID_04_v1: calculate_rsi
 def calculate_rsi_04(df, period=14):
