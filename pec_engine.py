@@ -34,11 +34,15 @@ def run_pec_check(
         result: dict with key stats & verdicts, PLUS diagnostics
     """
     try:
-        pec_data = ohlcv_df.iloc[entry_idx : entry_idx + pec_bars + 1].copy()
+        print(f"[PEC_ENGINE] Starting PEC check for {symbol} at index {entry_idx}.")
+        
+        # Get the relevant data for backtest
+        pec_data = ohlcv_df.iloc[entry_idx: entry_idx + pec_bars + 1].copy()
         if pec_data.shape[0] < pec_bars + 1:
+            print(f"[PEC_ENGINE] Not enough data for PEC: {symbol} at index {entry_idx}.")
             return {"status": "not enough data for PEC"}
-
-        # Calculate Max Favorable/Adverse Excursion (MFE/MAE)
+        
+        # Calculate MFE and MAE for the trade
         if signal_type == "LONG":
             max_up = (pec_data["high"].max() - entry_price) / entry_price * 100
             max_dn = (pec_data["low"].min() - entry_price) / entry_price * 100
@@ -48,6 +52,8 @@ def run_pec_check(
             max_dn = (entry_price - pec_data["high"].max()) / entry_price * 100
             final_ret = (entry_price - pec_data["close"].iloc[-1]) / entry_price * 100
 
+        print(f"[PEC_ENGINE] MFE: {max_up:.2f}%, MAE: {max_dn:.2f}%, Final Return: {final_ret:.2f}%")
+    
         # Entry Follow-Through: Did it move at least +0.5% in your favor?
         follow_through = max_up >= 0.5
 
@@ -110,7 +116,7 @@ def run_pec_check(
         return result
 
     except Exception as e:
-        # Golden Rule: Always return a dict, even on error
+        print(f"[PEC_ENGINE] Error in run_pec_check: {e}")
         return {
             "status": "error",
             "error": str(e),
