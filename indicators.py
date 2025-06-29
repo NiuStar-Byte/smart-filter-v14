@@ -64,25 +64,25 @@ def calculate_bollinger_bands_05(df, window=20):
     return df
 
 # Function_ID_06_v1: calculate_stochastic_oscillator
-def calculate_stochastic_oscillator(df, window=14):
+def calculate_stochastic_oscillator_06(df, window=14):
     df['stochastic'] = ((df['close'] - df['low'].rolling(window=window).min()) /
                         (df['high'].rolling(window=window).max() - df['low'].rolling(window=window).min())) * 100
     return df
 
 # Function_ID_07_v1: calculate_supertrend
-def calculate_supertrend(df, period=7, multiplier=3):
+def calculate_supertrend_07(df, period=7, multiplier=3):
     df['ATR'] = df['high'].rolling(window=period).max() - df['low'].rolling(window=period).min()
     df['upper_band'] = (df['high'] + df['low']) / 2 + multiplier * df['ATR']
     df['lower_band'] = (df['high'] + df['low']) / 2 - multiplier * df['ATR']
     return df
 
 # Function_ID_08_v1: calculate_atr
-def calculate_atr(df, period=14):
+def calculate_atr_08(df, period=14):
     df['ATR'] = df['high'].rolling(window=period).max() - df['low'].rolling(window=period).min()
     return df
 
 # Function_ID_09_v1: calculate_parabolic_sar
-def calculate_parabolic_sar(df, acceleration=0.02, maximum=0.2):
+def calculate_parabolic_sar_09(df, acceleration=0.02, maximum=0.2):
     df['sar'] = df['close'].copy()
     up_trend = True
     ep = df['high'][0]
@@ -109,14 +109,14 @@ def calculate_parabolic_sar(df, acceleration=0.02, maximum=0.2):
     return df
 
 # Function_ID_10_v1: calculate_adx
-def calculate_adx(df, period=14):
+def calculate_adx_10(df, period=14):
     df['+DI'] = df['high'].diff()
     df['-DI'] = df['low'].diff()
     df['ADX'] = abs(df['+DI'] - df['-DI']) / (df['+DI'] + df['-DI'])
     return df
 
 # Function_ID_11_v1: calculate_market_structure
-def calculate_market_structure(df):
+def calculate_market_structure_11(df):
     df['market_structure'] = 'None'
     for i in range(2, len(df)):
         if df['high'][i] > df['high'][i-1] and df['low'][i] > df['low'][i-1]:
@@ -134,13 +134,13 @@ def calculate_support_resistance_12(df, period=20):
     return df
 
 # Function_ID_13_v1: calculate_pivot_points
-def calculate_pivot_points(df):
+def calculate_pivot_points_13(df):
     df['pivot'] = (df['high'] + df['low'] + df['close']) / 3
     df['support_1'] = (2 * df['pivot']) - df['high']
     df['resistance_1'] = (2 * df['pivot']) - df['low']
     return df
 
 # Function_ID_14_v1: calculate_composite_trend_indicator
-def calculate_composite_trend_indicator(df):
+def calculate_composite_trend_indicator_14(df):
     df['CTI'] = (df['close'] - df['open']) / (df['high'] - df['low']) * 100
     return df
