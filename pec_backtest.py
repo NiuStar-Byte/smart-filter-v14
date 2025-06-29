@@ -1,9 +1,47 @@
 import pandas as pd
+import csv
 from smart_filter import SmartFilter
 from pec_engine import run_pec_check
 from telegram_alert import send_telegram_file
 import os
 import datetime
+
+def save_to_csv(results, filename="pec_results.csv"):
+    # Define the column headers
+    headers = ["Signal Type", "Symbol", "TF", "Entry Time", "Entry Price", "Exit Price", 
+               "PnL ($)", "PnL (%)", "Score", "Max Score", "Confidence", "Weighted Confidence", 
+               "Gatekeepers Passed", "Filter Results", "GK Flags", "Result"]
+    
+    # Open the CSV file for writing (mode 'a' appends to the file)
+    with open(filename, mode='a', newline='') as file:
+        writer = csv.writer(file)
+        
+        # Write headers only if the file is empty (using file.tell())
+        if file.tell() == 0:
+            writer.writerow(headers)
+
+        # Write the PEC result data to the CSV
+        for result in results:
+            writer.writerow([
+                result['signal_type'],
+                result['symbol'],
+                result['tf'],
+                result['entry_time'],
+                result['entry_price'],
+                result['exit_price'],
+                result['pnl_abs'],
+                result['pnl_pct'],
+                result['score'],
+                result['score_max'],
+                result['confidence'],
+                result['weighted_confidence'],
+                result['gatekeepers_passed'],
+                result['filter_results'],
+                result['gk_flags'],
+                result['win_loss']
+            ])
+    print(f"[{datetime.datetime.now()}] [SCHEDULER] PEC results saved to {filename}")
+
 
 def run_pec_backtest(
     TOKENS,
@@ -20,8 +58,8 @@ def run_pec_backtest(
     Output filenames are timestamped for version tracking.
     """
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
-    long_file = f"pec_long_results_{timestamp}.txt"
-    short_file = f"pec_short_results_{timestamp}.txt"
+    long_file = f"pec_long_results_{timestamp}.csv"
+    short_file = f"pec_short_results_{timestamp}.csv"
 
     print(f"[BACKTEST PEC] Running PEC simulation for last {PEC_WINDOW_MINUTES} minutes on ALL tokens: {', '.join(TOKENS)}...")
 
@@ -78,45 +116,42 @@ def run_pec_backtest(
                     pnl_pct = 100 * pnl_abs / 100
                     win_loss = "WIN" if pnl_abs > 0 else "LOSS"
 
-                    # Compose full output block
-                    pec_block = (
-                        f"#{pec_counter} PEC Result Export [BTST:#{pec_counter} {symbol}-{tf}: {local_time_str}]\n"
-                        f"Symbol: {symbol}\n"
-                        f"TF: {tf}\n"
-                        f"Entry Time: {local_time_str}\n"
-                        f"Signal: {signal_type}\n"
-                        f"Entry Price: {entry_price:.6f}\n"
-                        f"Exit Price: {exit_price:.6f}\n"
-                        f"PnL ($): {pnl_abs:.2f}\n"
-                        f"PnL (%): {pnl_pct:.2f}\n"
-                        f"Score: {score}/{score_max}\n"
-                        f"Confidence: {confidence:.1f}% (Weighted: {weighted:.1f}/{total_weight:.1f})\n"
-                        f"Passed GK: {passes}/{gk_total}\n"
-                        f"Filter Results: {filter_pass_str}\n"
-                        f"GK Flags: {gk_pass_str}\n"
-                        f"Drawdown (%): -\n"
-                        f"Volume Pass (%): -\n"
-                        f"Result: {win_loss}\n"
-                        + "="*40 + "\n"
-                    )
+                    # Compose data for CSV export
+                    pec_result = {
+                        'signal_type': signal_type,
+                        'symbol': symbol,
+                        'tf': tf,
+                        'entry_time': local_time_str,
+                        'entry_price': entry_price,
+                        'exit_price': exit_price,
+                        'pnl_abs': pnl_abs,
+                        'pnl_pct': pnl_pct,
+                        'score': score,
+                        'score_max': score_max,
+                        'confidence': confidence,
+                        'weighted_confidence': weighted,
+                        'gatekeepers_passed': passes,
+                        'filter_results': filter_pass_str,
+                        'gk_flags': gk_pass_str,
+                        'win_loss': win_loss
+                    }
 
+                    # Append result to respective block
                     if signal_type == "LONG":
-                        long_blocks.append(pec_block)
+                        long_blocks.append(pec_result)
                     else:
-                        short_blocks.append(pec_block)
+                        short_blocks.append(pec_result)
                     pec_counter += 1
             print(f"[BACKTEST PEC] Done for {symbol} {tf}.")
 
-    # Write to files
-    with open(long_file, "w") as f:
-        f.writelines(long_blocks)
-    with open(short_file, "w") as f:
-        f.writelines(short_blocks)
+    # Save the results to CSV
+    save_to_csv(long_blocks, long_file)
+    save_to_csv(short_blocks, short_file)
 
-    print(f"[DEBUG] {long_file} written, {len(long_blocks)} signals, size={os.path.getsize(long_file)} bytes.")
-    print(f"[DEBUG] {short_file} written, {len(short_blocks)} signals, size={os.path.getsize(short_file)} bytes.")
+    print(f"[DEBUG] {long_file} written, {len(long_blocks)} signals.")
+    print(f"[DEBUG] {short_file} written, {len(short_blocks)} signals.")
 
-    # Send to Telegram
+    # Send the CSV files to Telegram
     print("[DEBUG] Sending PEC long file to Telegram...")
     send_telegram_file(long_file, caption=f"All PEC LONG results for ALL tokens [{timestamp}]")
     print("[DEBUG] Sending PEC short file to Telegram...")
