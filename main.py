@@ -1,3 +1,4 @@
+# --- Function_ID_00_v1: Import Necessary Libraries ---
 import os
 import time
 import pandas as pd
@@ -11,6 +12,20 @@ from telegram_alert import send_telegram_alert, send_telegram_file
 from signal_debug_log import dump_signal_debug_txt
 from kucoin_orderbook import get_order_wall_delta
 from pec_engine import run_pec_check, export_pec_log
+
+from indicators import (
+    calculate_rsi_04,
+    calculate_bollinger_bands_05,
+    calculate_stochastic_oscillator_06,
+    calculate_supertrend_07,
+    calculate_atr_08,
+    calculate_parabolic_sar_09,
+    calculate_adx_10,
+    calculate_market_structure_11,
+    calculate_support_resistance_12,
+    calculate_pivot_points_13,
+    calculate_composite_trend_indicator_14
+)
 
 # PEC backtest fires ONLY when backtest mode is enabled.
 TOKENS = [
