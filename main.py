@@ -142,11 +142,16 @@ def calculate_rsi_04(df, period=14):
     return df
 
 # --- Function_ID_05_v1: Calculate Bollinger Bands ---
-def calculate_bollinger_bands_05(df, window=20):  # Function_ID_05_v1
+def calculate_bollinger_bands_05(df, window=20):
     df['rolling_mean'] = df['close'].rolling(window=window).mean()
     df['rolling_std'] = df['close'].rolling(window=window).std()
     df['upper_band'] = df['rolling_mean'] + (df['rolling_std'] * 2)
     df['lower_band'] = df['rolling_mean'] - (df['rolling_std'] * 2)
+    
+    # Debugging print statements to check the values of the bands
+    print(f"upper_band values: {df['upper_band']}")
+    print(f"lower_band values: {df['lower_band']}")
+    
     return df
 
 # --- Function_ID_06_v1: Calculate Stochastic Oscillator ---
