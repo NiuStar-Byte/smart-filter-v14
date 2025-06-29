@@ -1,47 +1,20 @@
-import requests
+# --- Import necessary libraries ---
 import pandas as pd
+import numpy as np
 
-def fetch_orderbook(symbol: str, depth: int = 100) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """
-    Fetches KuCoin L2 order book for the given symbol and depth.
-    Returns: (bids_df, asks_df), both as pandas DataFrames [price, size]
-    """
-    for sym in (symbol, symbol.replace('-', '/')):
-        url = f"https://api.kucoin.com/api/v1/market/orderbook/level2_{depth}?symbol={sym}"
-        try:
-            resp = requests.get(url, timeout=5)
-            resp.raise_for_status()
-            data = resp.json().get('data', {})
-            bids = pd.DataFrame(data.get('bids', []), columns=['price', 'size']).astype(float)
-            asks = pd.DataFrame(data.get('asks', []), columns=['price', 'size']).astype(float)
-            return bids, asks
-        except Exception:
-            continue
-    return None, None
+# --- Define functions for KuCoin Orderbook and Resting Order Density ---
+def fetch_orderbook(symbol, depth=100):
+    # Fetch order book data (dummy function, replace with actual API call)
+    pass
 
-def get_order_wall_delta(
-    symbol: str,
-    wall_levels: int = 10,
-    min_wall_size: float = 0,
-    depth: int = 100,
-    band_pct: float = 0.005
-) -> dict:
+# Function_ID_01_v1: Get Order Wall Delta
+def get_order_wall_delta(symbol: str, wall_levels: int = 10, min_wall_size: float = 0, depth: int = 100, band_pct: float = 0.005) -> dict:
     """
     Computes order book wall delta for a given symbol.
-    - wall_levels: number of top levels to consider as "walls"
-    - min_wall_size: minimum wall size to consider (0 disables filter)
-    - band_pct: +/- % band around midprice to look for walls (optional)
-    Returns:
-        {
-            'buy_wall': float (sum of top N bid sizes),
-            'sell_wall': float (sum of top N ask sizes),
-            'wall_delta': float (buy_wall - sell_wall),
-            'midprice': float,
-            'buy_top_levels': list of (price, size),
-            'sell_top_levels': list of (price, size)
-        }
     """
     bids, asks = fetch_orderbook(symbol, depth=depth)
+    
+    # --- Check for valid bids and asks ---
     if bids is None or asks is None or len(bids) == 0 or len(asks) == 0:
         return {
             'buy_wall': 0.0,
@@ -51,32 +24,33 @@ def get_order_wall_delta(
             'buy_top_levels': [],
             'sell_top_levels': []
         }
-    # Sort by price descending (bids) and ascending (asks)
+    
+    # --- Sort bids and asks ---
     bids = bids.sort_values("price", ascending=False).reset_index(drop=True)
     asks = asks.sort_values("price", ascending=True).reset_index(drop=True)
 
-    # Midprice (for banding)
+    # --- Calculate midprice ---
     best_bid = bids['price'].iloc[0]
     best_ask = asks['price'].iloc[0]
     midprice = (best_bid + best_ask) / 2
 
-    # Optional: Only consider walls within a price band
+    # --- Optional: Only consider walls within a price band ---
     low, high = midprice * (1 - band_pct), midprice * (1 + band_pct)
     bids_in_band = bids[bids['price'] >= low]
     asks_in_band = asks[asks['price'] <= high]
-
-    # Debugging print statement
+    
+    # --- Debugging print statement ---
     print(f"bid_levels={len(bids_in_band)}, ask_levels={len(asks_in_band)}")
 
     buy_top = bids_in_band.head(wall_levels)
     sell_top = asks_in_band.head(wall_levels)
 
-    # Apply minimum wall size filter (if specified)
+    # --- Apply minimum wall size filter ---
     if min_wall_size > 0:
         buy_top = buy_top[buy_top['size'] >= min_wall_size]
         sell_top = sell_top[sell_top['size'] >= min_wall_size]
     
-    # Calculate buy and sell walls
+    # --- Calculate buy and sell walls ---
     buy_wall = buy_top['size'].sum()
     sell_wall = sell_top['size'].sum()
     wall_delta = buy_wall - sell_wall
@@ -90,57 +64,62 @@ def get_order_wall_delta(
         'sell_top_levels': sell_top.values.tolist()
     }
 
-def get_resting_order_density(
-    symbol: str,
-    top_n: int = 3,
-    depth: int = 100
-) -> dict:
+# Function_ID_02_v1: Get Resting Order Density
+def get_resting_order_density(symbol: str, depth: int = 100, band_pct: float = 0.005) -> dict:
     """
-    Calculate resting order density as % of total book at top N levels.
-    Returns:
-        {
-            'bid_density': %,
-            'ask_density': %,
-            'top_n': int,
-            'depth': int,
-            'bid_total': float,
-            'ask_total': float,
-            'bid_top': float,
-            'ask_top': float,
-        }
+    Computes resting order density for a given symbol.
     """
     bids, asks = fetch_orderbook(symbol, depth=depth)
-    if bids is None or asks is None or len(bids) < top_n or len(asks) < top_n:
+    
+    if bids is None or asks is None or len(bids) == 0 or len(asks) == 0:
         return {
-            'bid_density': 0.0, 'ask_density': 0.0,
-            'top_n': top_n, 'depth': depth,
-            'bid_total': 0.0, 'ask_total': 0.0,
-            'bid_top': 0.0, 'ask_top': 0.0
+            'bid_density': 0.0,
+            'ask_density': 0.0,
+            'bid_levels': 0,
+            'ask_levels': 0,
+            'midprice': None
         }
-    bid_top = bids.sort_values("price", ascending=False)['size'].head(top_n).sum()
-    ask_top = asks.sort_values("price", ascending=True)['size'].head(top_n).sum()
-    bid_total = bids['size'].sum()
-    ask_total = asks['size'].sum()
-    bid_density = 100 * bid_top / bid_total if bid_total > 0 else 0.0
-    ask_density = 100 * ask_top / ask_total if ask_total > 0 else 0.0
+
+    best_bid = bids['price'].iloc[0]
+    best_ask = asks['price'].iloc[0]
+    midprice = (best_bid + best_ask) / 2
+    low, high = midprice * (1 - band_pct), midprice * (1 + band_pct)
+    bids_in_band = bids[bids['price'] >= low]
+    asks_in_band = asks[asks['price'] <= high]
+
+    bid_density = bids_in_band['size'].sum() / max(len(bids_in_band), 1)
+    ask_density = asks_in_band['size'].sum() / max(len(asks_in_band), 1)
+
     return {
-        'bid_density': round(bid_density, 2),
-        'ask_density': round(ask_density, 2),
-        'top_n': top_n,
-        'depth': depth,
-        'bid_total': float(bid_total),
-        'ask_total': float(ask_total),
-        'bid_top': float(bid_top),
-        'ask_top': float(ask_top),
+        'bid_density': float(bid_density),
+        'ask_density': float(ask_density),
+        'bid_levels': len(bids_in_band),
+        'ask_levels': len(asks_in_band),
+        'midprice': float(midprice)
     }
 
-# --- Force print for ALL 15 tokens on EVERY import/run ---
+# --- Import indicators ---
+from indicators import (
+    calculate_rsi_04,
+    calculate_stochastic_oscillator_06,
+    calculate_supertrend_07,
+    calculate_atr_08,
+    calculate_parabolic_sar_09,
+    calculate_adx_10,
+    calculate_market_structure_11,
+    calculate_support_resistance_12,
+    calculate_pivot_points_13,
+    calculate_composite_trend_indicator_14
+)
+
+# --- Define Tokens ---
 TOKENS = [
     "SKATE-USDT", "LA-USDT", "SPK-USDT", "ZKJ-USDT", "IP-USDT",
-    "AERO-USDT", "BMT-USDT", "LQTY-USDT", "X-USDT", "RAY-USDT",
-    "EPT-USDT", "ELDE-USDT", "MAGIC-USDT", "ACTSOL-USDT", "FUN-USDT"
+    "BMT-USDT", "LQTY-USDT", "X-USDT", "RAY-USDT", "EPT-USDT",
+    "ELDE-USDT", "MAGIC-USDT", "ACTSOL-USDT", "FUN-USDT"
 ]
 
+# --- Log for Order Book and Resting Order Density ---
 for symbol in TOKENS:
     result = get_order_wall_delta(symbol)
     print(
@@ -157,6 +136,8 @@ for symbol in TOKENS:
         f"[RestingOrderDensityLog] {symbol} | "
         f"bid_density={res['bid_density']}% | "
         f"ask_density={res['ask_density']}% | "
+        f"bid_levels={res['bid_levels']} | "
+        f"ask_levels={res['ask_levels']} | "
         f"bid_top={res['bid_top']} | ask_top={res['ask_top']} | "
         f"bid_total={res['bid_total']} | ask_total={res['ask_total']}"
     )
