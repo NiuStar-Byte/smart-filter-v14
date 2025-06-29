@@ -71,10 +71,12 @@ def get_order_wall_delta(
     buy_top = bids_in_band.head(wall_levels)
     sell_top = asks_in_band.head(wall_levels)
 
+    # Apply minimum wall size filter (if specified)
     if min_wall_size > 0:
         buy_top = buy_top[buy_top['size'] >= min_wall_size]
         sell_top = sell_top[sell_top['size'] >= min_wall_size]
-
+    
+    # Calculate buy and sell walls
     buy_wall = buy_top['size'].sum()
     sell_wall = sell_top['size'].sum()
     wall_delta = buy_wall - sell_wall
