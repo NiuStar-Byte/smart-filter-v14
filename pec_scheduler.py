@@ -5,6 +5,7 @@ from kucoin_data import get_ohlcv
 # If you have a utils.py or similar, adjust import accordingly.
 # Otherwise, place your get_local_wib definition here.
 from main import get_local_wib  # If not in utils, import from main
+from datetime import datetime
 
 # === CONFIGURATION ===
 TOKENS = [
@@ -22,27 +23,33 @@ def is_backtest_mode():
     return os.getenv("PEC_BACKTEST_ONLY", "false").lower() == "true"
 
 def main():
-    print("[SCHEDULER] Starting PEC Backtest Scheduler (1-minute interval).")
+    print(f"[{datetime.now()}] [SCHEDULER] Starting PEC Backtest Scheduler (1-minute interval).")
     first_run = True
     while True:
-        print("[SCHEDULER] Checking if backtest mode is on...")
-        
+        print(f"[{datetime.now()}] [SCHEDULER] Checking if backtest mode is on...")
+
         if is_backtest_mode():
+            print(f"[{datetime.now()}] [SCHEDULER] Backtest mode is active.")
+
             if first_run:
-                print("[SCHEDULER] First run after switching to backtest mode!")
+                print(f"[{datetime.now()}] [SCHEDULER] First run after switching to backtest mode!")
             else:
-                print("[SCHEDULER] Scheduled run (1 minute interval).")
-            
-            # Fire PEC backtest output
-            run_pec_backtest(TOKENS, get_ohlcv, get_local_wib, PEC_WINDOW_MINUTES, PEC_BARS, OHLCV_LIMIT)
-            
+                print(f"[{datetime.now()}] [SCHEDULER] Scheduled run (1 minute interval).")
+
+            # Run PEC backtest output
+            try:
+                run_pec_backtest(TOKENS, get_ohlcv, get_local_wib, PEC_WINDOW_MINUTES, PEC_BARS, OHLCV_LIMIT)
+                print(f"[{datetime.now()}] [SCHEDULER] PEC backtest completed successfully.")
+            except Exception as e:
+                print(f"[{datetime.now()}] [SCHEDULER] Error in backtest: {e}")
+
             first_run = False
         else:
-            print("[SCHEDULER] Not in backtest mode. Waiting for mode switch...")
+            print(f"[{datetime.now()}] [SCHEDULER] Not in backtest mode. Waiting for mode switch...")
             time.sleep(5)  # Check every 5 seconds if backtest mode is on
 
-        # Sleep for 1 minute
-        print(f"[SCHEDULER] Sleeping for {INTERVAL_SECONDS/60:.1f} minutes...")
+        # Sleep for 1 minute (for testing purposes)
+        print(f"[{datetime.now()}] [SCHEDULER] Sleeping for {INTERVAL_SECONDS/60:.1f} minutes...")
         time.sleep(INTERVAL_SECONDS)
 
 if __name__ == "__main__":
