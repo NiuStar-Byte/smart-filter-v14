@@ -76,7 +76,7 @@ def get_resting_order_density_02(symbol, depth=100, band_pct=0.005):  # Function
         return {'bid_density': 0.0, 'ask_density': 0.0, 'bid_levels': 0, 'ask_levels': 0, 'midprice': None}
 
 # --- Function_ID_03_v1: Log Orderbook and Density ---
-def log_orderbook_and_density_03(symbol):  # Function_ID_03_v1
+def log_orderbook_and_density(symbol):  # Function_ID_03_v1
     try:
         result = get_order_wall_delta(symbol)
         print(
