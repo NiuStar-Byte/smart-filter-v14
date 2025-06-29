@@ -4,6 +4,8 @@ from pec_engine import run_pec_check
 from telegram_alert import send_telegram_file
 import os
 import datetime
+# Temporarily set to False to disable backtest check
+os.environ["PEC_BACKTEST_ONLY"] = "false"
 
 def run_pec_backtest(
     TOKENS,
