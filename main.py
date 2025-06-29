@@ -122,12 +122,24 @@ def log_orderbook_and_density(symbol):  # Function_ID_03_v1
         print(f"[IndicatorsLog] {symbol} ERROR: {e}")
 
 # --- Function_ID_04_v1: Calculate RSI ---
-def calculate_rsi_04(df, period=14):  # Function_ID_04_v1
+def calculate_rsi_04(df, period=14):
+    # Check if 'close' column exists
+    if 'close' not in df.columns:
+        raise ValueError("DataFrame must contain a 'close' column")
+    
+    # Drop rows with NaN values in 'close' column
+    df = df.dropna(subset=['close'])
+    
+    # Calculate RSI
     delta = df['close'].diff()
     gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
     loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
     rs = gain / loss
-    return 100 - (100 / (1 + rs))
+    rsi = 100 - (100 / (1 + rs))
+    
+    # Add RSI to the DataFrame and return
+    df['RSI'] = rsi
+    return df
 
 # --- Function_ID_05_v1: Calculate Bollinger Bands ---
 def calculate_bollinger_bands_05(df, window=20):  # Function_ID_05_v1
