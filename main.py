@@ -30,6 +30,7 @@ def get_local_wib(dt):
         dt = pd.Timestamp(dt)
     return dt.tz_localize('UTC').tz_convert('Asia/Jakarta').strftime('%H:%M WIB')
 
+# --- Order Book and Resting Order Density Functions ---
 def get_resting_order_density(symbol, depth=100, band_pct=0.005):
     try:
         from kucoin_orderbook import fetch_orderbook
@@ -71,17 +72,120 @@ def log_orderbook_and_density(symbol):
     except Exception as e:
         print(f"[RestingOrderDensityLog] {symbol} ERROR: {e}")
 
+# --- Added New Indicators ---
+def calculate_rsi(df, period=14):
+    delta = df['close'].diff()
+    gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+    loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+    rs = gain / loss
+    return 100 - (100 / (1 + rs))
+
+def calculate_bollinger_bands(df, window=20):
+    df['rolling_mean'] = df['close'].rolling(window=window).mean()
+    df['rolling_std'] = df['close'].rolling(window=window).std()
+    df['upper_band'] = df['rolling_mean'] + (df['rolling_std'] * 2)
+    df['lower_band'] = df['rolling_mean'] - (df['rolling_std'] * 2)
+    return df
+
+def calculate_stochastic_oscillator(df, window=14):
+    df['stochastic'] = ((df['close'] - df['low'].rolling(window=window).min()) /
+                        (df['high'].rolling(window=window).max() - df['low'].rolling(window=window).min())) * 100
+    return df
+
+def calculate_supertrend(df, period=7, multiplier=3):
+    df['ATR'] = df['high'].rolling(window=period).max() - df['low'].rolling(window=period).min()
+    df['upper_band'] = (df['high'] + df['low']) / 2 + multiplier * df['ATR']
+    df['lower_band'] = (df['high'] + df['low']) / 2 - multiplier * df['ATR']
+    return df
+
+def calculate_atr(df, period=14):
+    df['ATR'] = df['high'].rolling(window=period).max() - df['low'].rolling(window=period).min()
+    return df
+
+def calculate_parabolic_sar(df, acceleration=0.02, maximum=0.2):
+    df['sar'] = df['close'].copy()
+    up_trend = True
+    ep = df['high'][0]
+    af = acceleration
+    sar = df['sar'][0]
+    
+    for i in range(1, len(df)):
+        if up_trend:
+            sar = sar + af * (ep - sar)
+            if df['low'][i] < sar:
+                up_trend = False
+                sar = ep
+                ep = df['low'][i]
+                af = acceleration
+        else:
+            sar = sar + af * (ep - sar)
+            if df['high'][i] > sar:
+                up_trend = True
+                sar = ep
+                ep = df['high'][i]
+                af = acceleration
+        
+        df['sar'][i] = sar
+    return df
+
+def calculate_adx(df, period=14):
+    df['+DI'] = df['high'].diff()
+    df['-DI'] = df['low'].diff()
+    df['ADX'] = abs(df['+DI'] - df['-DI']) / (df['+DI'] + df['-DI'])
+    return df
+
+def calculate_market_structure(df):
+    df['market_structure'] = 'None'
+    for i in range(2, len(df)):
+        if df['high'][i] > df['high'][i-1] and df['low'][i] > df['low'][i-1]:
+            df['market_structure'][i] = 'Uptrend'
+        elif df['high'][i] < df['high'][i-1] and df['low'][i] < df['low'][i-1]:
+            df['market_structure'][i] = 'Downtrend'
+        else:
+            df['market_structure'][i] = 'Sideways'
+    return df
+
+def calculate_support_resistance(df, period=20):
+    df['support'] = df['low'].rolling(window=period).min()
+    df['resistance'] = df['high'].rolling(window=period).max()
+    return df
+
+def calculate_pivot_points(df):
+    df['pivot'] = (df['high'] + df['low'] + df['close']) / 3
+    df['support_1'] = (2 * df['pivot']) - df['high']
+    df['resistance_1'] = (2 * df['pivot']) - df['low']
+    return df
+
+def calculate_composite_trend_indicator(df):
+    df['CTI'] = (df['close'] - df['open']) / (df['high'] - df['low']) * 100
+    return df
+# --- End of Added New Indicators ---
+
+# --- SuperGK Alignment Logic ---
 def super_gk_aligned(bias, orderbook_result, density_result):
     wall_delta = orderbook_result.get('wall_delta', 0) if orderbook_result else 0
     orderbook_bias = "LONG" if wall_delta > 0 else "SHORT" if wall_delta < 0 else "NEUTRAL"
+    
+    # Extract density values
     bid_density = density_result.get('bid_density', 0) if density_result else 0
     ask_density = density_result.get('ask_density', 0) if density_result else 0
     density_bias = "LONG" if bid_density > ask_density else "SHORT" if ask_density > bid_density else "NEUTRAL"
-    if (orderbook_bias != "NEUTRAL" and bias != orderbook_bias): return False
-    if (density_bias != "NEUTRAL" and bias != density_bias): return False
-    if orderbook_bias == "NEUTRAL" or density_bias == "NEUTRAL": return False
+    
+    # Check if the biases align
+    if (orderbook_bias != "NEUTRAL" and bias != orderbook_bias):
+        return False
+    
+    if (density_bias != "NEUTRAL" and bias != density_bias):
+        return False
+    
+    # If either orderbook or density is neutral, we don't align
+    if orderbook_bias == "NEUTRAL" or density_bias == "NEUTRAL":
+        return False
+    
+    # If all checks pass, biases align
     return True
 
+# PEC backtest mode settings
 def run():
     print("[INFO] Starting Smart Filter engine (LIVE MODE)...\n")
     while True:
