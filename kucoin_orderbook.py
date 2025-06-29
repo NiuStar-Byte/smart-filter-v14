@@ -7,13 +7,13 @@ def fetch_orderbook(symbol, depth=100):
     # Fetch order book data (dummy function, replace with actual API call)
     pass
 
-# Function_ID_01_v1: Get Order Wall Delta
+# --- Function_ID_01_v1: Get Order Wall Delta ---
 def get_order_wall_delta(symbol: str, wall_levels: int = 10, min_wall_size: float = 0, depth: int = 100, band_pct: float = 0.005) -> dict:
     """
     Computes order book wall delta for a given symbol.
     """
     bids, asks = fetch_orderbook(symbol, depth=depth)
-    
+
     # --- Check for valid bids and asks ---
     if bids is None or asks is None or len(bids) == 0 or len(asks) == 0:
         return {
@@ -24,7 +24,7 @@ def get_order_wall_delta(symbol: str, wall_levels: int = 10, min_wall_size: floa
             'buy_top_levels': [],
             'sell_top_levels': []
         }
-    
+
     # --- Sort bids and asks ---
     bids = bids.sort_values("price", ascending=False).reset_index(drop=True)
     asks = asks.sort_values("price", ascending=True).reset_index(drop=True)
@@ -38,7 +38,7 @@ def get_order_wall_delta(symbol: str, wall_levels: int = 10, min_wall_size: floa
     low, high = midprice * (1 - band_pct), midprice * (1 + band_pct)
     bids_in_band = bids[bids['price'] >= low]
     asks_in_band = asks[asks['price'] <= high]
-    
+
     # --- Debugging print statement ---
     print(f"bid_levels={len(bids_in_band)}, ask_levels={len(asks_in_band)}")
 
@@ -64,7 +64,7 @@ def get_order_wall_delta(symbol: str, wall_levels: int = 10, min_wall_size: floa
         'sell_top_levels': sell_top.values.tolist()
     }
 
-# Function_ID_02_v1: Get Resting Order Density
+# --- Function_ID_02_v1: Get Resting Order Density ---
 def get_resting_order_density(symbol: str, depth: int = 100, band_pct: float = 0.005) -> dict:
     """
     Computes resting order density for a given symbol.
