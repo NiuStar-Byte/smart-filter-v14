@@ -1,4 +1,3 @@
-# --- Function_ID_00_v1: Import Necessary Libraries ---
 import os
 import time
 import pandas as pd
@@ -6,34 +5,12 @@ import random
 import pytz
 from datetime import datetime
 
-# Importing required functions for kucoin data and orderbook
 from kucoin_data import get_ohlcv
-from kucoin_orderbook import get_order_wall_delta, get_resting_order_density
-
-# Importing SmartFilter and alert functions
 from smart_filter import SmartFilter
 from telegram_alert import send_telegram_alert, send_telegram_file
-
-# Importing debug functions
 from signal_debug_log import dump_signal_debug_txt
-
-# Importing functions for PEC engine
+from kucoin_orderbook import get_order_wall_delta
 from pec_engine import run_pec_check, export_pec_log
-
-# Importing indicators from the 'indicators.py' module
-from indicators import (
-    calculate_rsi_04,
-    # calculate_bollinger_bands_05,
-    calculate_stochastic_oscillator_06,
-    calculate_supertrend_07,
-    calculate_atr_08,
-    calculate_parabolic_sar_09,
-    calculate_adx_10,
-    calculate_market_structure_11,
-    calculate_support_resistance_12,
-    calculate_pivot_points_13,
-    calculate_composite_trend_indicator_14
-)
 
 # PEC backtest fires ONLY when backtest mode is enabled.
 TOKENS = [
@@ -48,15 +25,12 @@ PEC_BARS = 5
 PEC_WINDOW_MINUTES = 500
 OHLCV_LIMIT = 1000
 
-# --- Function_ID_01_v1: Get Local Time in WIB ---
-def get_local_wib_01(dt):  # Function_ID_01_v1
+def get_local_wib(dt):
     if not isinstance(dt, pd.Timestamp):
         dt = pd.Timestamp(dt)
     return dt.tz_localize('UTC').tz_convert('Asia/Jakarta').strftime('%H:%M WIB')
 
-
-# --- Function_ID_02_v1: Get Resting Order Density ---
-def get_resting_order_density_02(symbol, depth=100, band_pct=0.005):  # Function_ID_02_v1
+def get_resting_order_density(symbol, depth=100, band_pct=0.005):
     try:
         from kucoin_orderbook import fetch_orderbook
         bids, asks = fetch_orderbook(symbol, depth)
@@ -75,8 +49,7 @@ def get_resting_order_density_02(symbol, depth=100, band_pct=0.005):  # Function
     except Exception:
         return {'bid_density': 0.0, 'ask_density': 0.0, 'bid_levels': 0, 'ask_levels': 0, 'midprice': None}
 
-# --- Function_ID_03_v1: Log Orderbook and Density ---
-def log_orderbook_and_density(symbol):  # Function_ID_03_v1
+def log_orderbook_and_density(symbol):
     try:
         result = get_order_wall_delta(symbol)
         print(
@@ -88,7 +61,6 @@ def log_orderbook_and_density(symbol):  # Function_ID_03_v1
         )
     except Exception as e:
         print(f"[OrderBookDeltaLog] {symbol} ERROR: {e}")
-    
     try:
         dens = get_resting_order_density(symbol)
         print(
@@ -99,169 +71,18 @@ def log_orderbook_and_density(symbol):  # Function_ID_03_v1
     except Exception as e:
         print(f"[RestingOrderDensityLog] {symbol} ERROR: {e}")
 
-    # Log the indicators for the last row (latest data point)
-    try:
-        df = get_ohlcv(symbol, interval="3min", limit=1)  # Retrieve the latest 3min data point
-        if df is not None and not df.empty:
-            print(f"[IndicatorsLog] {symbol} | Latest Indicators:")
-            print(f"  RSI: {calculate_rsi_04(df)['RSI'].iloc[-1]:.2f}")
-            # print(f"  Bollinger Bands: Upper: {df['upper_band'].iloc[-1]:.2f}, Lower: {df['lower_band'].iloc[-1]:.2f}")
-            print(f"  Stochastic Oscillator: {df['stochastic'].iloc[-1]:.2f}")
-            print(f"  Supertrend: Upper: {df['upper_band'].iloc[-1]:.2f}, Lower: {df['lower_band'].iloc[-1]:.2f}")
-            print(f"  ATR: {df['ATR'].iloc[-1]:.2f}")
-            print(f"  Parabolic SAR: {df['sar'].iloc[-1]:.2f}")
-            print(f"  ADX: {df['ADX'].iloc[-1]:.2f}")
-            print(f"  Market Structure: {df['market_structure'].iloc[-1]}")
-            print(f"  Support: {df['support'].iloc[-1]:.2f}")
-            print(f"  Resistance: {df['resistance'].iloc[-1]:.2f}")
-            print(f"  Pivot Points: Pivot: {df['pivot'].iloc[-1]:.2f}, Support_1: {df['support_1'].iloc[-1]:.2f}, Resistance_1: {df['resistance_1'].iloc[-1]:.2f}")
-            print(f"  Composite Trend Indicator: {df['CTI'].iloc[-1]:.2f}")
-        else:
-            print(f"[ERROR] No data available for {symbol} to log indicators.")
-    except Exception as e:
-        print(f"[IndicatorsLog] {symbol} ERROR: {e}")
-
-# --- Function_ID_04_v1: Calculate RSI ---
-def calculate_rsi_04(df, period=14):
-    # Check if 'close' column exists
-    if 'close' not in df.columns:
-        raise ValueError("DataFrame must contain a 'close' column")
-    
-    # Drop rows with NaN values in 'close' column
-    df = df.dropna(subset=['close'])
-    
-    # Calculate RSI
-    delta = df['close'].diff()
-    gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
-    loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
-    rs = gain / loss
-    rsi = 100 - (100 / (1 + rs))
-    
-    # Add RSI to the DataFrame and return
-    df['RSI'] = rsi
-    return df
-
-# --- Function_ID_05_v1: Calculate Bollinger Bands ---
-# def calculate_bollinger_bands_05(df, window=20):
-    # df['rolling_mean'] = df['close'].rolling(window=window).mean()
-    # df['rolling_std'] = df['close'].rolling(window=window).std()
-    # df['upper_band'] = df['rolling_mean'] + (df['rolling_std'] * 2)
-    # df['lower_band'] = df['rolling_mean'] - (df['rolling_std'] * 2)
-    #
-    # Debugging print statements to check the values of the bands
-    # print(f"upper_band values: {df['upper_band']}")
-    # print(f"lower_band values: {df['lower_band']}")
-    # 
-    # return df
-
-# --- Function_ID_06_v1: Calculate Stochastic Oscillator ---
-def calculate_stochastic_oscillator_06(df, window=14):  # Function_ID_06_v1
-    df['stochastic'] = ((df['close'] - df['low'].rolling(window=window).min()) /
-                        (df['high'].rolling(window=window).max() - df['low'].rolling(window=window).min())) * 100
-    return df
-
-# --- Function_ID_07_v1: Calculate Supertrend ---
-def calculate_supertrend_07(df, period=7, multiplier=3):  # Function_ID_07_v1
-    df['ATR'] = df['high'].rolling(window=period).max() - df['low'].rolling(window=period).min()
-    df['upper_band'] = (df['high'] + df['low']) / 2 + multiplier * df['ATR']
-    df['lower_band'] = (df['high'] + df['low']) / 2 - multiplier * df['ATR']
-    return df
-
-# --- Function_ID_08_v1: Calculate ATR ---
-def calculate_atr_08(df, period=14):  # Function_ID_08_v1
-    df['ATR'] = df['high'].rolling(window=period).max() - df['low'].rolling(window=period).min()
-    return df
-
-# --- Function_ID_09_v1: Calculate Parabolic SAR ---
-def calculate_parabolic_sar_09(df, acceleration=0.02, maximum=0.2):  # Function_ID_09_v1
-    df['sar'] = df['close'].copy()
-    up_trend = True
-    ep = df['high'][0]
-    af = acceleration
-    sar = df['sar'][0]
-    
-    for i in range(1, len(df)):
-        if up_trend:
-            sar = sar + af * (ep - sar)
-            if df['low'][i] < sar:
-                up_trend = False
-                sar = ep
-                ep = df['low'][i]
-                af = acceleration
-        else:
-            sar = sar + af * (ep - sar)
-            if df['high'][i] > sar:
-                up_trend = True
-                sar = ep
-                ep = df['high'][i]
-                af = acceleration
-        
-        df['sar'][i] = sar
-    return df
-
-# --- Function_ID_10_v1: Calculate ADX ---
-def calculate_adx_10(df, period=14):  # Function_ID_10_v1
-    df['+DI'] = df['high'].diff()
-    df['-DI'] = df['low'].diff()
-    df['ADX'] = abs(df['+DI'] - df['-DI']) / (df['+DI'] + df['-DI'])
-    return df
-
-# --- Function_ID_11_v1: Calculate Market Structure ---
-def calculate_market_structure_11(df):  # Function_ID_11_v1
-    df['market_structure'] = 'None'
-    for i in range(2, len(df)):
-        if df['high'][i] > df['high'][i-1] and df['low'][i] > df['low'][i-1]:
-            df['market_structure'][i] = 'Uptrend'
-        elif df['high'][i] < df['high'][i-1] and df['low'][i] < df['low'][i-1]:
-            df['market_structure'][i] = 'Downtrend'
-        else:
-            df['market_structure'][i] = 'Sideways'
-    return df
-
-# --- Function_ID_12_v1: Calculate Support and Resistance ---
-def calculate_support_resistance_12(df, period=20):  # Function_ID_12_v1
-    df['support'] = df['low'].rolling(window=period).min()
-    df['resistance'] = df['high'].rolling(window=period).max()
-    return df
-
-# --- Function_ID_13_v1: Calculate Pivot Points ---
-def calculate_pivot_points_13(df):  # Function_ID_13_v1
-    df['pivot'] = (df['high'] + df['low'] + df['close']) / 3
-    df['support_1'] = (2 * df['pivot']) - df['high']
-    df['resistance_1'] = (2 * df['pivot']) - df['low']
-    return df
-
-# --- Function_ID_14_v1: Calculate Composite Trend Indicator ---
-def calculate_composite_trend_indicator_14(df):  # Function_ID_14_v1
-    df['CTI'] = (df['close'] - df['open']) / (df['high'] - df['low']) * 100
-    return df
-
-# --- Function_ID_15_v1: SuperGK Alignment Logic ---
-def super_gk_aligned(bias, orderbook_result, density_result):  # Function_ID_15_v1
+def super_gk_aligned(bias, orderbook_result, density_result):
     wall_delta = orderbook_result.get('wall_delta', 0) if orderbook_result else 0
     orderbook_bias = "LONG" if wall_delta > 0 else "SHORT" if wall_delta < 0 else "NEUTRAL"
-    
-    # Extract density values
     bid_density = density_result.get('bid_density', 0) if density_result else 0
     ask_density = density_result.get('ask_density', 0) if density_result else 0
     density_bias = "LONG" if bid_density > ask_density else "SHORT" if ask_density > bid_density else "NEUTRAL"
-    
-    # Check if the biases align
-    if (orderbook_bias != "NEUTRAL" and bias != orderbook_bias):
-        return False
-    
-    if (density_bias != "NEUTRAL" and bias != density_bias):
-        return False
-    
-    # If either orderbook or density is neutral, we don't align
-    if orderbook_bias == "NEUTRAL" or density_bias == "NEUTRAL":
-        return False
-    
-    # If all checks pass, biases align
+    if (orderbook_bias != "NEUTRAL" and bias != orderbook_bias): return False
+    if (density_bias != "NEUTRAL" and bias != density_bias): return False
+    if orderbook_bias == "NEUTRAL" or density_bias == "NEUTRAL": return False
     return True
 
-# --- Function_ID_16_v1: Main Run Logic ---
-def run_16():  # Function_ID_16_v1
+def run():
     print("[INFO] Starting Smart Filter engine (LIVE MODE)...\n")
     while True:
         now = time.time()
@@ -292,21 +113,6 @@ def run_16():  # Function_ID_16_v1
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT")
                             continue
                         print(f"[LOG] Sending 3min alert for {res3['symbol']}")
-
-                        # Log the indicators for the last row (latest data point)
-                        print(f"[INFO] {symbol} 3min Indicator Values:")
-                        print(f"RSI: {df3['RSI'].iloc[-1]}")
-                        # print(f"Bollinger Bands: Upper: {df3['upper_band'].iloc[-1]}, Lower: {df3['lower_band'].iloc[-1]}")
-                        print(f"Stochastic Oscillator: {df3['stochastic'].iloc[-1]}")
-                        print(f"SuperTrend: {df3['upper_band'].iloc[-1]} / {df3['lower_band'].iloc[-1]}")
-                        print(f"ATR: {df3['ATR'].iloc[-1]}")
-                        print(f"Parabolic SAR: {df3['sar'].iloc[-1]}")
-                        print(f"ADX: {df3['ADX'].iloc[-1]}")
-                        print(f"Market Structure: {df3['market_structure'].iloc[-1]}")
-                        print(f"Support: {df3['support'].iloc[-1]} / Resistance: {df3['resistance'].iloc[-1]}")
-                        print(f"Pivot: {df3['pivot'].iloc[-1]}")
-                        print(f"CTI: {df3['CTI'].iloc[-1]}")
-
                         valid_debugs.append({
                             "symbol": res3["symbol"],
                             "tf": res3["tf"],
@@ -361,21 +167,6 @@ def run_16():  # Function_ID_16_v1
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT")
                             continue
                         print(f"[LOG] Sending 5min alert for {res5['symbol']}")
-
-                        # Log the indicators for the last row (latest data point)
-                        print(f"[INFO] {symbol} 5min Indicator Values:")
-                        print(f"RSI: {df5['RSI'].iloc[-1]}")
-                        # print(f"Bollinger Bands: Upper: {df5['upper_band'].iloc[-1]}, Lower: {df5['lower_band'].iloc[-1]}")
-                        print(f"Stochastic Oscillator: {df5['stochastic'].iloc[-1]}")
-                        print(f"SuperTrend: {df5['upper_band'].iloc[-1]} / {df5['lower_band'].iloc[-1]}")
-                        print(f"ATR: {df5['ATR'].iloc[-1]}")
-                        print(f"Parabolic SAR: {df5['sar'].iloc[-1]}")
-                        print(f"ADX: {df5['ADX'].iloc[-1]}")
-                        print(f"Market Structure: {df5['market_structure'].iloc[-1]}")
-                        print(f"Support: {df5['support'].iloc[-1]} / Resistance: {df5['resistance'].iloc[-1]}")
-                        print(f"Pivot: {df5['pivot'].iloc[-1]}")
-                        print(f"CTI: {df5['CTI'].iloc[-1]}")
-
                         valid_debugs.append({
                             "symbol": res5["symbol"],
                             "tf": res5["tf"],
@@ -444,4 +235,4 @@ if __name__ == "__main__":
             PEC_WINDOW_MINUTES, PEC_BARS, OHLCV_LIMIT
         )
     else:
-        run_16()  # Call the revised run function
+        run()
