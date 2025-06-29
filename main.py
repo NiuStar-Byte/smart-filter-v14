@@ -220,7 +220,7 @@ def calculate_composite_trend_indicator_14(df):  # Function_ID_14_v1
     return df
 
 # --- Function_ID_15_v1: SuperGK Alignment Logic ---
-def super_gk_aligned_15(bias, orderbook_result, density_result):  # Function_ID_15_v1
+def super_gk_aligned(bias, orderbook_result, density_result):  # Function_ID_15_v1
     wall_delta = orderbook_result.get('wall_delta', 0) if orderbook_result else 0
     orderbook_bias = "LONG" if wall_delta > 0 else "SHORT" if wall_delta < 0 else "NEUTRAL"
     
