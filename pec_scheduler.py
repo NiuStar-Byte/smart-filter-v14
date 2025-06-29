@@ -15,7 +15,7 @@ TOKENS = [
 PEC_WINDOW_MINUTES = 500     # Adjust as needed
 PEC_BARS = 5
 OHLCV_LIMIT = 1000           # Adjust as needed
-INTERVAL_SECONDS = 3600      # 1 hour
+INTERVAL_SECONDS = 60        # 1 minute
 
 def is_backtest_mode():
     # Reads the same variable as main.py (case-insensitive).
