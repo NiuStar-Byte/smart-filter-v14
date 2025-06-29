@@ -25,13 +25,14 @@ PEC_BARS = 5
 PEC_WINDOW_MINUTES = 500
 OHLCV_LIMIT = 1000
 
-def get_local_wib(dt):
+# --- Function_ID_01_v1: Get Local Time in WIB ---
+def get_local_wib_01(dt):  # Function_ID_01_v1
     if not isinstance(dt, pd.Timestamp):
         dt = pd.Timestamp(dt)
     return dt.tz_localize('UTC').tz_convert('Asia/Jakarta').strftime('%H:%M WIB')
 
-# --- Order Book and Resting Order Density Functions ---
-def get_resting_order_density(symbol, depth=100, band_pct=0.005):
+# --- Function_ID_02_v1: Get Resting Order Density ---
+def get_resting_order_density_02(symbol, depth=100, band_pct=0.005):  # Function_ID_02_v1
     try:
         from kucoin_orderbook import fetch_orderbook
         bids, asks = fetch_orderbook(symbol, depth)
@@ -50,7 +51,8 @@ def get_resting_order_density(symbol, depth=100, band_pct=0.005):
     except Exception:
         return {'bid_density': 0.0, 'ask_density': 0.0, 'bid_levels': 0, 'ask_levels': 0, 'midprice': None}
 
-def log_orderbook_and_density(symbol):
+# --- Function_ID_03_v1: Log Orderbook and Density ---
+def log_orderbook_and_density_03(symbol):  # Function_ID_03_v1
     try:
         result = get_order_wall_delta(symbol)
         print(
@@ -72,37 +74,42 @@ def log_orderbook_and_density(symbol):
     except Exception as e:
         print(f"[RestingOrderDensityLog] {symbol} ERROR: {e}")
 
-# --- Added New Indicators ---
-def calculate_rsi(df, period=14):
+# --- Function_ID_04_v1: Calculate RSI ---
+def calculate_rsi_04(df, period=14):  # Function_ID_04_v1
     delta = df['close'].diff()
     gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
     loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
     rs = gain / loss
     return 100 - (100 / (1 + rs))
 
-def calculate_bollinger_bands(df, window=20):
+# --- Function_ID_05_v1: Calculate Bollinger Bands ---
+def calculate_bollinger_bands_05(df, window=20):  # Function_ID_05_v1
     df['rolling_mean'] = df['close'].rolling(window=window).mean()
     df['rolling_std'] = df['close'].rolling(window=window).std()
     df['upper_band'] = df['rolling_mean'] + (df['rolling_std'] * 2)
     df['lower_band'] = df['rolling_mean'] - (df['rolling_std'] * 2)
     return df
 
-def calculate_stochastic_oscillator(df, window=14):
+# --- Function_ID_06_v1: Calculate Stochastic Oscillator ---
+def calculate_stochastic_oscillator_06(df, window=14):  # Function_ID_06_v1
     df['stochastic'] = ((df['close'] - df['low'].rolling(window=window).min()) /
                         (df['high'].rolling(window=window).max() - df['low'].rolling(window=window).min())) * 100
     return df
 
-def calculate_supertrend(df, period=7, multiplier=3):
+# --- Function_ID_07_v1: Calculate Supertrend ---
+def calculate_supertrend_07(df, period=7, multiplier=3):  # Function_ID_07_v1
     df['ATR'] = df['high'].rolling(window=period).max() - df['low'].rolling(window=period).min()
     df['upper_band'] = (df['high'] + df['low']) / 2 + multiplier * df['ATR']
     df['lower_band'] = (df['high'] + df['low']) / 2 - multiplier * df['ATR']
     return df
 
-def calculate_atr(df, period=14):
+# --- Function_ID_08_v1: Calculate ATR ---
+def calculate_atr_08(df, period=14):  # Function_ID_08_v1
     df['ATR'] = df['high'].rolling(window=period).max() - df['low'].rolling(window=period).min()
     return df
 
-def calculate_parabolic_sar(df, acceleration=0.02, maximum=0.2):
+# --- Function_ID_09_v1: Calculate Parabolic SAR ---
+def calculate_parabolic_sar_09(df, acceleration=0.02, maximum=0.2):  # Function_ID_09_v1
     df['sar'] = df['close'].copy()
     up_trend = True
     ep = df['high'][0]
@@ -128,13 +135,15 @@ def calculate_parabolic_sar(df, acceleration=0.02, maximum=0.2):
         df['sar'][i] = sar
     return df
 
-def calculate_adx(df, period=14):
+# --- Function_ID_10_v1: Calculate ADX ---
+def calculate_adx_10(df, period=14):  # Function_ID_10_v1
     df['+DI'] = df['high'].diff()
     df['-DI'] = df['low'].diff()
     df['ADX'] = abs(df['+DI'] - df['-DI']) / (df['+DI'] + df['-DI'])
     return df
 
-def calculate_market_structure(df):
+# --- Function_ID_11_v1: Calculate Market Structure ---
+def calculate_market_structure_11(df):  # Function_ID_11_v1
     df['market_structure'] = 'None'
     for i in range(2, len(df)):
         if df['high'][i] > df['high'][i-1] and df['low'][i] > df['low'][i-1]:
@@ -145,24 +154,26 @@ def calculate_market_structure(df):
             df['market_structure'][i] = 'Sideways'
     return df
 
-def calculate_support_resistance(df, period=20):
+# --- Function_ID_12_v1: Calculate Support and Resistance ---
+def calculate_support_resistance_12(df, period=20):  # Function_ID_12_v1
     df['support'] = df['low'].rolling(window=period).min()
     df['resistance'] = df['high'].rolling(window=period).max()
     return df
 
-def calculate_pivot_points(df):
+# --- Function_ID_13_v1: Calculate Pivot Points ---
+def calculate_pivot_points_13(df):  # Function_ID_13_v1
     df['pivot'] = (df['high'] + df['low'] + df['close']) / 3
     df['support_1'] = (2 * df['pivot']) - df['high']
     df['resistance_1'] = (2 * df['pivot']) - df['low']
     return df
 
-def calculate_composite_trend_indicator(df):
+# --- Function_ID_14_v1: Calculate Composite Trend Indicator ---
+def calculate_composite_trend_indicator_14(df):  # Function_ID_14_v1
     df['CTI'] = (df['close'] - df['open']) / (df['high'] - df['low']) * 100
     return df
-# --- End of Added New Indicators ---
 
-# --- SuperGK Alignment Logic ---
-def super_gk_aligned(bias, orderbook_result, density_result):
+# --- Function_ID_15_v1: SuperGK Alignment Logic ---
+def super_gk_aligned_15(bias, orderbook_result, density_result):  # Function_ID_15_v1
     wall_delta = orderbook_result.get('wall_delta', 0) if orderbook_result else 0
     orderbook_bias = "LONG" if wall_delta > 0 else "SHORT" if wall_delta < 0 else "NEUTRAL"
     
@@ -185,8 +196,8 @@ def super_gk_aligned(bias, orderbook_result, density_result):
     # If all checks pass, biases align
     return True
 
-# PEC backtest mode settings
-def run():
+# --- Function_ID_16_v1: Main Run Logic ---
+def run_16():  # Function_ID_16_v1
     print("[INFO] Starting Smart Filter engine (LIVE MODE)...\n")
     while True:
         now = time.time()
@@ -339,4 +350,4 @@ if __name__ == "__main__":
             PEC_WINDOW_MINUTES, PEC_BARS, OHLCV_LIMIT
         )
     else:
-        run()
+        run_16()  # Call the revised run function
