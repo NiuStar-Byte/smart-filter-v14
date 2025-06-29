@@ -6,13 +6,21 @@ import random
 import pytz
 from datetime import datetime
 
+# Importing required functions for kucoin data and orderbook
 from kucoin_data import get_ohlcv
+from kucoin_orderbook import get_order_wall_delta, get_resting_order_density
+
+# Importing SmartFilter and alert functions
 from smart_filter import SmartFilter
 from telegram_alert import send_telegram_alert, send_telegram_file
+
+# Importing debug functions
 from signal_debug_log import dump_signal_debug_txt
-from kucoin_orderbook import get_order_wall_delta
+
+# Importing functions for PEC engine
 from pec_engine import run_pec_check, export_pec_log
 
+# Importing indicators from the 'indicators.py' module
 from indicators import (
     calculate_rsi_04,
     calculate_bollinger_bands_05,
