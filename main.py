@@ -229,6 +229,21 @@ def run_16():  # Function_ID_16_v1
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT")
                             continue
                         print(f"[LOG] Sending 3min alert for {res3['symbol']}")
+
+                        # Log the indicators for the last row (latest data point)
+                        print(f"[INFO] {symbol} 3min Indicator Values:")
+                        print(f"RSI: {df3['RSI'].iloc[-1]}")
+                        print(f"Bollinger Bands: Upper: {df3['upper_band'].iloc[-1]}, Lower: {df3['lower_band'].iloc[-1]}")
+                        print(f"Stochastic Oscillator: {df3['stochastic'].iloc[-1]}")
+                        print(f"SuperTrend: {df3['upper_band'].iloc[-1]} / {df3['lower_band'].iloc[-1]}")
+                        print(f"ATR: {df3['ATR'].iloc[-1]}")
+                        print(f"Parabolic SAR: {df3['sar'].iloc[-1]}")
+                        print(f"ADX: {df3['ADX'].iloc[-1]}")
+                        print(f"Market Structure: {df3['market_structure'].iloc[-1]}")
+                        print(f"Support: {df3['support'].iloc[-1]} / Resistance: {df3['resistance'].iloc[-1]}")
+                        print(f"Pivot: {df3['pivot'].iloc[-1]}")
+                        print(f"CTI: {df3['CTI'].iloc[-1]}")
+
                         valid_debugs.append({
                             "symbol": res3["symbol"],
                             "tf": res3["tf"],
@@ -283,6 +298,21 @@ def run_16():  # Function_ID_16_v1
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT")
                             continue
                         print(f"[LOG] Sending 5min alert for {res5['symbol']}")
+
+                        # Log the indicators for the last row (latest data point)
+                        print(f"[INFO] {symbol} 5min Indicator Values:")
+                        print(f"RSI: {df5['RSI'].iloc[-1]}")
+                        print(f"Bollinger Bands: Upper: {df5['upper_band'].iloc[-1]}, Lower: {df5['lower_band'].iloc[-1]}")
+                        print(f"Stochastic Oscillator: {df5['stochastic'].iloc[-1]}")
+                        print(f"SuperTrend: {df5['upper_band'].iloc[-1]} / {df5['lower_band'].iloc[-1]}")
+                        print(f"ATR: {df5['ATR'].iloc[-1]}")
+                        print(f"Parabolic SAR: {df5['sar'].iloc[-1]}")
+                        print(f"ADX: {df5['ADX'].iloc[-1]}")
+                        print(f"Market Structure: {df5['market_structure'].iloc[-1]}")
+                        print(f"Support: {df5['support'].iloc[-1]} / Resistance: {df5['resistance'].iloc[-1]}")
+                        print(f"Pivot: {df5['pivot'].iloc[-1]}")
+                        print(f"CTI: {df5['CTI'].iloc[-1]}")
+
                         valid_debugs.append({
                             "symbol": res5["symbol"],
                             "tf": res5["tf"],
