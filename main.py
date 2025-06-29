@@ -80,6 +80,7 @@ def log_orderbook_and_density_03(symbol):  # Function_ID_03_v1
         )
     except Exception as e:
         print(f"[OrderBookDeltaLog] {symbol} ERROR: {e}")
+    
     try:
         dens = get_resting_order_density(symbol)
         print(
@@ -89,6 +90,28 @@ def log_orderbook_and_density_03(symbol):  # Function_ID_03_v1
         )
     except Exception as e:
         print(f"[RestingOrderDensityLog] {symbol} ERROR: {e}")
+
+    # Log the indicators for the last row (latest data point)
+    try:
+        df = get_ohlcv(symbol, interval="3min", limit=1)  # Retrieve the latest 3min data point
+        if df is not None and not df.empty:
+            print(f"[IndicatorsLog] {symbol} | Latest Indicators:")
+            print(f"  RSI: {calculate_rsi_04(df)['RSI'].iloc[-1]:.2f}")
+            print(f"  Bollinger Bands: Upper: {df['upper_band'].iloc[-1]:.2f}, Lower: {df['lower_band'].iloc[-1]:.2f}")
+            print(f"  Stochastic Oscillator: {df['stochastic'].iloc[-1]:.2f}")
+            print(f"  Supertrend: Upper: {df['upper_band'].iloc[-1]:.2f}, Lower: {df['lower_band'].iloc[-1]:.2f}")
+            print(f"  ATR: {df['ATR'].iloc[-1]:.2f}")
+            print(f"  Parabolic SAR: {df['sar'].iloc[-1]:.2f}")
+            print(f"  ADX: {df['ADX'].iloc[-1]:.2f}")
+            print(f"  Market Structure: {df['market_structure'].iloc[-1]}")
+            print(f"  Support: {df['support'].iloc[-1]:.2f}")
+            print(f"  Resistance: {df['resistance'].iloc[-1]:.2f}")
+            print(f"  Pivot Points: Pivot: {df['pivot'].iloc[-1]:.2f}, Support_1: {df['support_1'].iloc[-1]:.2f}, Resistance_1: {df['resistance_1'].iloc[-1]:.2f}")
+            print(f"  Composite Trend Indicator: {df['CTI'].iloc[-1]:.2f}")
+        else:
+            print(f"[ERROR] No data available for {symbol} to log indicators.")
+    except Exception as e:
+        print(f"[IndicatorsLog] {symbol} ERROR: {e}")
 
 # --- Function_ID_04_v1: Calculate RSI ---
 def calculate_rsi_04(df, period=14):  # Function_ID_04_v1
