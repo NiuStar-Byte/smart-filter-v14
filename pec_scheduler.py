@@ -22,25 +22,27 @@ def is_backtest_mode():
     return os.getenv("PEC_BACKTEST_ONLY", "false").lower() == "true"
 
 def main():
-    print("[SCHEDULER] 🔄 Starting PEC Backtest Scheduler for 15 tokens (hourly).")
+    print("[SCHEDULER] Starting PEC Backtest Scheduler (1-minute interval).")
     first_run = True
     while True:
+        print("[SCHEDULER] Checking if backtest mode is on...")
+        
         if is_backtest_mode():
             if first_run:
                 print("[SCHEDULER] First run after switching to backtest mode!")
             else:
-                print("[SCHEDULER] Scheduled run (1 hour interval).")
+                print("[SCHEDULER] Scheduled run (1 minute interval).")
+            
             # Fire PEC backtest output
-            run_pec_backtest(
-                TOKENS, get_ohlcv, get_local_wib,
-                PEC_WINDOW_MINUTES, PEC_BARS, OHLCV_LIMIT
-            )
+            run_pec_backtest(TOKENS, get_ohlcv, get_local_wib, PEC_WINDOW_MINUTES, PEC_BARS, OHLCV_LIMIT)
+            
             first_run = False
         else:
             print("[SCHEDULER] Not in backtest mode. Waiting for mode switch...")
-            first_run = True  # Reset for next backtest mode session
+            time.sleep(5)  # Check every 5 seconds if backtest mode is on
 
-        print(f"[SCHEDULER] Sleeping {INTERVAL_SECONDS/60:.0f} minutes...\n")
+        # Sleep for 1 minute
+        print(f"[SCHEDULER] Sleeping for {INTERVAL_SECONDS/60:.1f} minutes...")
         time.sleep(INTERVAL_SECONDS)
 
 if __name__ == "__main__":
