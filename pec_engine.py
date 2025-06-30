@@ -1,5 +1,3 @@
-# pec_engine.py
-
 import pandas as pd
 from datetime import datetime
 
@@ -11,10 +9,10 @@ def run_pec_check(
     entry_price,
     ohlcv_df,
     pec_bars=5,
-    filter_result=None,          # NEW: expects a dict of filter pass/fail per signal
-    score=None,                  # NEW: total score (int or float)
-    confidence=None,             # NEW: confidence (float or pct)
-    passed_gk_count=None,        # NEW: count of passed GK filters
+    filter_result=None,  # Expects a dict of filter pass/fail per signal
+    score=None,  # Total score (int or float)
+    confidence=None,  # Confidence (float or pct)
+    passed_gk_count=None,  # Number of passed GK filters
 ):
     """
     Perform post-entry quality control (PEC) simulation for a fired signal.
@@ -122,18 +120,3 @@ def run_pec_check(
             "error": str(e),
             "summary": f"# PEC ERROR: {symbol} {tf}: {str(e)}"
         }
-
-def export_pec_log(result, filename="pec_debug_temp.txt", custom_header=None):
-    """
-    Export a single PEC result (dict) to the given txt file.
-    If custom_header is supplied, prepend it as the first line (for numbered, apple-to-apple log).
-    """
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    summary = result.get("summary", str(result))
-    with open(filename, "a") as f:
-        if custom_header:
-            f.write(f"\n{custom_header}\n")
-        else:
-            f.write(f"\n# PEC Result Export (created: {now})\n")
-        f.write(summary)
-        f.write("\n" + "="*32 + "\n")
