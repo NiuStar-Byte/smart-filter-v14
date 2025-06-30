@@ -7,10 +7,6 @@ import os
 from datetime import datetime
 from pec_scheduler import TOKENS
 
-def run_pec_backtest(...):
-    from pec_scheduler import TOKENS  # Import here to avoid circular dependency
-    # Rest of the code
-
 def save_to_csv(results, filename="pec_results.csv"):
     """
     Save the backtest results to a CSV file, including Exit Bar # and Exit Price.
@@ -126,3 +122,4 @@ def run_backtest():
 # Example usage:
 # Run the backtest for the configured tokens and timeframe
 run_backtest()
+
