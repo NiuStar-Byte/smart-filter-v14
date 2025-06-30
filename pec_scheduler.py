@@ -4,6 +4,10 @@ from kucoin_data import get_ohlcv  # Assuming get_ohlcv is imported from kucoin_
 from pec_engine import run_pec_check  # Assuming run_pec_check is imported from pec_engine.py
 from pec_backtest import run_pec_backtest  # Assuming run_pec_backtest is imported from pec_backtest.py
 
+def is_backtest_mode():
+    from pec_backtest import run_pec_backtest  # Import here to avoid circular dependency
+    # Rest of the code
+
 # === CONFIGURATION ===
 TOKENS = [
     "SKATE-USDT", "LA-USDT", "SPK-USDT", "ZKJ-USDT", "IP-USDT",
