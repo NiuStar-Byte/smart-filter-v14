@@ -1,9 +1,7 @@
-import time
+import os
 from datetime import datetime
 from kucoin_data import get_ohlcv
-from pec_backtest import run_pec_backtest  # Import the function here to avoid circular import
-from telegram_alert import send_telegram_file  # Assuming send_telegram_file is correctly implemented
-import os
+from telegram_alert import send_telegram_file
 
 # === CONFIGURATION ===
 TOKENS = [
@@ -37,6 +35,14 @@ def fetch_ohlcv_data(symbol, timeframe, pec_window_minutes=PEC_WINDOW_MINUTES):
     ohlcv_data = get_ohlcv(symbol, interval=timeframe, limit=bars_needed)
     return ohlcv_data
 
+def run_pec_backtest_wrapper(symbols, timeframe, pec_window_minutes, pec_bars, ohlcv_data):
+    """
+    This function will call `run_pec_backtest` from pec_backtest.py, but only when needed.
+    """
+    from pec_backtest import run_pec_backtest  # Delaying the import to avoid circular import
+    # Call the backtest function
+    run_pec_backtest(symbols, timeframe, pec_window_minutes, pec_bars, ohlcv_data)
+
 def run_backtest():
     print(f"[{datetime.now()}] [SCHEDULER] Running PEC backtest for all tokens...")
     for symbol in TOKENS:
@@ -44,7 +50,7 @@ def run_backtest():
         try:
             ohlcv_data = fetch_ohlcv_data(symbol, "5min")  # Adjust timeframe as needed
             # Assuming we call run_pec_backtest here for the signal evaluation
-            run_pec_backtest([symbol], "5min", pec_window_minutes=PEC_WINDOW_MINUTES, pec_bars=PEC_BARS, ohlcv_data=ohlcv_data)
+            run_pec_backtest_wrapper([symbol], "5min", PEC_WINDOW_MINUTES, PEC_BARS, ohlcv_data)
             print(f"[{datetime.now()}] [SCHEDULER] PEC backtest for {symbol} completed successfully.")
         except Exception as e:
             print(f"[{datetime.now()}] [SCHEDULER] Error in backtest for {symbol}: {e}")
