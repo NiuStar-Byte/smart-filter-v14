@@ -47,19 +47,19 @@ def save_to_csv(results, filename="pec_results.csv"):
             ])
     print(f"[{datetime.now()}] [SCHEDULER] PEC results saved to {filename}")
 
-
-def run_pec_backtest(symbols, timeframe, pec_window_minutes, pec_bars, ohlcv_data):
+def run_pec_backtest(symbols, timeframe, pec_window_minutes, pec_bars, ohlcv_data, get_local_wib):
     """
-    Run the backtest for the symbols, and save to a CSV file.
+    Run the backtest for a given set of symbols, passing get_local_wib to format timestamps.
     """
     results = []
+
     for symbol in symbols:
         print(f"[{datetime.now()}] [SCHEDULER] Running PEC for {symbol}...")
 
         # Evaluate signal for each symbol
         for entry_idx in range(len(ohlcv_data) - pec_bars):
             try:
-                result = evaluate_signal(symbol, ohlcv_data, entry_idx, pec_bars)
+                result = evaluate_signal(symbol, ohlcv_data, entry_idx, pec_bars, get_local_wib)
                 results.append(result)
                 print(f"[{datetime.now()}] [SCHEDULER] PEC for {symbol} completed successfully.")
             except Exception as e:
@@ -74,8 +74,7 @@ def run_pec_backtest(symbols, timeframe, pec_window_minutes, pec_bars, ohlcv_dat
         send_telegram_file(long_file, caption=f"Long Signal Results for {symbol}")
         send_telegram_file(short_file, caption=f"Short Signal Results for {symbol}")
 
-
-def evaluate_signal(symbol, df, entry_idx, pec_bars):
+def evaluate_signal(symbol, df, entry_idx, pec_bars, get_local_wib):
     """
     Evaluates a single signal: calculates entry price, exit price, and PnL.
     Args:
@@ -83,6 +82,7 @@ def evaluate_signal(symbol, df, entry_idx, pec_bars):
         df (DataFrame): The OHLCV data for the symbol.
         entry_idx (int): The index of the entry bar.
         pec_bars (int): The number of bars to evaluate after the entry.
+        get_local_wib (function): Function to convert the timestamp to WIB format.
 
     Returns:
         dict: A dictionary containing the signal data for export to CSV.
@@ -100,7 +100,7 @@ def evaluate_signal(symbol, df, entry_idx, pec_bars):
         'signal_type': signal_type,
         'symbol': symbol,
         'tf': '5min',  # Assuming 5-minute timeframe
-        'entry_time': str(df.index[entry_idx]),
+        'entry_time': get_local_wib(df.index[entry_idx]),  # Format time using get_local_wib
         'entry_price': entry_price,
         'exit_price': exit_price,
         'pnl_abs': pnl_abs,
@@ -117,3 +117,19 @@ def evaluate_signal(symbol, df, entry_idx, pec_bars):
     }
     return result
 
+def main():
+    """
+    Start the backtest process.
+    """
+    symbols = TOKENS  # Or the tokens you wish to backtest
+    timeframe = '5min'  # Adjust based on your needs
+    pec_window_minutes = 500
+    pec_bars = 5
+
+    # Example: Get OHLCV data for backtest
+    ohlcv_data = get_ohlcv(symbols[0], "5min")  # Placeholder for actual data fetching
+
+    run_pec_backtest(symbols, timeframe, pec_window_minutes, pec_bars, ohlcv_data, get_local_wib)
+
+if __name__ == "__main__":
+    main()
