@@ -11,10 +11,10 @@ def run_pec_check(
     entry_price,
     ohlcv_df,
     pec_bars=5,
-    filter_result=None,  # Expects a dict of filter pass/fail per signal
-    score=None,  # Total score (int or float)
-    confidence=None,  # Confidence (float or pct)
-    passed_gk_count=None,  # Number of passed GK filters
+    filter_result=None,          # NEW: expects a dict of filter pass/fail per signal
+    score=None,                  # NEW: total score (int or float)
+    confidence=None,             # NEW: confidence (float or pct)
+    passed_gk_count=None,        # NEW: count of passed GK filters
 ):
     """
     Perform post-entry quality control (PEC) simulation for a fired signal.
@@ -130,7 +130,6 @@ def export_pec_log(result, filename="pec_debug_temp.txt", custom_header=None):
     """
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     summary = result.get("summary", str(result))
-    
     with open(filename, "a") as f:
         if custom_header:
             f.write(f"\n{custom_header}\n")
