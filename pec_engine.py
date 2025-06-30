@@ -94,6 +94,14 @@ def run_pec_check(
 - GK Passed: {passed_gk_count if passed_gk_count is not None else '-'}{filter_diag_str}
 """
 
+        # Calculate # BAR Exit (last bar number based on pec_bars)
+        exit_bar = entry_idx + pec_bars  # Exit after specified number of bars
+
+        # Find the time of exit (Exit Time) when the condition is met
+        exit_time = None
+        if follow_through:  # Assuming exit is based on the follow-through condition
+            exit_time = ohlcv_df.iloc[exit_bar]['datetime']  # Assuming 'datetime' is the column with the timestamp
+        
         result = {
             "symbol": symbol,
             "tf": tf,
@@ -111,6 +119,8 @@ def run_pec_check(
             "confidence": confidence,
             "passed_gk_count": passed_gk_count,
             "filter_level_results": filter_result,
+            "exit_time": exit_time,   # NEW: exit time
+            "exit_bar": exit_bar,     # NEW: exit bar index
             "summary": summary
         }
         return result
