@@ -1,5 +1,3 @@
-# pec_engine.py
-
 import pandas as pd
 from datetime import datetime
 
@@ -15,6 +13,8 @@ def run_pec_check(
     score=None,                  # NEW: total score (int or float)
     confidence=None,             # NEW: confidence (float or pct)
     passed_gk_count=None,        # NEW: count of passed GK filters
+    take_profit_threshold=None,  # NEW: Take Profit threshold (optional)
+    stop_loss_threshold=None    # NEW: Stop Loss threshold (optional)
 ):
     """
     Perform post-entry quality control (PEC) simulation for a fired signal.
@@ -30,6 +30,8 @@ def run_pec_check(
         score: int/float, total SmartFilter score
         confidence: float, SmartFilter confidence
         passed_gk_count: int, number of passed GK filters
+        take_profit_threshold: float, price for take profit (optional)
+        stop_loss_threshold: float, price for stop loss (optional)
     Returns:
         result: dict with key stats & verdicts, PLUS diagnostics
     """
@@ -75,6 +77,21 @@ def run_pec_check(
         avg_vol = ohlcv_df["volume"].iloc[max(0, entry_idx-30):entry_idx].mean()
         vol_pass = (pec_data["volume"].iloc[1:] > avg_vol).sum() >= 3
 
+        # Initialize Exit Bar and Exit Price
+        exit_bar = None
+        exit_price = None
+
+        # Track Exit Conditions (Take Profit and Stop Loss)
+        for bar in pec_data.itertuples():
+            if take_profit_threshold and bar.Close >= take_profit_threshold:
+                exit_bar = bar.Index  # Exit happens on this bar
+                exit_price = bar.Close
+                break
+            elif stop_loss_threshold and bar.Close <= stop_loss_threshold:
+                exit_bar = bar.Index  # Exit happens on this bar
+                exit_price = bar.Close
+                break
+
         # Format diagnostics for filter-level pass/fail
         filter_diag_str = ""
         if filter_result is not None and isinstance(filter_result, dict):
@@ -111,6 +128,8 @@ def run_pec_check(
             "confidence": confidence,
             "passed_gk_count": passed_gk_count,
             "filter_level_results": filter_result,
+            "exit_bar": exit_bar,        # Exit Bar # now included
+            "exit_price": exit_price,    # Exit Price now included
             "summary": summary
         }
         return result
