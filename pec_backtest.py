@@ -4,23 +4,22 @@ from smart_filter import SmartFilter
 from pec_engine import run_pec_check
 from telegram_alert import send_telegram_file
 import os
-import datetime
+from datetime import datetime
 
 def save_to_csv(results, filename="pec_results.csv"):
-    # Define the column headers
+    """
+    Save the backtest results to a CSV file, including Exit Bar # and Exit Price.
+    """
     headers = ["Signal Type", "Symbol", "TF", "Entry Time", "Entry Price", "Exit Price", 
                "PnL ($)", "PnL (%)", "Score", "Max Score", "Confidence", "Weighted Confidence", 
-               "Gatekeepers Passed", "Filter Results", "GK Flags", "Result"]
+               "Gatekeepers Passed", "Filter Results", "GK Flags", "Result", "Exit Bar #"]
     
-    # Open the CSV file for writing (mode 'a' appends to the file)
     with open(filename, mode='a', newline='') as file:
         writer = csv.writer(file)
         
-        # Write headers only if the file is empty (using file.tell())
-        if file.tell() == 0:
+        if file.tell() == 0:  # Write headers only if the file is empty
             writer.writerow(headers)
 
-        # Write the PEC result data to the CSV
         for result in results:
             writer.writerow([
                 result['signal_type'],
@@ -38,19 +37,13 @@ def save_to_csv(results, filename="pec_results.csv"):
                 result['gatekeepers_passed'],
                 result['filter_results'],
                 result['gk_flags'],
-                result['win_loss']
+                result['win_loss'],
+                result['exit_bar']  # Exit Bar # included here
             ])
     print(f"[{datetime.datetime.now()}] [SCHEDULER] PEC results saved to {filename}")
 
 
-def run_pec_backtest(
-    TOKENS,
-    get_ohlcv,
-    get_local_wib,
-    PEC_WINDOW_MINUTES,
-    PEC_BARS,
-    OHLCV_LIMIT,
-):
+def run_pec_backtest(TOKENS, get_ohlcv, get_local_wib, PEC_WINDOW_MINUTES, PEC_BARS, OHLCV_LIMIT):
     """
     Runs PEC backtest on ALL tokens from TOKENS.
     Uses $100 per trade, 5-bar fixed exit. Exports clean block with all detail,
@@ -133,7 +126,8 @@ def run_pec_backtest(
                         'gatekeepers_passed': passes,
                         'filter_results': filter_pass_str,
                         'gk_flags': gk_pass_str,
-                        'win_loss': win_loss
+                        'win_loss': win_loss,
+                        'exit_bar': exit_idx  # Added Exit Bar #
                     }
 
                     # Append result to respective block
