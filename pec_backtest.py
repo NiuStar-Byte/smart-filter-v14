@@ -119,7 +119,9 @@ def run_pec_backtest(
                     win_loss = "WIN" if pnl_abs > 0 else "LOSS"
 
                     # Get Exit Time and # BAR Exit (calculated from pec_engine.py)
-                    exit_time, bar_exit = run_pec_check(symbol, entry_idx, tf, signal_type, entry_price, df, pec_bars=PEC_BARS)
+                    result_from_check = run_pec_check(symbol, entry_idx, tf, signal_type, entry_price, df, pec_bars=PEC_BARS)
+                    exit_time = result_from_check[0]  # First returned value (Exit Time)
+                    bar_exit = result_from_check[1]   # Second returned value (# BAR Exit)
 
                     # Compose data for CSV export
                     pec_result = {
@@ -165,4 +167,3 @@ def run_pec_backtest(
     send_telegram_file(short_file, caption=f"All PEC SHORT results for ALL tokens [{timestamp}]")
 
     print("[BACKTEST PEC] All done. PEC logs grouped in", long_file, "and", short_file)
-
