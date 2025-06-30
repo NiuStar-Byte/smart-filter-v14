@@ -20,7 +20,7 @@ def save_to_csv(results, filename="pec_results.csv"):
                "Confidence", "Weighted Confidence", "Gatekeepers Passed", 
                "Filter Results", "GK Flags", "Result", "Exit Bar #"]
 
-    with open(filename, mode='w', newline='') as file:
+    with open(filename, mode='a', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(headers)  # Write headers
 
