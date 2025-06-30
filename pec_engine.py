@@ -120,3 +120,19 @@ def run_pec_check(
             "error": str(e),
             "summary": f"# PEC ERROR: {symbol} {tf}: {str(e)}"
         }
+
+def export_pec_log(result, filename="pec_debug_temp.txt", custom_header=None):
+    """
+    Export a single PEC result (dict) to the given txt file.
+    If custom_header is supplied, prepend it as the first line (for numbered, apple-to-apple log).
+    """
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    summary = result.get("summary", str(result))
+    
+    with open(filename, "a") as f:
+        if custom_header:
+            f.write(f"\n{custom_header}\n")
+        else:
+            f.write(f"\n# PEC Result Export (created: {now})\n")
+        f.write(summary)
+        f.write("\n" + "="*32 + "\n")
