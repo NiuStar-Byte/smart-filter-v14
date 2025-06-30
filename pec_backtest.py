@@ -10,7 +10,7 @@ def save_to_csv(results, filename="pec_results.csv"):
     # Define the column headers
     headers = ["Signal Type", "Symbol", "TF", "Entry Time", "Entry Price", "Exit Price", 
                "PnL ($)", "PnL (%)", "Score", "Max Score", "Confidence", "Weighted Confidence", 
-               "Gatekeepers Passed", "Filter Results", "GK Flags", "Result"]
+               "Gatekeepers Passed", "Filter Results", "GK Flags", "Result", "Exit Time", "# BAR Exit"]
     
     # Open the CSV file for writing (mode 'a' appends to the file)
     with open(filename, mode='a', newline='') as file:
@@ -38,7 +38,9 @@ def save_to_csv(results, filename="pec_results.csv"):
                 result['gatekeepers_passed'],
                 result['filter_results'],
                 result['gk_flags'],
-                result['win_loss']
+                result['win_loss'],
+                result['exit_time'],   # NEW: Exit Time
+                result['exit_bar']     # NEW: # BAR Exit
             ])
     print(f"[{datetime.datetime.now()}] [SCHEDULER] PEC results saved to {filename}")
 
@@ -116,6 +118,9 @@ def run_pec_backtest(
                     pnl_pct = 100 * pnl_abs / 100
                     win_loss = "WIN" if pnl_abs > 0 else "LOSS"
 
+                    # Get Exit Time and # BAR Exit (calculated from pec_engine.py)
+                    exit_time, bar_exit = run_pec_check(symbol, entry_idx, tf, signal_type, entry_price, df, pec_bars=PEC_BARS)
+
                     # Compose data for CSV export
                     pec_result = {
                         'signal_type': signal_type,
@@ -133,7 +138,9 @@ def run_pec_backtest(
                         'gatekeepers_passed': passes,
                         'filter_results': filter_pass_str,
                         'gk_flags': gk_pass_str,
-                        'win_loss': win_loss
+                        'win_loss': win_loss,
+                        'exit_time': exit_time,  # NEW: exit time
+                        'exit_bar': bar_exit   # NEW: # BAR Exit
                     }
 
                     # Append result to respective block
@@ -158,3 +165,4 @@ def run_pec_backtest(
     send_telegram_file(short_file, caption=f"All PEC SHORT results for ALL tokens [{timestamp}]")
 
     print("[BACKTEST PEC] All done. PEC logs grouped in", long_file, "and", short_file)
+
