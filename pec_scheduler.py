@@ -39,8 +39,16 @@ def main():
             # Execute PEC backtest
             try:
                 print(f"[{datetime.now()}] [SCHEDULER] Running PEC backtest for all tokens...")
-                run_pec_backtest(TOKENS, get_ohlcv, get_local_wib, PEC_WINDOW_MINUTES, PEC_BARS, OHLCV_LIMIT)
+                
+                # Run PEC backtest with updated logic for Exit Time and # BAR Exit
+                results = run_pec_backtest(TOKENS, get_ohlcv, get_local_wib, PEC_WINDOW_MINUTES, PEC_BARS, OHLCV_LIMIT)
+                
+                # Here you can send the results or save them, for now we just print the completion message
                 print(f"[{datetime.now()}] [SCHEDULER] PEC backtest completed successfully.")
+                
+                # Optionally, you can process and send alerts for each result
+                send_telegram_file(results)  # If you want to send the file via Telegram (optional)
+                
             except Exception as e:
                 print(f"[{datetime.now()}] [SCHEDULER] Error in backtest: {e}")
 
@@ -55,3 +63,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
