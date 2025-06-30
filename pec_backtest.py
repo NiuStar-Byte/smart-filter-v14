@@ -5,6 +5,7 @@ from pec_engine import run_pec_check
 from telegram_alert import send_telegram_file
 import os
 from datetime import datetime
+from pec_scheduler import TOKENS
 
 def save_to_csv(results, filename="pec_results.csv"):
     """
