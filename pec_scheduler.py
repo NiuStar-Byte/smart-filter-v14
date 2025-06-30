@@ -1,9 +1,9 @@
 import time
 from datetime import datetime
-from kucoin_data import get_ohlcv  # Assuming get_ohlcv is imported from kucoin_data.py
-from pec_engine import run_pec_check  # Assuming run_pec_check is imported from pec_engine.py
-from pec_backtest import run_pec_backtest  # Assuming run_pec_backtest is imported from pec_backtest.py
-from telegram_alert import send_telegram_file
+from kucoin_data import get_ohlcv
+from pec_backtest import run_pec_backtest  # Import the function here to avoid circular import
+from telegram_alert import send_telegram_file  # Assuming send_telegram_file is correctly implemented
+import os
 
 # === CONFIGURATION ===
 TOKENS = [
