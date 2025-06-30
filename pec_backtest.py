@@ -50,7 +50,7 @@ def run_pec_backtest(TOKENS, get_ohlcv, get_local_wib, PEC_WINDOW_MINUTES, PEC_B
     including filter pass/fail, GK pass, total score, confidence, etc.
     Output filenames are timestamped for version tracking.
     """
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M")  # Corrected usage of datetime.now()
     long_file = f"pec_long_results_{timestamp}.csv"
     short_file = f"pec_short_results_{timestamp}.csv"
 
