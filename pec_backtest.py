@@ -120,9 +120,13 @@ def run_pec_backtest(
 
                     # Get Exit Time and # BAR Exit (calculated from pec_engine.py)
                     result_from_check = run_pec_check(symbol, entry_idx, tf, signal_type, entry_price, df, pec_bars=PEC_BARS)
-                    exit_time = result_from_check[0]  # First returned value (Exit Time)
-                    bar_exit = result_from_check[1]   # Second returned value (# BAR Exit)
-
+                    if len(result_from_check) == 2:
+                        exit_time = result_from_check[0]  # First returned value (Exit Time)
+                        bar_exit = result_from_check[1]   # Second returned value (# BAR Exit)
+                    else:
+                        exit_time = "N/A"
+                        bar_exit = "N/A"
+                    
                     # Compose data for CSV export
                     pec_result = {
                         'signal_type': signal_type,
