@@ -4,7 +4,7 @@ from smart_filter import SmartFilter
 from pec_engine import run_pec_check
 from telegram_alert import send_telegram_file
 import os
-import datetime
+from datetime import datetime
 
 def save_to_csv(results, filename="pec_results.csv"):
     """
