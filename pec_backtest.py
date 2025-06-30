@@ -1,11 +1,12 @@
-import pandas as pd
-import csv
-from smart_filter import SmartFilter
-from pec_engine import run_pec_check
-from telegram_alert import send_telegram_file
+# pec_backtest.py
+
 import os
+import csv
+import pandas as pd
+from telegram_alert import send_telegram_file
+from smart_filter import SmartFilter
 from datetime import datetime
-from pec_scheduler import TOKENS
+from pec_scheduler import TOKENS  # Ensure the tokens are imported properly
 
 def save_to_csv(results, filename="pec_results.csv"):
     """
@@ -20,7 +21,7 @@ def save_to_csv(results, filename="pec_results.csv"):
                "Confidence", "Weighted Confidence", "Gatekeepers Passed", 
                "Filter Results", "GK Flags", "Result", "Exit Bar #"]
 
-    with open(filename, mode='a', newline='') as file:
+    with open(filename, mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(headers)  # Write headers
 
@@ -49,10 +50,9 @@ def save_to_csv(results, filename="pec_results.csv"):
 
 def run_pec_backtest(symbols, timeframe, pec_window_minutes, pec_bars, ohlcv_data):
     """
-    Run the backtest for a given set of symbols.
+    Run the backtest for the symbols, and save to a CSV file.
     """
     results = []
-
     for symbol in symbols:
         print(f"[{datetime.now()}] [SCHEDULER] Running PEC for {symbol}...")
 
@@ -117,21 +117,3 @@ def evaluate_signal(symbol, df, entry_idx, pec_bars):
     }
     return result
 
-
-def main():
-    """
-    Start the backtest process.
-    """
-    symbols = TOKENS  # Or the tokens you wish to backtest
-    timeframe = '5min'  # Adjust based on your needs
-    pec_window_minutes = 500
-    pec_bars = 5
-
-    # Example: Get OHLCV data for backtest
-    ohlcv_data = get_ohlcv(symbols[0], "5min")  # Placeholder for actual data fetching
-
-    run_pec_backtest(symbols, timeframe, pec_window_minutes, pec_bars, ohlcv_data)
-
-
-if __name__ == "__main__":
-    main()
