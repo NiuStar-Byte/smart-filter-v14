@@ -1,5 +1,5 @@
 import logging
-from telegram import Bot
+import requests
 
 # Set up logging to a text file
 logging.basicConfig(
@@ -17,10 +17,18 @@ def send_logs_to_telegram(message):
     Sends the message to a specified Telegram group using the bot.
     """
     try:
-        bot = Bot(token=BOT_TOKEN)
-        bot.send_message(chat_id=CHAT_ID, text=message)
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        params = {
+            "chat_id": CHAT_ID,
+            "text": message
+        }
+        response = requests.get(url, params=params)
+        if response.status_code == 200:
+            print("Log sent to Telegram successfully!")
+        else:
+            print(f"Failed to send log to Telegram: {response.status_code}")
     except Exception as e:
-        logging.error(f"Failed to send message to Telegram: {e}")
+        print(f"Error sending log to Telegram: {e}")
 
 def log_exit_conditions(exit_time, exit_price, follow_through, stop_survival, volume_condition, condition_met):
     """
@@ -33,6 +41,6 @@ def log_exit_conditions(exit_time, exit_price, follow_through, stop_survival, vo
 
     # Log to file
     logging.debug(message)
-
+    print(f"Log message written: {message}")  # Debugging line to check log creation
     # Send the log to Telegram
     send_logs_to_telegram(message)
