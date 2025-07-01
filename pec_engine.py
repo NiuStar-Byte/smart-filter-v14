@@ -1,5 +1,3 @@
-# pec_engine.py
-
 import pandas as pd
 from datetime import datetime
 from exit_condition_debug import log_exit_conditions
@@ -36,13 +34,13 @@ def run_pec_check(
     """
     try:
         print(f"[PEC_ENGINE] Starting PEC check for {symbol} at index {entry_idx}.")
-        
+
         # Get the relevant data for backtest
         pec_data = ohlcv_df.iloc[entry_idx: entry_idx + pec_bars + 1].copy()
         if pec_data.shape[0] < pec_bars + 1:
             print(f"[PEC_ENGINE] Not enough data for PEC: {symbol} at index {entry_idx}.")
             return {"status": "not enough data for PEC"}
-        
+
         # Calculate MFE and MAE for the trade
         if signal_type == "LONG":
             max_up = (pec_data["high"].max() - entry_price) / entry_price * 100
@@ -54,7 +52,7 @@ def run_pec_check(
             final_ret = (entry_price - pec_data["close"].iloc[-1]) / entry_price * 100
 
         print(f"[PEC_ENGINE] MFE: {max_up:.2f}%, MAE: {max_dn:.2f}%, Final Return: {final_ret:.2f}%")
-    
+
         # Entry Follow-Through: Did it move at least +0.5% in your favor?
         follow_through = max_up >= 0.5
 
@@ -76,25 +74,34 @@ def run_pec_check(
         avg_vol = ohlcv_df["volume"].iloc[max(0, entry_idx-30):entry_idx].mean()
         vol_pass = (pec_data["volume"].iloc[1:] > avg_vol).sum() >= 3
 
-def check_exit_conditions():
-    # Your logic for calculating exit conditions
-    
-    # Assuming you've already calculated these variables:
-    exit_time = None
-    exit_price = None
-    follow_through = False
-    stop_survival = False
-    volume_condition = False
-    condition_met = False
+        # Logic for logging the exit conditions (EXIT TIME and EXIT PRICE)
+        exit_time = None
+        exit_price = None
+        follow_through = False
+        stop_survival = False
+        volume_condition = False
+        condition_met = False
 
-    # Logic to determine if exit conditions are met
-    if some_exit_condition:
-        exit_price = calculated_exit_price
-        exit_time = calculated_exit_time
-        condition_met = True
+        try:
+            if follow_through:  # Assuming exit is based on the follow-through condition
+                exit_price = pec_data["close"].max()  # Exit price (take profit condition)
+                exit_time = ohlcv_df.index[entry_idx + pec_bars]  # Exit time is the timestamp of the exit bar
 
-    # Log exit conditions
-    log_exit_conditions(exit_time, exit_price, follow_through, stop_survival, volume_condition, condition_met)
+            if stop_survival:  # Check if trailing stop condition met
+                if pec_data["close"].iloc[-1] < pec_data["close"].iloc[-2] * 0.995:
+                    exit_price = pec_data["close"].iloc[-1]
+                    exit_time = ohlcv_df.index[entry_idx + pec_bars]  # Exit time when the condition is met
+
+            if volume_condition:  # Check if volume condition met
+                if pec_data["volume"].iloc[-1] > pec_data["volume"].mean():
+                    exit_price = pec_data["close"].iloc[-1]
+                    exit_time = ohlcv_df.index[entry_idx + pec_bars]  # Exit time when volume condition met
+
+            # Log exit conditions
+            log_exit_conditions(exit_time, exit_price, follow_through, stop_survival, volume_condition, condition_met)
+        
+        except Exception as e:
+            logging.error(f"Error in logging exit conditions: {e}")
         
         # Format diagnostics for filter-level pass/fail
         filter_diag_str = ""
@@ -118,48 +125,6 @@ def check_exit_conditions():
         # Calculate # BAR Exit (last bar number based on pec_bars)
         exit_bar = entry_idx + pec_bars  # Exit after specified number of bars
 
-        # Find the time of exit (Exit Time) when the condition is met
-        exit_time = None
-        exit_price = None
-        if follow_through:  # Assuming exit is based on the follow-through condition
-            exit_price = pec_data["close"].max()  # Exit price (take profit condition)
-            exit_time = ohlcv_df.index[exit_bar]  # Exit time is the timestamp of the exit bar
-
-def track_exit_conditions_example(pec_data, follow_through, stop_survival, volume_condition):
-    # Track when the exit price and time are populated based on conditions in pec_data.
-    exit_time = None
-    exit_price = None
-    condition_met = False
-
-    # If follow-through condition is met
-    if follow_through:
-        exit_price = pec_data["close"].max()
-        exit_time = pec_data.index[-1]  # Assuming pec_data has datetime index
-
-    # If trailing stop condition is met
-    if stop_survival:
-        # Example of stop survival condition
-        if pec_data["close"].iloc[-1] < pec_data["close"].iloc[-2] * 0.995:  # Stop condition at 0.5% decrease
-            exit_price = pec_data["close"].iloc[-1]
-            exit_time = pec_data.index[-1] 
-
-    # If volume condition is met
-    if volume_condition:
-        # Example of volume condition logic
-        if pec_data["volume"].iloc[-1] > pec_data["volume"].mean():
-            exit_price = pec_data["close"].iloc[-1]
-            exit_time = pec_data.index[-1]
-
-    # Call the logging function to record the exit conditions
-    log_exit_conditions(exit_time, exit_price, follow_through, stop_survival, volume_condition, condition_met)
-        
-        # If exit condition isn't met, leave exit time and exit price as N/A
-        if exit_time is None or exit_price is None:
-            exit_time = "N/A"
-            exit_price = "N/A"
-
-
-        
         result = {
             "symbol": symbol,
             "tf": tf,
