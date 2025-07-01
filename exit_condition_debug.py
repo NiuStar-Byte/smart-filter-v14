@@ -1,5 +1,6 @@
 
 import logging
+from exit_logs_tele import send_logs_to_telegram  # Import the function from exit_logs_tele.py
 
 # Set up logging configuration
 logging.basicConfig(filename="exit_condition_debug.log", level=logging.DEBUG, format="%(asctime)s - %(message)s")
@@ -8,7 +9,13 @@ def log_exit_conditions(exit_time, exit_price, follow_through, stop_survival, vo
     # Log the exit condition status and track when EXIT TIME and EXIT PRICE are populated.
     logging.debug("Evaluating Exit Conditions:")
     logging.debug(f"Exit Time: {exit_time}, Exit Price: {exit_price}")
-
+    log_message = f"Exit Time: {exit_time}, Exit Price: {exit_price}, Condition Met: {condition_met}"
+    # Log the message to a file (if necessary)
+    logging.info(log_message)
+    # Send the log message to Telegram
+    send_logs_to_telegram(log_message)  # Send the log to Telegram
+    log_exit_conditions("2025-07-01 12:00:00", "123.45", True, True, True, True)
+    
     if exit_time == 'N/A' and exit_price == 'N/A':
         logging.debug("Exit Time and Exit Price: Both are N/A (No exit condition met).")
     else:
