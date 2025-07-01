@@ -1,3 +1,4 @@
+# exit_condition_debug.py
 
 import logging
 from exit_logs_tele import send_logs_to_telegram  # Import the function from exit_logs_tele.py
@@ -14,7 +15,9 @@ def log_exit_conditions(exit_time, exit_price, follow_through, stop_survival, vo
     logging.info(log_message)
     # Send the log message to Telegram
     send_logs_to_telegram(log_message)  # Send the log to Telegram
-    log_exit_conditions("2025-07-01 12:00:00", "123.45", True, True, True, True)
+    
+    # Debug log example
+    logging.debug(f"Evaluating Exit Time: {exit_time} and Exit Price: {exit_price}")
     
     if exit_time == 'N/A' and exit_price == 'N/A':
         logging.debug("Exit Time and Exit Price: Both are N/A (No exit condition met).")
@@ -59,4 +62,5 @@ def track_exit_conditions_example(pec_data, follow_through, stop_survival, volum
 # Example use of the debug function
 # Assuming you have pec_data available with follow-through and stop-survival conditions
 # track_exit_conditions_example(pec_data, follow_through=True, stop_survival=False, volume_condition=True)
+
 
