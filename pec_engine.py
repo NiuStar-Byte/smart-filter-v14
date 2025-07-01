@@ -1,6 +1,7 @@
 import pandas as pd
 from datetime import datetime
 from exit_condition_debug import log_exit_conditions
+import logging
 
 def run_pec_check(
     symbol,
