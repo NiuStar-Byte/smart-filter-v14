@@ -18,11 +18,11 @@ TOKENS = [
     "AERO-USDT", "BMT-USDT", "LQTY-USDT", "X-USDT", "RAY-USDT",
     "EPT-USDT", "ELDE-USDT", "MAGIC-USDT", "ACTSOL-USDT", "FUN-USDT"
 ]
-COOLDOWN = {"3min": 720, "5min": 900}
+COOLDOWN = {"3min": 540, "5min": 900}
 last_sent = {}
 
 PEC_BARS = 5
-PEC_WINDOW_MINUTES = 500
+PEC_WINDOW_MINUTES = 600
 OHLCV_LIMIT = 1000
 
 def get_local_wib(dt):
