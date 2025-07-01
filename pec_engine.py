@@ -2,6 +2,8 @@ import pandas as pd
 from datetime import datetime
 from exit_condition_debug import log_exit_conditions
 import logging
+from exit_logs_tele import log_exit_conditions
+
 
 def run_pec_check(
     symbol,
@@ -83,6 +85,9 @@ def run_pec_check(
         volume_condition = False
         condition_met = False
 
+        # Log the exit conditions to both the file and Telegram
+        log_exit_conditions(exit_time, exit_price, follow_through, stop_survival, volume_condition, condition_met)
+        
         try:
             if follow_through:  # Assuming exit is based on the follow-through condition
                 exit_price = pec_data["close"].max()  # Exit price (take profit condition)
