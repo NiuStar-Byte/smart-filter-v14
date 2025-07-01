@@ -1,3 +1,5 @@
+# exit_logs_tele.py
+
 import logging
 import requests
 from telegram import Bot  # Ensure Bot class is imported
@@ -13,13 +15,13 @@ logging.basicConfig(
 BOT_TOKEN = "7100609549:AAHmeFe0RondzYyPKNuGTTp8HNAuT0PbNJs"  # Your bot token
 CHAT_ID = "-1002857433223"  # Your chat ID
 
-def send_logs_to_telegram(message):
+async def send_logs_to_telegram(message):
     """
     Sends the message to a specified Telegram group using the bot.
     """
     try:
         bot = Bot(token=BOT_TOKEN)
-        bot.send_message(chat_id=CHAT_ID, text=message)  # Sending text message
+        await bot.send_message(chat_id=CHAT_ID, text=message)  # Sending text message
         logging.debug(f"Log message sent to Telegram: {message}")
     except Exception as e:
         logging.error(f"Failed to send message to Telegram: {e}")
@@ -34,6 +36,18 @@ def send_blank_log_to_telegram():
     send_logs_to_telegram("Sending blank exit_logs_tele.txt file to Telegram.")
     logging.debug("Sent blank exit_logs_tele.txt to Telegram.")
 
-# Call the function to send the blank file
-send_blank_log_to_telegram()
-
+# The function to log exit conditions and send to Telegram
+def log_exit_conditions(exit_time, exit_price, follow_through, stop_survival, volume_condition, condition_met):
+    """
+    Logs exit conditions both to a file and to Telegram.
+    """
+    # Create the log message
+    message = f"Exit Time: {exit_time}, Exit Price: {exit_price}\n"
+    message += f"Follow-Through: {follow_through}, Trailing Stop Survival: {stop_survival}, Volume Condition: {volume_condition}\n"
+    message += f"Exit Condition met: {condition_met}"
+    
+    # Log to file
+    logging.debug(message)
+    
+    # Send the log message to Telegram
+    send_logs_to_telegram(message)
