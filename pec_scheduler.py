@@ -12,7 +12,7 @@ TOKENS = [
     "AERO-USDT", "BMT-USDT", "LQTY-USDT", "X-USDT", "RAY-USDT",
     "EPT-USDT", "ELDE-USDT", "MAGIC-USDT", "ACTSOL-USDT", "FUN-USDT"
 ]
-PEC_WINDOW_MINUTES = 500     # Adjust as needed
+PEC_WINDOW_MINUTES = 600     # Adjust as needed
 PEC_BARS = 5
 OHLCV_LIMIT = 1000           # Adjust as needed
 INTERVAL_SECONDS = 60        # 1 minute
