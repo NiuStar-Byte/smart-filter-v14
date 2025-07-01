@@ -97,6 +97,9 @@ def run_pec_check(
                     exit_price = pec_data["close"].iloc[-1]
                     exit_time = ohlcv_df.index[entry_idx + pec_bars]  # Exit time when volume condition met
 
+            # Add this log statement just before calling log_exit_conditions
+            logging.debug("Preparing to log exit conditions.")
+            
             # Log exit conditions
             log_exit_conditions(exit_time, exit_price, follow_through, stop_survival, volume_condition, condition_met)
         
