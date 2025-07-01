@@ -21,7 +21,7 @@ BINANCE_INTERVAL = {
     "5min": "5m"
 }
 
-def fetch_ohlcv(symbol: str, tf: str, limit: int = 50) -> pd.DataFrame | None:
+def fetch_ohlcv(symbol: str, tf: str, limit: int = 100) -> pd.DataFrame | None:
     """
     Internal: Fetch OHLCV data for a given symbol & timeframe key (tf).
     Tries (in order):
