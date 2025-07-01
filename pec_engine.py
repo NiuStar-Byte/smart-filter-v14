@@ -99,8 +99,15 @@ def run_pec_check(
 
         # Find the time of exit (Exit Time) when the condition is met
         exit_time = None
+        exit_price = None
         if follow_through:  # Assuming exit is based on the follow-through condition
-            exit_time = ohlcv_df.iloc[exit_bar]['datetime']  # Assuming 'datetime' is the column with the timestamp
+            exit_price = pec_data["close"].max()  # Exit price (take profit condition)
+            exit_time = ohlcv_df.index[exit_bar]  # Exit time is the timestamp of the exit bar
+        
+        # If exit condition isn't met, leave exit time and exit price as N/A
+        if exit_time is None or exit_price is None:
+            exit_time = "N/A"
+            exit_price = "N/A"
         
         result = {
             "symbol": symbol,
