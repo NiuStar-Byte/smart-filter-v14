@@ -94,7 +94,7 @@ def fetch_ohlcv(symbol: str, tf: str, limit: int = 100) -> pd.DataFrame | None:
     print(f"[{symbol}] No OHLCV data fetched for any endpoint.")
     return None
 
-def get_ohlcv(symbol: str, interval: str, limit: int = 50) -> pd.DataFrame | None:
+def get_ohlcv(symbol: str, interval: str, limit: int = 100) -> pd.DataFrame | None:
     """
     Public alias matching main.py signature.
       interval: one of "2min","3min","5min"
