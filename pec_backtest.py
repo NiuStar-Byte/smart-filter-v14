@@ -101,6 +101,10 @@ def run_pec_backtest(
                     weighted = res.get("passed_weight")
                     total_weight = res.get("total_weight")
 
+                    # Add Exit Time and Bar Exit here if necessary
+                    exit_time = res.get("exit_time", "N/A")  # Fallback to "N/A" if not available
+                    bar_exit = res.get("exit_bar", "N/A")    # Fallback to "N/A" if not available
+
                     # Filter-level pass/fail export
                     filter_results = res.get("filter_results", {})
                     filter_passes = {k: ("✅" if v else "❌") for k, v in filter_results.items()}
