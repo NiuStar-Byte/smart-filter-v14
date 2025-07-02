@@ -118,14 +118,9 @@ def run_pec_backtest(
                     pnl_pct = 100 * pnl_abs / 100
                     win_loss = "WIN" if pnl_abs > 0 else "LOSS"
 
-                    # Get Exit Time and # BAR Exit (calculated from pec_engine.py)
-                    result_from_check = run_pec_check(symbol, entry_idx, tf, signal_type, entry_price, df, pec_bars=PEC_BARS)
-                    if len(result_from_check) == 2:
-                        exit_time = result_from_check[0]  # First returned value (Exit Time)
-                        bar_exit = result_from_check[1]   # Second returned value (# BAR Exit)
-                    else:
-                        exit_time = "N/A"
-                        bar_exit = "N/A"
+                    # Get Exit Time and # BAR Exit (populated with mock data)
+                    exit_time = times[entry_idx + PEC_BARS]  # Set Exit Time as the timestamp of the exit bar
+                    bar_exit = PEC_BARS  # Set Exit Bar as the number of bars after the entry
                     
                     # Compose data for CSV export
                     pec_result = {
@@ -145,8 +140,8 @@ def run_pec_backtest(
                         'filter_results': filter_pass_str,
                         'gk_flags': gk_pass_str,
                         'win_loss': win_loss,
-                        'exit_time': exit_time,  # NEW: exit time
-                        'exit_bar': bar_exit   # NEW: # BAR Exit
+                        'exit_time': exit_time,  # Disabled
+                        'exit_bar': bar_exit   # Disabled
                     }
 
                     # Append result to respective block
