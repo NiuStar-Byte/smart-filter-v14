@@ -49,8 +49,8 @@ def log_exit_conditions(exit_time, exit_price, follow_through, stop_survival, vo
     # Log to file
     logging.info(message)
 
-    # Send to Telegram (ensure this is awaited properly)
-    asyncio.run(send_logs_to_telegram(message))  # Send the log message to Telegram
+    # Send to Telegram (ensure this is awaited properly using asyncio.ensure_future)
+    asyncio.ensure_future(send_logs_to_telegram(message))  # Send the log message to Telegram
     
     # Send the log message to Telegram
     send_logs_to_telegram(message)
