@@ -15,16 +15,19 @@ logging.basicConfig(
 BOT_TOKEN = "7100609549:AAHmeFe0RondzYyPKNuGTTp8HNAuT0PbNJs"  # Your bot token
 CHAT_ID = "-1002857433223"  # Your chat ID
 
+# Function to send logs to Telegram (async function)
 async def send_logs_to_telegram(message):
     """
     Sends the message to a specified Telegram group using the bot.
     """
     try:
         bot = Bot(token=BOT_TOKEN)
-        await bot.send_message(chat_id=CHAT_ID, text=message)  # Sending text message
-        logging.debug(f"Log message sent to Telegram: {message}")
+        await bot.send_message(chat_id=CHAT_ID, text=message)
+        
+        # Log the success of sending the message to Telegram
+        logging.debug(f"Log message sent to Telegram: {message}")  # Log successful send
     except Exception as e:
-        logging.error(f"Failed to send message to Telegram: {e}")
+        logging.error(f"Failed to send message to Telegram: {e}")  # Log error in case of failure
 
 # Function to create the blank log file and send it
 def send_blank_log_to_telegram():
