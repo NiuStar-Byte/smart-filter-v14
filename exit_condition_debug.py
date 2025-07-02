@@ -2,17 +2,24 @@
 
 import logging
 from exit_logs_tele import send_logs_to_telegram  # Import the function from exit_logs_tele.py
+import asyncio  # Ensure asyncio is imported
 
 # Set up logging configuration
 logging.basicConfig(filename="exit_condition_debug.log", level=logging.DEBUG, format="%(asctime)s - %(message)s")
 
-def log_exit_conditions(exit_time, exit_price, follow_through, stop_survival, volume_condition, condition_met):
+# Make the log_exit_conditions function asynchronous
+async def log_exit_conditions(exit_time, exit_price, follow_through, stop_survival, volume_condition, condition_met):
     # Log the exit condition status and track when EXIT TIME and EXIT PRICE are populated.
     logging.debug("Evaluating Exit Conditions:")
     logging.debug(f"Exit Time: {exit_time}, Exit Price: {exit_price}")
     log_message = f"Exit Time: {exit_time}, Exit Price: {exit_price}, Condition Met: {condition_met}"
+    
     # Log the message to a file (if necessary)
     logging.info(log_message)
+
+    # Await the log message to be sent to Telegram
+    await send_logs_to_telegram(log_message)  # Await the message being sent to Telegram
+
     # Send the log message to Telegram
     send_logs_to_telegram(log_message)  # Send the log to Telegram
     
