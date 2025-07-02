@@ -10,8 +10,8 @@ def save_to_csv(results, filename="pec_results.csv"):
     # Define the column headers
     headers = ["Signal Type", "Symbol", "TF", "Entry Time", "Entry Price", "Exit Price", 
                "PnL ($)", "PnL (%)", "Score", "Max Score", "Confidence", "Weighted Confidence", 
-               "Gatekeepers Passed", "Filter Results", "GK Flags", "Result", "Exit Time", "# BAR Exit"]
-    
+               "Gatekeepers Passed", "Filter Results", "GK Flags", "Result", "Exit Time", "# BAR Exit", "Signal Time"]
+     
     # Open the CSV file for writing (mode 'a' appends to the file)
     with open(filename, mode='a', newline='') as file:
         writer = csv.writer(file)
@@ -41,6 +41,7 @@ def save_to_csv(results, filename="pec_results.csv"):
                 result['win_loss'],
                 result['exit_time'],   # NEW: Exit Time
                 result['exit_bar']     # NEW: # BAR Exit
+                result['signal_time']  # NEW: Signal Time
             ])
     print(f"[{datetime.datetime.now()}] [SCHEDULER] PEC results saved to {filename}")
 
@@ -125,7 +126,10 @@ def run_pec_backtest(
                     # Get Exit Time and # BAR Exit (populated with mock data)
                     exit_time = times[entry_idx + PEC_BARS]  # Set Exit Time as the timestamp of the exit bar
                     bar_exit = PEC_BARS  # Set Exit Bar as the number of bars after the entry
-                    
+
+                    # Capture signal time
+                    signal_time = datetime.datetime.now()  # Signal time when the signal is fired
+
                     # Compose data for CSV export
                     pec_result = {
                         'signal_type': signal_type,
@@ -144,8 +148,9 @@ def run_pec_backtest(
                         'filter_results': filter_pass_str,
                         'gk_flags': gk_pass_str,
                         'win_loss': win_loss,
-                        'exit_time': exit_time,  # Disabled
-                        'exit_bar': bar_exit   # Disabled
+                        'exit_time': exit_time,  # Exit Time
+                        'exit_bar': bar_exit,    # # BAR Exit
+                        'signal_time': signal_time  # Signal Time
                     }
 
                     # Append result to respective block
