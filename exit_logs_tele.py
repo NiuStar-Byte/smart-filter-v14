@@ -49,8 +49,9 @@ def log_exit_conditions(exit_time, exit_price, follow_through, stop_survival, vo
     # Log to file
     logging.info(message)
 
-    # Send to Telegram (ensure this is awaited properly using asyncio.ensure_future)
-    asyncio.ensure_future(send_logs_to_telegram(message))  # Send the log message to Telegram
+    # Send to Telegram (ensure this is awaited properly within the event loop)
+    loop = asyncio.get_event_loop()
+    loop.create_task(send_logs_to_telegram(message))  # Schedule coroutine for execution
     
     # Send the log message to Telegram
     send_logs_to_telegram(message)
