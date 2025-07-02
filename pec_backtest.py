@@ -40,8 +40,8 @@ def save_to_csv(results, filename="pec_results.csv"):
                 result['gk_flags'],
                 result['win_loss'],
                 result['exit_time'],   # NEW: Exit Time
-                result['exit_bar']     # NEW: # BAR Exit
-                result['signal_time']  # NEW: Signal Time
+                result['exit_bar'],     # NEW: # BAR Exit
+                result['signal_time'],  # NEW: Signal Time
             ])
     print(f"[{datetime.datetime.now()}] [SCHEDULER] PEC results saved to {filename}")
 
