@@ -29,9 +29,6 @@ def run_pec_check(
         ohlcv_df: pd.DataFrame with columns: ["open", "high", "low", "close", ...]
         pec_bars: int, how many bars ahead to check (default 5)
         filter_result: dict, key=filter name, value=True/False (pass/fail)
-        score: int/float, total SmartFilter score
-        confidence: float, SmartFilter confidence
-        passed_gk_count: int, number of passed GK filters
     Returns:
         result: dict with key stats & verdicts, PLUS diagnostics
     """
@@ -57,57 +54,45 @@ def run_pec_check(
         print(f"[PEC_ENGINE] MFE: {max_up:.2f}%, MAE: {max_dn:.2f}%, Final Return: {final_ret:.2f}%")
 
         # Entry Follow-Through: Did it move at least +0.5% in your favor?
-        follow_through = max_up >= 0.5
+        follow_through = False  # Disabled follow-through condition
 
         # Trailing Stop Survival (0.5% from entry)
         stop_width = 0.5 / 100 * entry_price
-        survived = True
-        for bar in pec_data.itertuples():
-            if signal_type == "LONG" and bar.low < entry_price - stop_width:
-                survived = False
-                break
-            if signal_type == "SHORT" and bar.high > entry_price + stop_width:
-                survived = False
-                break
-
-        # Signal Persistence (How many closes in same direction?)
-        up_bars = ((pec_data["close"] > entry_price) if signal_type == "LONG" else (pec_data["close"] < entry_price)).sum()
+        survived = False  # Disabled survival condition
 
         # Volume Confirmation (at least 3/5 bars have above-average volume)
         avg_vol = ohlcv_df["volume"].iloc[max(0, entry_idx-30):entry_idx].mean()
-        vol_pass = (pec_data["volume"].iloc[1:] > avg_vol).sum() >= 3
+        vol_pass = False  # Disabled volume condition
 
         # Logic for logging the exit conditions (EXIT TIME and EXIT PRICE)
         exit_time = None
         exit_price = None
-        follow_through = False
-        stop_survival = False
-        volume_condition = False
-        condition_met = False
+        condition_met = False  # Disabled condition logic
 
         # Log the exit conditions to both the file and Telegram
-        log_exit_conditions(exit_time, exit_price, follow_through, stop_survival, volume_condition, condition_met)
+        log_exit_conditions(exit_time, exit_price, follow_through, stop_survival, vol_pass, condition_met)
         
         try:
-            if follow_through:  # Assuming exit is based on the follow-through condition
-                exit_price = pec_data["close"].max()  # Exit price (take profit condition)
-                exit_time = ohlcv_df.index[entry_idx + pec_bars]  # Exit time is the timestamp of the exit bar
+            # Disabled exit checks here
+            # if follow_through:  # Assuming exit is based on the follow-through condition
+            #     exit_price = pec_data["close"].max()  # Exit price (take profit condition)
+            #     exit_time = ohlcv_df.index[entry_idx + pec_bars]  # Exit time is the timestamp of the exit bar
 
-            if stop_survival:  # Check if trailing stop condition met
-                if pec_data["close"].iloc[-1] < pec_data["close"].iloc[-2] * 0.995:
-                    exit_price = pec_data["close"].iloc[-1]
-                    exit_time = ohlcv_df.index[entry_idx + pec_bars]  # Exit time when the condition is met
+            # if stop_survival:  # Check if trailing stop condition met
+            #     if pec_data["close"].iloc[-1] < pec_data["close"].iloc[-2] * 0.995:
+            #         exit_price = pec_data["close"].iloc[-1]
+            #         exit_time = ohlcv_df.index[entry_idx + pec_bars]  # Exit time when the condition is met
 
-            if volume_condition:  # Check if volume condition met
-                if pec_data["volume"].iloc[-1] > pec_data["volume"].mean():
-                    exit_price = pec_data["close"].iloc[-1]
-                    exit_time = ohlcv_df.index[entry_idx + pec_bars]  # Exit time when volume condition met
+            # if volume_condition:  # Check if volume condition met
+            #     if pec_data["volume"].iloc[-1] > pec_data["volume"].mean():
+            #         exit_price = pec_data["close"].iloc[-1]
+            #         exit_time = ohlcv_df.index[entry_idx + pec_bars]  # Exit time when volume condition met
 
             # Add this log statement just before calling log_exit_conditions
             logging.debug("Preparing to log exit conditions.")
             
             # Log exit conditions
-            log_exit_conditions(exit_time, exit_price, follow_through, stop_survival, volume_condition, condition_met)
+            log_exit_conditions(exit_time, exit_price, follow_through, stop_survival, vol_pass, condition_met)
         
         except Exception as e:
             logging.error(f"Error in logging exit conditions: {e}")
