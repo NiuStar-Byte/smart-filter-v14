@@ -53,6 +53,12 @@ def run_pec_check(
 
         print(f"[PEC_ENGINE] MFE: {max_up:.2f}%, MAE: {max_dn:.2f}%, Final Return: {final_ret:.2f}%")
 
+        # Capture the signal time
+        signal_time = datetime.datetime.now()  # Current datetime when the signal is fired
+
+        # Get the entry time (datetime index from OHLCV data)
+        entry_time = str(ohlcv_df.index[entry_idx])  # Ensures entry time is taken from OHLCV
+
         # Entry Follow-Through: Did it move at least +0.5% in your favor?
         follow_through = False  # Disabled follow-through condition
 
@@ -122,9 +128,10 @@ def run_pec_check(
         result = {
             "symbol": symbol,
             "tf": tf,
+            "entry_time": entry_time,  # This will now be correctly populated
+            "signal_time": str(signal_time),  # Capture signal time when the signal is fired
             "signal_type": signal_type,
             "entry_price": entry_price,
-            "entry_time": str(ohlcv_df.index[entry_idx]),
             "max_favorable": max_up,
             "max_adverse": max_dn,
             "final_return": final_ret,
