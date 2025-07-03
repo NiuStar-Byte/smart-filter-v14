@@ -26,7 +26,6 @@ def save_to_csv(results, filename="pec_results.csv"):
                 result['signal_type'],
                 result['symbol'],
                 result['tf'],
-                result['signal_time'],  # NEW: Signal Time
                 result['entry_time'],
                 result['entry_price'],
                 result['exit_price'],
@@ -41,7 +40,8 @@ def save_to_csv(results, filename="pec_results.csv"):
                 result['gk_flags'],
                 result['win_loss'],
                 result['exit_time'],   # NEW: Exit Time
-                result['exit_bar']     # NEW: # BAR Exit
+                result['exit_bar'],    # NEW: # BAR Exit
+                result['signal_time']  # NEW: Signal Time
             ])
     print(f"[{datetime.datetime.now()}] [SCHEDULER] PEC results saved to {filename}")
 
@@ -135,7 +135,6 @@ def run_pec_backtest(
                         'signal_type': signal_type,
                         'symbol': symbol,
                         'tf': tf,
-                        'signal_time': signal_time,  # Signal Time
                         'entry_time': local_time_str,
                         'entry_price': entry_price,
                         'exit_price': exit_price,
@@ -150,7 +149,8 @@ def run_pec_backtest(
                         'gk_flags': gk_pass_str,
                         'win_loss': win_loss,
                         'exit_time': exit_time,  # Exit Time
-                        'exit_bar': bar_exit    # # BAR Exit
+                        'exit_bar': bar_exit,    # # BAR Exit
+                        'signal_time': signal_time  # Signal Time
                     }
 
                     # Append result to respective block
