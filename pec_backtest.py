@@ -159,8 +159,8 @@ def run_pec_backtest(
                     exit_time = times[entry_idx + PEC_BARS]  # Set Exit Time as the timestamp of the exit bar
                     bar_exit = PEC_BARS  # Set Exit Bar as the number of bars after the entry
 
-                    # Capture signal time
-                    signal_time = datetime.datetime.now()  # Signal time when the signal is fired
+                    # Capture signal time & ensure signal_time is always a valid datetime object
+                    signal_time = datetime.datetime.now().replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S") # Remove microseconds
 
                     # Compose data for CSV export
                     pec_result = {
