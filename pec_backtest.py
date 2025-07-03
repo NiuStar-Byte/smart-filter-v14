@@ -23,7 +23,27 @@ def save_to_csv(results, filename="pec_results.csv"):
         # Write the PEC result data to the CSV
         for result in results:
             writer.writerow([
-                result['signal_type'],
+                result["Signal Type"],
+                result["Symbol"],
+                result["TF"],
+                result["Entry Time"].replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S") if hasattr(result["Entry Time"], "strftime") else result["Entry Time"],
+                result["Entry Price"],
+                result["Exit Price"],
+                result["PnL ($)"],
+                result["PnL (%)"],
+                result["Score"],
+                result["Max Score"],
+                result["Confidence"],
+                result["Weighted Confidence"],
+                result["Gatekeepers Passed"],
+                result["Filter Results"],
+                result["GK Flags"],
+                result["Result"],
+                result["Exit Time"].replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S") if hasattr(result["Exit Time"], "strftime") else result["Exit Time"],
+                result["# BAR Exit"],
+                result["Signal Time"].replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S") if hasattr(result["Signal Time"], "strftime") else result["Signal Time"]
+            ])
+  result['signal_type'],
                 result['symbol'],
                 result['tf'],
                 result['entry_time'],
