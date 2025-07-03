@@ -25,7 +25,7 @@ PEC_BARS = 5
 PEC_WINDOW_MINUTES = 600
 OHLCV_LIMIT = 1000
 
-def get_local_wib(dt):
+# def get_local_wib(dt):  # DEPRECATED - we now use UTC everywhere
     if not isinstance(dt, pd.Timestamp):
         dt = pd.Timestamp(dt)
     return dt.tz_localize('UTC').tz_convert('Asia/Jakarta').strftime('%H:%M WIB')
