@@ -5,6 +5,7 @@ from pec_engine import run_pec_check
 from telegram_alert import send_telegram_file
 import os
 import datetime
+import pytz
 
 def save_to_csv(results, filename="pec_results.csv"):
     # Define the column headers
@@ -19,6 +20,36 @@ def save_to_csv(results, filename="pec_results.csv"):
         # Write headers only if the file is empty (using file.tell())
         if file.tell() == 0:
             writer.writerow(headers)
+
+        # Write each result row
+        for result in results:
+            try:
+                entry_time = result["Entry Time"]
+                exit_time = result["Exit Time"]
+                signal_time = result["Signal Time"]
+
+                # Convert all times to UTC and strip microseconds
+                if isinstance(entry_time, pd.Timestamp):
+                    entry_time = entry_time.to_pydatetime()
+                if isinstance(exit_time, pd.Timestamp):
+                    exit_time = exit_time.to_pydatetime()
+                if isinstance(signal_time, pd.Timestamp):
+                    signal_time = signal_time.to_pydatetime()
+
+                if entry_time.tzinfo is not None:
+                    entry_time = entry_time.astimezone(pytz.UTC)
+                if exit_time.tzinfo is not None:
+                    exit_time = exit_time.astimezone(pytz.UTC)
+                if signal_time.tzinfo is not None:
+                    signal_time = signal_time.astimezone(pytz.UTC)
+
+                entry_time_str = entry_time.replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
+                exit_time_str = exit_time.replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
+                signal_time_str = signal_time.replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
+            except Exception as e:
+                entry_time_str = str(result["Entry Time"])
+                exit_time_str = str(result["Exit Time"])
+                signal_time_str = str(result["Signal Time"])
 
         # Write the PEC result data to the CSV
         for result in results:
@@ -43,26 +74,7 @@ def save_to_csv(results, filename="pec_results.csv"):
                 result["# BAR Exit"],
                 result["Signal Time"].replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S") if hasattr(result["Signal Time"], "strftime") else result["Signal Time"]
             ])
-  result['signal_type'],
-                result['symbol'],
-                result['tf'],
-                result['entry_time'],
-                result['entry_price'],
-                result['exit_price'],
-                result['pnl_abs'],
-                result['pnl_pct'],
-                result['score'],
-                result['score_max'],
-                result['confidence'],
-                result['weighted_confidence'],
-                result['gatekeepers_passed'],
-                result['filter_results'],
-                result['gk_flags'],
-                result['win_loss'],
-                result['exit_time'],   # NEW: Exit Time
-                result['exit_bar'],    # NEW: # BAR Exit
-                result['signal_time']  # NEW: Signal Time
-            ])
+  
     print(f"[{datetime.datetime.now()}] [SCHEDULER] PEC results saved to {filename}")
 
 
