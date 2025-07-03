@@ -25,11 +25,6 @@ PEC_BARS = 5
 PEC_WINDOW_MINUTES = 600
 OHLCV_LIMIT = 1000
 
-# def get_local_wib(dt):  # DEPRECATED - we now use UTC everywhere
-    if not isinstance(dt, pd.Timestamp):
-        dt = pd.Timestamp(dt)
-    return dt.tz_localize('UTC').tz_convert('Asia/Jakarta').strftime('%H:%M WIB')
-
 def get_resting_order_density(symbol, depth=100, band_pct=0.005):
     try:
         from kucoin_orderbook import fetch_orderbook
