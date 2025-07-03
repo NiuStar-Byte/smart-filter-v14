@@ -139,7 +139,6 @@ def run_pec_check(
             "symbol": symbol,
             "tf": tf,
             "entry_time": entry_time,  # This will now be correctly populated
-            "signal_time": str(signal_time),  # Capture signal time when the signal is fired
             "signal_type": signal_type,
             "entry_price": entry_price,
             "max_favorable": max_up,
@@ -155,6 +154,7 @@ def run_pec_check(
             "filter_level_results": filter_result,
             "exit_time": exit_time,   # NEW: exit time
             "exit_bar": exit_bar,     # NEW: exit bar index
+            "signal_time": str(signal_time),  # Capture signal time when the signal is fired
             "summary": summary
         }
         return result
