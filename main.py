@@ -1,9 +1,9 @@
-from datetime import datetime
 import os
 import time
 import pandas as pd
 import random
 import pytz
+from datetime import datetime
 
 from kucoin_data import get_ohlcv
 from smart_filter import SmartFilter
@@ -24,6 +24,11 @@ last_sent = {}
 PEC_BARS = 5
 PEC_WINDOW_MINUTES = 600
 OHLCV_LIMIT = 1000
+
+def get_local_wib(dt):
+    if not isinstance(dt, pd.Timestamp):
+        dt = pd.Timestamp(dt)
+    return dt.tz_localize('UTC').tz_convert('Asia/Jakarta').strftime('%H:%M WIB')
 
 def get_resting_order_density(symbol, depth=100, band_pct=0.005):
     try:
