@@ -7,6 +7,8 @@ CHAT_ID   = os.getenv("TELEGRAM_CHAT_ID",   "-1002857433223")
 SEND_URL  = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 SEND_FILE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendDocument"
 
+from datetime import datetime
+
 def send_telegram_alert(
     numbered_signal: str,
     symbol: str,
