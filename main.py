@@ -1,9 +1,9 @@
+from datetime import datetime
 import os
 import time
 import pandas as pd
 import random
 import pytz
-from datetime import datetime
 
 from kucoin_data import get_ohlcv
 from smart_filter import SmartFilter
