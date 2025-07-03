@@ -166,6 +166,7 @@ class SmartFilter:
         else:
             print(f"[{self.symbol}] ❌ No signal.")
 
+        signal_time = datetime.utcnow()
         return {
             "symbol": self.symbol,
             "tf": self.tf,
@@ -180,7 +181,8 @@ class SmartFilter:
             "price": price,
             "valid_signal": valid_signal,
             "message": message,
-            "filter_results": results
+            "filter_results": results,
+            "Signal Time": signal_time
         }
 
     # === Super-GK logic stubs ===
