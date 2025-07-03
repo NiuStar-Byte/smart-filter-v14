@@ -3,7 +3,10 @@ from datetime import datetime
 from exit_condition_debug import log_exit_conditions
 import logging
 from exit_logs_tele import log_exit_conditions
+import pytz  # To handle time zone conversion
 
+# Set timezone to WIB (Western Indonesian Time)
+WIB = pytz.timezone('Asia/Jakarta')
 
 def run_pec_check(
     symbol,
@@ -35,11 +38,18 @@ def run_pec_check(
     try:
         print(f"[PEC_ENGINE] Starting PEC check for {symbol} at index {entry_idx}.")
 
+        # Capture Signal Time in UTC
+        signal_time_utc = datetime.now(pytz.utc)  # Capture time in UTC first
+        signal_time = signal_time_utc.astimezone(WIB)  # Convert to WIB time zone
+
         # Get the relevant data for backtest
         pec_data = ohlcv_df.iloc[entry_idx: entry_idx + pec_bars + 1].copy()
         if pec_data.shape[0] < pec_bars + 1:
             print(f"[PEC_ENGINE] Not enough data for PEC: {symbol} at index {entry_idx}.")
             return {"status": "not enough data for PEC"}
+
+        # ENTRY TIME from OHLCV
+        entry_time = str(ohlcv_df.index[entry_idx].tz_localize('UTC').astimezone(WIB))  # Convert entry time to WIB
 
         # Calculate MFE and MAE for the trade
         if signal_type == "LONG":
