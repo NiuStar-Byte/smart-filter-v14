@@ -67,7 +67,7 @@ def run_pec_check(
         signal_time = datetime.datetime.now()  # Current datetime when the signal is fired
 
         # Get the entry time (datetime index from OHLCV data)
-        entry_time = str(ohlcv_df.index[entry_idx])  # Ensures entry time is taken from OHLCV
+        entry_time = str(ohlcv_df.index[entry_idx].tz_localize('UTC').astimezone(WIB))  # Convert entry time to WIB
 
         # Entry Follow-Through: Did it move at least +0.5% in your favor?
         follow_through = False  # Disabled follow-through condition
