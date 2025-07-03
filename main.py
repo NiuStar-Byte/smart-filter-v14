@@ -28,7 +28,7 @@ OHLCV_LIMIT = 1000
 def get_local_wib(dt):
     if not isinstance(dt, pd.Timestamp):
         dt = pd.Timestamp(dt)
-    return dt.tz_localize('UTC').tz_convert('Asia/Jakarta').strftime('%Y-%m-%d %H:%M:%S')
+    return dt.tz_localize('UTC').tz_convert('Asia/Jakarta').replace(microsecond=0).strftime('%Y-%m-%d %H:%M:%S')
 
 def get_resting_order_density(symbol, depth=100, band_pct=0.005):
     try:
