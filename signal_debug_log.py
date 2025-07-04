@@ -1,17 +1,14 @@
 import pandas as pd
-from datetime import datetime
-import os
 
 def dump_signal_debug_txt(*args, **kwargs):
     pass
 
 def log_fired_signal(symbol, tf, signal_type, entry_idx):
-    print(f"[DEBUG] log_fired_signal called: {symbol}, {tf}, {signal_type}, {entry_idx}")
-    """
-    Appends fired signal details to fired_signals_temp.csv.
-    """
-    import csv, uuid
+    import csv, uuid, os
     from datetime import datetime
+
+    print(f"[DEBUG] log_fired_signal called: {symbol}, {tf}, {signal_type}, {entry_idx}")
+
     log_file = "fired_signals_temp.csv"
     header = ["uuid", "symbol", "tf", "signal_type", "fired_time", "entry_idx"]
     fired_time = datetime.utcnow().isoformat()
@@ -24,19 +21,33 @@ def log_fired_signal(symbol, tf, signal_type, entry_idx):
         entry_idx
     ]
 
+    print("[DEBUG] Current working directory:", os.getcwd())
+    print("[DEBUG] Contents of cwd:", os.listdir())
+
     try:
         write_header = False
         try:
+            if os.path.exists(log_file):
+                print(f"[DEBUG] {log_file} exists.")
+            else:
+                print(f"[DEBUG] {log_file} does NOT exist. Will create.")
             with open(log_file, "r", newline='') as f:
-                if f.read().strip() == "":
+                content = f.read().strip()
+                print(f"[DEBUG] Existing content length: {len(content)}")
+                if content == "":
                     write_header = True
         except FileNotFoundError:
+            print("[DEBUG] FileNotFoundError - header will be written.")
             write_header = True
+
         with open(log_file, "a", newline='') as f:
             writer = csv.writer(f, delimiter=",")
             if write_header:
+                print("[DEBUG] Writing header:", header)
                 writer.writerow(header)
+            print("[DEBUG] Writing row:", row)
             writer.writerow(row)
+        print("[DEBUG] CSV write completed successfully.")
     except Exception as e:
         print(f"[ERROR] log_fired_signal failed: {e}")
 
