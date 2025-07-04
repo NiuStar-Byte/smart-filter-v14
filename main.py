@@ -7,7 +7,6 @@ import pandas as pd
 import random
 import pytz
 from datetime import datetime
-import logging
 
 from kucoin_data import get_ohlcv
 from smart_filter import SmartFilter
@@ -85,48 +84,6 @@ def super_gk_aligned(bias, orderbook_result, density_result):
     if (density_bias != "NEUTRAL" and bias != density_bias): return False
     if orderbook_bias == "NEUTRAL" or density_bias == "NEUTRAL": return False
     return True
-
-def print_signal_summary():
-    # Initialize counters for each category
-    total_signals = 0
-    three_min_signals = 0
-    five_min_signals = 0
-    long_signals = 0
-    short_signals = 0
-
-    try:
-        with open("fired_signals_temp.csv", "r") as file:
-            # Skip the header line
-            next(file)
-            for line in file:
-                total_signals += 1
-                columns = line.strip().split(",")
-                tf = columns[2]  # Timeframe is the 3rd column
-                signal_type = columns[3]  # Signal type is the 4th column
-
-                # Count the signals for each timeframe
-                if tf == "3min":
-                    three_min_signals += 1
-                elif tf == "5min":
-                    five_min_signals += 1
-
-                # Count the signals for each signal type (LONG/SHORT)
-                if signal_type == "LONG":
-                    long_signals += 1
-                elif signal_type == "SHORT":
-                    short_signals += 1
-
-        # Print the summary
-        print(f"\n[INFO] Signal Summary after this cycle:")
-        print(f"Total signals fired = {total_signals}")
-        print(f"3minTF signals = {three_min_signals}")
-        print(f"5minTF signals = {five_min_signals}")
-        print(f"LONG signals = {long_signals}")
-        print(f"SHORT signals = {short_signals}")
-
-    except Exception as e:
-        print(f"[ERROR] Failed to read fired_signals_temp.csv: {e}")
-
 
 def run():
     print("[INFO] Starting Smart Filter engine (LIVE MODE)...\n")
@@ -295,47 +252,6 @@ def run():
                     caption=debug_info["caption"]
                 )
 
-    print("[INFO] Starting Smart Filter engine (LIVE MODE)...\n")
-    
-    # Initialize counters
-    total_signals = 0
-    signals_3min = 0
-    signals_5min = 0
-    signals_long = 0
-    signals_short = 0
-
-    while True:
-        now = time.time()
-        valid_debugs = []
-        pec_candidates = []
-
-        for idx, symbol in enumerate(TOKENS, start=1):
-            # Process the symbol for 3min and 5min...
-            
-            # For 3min signals
-            if res3.get("valid_signal") is True:
-                signals_3min += 1
-                if res3.get("bias") == "LONG":
-                    signals_long += 1
-                elif res3.get("bias") == "SHORT":
-                    signals_short += 1
-                total_signals += 1
-
-            # For 5min signals
-            if res5.get("valid_signal") is True:
-                signals_5min += 1
-                if res5.get("bias") == "LONG":
-                    signals_long += 1
-                elif res5.get("bias") == "SHORT":
-                    signals_short += 1
-                total_signals += 1
-        
-        # Print the signal summary after processing all signals in the cycle
-        logging.info(f"\n[INFO] Signal Summary for this cycle:")
-        logging.info(f"Total signals fired = {total_signals}")
-        logging.info(f"3minTF = {signals_3min}; 5minTF = {signals_5min}")
-        logging.info(f"LONG = {signals_long}; SHORT = {signals_short}")
-        
         print("[INFO] ✅ Cycle complete. Sleeping 60 seconds...\n")
         time.sleep(60)
 
