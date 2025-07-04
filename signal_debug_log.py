@@ -1,8 +1,5 @@
 import pandas as pd
 from datetime import datetime
-import csv
-import uuid
-from datetime import datetime
 import os
 
 def dump_signal_debug_txt(*args, **kwargs):
@@ -12,7 +9,10 @@ def log_fired_signal(symbol, tf, signal_type, entry_idx):
     """
     Appends fired signal details to fired_signals_temp.csv.
     """
+    import csv, uuid
+    from datetime import datetime
     log_file = "fired_signals_temp.csv"
+    header = ["uuid", "symbol", "tf", "signal_type", "fired_time", "entry_idx"]
     fired_time = datetime.utcnow().isoformat()
     row = [
         str(uuid.uuid4()),
@@ -22,10 +22,7 @@ def log_fired_signal(symbol, tf, signal_type, entry_idx):
         fired_time,
         entry_idx
     ]
-    
-    # Always use comma as delimiter (GitHub/UNIX standard)
-    # Write header ONLY if file is empty
-    header = ["uuid", "symbol", "tf", "signal_type", "fired_time", "entry_idx"]
+
     try:
         write_header = False
         try:
@@ -41,22 +38,6 @@ def log_fired_signal(symbol, tf, signal_type, entry_idx):
             writer.writerow(row)
     except Exception as e:
         print(f"[ERROR] log_fired_signal failed: {e}")
-        
-    try:
-        write_header = False
-        try:
-            with open(log_file, "r"):
-                pass
-        except FileNotFoundError:
-            write_header = True
-
-        with open(log_file, "a", newline="") as f:
-            writer = csv.writer(f)
-            if write_header:
-                writer.writerow(["uuid", "symbol", "tf", "signal_type", "fired_time", "entry_idx"])
-            writer.writerow(row)
-    except Exception as e:
-        print(f"[ERROR] Could not write fired signal log: {e}")
 
 def dump_signal_debug_txt(symbol, tf, bias, filter_weights, gatekeepers, results,
                          orderbook_result=None, density_result=None):
