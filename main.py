@@ -208,9 +208,9 @@ def run():
                         )
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             log_fired_signal(
-                            symbol=res3.get("symbol"),
-                            tf=res3.get("tf"),
-                            signal_type=res3.get("bias"),
+                            symbol=res5.get("symbol"),
+                            tf=res5.get("tf"),
+                            signal_type=res5.get("bias"),
                             entry_idx=entry_idx,
                             )
                             send_telegram_alert(
