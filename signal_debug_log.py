@@ -3,6 +3,7 @@ from datetime import datetime
 import csv
 import uuid
 from datetime import datetime
+import os
 
 def dump_signal_debug_txt(*args, **kwargs):
     pass
@@ -21,7 +22,26 @@ def log_fired_signal(symbol, tf, signal_type, entry_idx):
         fired_time,
         entry_idx
     ]
-
+    
+    # Always use comma as delimiter (GitHub/UNIX standard)
+    # Write header ONLY if file is empty
+    header = ["uuid", "symbol", "tf", "signal_type", "fired_time", "entry_idx"]
+    try:
+        write_header = False
+        try:
+            with open(log_file, "r", newline='') as f:
+                if f.read().strip() == "":
+                    write_header = True
+        except FileNotFoundError:
+            write_header = True
+        with open(log_file, "a", newline='') as f:
+            writer = csv.writer(f, delimiter=",")
+            if write_header:
+                writer.writerow(header)
+            writer.writerow(row)
+    except Exception as e:
+        print(f"[ERROR] log_fired_signal failed: {e}")
+        
     try:
         write_header = False
         try:
