@@ -1,3 +1,5 @@
+# pec_backtest.py
+
 import pandas as pd
 import csv
 from smart_filter import SmartFilter
@@ -12,39 +14,40 @@ def save_to_csv(results, filename="pec_results.csv"):
                "PnL ($)", "PnL (%)", "Score", "Max Score", "Confidence", "Weighted Confidence", 
                "Gatekeepers Passed", "Filter Results", "GK Flags", "Result", "Exit Time", "# BAR Exit", "Signal Time"]
      
-    # Open the CSV file for writing (mode 'a' appends to the file)
     with open(filename, mode='a', newline='') as file:
         writer = csv.writer(file)
-        
-        # Write headers only if the file is empty (using file.tell())
         if file.tell() == 0:
             writer.writerow(headers)
-
-        # Write the PEC result data to the CSV
         for result in results:
+            # Format signal time (remove microseconds)
+            signal_time = result.get("signal_time")
+            if isinstance(signal_time, (datetime.datetime, pd.Timestamp)):
+                signal_time = signal_time.replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
+            elif isinstance(signal_time, str) and "." in signal_time:
+                signal_time = signal_time.split(".")[0]
+            # Write row
             writer.writerow([
-                result['signal_type'],
-                result['symbol'],
-                result['tf'],
-                result['entry_time'],
-                result['entry_price'],
-                result['exit_price'],
-                result['pnl_abs'],
-                result['pnl_pct'],
-                result['score'],
-                result['score_max'],
-                result['confidence'],
-                result['weighted_confidence'],
-                result['gatekeepers_passed'],
-                result['filter_results'],
-                result['gk_flags'],
-                result['win_loss'],
-                result['exit_time'],   # NEW: Exit Time
-                result['exit_bar'],    # NEW: # BAR Exit
-                result["Signal Time"]replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S") # NEW: Signal Time without microsecond
+                result.get('signal_type', ''),
+                result.get('symbol', ''),
+                result.get('tf', ''),
+                result.get('entry_time', ''),
+                result.get('entry_price', ''),
+                result.get('exit_price', ''),
+                result.get('pnl_abs', ''),
+                result.get('pnl_pct', ''),
+                result.get('score', ''),
+                result.get('score_max', ''),
+                result.get('confidence', ''),
+                result.get('weighted_confidence', ''),
+                result.get('gatekeepers_passed', ''),
+                result.get('filter_results', ''),
+                result.get('gk_flags', ''),
+                result.get('win_loss', ''),
+                result.get('exit_time', ''),
+                result.get('exit_bar', ''),
+                signal_time or ''
             ])
     print(f"[{datetime.datetime.now()}] [SCHEDULER] PEC results saved to {filename}")
-
 
 def run_pec_backtest(
     TOKENS,
@@ -54,12 +57,6 @@ def run_pec_backtest(
     PEC_BARS,
     OHLCV_LIMIT,
 ):
-    """
-    Runs PEC backtest on ALL tokens from TOKENS.
-    Uses $100 per trade, 5-bar fixed exit. Exports clean block with all detail,
-    including filter pass/fail, GK pass, total score, confidence, etc.
-    Output filenames are timestamped for version tracking.
-    """
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
     long_file = f"pec_long_results_{timestamp}.csv"
     short_file = f"pec_short_results_{timestamp}.csv"
@@ -101,20 +98,13 @@ def run_pec_backtest(
                     confidence = res.get("confidence")
                     weighted = res.get("passed_weight")
                     total_weight = res.get("total_weight")
-
-                    # Add Exit Time and Bar Exit here if necessary
-                    exit_time = res.get("exit_time", "N/A")  # Fallback to "N/A" if not available
-                    bar_exit = res.get("exit_bar", "N/A")    # Fallback to "N/A" if not available
-
                     # Filter-level pass/fail export
                     filter_results = res.get("filter_results", {})
                     filter_passes = {k: ("✅" if v else "❌") for k, v in filter_results.items()}
                     filter_pass_str = ", ".join(f"{k}:{v}" for k, v in filter_passes.items())
-
                     # GK-level pass/fail export
                     gk_flags = getattr(sf, "gatekeepers", [])
                     gk_pass_str = ", ".join(str(gk) for gk in gk_flags)
-
                     # $100 notional logic
                     if signal_type == "LONG":
                         pnl_abs = 100 * (exit_price - entry_price) / entry_price
@@ -122,14 +112,11 @@ def run_pec_backtest(
                         pnl_abs = 100 * (entry_price - exit_price) / entry_price
                     pnl_pct = 100 * pnl_abs / 100
                     win_loss = "WIN" if pnl_abs > 0 else "LOSS"
-
-                    # Get Exit Time and # BAR Exit (populated with mock data)
-                    exit_time = times[entry_idx + PEC_BARS]  # Set Exit Time as the timestamp of the exit bar
-                    bar_exit = PEC_BARS  # Set Exit Bar as the number of bars after the entry
-
-                    # Capture signal time
-                    signal_time = datetime.datetime.now()  # Signal time when the signal is fired
-
+                    # Exit time and # BAR Exit
+                    exit_time = times[entry_idx + PEC_BARS]
+                    bar_exit = PEC_BARS
+                    # Signal time (fired bar time, not "now")
+                    signal_time = times[entry_idx].replace(microsecond=0)
                     # Compose data for CSV export
                     pec_result = {
                         'signal_type': signal_type,
@@ -148,11 +135,10 @@ def run_pec_backtest(
                         'filter_results': filter_pass_str,
                         'gk_flags': gk_pass_str,
                         'win_loss': win_loss,
-                        'exit_time': exit_time,  # Exit Time
-                        'exit_bar': bar_exit,    # # BAR Exit
-                        'signal_time': signal_time  # Signal Time
+                        'exit_time': exit_time.strftime("%Y-%m-%d %H:%M:%S"),
+                        'exit_bar': bar_exit,
+                        'signal_time': signal_time.strftime("%Y-%m-%d %H:%M:%S"),
                     }
-
                     # Append result to respective block
                     if signal_type == "LONG":
                         long_blocks.append(pec_result)
@@ -161,17 +147,15 @@ def run_pec_backtest(
                     pec_counter += 1
             print(f"[BACKTEST PEC] Done for {symbol} {tf}.")
 
-    # Save the results to CSV
     save_to_csv(long_blocks, long_file)
     save_to_csv(short_blocks, short_file)
 
     print(f"[DEBUG] {long_file} written, {len(long_blocks)} signals.")
     print(f"[DEBUG] {short_file} written, {len(short_blocks)} signals.")
 
-    # Send the CSV files to Telegram
     print("[DEBUG] Sending PEC long file to Telegram...")
     send_telegram_file(long_file, caption=f"All PEC LONG results for ALL tokens [{timestamp}]")
     print("[DEBUG] Sending PEC short file to Telegram...")
     send_telegram_file(short_file, caption=f"All PEC SHORT results for ALL tokens [{timestamp}]")
-
     print("[BACKTEST PEC] All done. PEC logs grouped in", long_file, "and", short_file)
+
