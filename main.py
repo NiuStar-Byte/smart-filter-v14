@@ -1,5 +1,6 @@
 # main.py
 
+from signal_debug_log import dump_signal_debug_txt, log_fired_signal
 import os
 import time
 import pandas as pd
@@ -139,6 +140,12 @@ def run():
                             entry_idx=entry_idx
                         )
                         if os.getenv("DRY_RUN", "false").lower() != "true":
+                            log_fired_signal(
+                            symbol=res3.get("symbol"),
+                            tf=res3.get("tf"),
+                            signal_type=res3.get("bias"),
+                            entry_idx=entry_idx,
+                            )
                             send_telegram_alert(
                                 numbered_signal=numbered_signal,
                                 symbol=res3.get("symbol"),
@@ -200,6 +207,12 @@ def run():
                             entry_idx=entry_idx
                         )
                         if os.getenv("DRY_RUN", "false").lower() != "true":
+                            log_fired_signal(
+                            symbol=res3.get("symbol"),
+                            tf=res3.get("tf"),
+                            signal_type=res3.get("bias"),
+                            entry_idx=entry_idx,
+                            )
                             send_telegram_alert(
                                 numbered_signal=numbered_signal,
                                 symbol=res5.get("symbol"),
