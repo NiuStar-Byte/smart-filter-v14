@@ -41,7 +41,7 @@ def save_to_csv(results, filename="pec_results.csv"):
                 result['win_loss'],
                 result['exit_time'],   # NEW: Exit Time
                 result['exit_bar'],    # NEW: # BAR Exit
-                result['signal_time']  # NEW: Signal Time
+                result["Signal Time"]replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S") # NEW: Signal Time without microsecond
             ])
     print(f"[{datetime.datetime.now()}] [SCHEDULER] PEC results saved to {filename}")
 
