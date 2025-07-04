@@ -51,6 +51,15 @@ def log_fired_signal(symbol, tf, signal_type, entry_idx):
     except Exception as e:
         print(f"[ERROR] log_fired_signal failed: {e}")
 
+def print_fired_signals_csv():
+    print("\n[DEBUG] === Contents of fired_signals_temp.csv ===")
+    try:
+        with open("fired_signals_temp.csv") as f:
+            content = f.read()
+            print(content)
+    except Exception as e:
+        print(f"[ERROR] Could not read fired_signals_temp.csv: {e}")
+
 def dump_signal_debug_txt(symbol, tf, bias, filter_weights, gatekeepers, results,
                          orderbook_result=None, density_result=None):
     """
