@@ -1,3 +1,5 @@
+# main.py
+
 import os
 import time
 import pandas as pd
@@ -8,7 +10,7 @@ from datetime import datetime
 from kucoin_data import get_ohlcv
 from smart_filter import SmartFilter
 from telegram_alert import send_telegram_alert, send_telegram_file
-from signal_debug_log import dump_signal_debug_txt
+from signal_debug_log import dump_signal_debug_txt, log_fired_signal
 from kucoin_orderbook import get_order_wall_delta
 from pec_engine import run_pec_check, export_pec_log
 
@@ -129,6 +131,13 @@ def run():
                         pec_candidates.append(
                             ("3min", symbol, res3.get("price"), bias, df3, entry_idx)
                         )
+                        # --- Add log_fired_signal for each fired signal ---
+                        log_fired_signal(
+                            symbol=symbol,
+                            tf="3min",
+                            signal_type=res3.get("bias"),
+                            entry_idx=entry_idx
+                        )
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             send_telegram_alert(
                                 numbered_signal=numbered_signal,
@@ -183,6 +192,13 @@ def run():
                         pec_candidates.append(
                             ("5min", symbol, res5.get("price"), bias, df5, entry_idx)
                         )
+                        # --- Add log_fired_signal for each fired signal ---
+                        log_fired_signal(
+                            symbol=symbol,
+                            tf="5min",
+                            signal_type=res5.get("bias"),
+                            entry_idx=entry_idx
+                        )
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             send_telegram_alert(
                                 numbered_signal=numbered_signal,
@@ -236,3 +252,4 @@ if __name__ == "__main__":
         )
     else:
         run()
+
