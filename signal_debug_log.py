@@ -1,5 +1,43 @@
 import pandas as pd
 from datetime import datetime
+import csv
+import uuid
+from datetime import datetime
+
+def dump_signal_debug_txt(...):
+    # Your existing code for signal_debug_temp.txt here
+    pass
+
+def log_fired_signal(symbol, tf, signal_type, entry_idx):
+    """
+    Appends fired signal details to fired_signals_temp.csv.
+    """
+    log_file = "fired_signals_temp.csv"
+    fired_time = datetime.utcnow().isoformat()
+    row = [
+        str(uuid.uuid4()),
+        symbol,
+        tf,
+        signal_type,
+        fired_time,
+        entry_idx
+    ]
+
+    try:
+        write_header = False
+        try:
+            with open(log_file, "r"):
+                pass
+        except FileNotFoundError:
+            write_header = True
+
+        with open(log_file, "a", newline="") as f:
+            writer = csv.writer(f)
+            if write_header:
+                writer.writerow(["uuid", "symbol", "tf", "signal_type", "fired_time", "entry_idx"])
+            writer.writerow(row)
+    except Exception as e:
+        print(f"[ERROR] Could not write fired signal log: {e}")
 
 def dump_signal_debug_txt(symbol, tf, bias, filter_weights, gatekeepers, results,
                          orderbook_result=None, density_result=None):
