@@ -4,8 +4,7 @@ import csv
 import uuid
 from datetime import datetime
 
-def dump_signal_debug_txt(...):
-    # Your existing code for signal_debug_temp.txt here
+def dump_signal_debug_txt(*args, **kwargs):
     pass
 
 def log_fired_signal(symbol, tf, signal_type, entry_idx):
