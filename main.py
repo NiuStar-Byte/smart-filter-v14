@@ -7,6 +7,7 @@ import pandas as pd
 import random
 import pytz
 from datetime import datetime
+import logging
 
 from kucoin_data import get_ohlcv
 from smart_filter import SmartFilter
@@ -330,10 +331,10 @@ def run():
                 total_signals += 1
         
         # Print the signal summary after processing all signals in the cycle
-        print("\n[INFO] Signal Summary for this cycle:")
-        print(f"Total signals fired = {total_signals}")
-        print(f"3minTF = {signals_3min}; 5minTF = {signals_5min}")
-        print(f"LONG = {signals_long}; SHORT = {signals_short}")
+        logging.info(f"\n[INFO] Signal Summary for this cycle:")
+        logging.info(f"Total signals fired = {total_signals}")
+        logging.info(f"3minTF = {signals_3min}; 5minTF = {signals_5min}")
+        logging.info(f"LONG = {signals_long}; SHORT = {signals_short}")
         
         print("[INFO] ✅ Cycle complete. Sleeping 60 seconds...\n")
         time.sleep(60)
