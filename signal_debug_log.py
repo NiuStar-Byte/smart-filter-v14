@@ -6,6 +6,7 @@ def dump_signal_debug_txt(*args, **kwargs):
     pass
 
 def log_fired_signal(symbol, tf, signal_type, entry_idx):
+    print(f"[DEBUG] log_fired_signal called: {symbol}, {tf}, {signal_type}, {entry_idx}")
     """
     Appends fired signal details to fired_signals_temp.csv.
     """
