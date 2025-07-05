@@ -25,7 +25,7 @@ COOLDOWN = {"3min": 540, "5min": 900}
 last_sent = {}
 
 PEC_BARS = 5
-PEC_WINDOW_MINUTES = 600
+PEC_WINDOW_MINUTES = 720
 OHLCV_LIMIT = 1000
 
 def get_local_wib(dt):
