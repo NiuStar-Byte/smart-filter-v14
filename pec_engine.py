@@ -28,8 +28,38 @@ def process_signal_in_pec(signal, df):
     # Retrieve the entry price and calculate the PnL based on the next 5 bars
     entry_price = df.iloc[entry_idx]["close"]
     exit_idx = entry_idx + PEC_BARS  # Look ahead 5 bars
+    
+    # Retrieve the entry price and calculate the PnL based on the next 5 bars
+    entry_price = df.iloc[entry_idx]["close"]
+    exit_idx = entry_idx + PEC_BARS  # Look ahead 5 bars
+
+    # Force Exit Rules (TP and SL)
+    tp = entry_price * 1.20  # 20% Take Profit
+    sl = entry_price * 0.90  # 10% Stop Loss
+
+    for i in range(entry_idx, entry_idx + PEC_BARS):
+        current_price = df.iloc[i]["close"]
+        
+        # Check if the current price hits the TP or SL
+        if current_price >= tp:
+            exit_price = tp
+            pnl = (exit_price - entry_price)
+            pnl_percent = (pnl / entry_price) * 100  # Percentage profit
+            exit_time = df.iloc[i]["time"]
+            return {"symbol": signal["symbol"], "entry_price": entry_price, "exit_price": exit_price, 
+                    "pnl": pnl, "pnl_percent": pnl_percent, "exit_time": exit_time, "exit_reason": "Take Profit"}
+
+        elif current_price <= sl:
+            exit_price = sl
+            pnl = (entry_price - exit_price)
+            pnl_percent = (pnl / entry_price) * 100  # Percentage loss
+            exit_time = df.iloc[i]["time"]
+            return {"symbol": signal["symbol"], "entry_price": entry_price, "exit_price": exit_price, 
+                    "pnl": pnl, "pnl_percent": pnl_percent, "exit_time": exit_time, "exit_reason": "Stop Loss"}
+
+    
     if exit_idx < len(df):  # Ensure we don't go out of bounds
-        exit_price = df.iloc[exit_idx]["close"]
+        exit_price = df.iloc[entry_idx + PEC_BARS]["close"]
 
         # Calculate PnL
         pnl = (exit_price - entry_price) if signal_type == "LONG" else (entry_price - exit_price)
@@ -46,7 +76,8 @@ def process_signal_in_pec(signal, df):
             "pnl_percent": pnl_percent,
             "fired_time": fired_time,
             "entry_idx": entry_idx,
-            "exit_idx": exit_idx
+            "exit_idx": exit_idx,
+            "exit_time": df.iloc[entry_idx + PEC_BARS]["time"]
         }
     else:
         # If not enough data for 5 bars, return None or an empty result
