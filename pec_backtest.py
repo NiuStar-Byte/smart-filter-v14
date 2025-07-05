@@ -8,6 +8,27 @@ from telegram_alert import send_telegram_file
 import os
 import datetime
 
+def load_fired_signals():
+    """Load successfully fired signals from the CSV for backtesting"""
+    signals = []
+    try:
+        with open("fired_signals_temp.csv", "r") as file:
+            next(file)  # Skip header
+            for line in file:
+                columns = line.strip().split(",")
+                uuid, symbol, tf, signal_type, fired_time, entry_idx = columns
+                signals.append({
+                    "uuid": uuid,
+                    "symbol": symbol,
+                    "tf": tf,
+                    "signal_type": signal_type,
+                    "fired_time": fired_time,
+                    "entry_idx": int(entry_idx)
+                })
+    except Exception as e:
+        print(f"[ERROR] Failed to load fired signals: {e}")
+    return signals
+    
 def save_to_csv(results, filename="pec_results.csv"):
     # Define the column headers
     headers = ["Signal Type", "Symbol", "TF", "Entry Time", "Entry Price", "Exit Price", 
@@ -67,6 +88,13 @@ def run_pec_backtest(
     long_blocks = []
     short_blocks = []
 
+    """Run backtest on the fired signals"""
+    signals = load_fired_signals()
+    
+    for signal in signals:
+        symbol = signal["symbol"]
+        tf = signal["tf"]
+ 
     for symbol in TOKENS:
         for tf, tf_minutes in [("3min", 3), ("5min", 5)]:
             print(f"[BACKTEST PEC] {symbol} {tf} ...")
