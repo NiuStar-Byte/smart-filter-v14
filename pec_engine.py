@@ -8,6 +8,50 @@ import pytz  # To handle time zone conversion
 # Set timezone to WIB (Western Indonesian Time)
 WIB = pytz.timezone('Asia/Jakarta')
 
+def process_signal_in_pec(signal, df):
+    """
+    Process a single fired signal for backtesting.
+
+    Args:
+        signal (dict): A dictionary containing the signal details.
+        df (DataFrame): The OHLCV data frame for the specific symbol and timeframe.
+
+    Returns:
+        dict: The result of the processed signal, including PnL calculations and additional data.
+    """
+    symbol = signal["symbol"]
+    tf = signal["tf"]
+    signal_type = signal["signal_type"]
+    fired_time = signal["fired_time"]
+    entry_idx = signal["entry_idx"]
+
+    # Retrieve the entry price and calculate the PnL based on the next 5 bars
+    entry_price = df.iloc[entry_idx]["close"]
+    exit_idx = entry_idx + PEC_BARS  # Look ahead 5 bars
+    if exit_idx < len(df):  # Ensure we don't go out of bounds
+        exit_price = df.iloc[exit_idx]["close"]
+
+        # Calculate PnL
+        pnl = (exit_price - entry_price) if signal_type == "LONG" else (entry_price - exit_price)
+        pnl_percent = (pnl / entry_price) * 100  # Calculate PnL percentage
+
+        # Return the results for this signal
+        return {
+            "symbol": symbol,
+            "tf": tf,
+            "signal_type": signal_type,
+            "entry_price": entry_price,
+            "exit_price": exit_price,
+            "pnl": pnl,
+            "pnl_percent": pnl_percent,
+            "fired_time": fired_time,
+            "entry_idx": entry_idx,
+            "exit_idx": exit_idx
+        }
+    else:
+        # If not enough data for 5 bars, return None or an empty result
+        return None
+
 def run_pec_check(
     symbol,
     entry_idx,
