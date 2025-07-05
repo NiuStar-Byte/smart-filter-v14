@@ -20,6 +20,17 @@ INTERVAL_SECONDS = 60        # 1 minute
 def is_backtest_mode():
     # Reads the same variable as main.py (case-insensitive).
     return os.getenv("PEC_BACKTEST_ONLY", "false").lower() == "true"
+    
+def run_pec_scheduler():
+    """Schedule and execute the PEC engine with the latest fired signals"""
+    while True:
+        # Example of running backtest logic
+        print("[INFO] Running PEC backtest...")
+        run_pec_backtest(
+            TOKENS, get_ohlcv, get_local_wib,
+            PEC_WINDOW_MINUTES, PEC_BARS, OHLCV_LIMIT
+        )
+        time.sleep(60)  # Wait before running the next cycle
 
 def main():
     print(f"[{datetime.now()}] [SCHEDULER] Starting PEC Backtest Scheduler (1-minute interval).")
