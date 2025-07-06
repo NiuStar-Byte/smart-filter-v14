@@ -425,3 +425,4 @@ class SmartFilter:
             except Exception:
                 continue
         return None, None
+
