@@ -260,16 +260,17 @@ class SmartFilter:
         return diff > 0 and diff / self.df['vwap'].iat[-1] > 0.001 and self.df['volume'].iat[-1] > self.df['volume'].rolling(10).mean().iat[-1]
     
         return diff > 0 and diff / self.df['vwap'].iat[-1] > 0.001
-
     
     def _check_mtf_volume_agreement(self):
         if self.df3m is None or self.df5m is None:
+            return False
+
         def zscore(vols):
             mean = vols.rolling(20).mean().iat[-1]
             std = vols.rolling(20).std().iat[-1]
             return self._safe_divide(vols.iat[-1] - mean, std)
+
         return zscore(self.df3m['volume']) > 1.2 and zscore(self.df5m['volume']) > 1.2
-    
 
     def _check_hh_ll(self):
         return (
