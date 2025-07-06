@@ -87,6 +87,7 @@ def super_gk_aligned(bias, orderbook_result, density_result):
 
 def run():
     print("[INFO] Starting Smart Filter engine (LIVE MODE)...\n")
+    last_tracker_sent = 0  # <-- FIX: Initialize before use!
     while True:
         now = time.time()
         valid_debugs = []
