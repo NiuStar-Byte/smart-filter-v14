@@ -201,8 +201,13 @@ class SmartFilter:
     def volume_surge_confirmed(self):
         return self._check_volume_spike() and self._check_5m_volume_trend()
 
+    
     def _check_volume_spike(self):
         avg = self.df['volume'].rolling(10).mean().iat[-1]
+        std = self.df['volume'].rolling(10).std().iat[-1]
+        zscore = self._safe_divide(self.df['volume'].iat[-1] - avg, std)
+        return zscore > 1.5
+    
         return self.df['volume'].iat[-1] > self.volume_multiplier * avg
 
     def _check_5m_volume_trend(self):
@@ -210,32 +215,62 @@ class SmartFilter:
             return False
         return self.df5m['volume'].iat[-1] > self.df5m['volume'].iat[-2]
 
-    def _check_fractal_zone(self):
-        return self.df['close'].iat[-1] > self.df['low'].rolling(20).min().iat[-1]
+    
+    def _check_fractal_zone(self, buffer_pct=0.005):
+        fractal_low = self.df['low'].rolling(20).min().iat[-1]
+        return self.df['close'].iat[-1] > fractal_low * (1 + buffer_pct)
+    
 
+    
     def _check_ema_cloud(self):
-        return self.df['ema20'].iat[-1] > self.df['ema50'].iat[-1]
+        return (
+            self.df['ema20'].iat[-1] > self.df['ema50'].iat[-1] and
+            self.df['ema20'].iat[-1] > self.df['ema20'].iat[-2]
+        )
+    
 
+    
     def _check_macd(self):
         e12 = self.df['close'].ewm(span=12).mean()
+        e26 = self.df['close'].ewm(span=26).mean()
+        macd = e12 - e26
+        signal = macd.ewm(span=9).mean()
+        return macd.iat[-1] > signal.iat[-1] and macd.iat[-1] > macd.iat[-2]
+    
         e26 = self.df['close'].ewm(span=26).mean()
         macd = e12 - e26
         sig = macd.ewm(span=9).mean()
         return macd.iat[-1] > sig.iat[-1]
 
-    def _check_momentum(self):
-        return self.df['close'].diff().iat[-1] > 0
+    
+    def _check_momentum(self, roc_window=3):
+        return self.df['close'].pct_change(roc_window).iat[-1] > 0
+    
 
+    
     def _check_hats(self):
-        ha = self.df[['open', 'high', 'low', 'close']].mean(axis=1)
+        ha_close = (self.df['open'] + self.df['high'] + self.df['low'] + self.df['close']) / 4
+        return ha_close.iat[-1] > ha_close.iat[-2]
+    
         return ha.iat[-1] > ha.iat[-2]
 
+    
     def _check_vwap_divergence(self):
         diff = self.df['close'].iat[-1] - self.df['vwap'].iat[-1]
+        return diff > 0 and diff / self.df['vwap'].iat[-1] > 0.001 and self.df['volume'].iat[-1] > self.df['volume'].rolling(10).mean().iat[-1]
+    
         return diff > 0 and diff / self.df['vwap'].iat[-1] > 0.001
 
+    
     def _check_mtf_volume_agreement(self):
         if self.df3m is None or self.df5m is None:
+            return False
+        def zscore(vols):
+            mean = vols.rolling(20).mean().iat[-1]
+            std = vols.rolling(20).std().iat[-1]
+            return self._safe_divide(vols.iat[-1] - mean, std)
+        return zscore(self.df3m['volume']) > 1.2 and zscore(self.df5m['volume']) > 1.2
+    
             return False
         v3 = self.df3m['volume'].iat[-1] > self.df3m['volume'].rolling(20).mean().iat[-1]
         v5 = self.df5m['volume'].iat[-1] > self.df5m['volume'].rolling(20).mean().iat[-1]
@@ -247,16 +282,27 @@ class SmartFilter:
             self.df['low'].iat[-1] > self.df['low'].iat[-3]
         )
 
+    
     def _check_ema_structure(self):
-        cond = self.df['ema20'].iat[-1] > self.df['ema50'].iat[-1] > self.df['ema200'].iat[-1]
+        e20, e50, e200 = self.df['ema20'].iat[-1], self.df['ema50'].iat[-1], self.df['ema200'].iat[-1]
+        slope20 = e20 > self.df['ema20'].iat[-3]
+        slope50 = e50 > self.df['ema50'].iat[-3]
+        slope200 = e200 > self.df['ema200'].iat[-3]
+        return e20 > e50 > e200 and slope20 and slope50
+    
         slope = all(self.df[f'ema{x}'].iat[-1] > self.df[f'ema{x}'].iat[-2] for x in (20, 50, 200))
         return cond and slope
 
     def _check_chop_zone(self):
         return (self.df['close'].diff() > 0).sum() > 7
 
+    
     def _check_candle_close(self):
         body = abs(self.df['close'].iat[-1] - self.df['open'].iat[-1])
+        rng = self.df['high'].iat[-1] - self.df['low'].iat[-1]
+        avg_body = abs(self.df['close'] - self.df['open']).rolling(5).mean().iat[-1]
+        return body > 0.5 * rng and body > avg_body
+    
         rng = self.df['high'].iat[-1] - self.df['low'].iat[-1]
         return body > 0.5 * rng
 
@@ -310,11 +356,23 @@ class SmartFilter:
         avg = sum(self._depth_history) / len(self._depth_history)
         return self._safe_divide(opp, avg) < wall_factor
 
+    
     def _check_trend_continuation(self):
-        return self.df['ema20'].iat[-1] > self.df['ema20'].iat[-2]
+        slope = self.df['ema20'].iat[-1] - self.df['ema20'].iat[-3]
+        return slope > 0
+    
 
+    
     def _check_volatility_model(self, low_pct=0.01, high_pct=0.05, period=14):
-        high_low = self.df['high'] - self.df['low']
+        tr = pd.concat([
+            self.df['high'] - self.df['low'],
+            (self.df['high'] - self.df['close'].shift()).abs(),
+            (self.df['low'] - self.df['close'].shift()).abs()
+        ], axis=1).max(axis=1)
+        atr = tr.rolling(period).mean().iat[-1]
+        atr_pct = self._safe_divide(atr, self.df['close'].iat[-1])
+        return low_pct <= atr_pct <= high_pct
+    
         high_prev = (self.df['high'] - self.df['close'].shift()).abs()
         low_prev = (self.df['low'] - self.df['close'].shift()).abs()
         tr = pd.concat([high_low, high_prev, low_prev], axis=1).max(axis=1)
@@ -323,8 +381,18 @@ class SmartFilter:
         atr_pct = self._safe_divide(atr, last)
         return low_pct <= atr_pct <= high_pct
 
+    
     def _check_atr_momentum_burst(self, atr_period=14, burst_threshold=1.5):
-        high_low = self.df['high'] - self.df['low']
+        tr = pd.concat([
+            self.df['high'] - self.df['low'],
+            (self.df['high'] - self.df['close'].shift()).abs(),
+            (self.df['low'] - self.df['close'].shift()).abs()
+        ], axis=1).max(axis=1)
+        atr = tr.rolling(atr_period).mean()
+        momentum = self.df['close'].diff()
+        burst = self._safe_divide(momentum.abs().iat[-1], atr.iat[-1])
+        return burst > burst_threshold
+    
         high_prev = (self.df['high'] - self.df['close'].shift()).abs()
         low_prev = (self.df['low'] - self.df['close'].shift()).abs()
         tr = pd.concat([high_low, high_prev, low_prev], axis=1).max(axis=1)
@@ -333,8 +401,13 @@ class SmartFilter:
         burst = (momentum.abs() / atr).iat[-1]
         return burst > burst_threshold
 
+    
     def _check_volatility_squeeze(self, window=20):
-        rolling_high = self.df['high'].rolling(window).max()
+        bb_high = self.df['close'].rolling(window).max()
+        bb_low = self.df['close'].rolling(window).min()
+        bb_width = (bb_high - bb_low) / self.df['close']
+        return bb_width.iat[-1] < 0.02
+    
         rolling_low = self.df['low'].rolling(window).min()
         range_pct = (rolling_high - rolling_low) / self.df['close']
         return range_pct.iat[-1] < 0.02
