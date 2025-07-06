@@ -13,7 +13,7 @@ from smart_filter import SmartFilter
 from telegram_alert import send_telegram_alert, send_telegram_file
 from signal_debug_log import dump_signal_debug_txt, log_fired_signal
 from kucoin_orderbook import get_order_wall_delta
-from pec_engine import run_pec_batch
+from pec_engine import run_pec_check, export_pec_log
 
 # PEC backtest fires ONLY when backtest mode is enabled.
 TOKENS = [
@@ -25,7 +25,7 @@ COOLDOWN = {"3min": 540, "5min": 900}
 last_sent = {}
 
 PEC_BARS = 5
-PEC_WINDOW_MINUTES = 720
+PEC_WINDOW_MINUTES = 600
 OHLCV_LIMIT = 1000
 
 def get_local_wib(dt):
@@ -87,7 +87,6 @@ def super_gk_aligned(bias, orderbook_result, density_result):
 
 def run():
     print("[INFO] Starting Smart Filter engine (LIVE MODE)...\n")
-    last_tracker_sent = 0  # <-- FIX: Initialize before use!
     while True:
         now = time.time()
         valid_debugs = []
@@ -253,19 +252,6 @@ def run():
                     caption=debug_info["caption"]
                 )
 
-        # === New: Send fired_signals_temp.csv to Telegram every 2 hours ===
-        if time.time() - last_tracker_sent >= 7200:  # 7200 seconds = 2 hours
-            try:
-                send_telegram_file(
-                    "fired_signals_temp.csv",
-                    caption="Signal Tracker: All successfully fired signals (past 2 hours)"
-                )
-                print("[INFO] Fired signal tracker sent to Telegram.")
-            except Exception as e:
-                print(f"[ERROR] Failed to send fired_signals_temp.csv: {e}")
-            last_tracker_sent = time.time()
-
-        
         print("[INFO] ✅ Cycle complete. Sleeping 60 seconds...\n")
         time.sleep(60)
 
