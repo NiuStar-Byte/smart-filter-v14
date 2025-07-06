@@ -212,6 +212,7 @@ class SmartFilter:
 
     def _check_5m_volume_trend(self):
         if self.df5m is None or len(self.df5m) < 2:
+            return False
         return self.df5m['volume'].iat[-1] > self.df5m['volume'].iat[-2]
 
     
