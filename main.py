@@ -13,7 +13,7 @@ from smart_filter import SmartFilter
 from telegram_alert import send_telegram_alert, send_telegram_file
 from signal_debug_log import dump_signal_debug_txt, log_fired_signal
 from kucoin_orderbook import get_order_wall_delta
-from pec_engine import run_pec_check, export_pec_log
+from pec_engine import run_pec_batch
 
 # PEC backtest fires ONLY when backtest mode is enabled.
 TOKENS = [
