@@ -252,6 +252,19 @@ def run():
                     caption=debug_info["caption"]
                 )
 
+        # === New: Send fired_signals_temp.csv to Telegram every 2 hours ===
+        if time.time() - last_tracker_sent >= 7200:  # 7200 seconds = 2 hours
+            try:
+                send_telegram_file(
+                    "fired_signals_temp.csv",
+                    caption="Signal Tracker: All successfully fired signals (past 2 hours)"
+                )
+                print("[INFO] Fired signal tracker sent to Telegram.")
+            except Exception as e:
+                print(f"[ERROR] Failed to send fired_signals_temp.csv: {e}")
+            last_tracker_sent = time.time()
+
+        
         print("[INFO] ✅ Cycle complete. Sleeping 60 seconds...\n")
         time.sleep(60)
 
