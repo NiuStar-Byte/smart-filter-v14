@@ -212,7 +212,6 @@ class SmartFilter:
 
     def _check_5m_volume_trend(self):
         if self.df5m is None or len(self.df5m) < 2:
-            return False
         return self.df5m['volume'].iat[-1] > self.df5m['volume'].iat[-2]
 
     
@@ -264,17 +263,12 @@ class SmartFilter:
     
     def _check_mtf_volume_agreement(self):
         if self.df3m is None or self.df5m is None:
-            return False
         def zscore(vols):
             mean = vols.rolling(20).mean().iat[-1]
             std = vols.rolling(20).std().iat[-1]
             return self._safe_divide(vols.iat[-1] - mean, std)
         return zscore(self.df3m['volume']) > 1.2 and zscore(self.df5m['volume']) > 1.2
     
-            return False
-        v3 = self.df3m['volume'].iat[-1] > self.df3m['volume'].rolling(20).mean().iat[-1]
-        v5 = self.df5m['volume'].iat[-1] > self.df5m['volume'].rolling(20).mean().iat[-1]
-        return v3 and v5
 
     def _check_hh_ll(self):
         return (
@@ -425,4 +419,3 @@ class SmartFilter:
             except Exception:
                 continue
         return None, None
-
