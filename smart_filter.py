@@ -50,6 +50,10 @@ class SmartFilter:
         self.df["ema200"] = self.df["close"].ewm(span=200).mean()
         self.df["vwap"] = (self.df["close"] * self.df["volume"]).cumsum() / self.df["volume"].cumsum()
 
+        # Initialize updated filter weights
+        self.updated_filter_weights_long = {}
+        self.updated_filter_weights_short = {}
+        
         # Update the weights for LONG and SHORT directions based on the previous patch
         self.updated_filter_weights_long = {
             "MACD": 5.0, "Volume Spike": 4.8, "Fractal Zone": 4.5, "EMA Cloud": 5.0, "Momentum": 4.0, "ATR Momentum Burst": 3.8,
