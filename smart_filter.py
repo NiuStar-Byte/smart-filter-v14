@@ -27,6 +27,7 @@ class SmartFilter:
     
     def __init__(
         self,
+        kwargs = None,
         symbol: str,
         df: pd.DataFrame,
         df3m: pd.DataFrame = None,
@@ -36,6 +37,10 @@ class SmartFilter:
         required_passed: int = 10,      # NEW: now 10 (for 17 gatekeepers)
         volume_multiplier: float = 2.0
     ):
+        if kwargs is None:
+            kwargs = {}  # Make sure kwargs is initialized
+        self.gatekeepers = kwargs.get("gatekeepers", None)  # Now it's properly set
+
         self.symbol = symbol
         self.df = df.copy()
         self.df3m = df3m.copy() if df3m is not None else None
@@ -71,6 +76,9 @@ class SmartFilter:
             "VWAP Divergence": 3.0, "Spread Filter": 2.7, "Chop Zone": 2.6, "Liquidity Pool": 2.5, "Support/Resistance": 2.1,
             "Smart Money Bias": 2.0, "Absorption": 2.0, "Wick Dominance": 1.5
         }
+
+        # You can initialize more attributes as per your system requirements
+        self.gatekeepers = kwargs.get("gatekeepers", None)  # Example, if you have gatekeepers
         
         # --- Expanded gatekeeper list ---
         self.gatekeepers = [
