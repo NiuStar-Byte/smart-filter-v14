@@ -145,7 +145,7 @@ class SmartFilter:
         price = self.df['close'].iat[-1] if valid_signal else None
 
         message = (
-            f"{signal_direction or 'NO-SIGNAL'} on {self.symbol} @ {price:.6f} "
+            f"{signal_direction or 'NO-SIGNAL'} on {self.symbol} @ {price_str} "
             f"| Score: {score}/23 | Passed: {passes}/{len(self.gatekeepers)} "
             f"| Confidence: {confidence}% (Weighted: {passed_weight:.1f}/{total_gk_weight:.1f})"
         )
