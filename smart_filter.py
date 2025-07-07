@@ -143,7 +143,7 @@ class SmartFilter:
         )
 
         price = self.df['close'].iat[-1] if valid_signal else None
-
+        price_str = f"{price:.6f}" if price is not None else "N/A"
         message = (
             f"{signal_direction or 'NO-SIGNAL'} on {self.symbol} @ {price_str} "
             f"| Score: {score}/23 | Passed: {passes}/{len(self.gatekeepers)} "
