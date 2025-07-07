@@ -7,6 +7,22 @@ from pec_engine import run_pec_check
 from telegram_alert import send_telegram_file
 import os
 import datetime
+import uuid
+
+def log_fired_signal(symbol, tf, signal_type, fired_time, entry_idx, csv_path="fired_signals_temp.csv"):
+    """
+    Appends a fired signal with a UUID to the fired_signals_temp.csv file.
+    """
+    fired_uuid = str(uuid.uuid4())
+    file_exists = os.path.isfile(csv_path)
+    with open(csv_path, mode='a', newline='') as file:
+        writer = csv.writer(file)
+        # Write header if file is empty
+        if not file_exists or os.stat(csv_path).st_size == 0:
+            writer.writerow(['uuid','symbol','tf','signal_type','fired_time','entry_idx'])
+        writer.writerow([fired_uuid, symbol, tf, signal_type, fired_time, entry_idx])
+    print(f"[FIRED] Logged: {fired_uuid}, {symbol}, {tf}, {signal_type}, {fired_time}, {entry_idx}")
+    return fired_uuid
 
 def load_fired_signals():
     """Load successfully fired signals from the CSV for backtesting"""
@@ -16,9 +32,9 @@ def load_fired_signals():
             next(file)  # Skip header
             for line in file:
                 columns = line.strip().split(",")
-                uuid, symbol, tf, signal_type, fired_time, entry_idx = columns
+                uuid_, symbol, tf, signal_type, fired_time, entry_idx = columns
                 signals.append({
-                    "uuid": uuid,
+                    "uuid": uuid_,
                     "symbol": symbol,
                     "tf": tf,
                     "signal_type": signal_type,
@@ -186,4 +202,3 @@ def run_pec_backtest(
     print("[DEBUG] Sending PEC short file to Telegram...")
     send_telegram_file(short_file, caption=f"All PEC SHORT results for ALL tokens [{timestamp}]")
     print("[BACKTEST PEC] All done. PEC logs grouped in", long_file, "and", short_file)
-
