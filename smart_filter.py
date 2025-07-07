@@ -39,6 +39,8 @@ class SmartFilter:
     ):
         if kwargs is None:
             kwargs = {}  # Make sure kwargs is initialized
+        # You can initialize more attributes as per your system requirements
+        self.gatekeepers = kwargs.get("gatekeepers", None)  # Example, if you have gatekeepers
 
         self.symbol = symbol
         self.df = df.copy()
@@ -75,9 +77,6 @@ class SmartFilter:
             "VWAP Divergence": 3.0, "Spread Filter": 2.7, "Chop Zone": 2.6, "Liquidity Pool": 2.5, "Support/Resistance": 2.1,
             "Smart Money Bias": 2.0, "Absorption": 2.0, "Wick Dominance": 1.5
         }
-
-        # You can initialize more attributes as per your system requirements
-        self.gatekeepers = kwargs.get("gatekeepers", None)  # Example, if you have gatekeepers
         
         # --- Expanded gatekeeper list ---
         self.gatekeepers = [
