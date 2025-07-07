@@ -8,23 +8,7 @@ class SmartFilter:
     then decides whether a valid LONG / SHORT signal exists,
     using pure directional logic from 4 filters per side (June 2025 Golden Rules).
     """
-    
-    # Function to calculate and determine signal direction based on total weights
-    def calculate_signal_direction(filter_weights_long, filter_weights_short):
-        """
-        This function compares the total weight of passed LONG filters against passed SHORT filters and
-        returns the direction (LONG or SHORT) based on the weight comparison.
-        """
-        total_weight_long = sum(filter_weights_long.values())
-        total_weight_short = sum(filter_weights_short.values())
 
-        if total_weight_long > total_weight_short:
-            return "LONG"
-        elif total_weight_short > total_weight_long:
-            return "SHORT"
-        else:
-            return "NEUTRAL"
-    
     def __init__(
         self,
         symbol: str,
@@ -38,9 +22,7 @@ class SmartFilter:
         kwargs = None
     ):
         if kwargs is None:
-            kwargs = {}  # Make sure kwargs is initialized
-        # You can initialize more attributes as per your system requirements
-        self.gatekeepers = kwargs.get("gatekeepers", None)  # Example, if you have gatekeepers
+            kwargs = {}
 
         self.symbol = symbol
         self.df = df.copy()
@@ -51,18 +33,8 @@ class SmartFilter:
         self.required_passed = required_passed
         self.volume_multiplier = volume_multiplier
 
-        # Initialize updated filter weights
-        self.updated_filter_weights_long = {}
-        self.updated_filter_weights_short = {}
-        
-        self.df["ema20"] = self.df["close"].ewm(span=20).mean()
-        self.df["ema50"] = self.df["close"].ewm(span=50).mean()
-        self.df["ema200"] = self.df["close"].ewm(span=200).mean()
-        self.df["vwap"] = (self.df["close"] * self.df["volume"]).cumsum() / self.df["volume"].cumsum()
-
-
-        # Update the weights for LONG and SHORT directions based on the previous patch
-        self.updated_filter_weights_long = {
+        # Weights for filters
+        self.filter_weights_long = {
             "MACD": 5.0, "Volume Spike": 4.8, "Fractal Zone": 4.5, "EMA Cloud": 5.0, "Momentum": 4.0, "ATR Momentum Burst": 3.8,
             "MTF Volume Agreement": 3.8, "Trend Continuation": 4.7, "HATS": 4.2, "HH/LL Trend": 4.5, "Volatility Model": 3.4,
             "EMA Structure": 3.3, "Liquidity Awareness": 3.2, "Volatility Squeeze": 3.1, "Candle Confirmation": 3.8,
@@ -70,15 +42,14 @@ class SmartFilter:
             "Smart Money Bias": 1.9, "Absorption": 1.7, "Wick Dominance": 1.5
         }
 
-        self.updated_filter_weights_short = {
+        self.filter_weights_short = {
             "MACD": 3.0, "Volume Spike": 4.8, "Fractal Zone": 4.5, "EMA Cloud": 5.0, "Momentum": 4.0, "ATR Momentum Burst": 4.3,
             "MTF Volume Agreement": 3.8, "Trend Continuation": 4.7, "HATS": 4.6, "HH/LL Trend": 4.5, "Volatility Model": 3.4,
             "EMA Structure": 3.3, "Liquidity Awareness": 3.6, "Volatility Squeeze": 3.1, "Candle Confirmation": 3.8,
             "VWAP Divergence": 3.0, "Spread Filter": 2.7, "Chop Zone": 2.6, "Liquidity Pool": 2.5, "Support/Resistance": 2.1,
             "Smart Money Bias": 2.0, "Absorption": 2.0, "Wick Dominance": 1.5
         }
-        
-        # --- Expanded gatekeeper list ---
+
         self.gatekeepers = [
             "Fractal Zone", "EMA Cloud", "MACD", "Momentum", "HATS",
             "Volume Spike", "VWAP Divergence", "MTF Volume Agreement",
@@ -88,37 +59,34 @@ class SmartFilter:
             "ATR Momentum Burst", "Volatility Squeeze"
         ]
 
-    def get_signal_direction(self):
-        """
-        This function uses the updated weights to calculate the current signal direction
-        and returns LONG, SHORT, or NEUTRAL.
-        """
-        signal_direction = calculate_signal_direction(self.updated_filter_weights_long, self.updated_filter_weights_short)
-        return signal_direction
+        self.df["ema20"] = self.df["close"].ewm(span=20).mean()
+        self.df["ema50"] = self.df["close"].ewm(span=50).mean()
+        self.df["ema200"] = self.df["close"].ewm(span=200).mean()
+        self.df["vwap"] = (self.df["close"] * self.df["volume"]).cumsum() / self.df["volume"].cumsum()
 
-    
-    # ===== Pure Directional Decision Engine (4+4 logic) =====
-    # def _directional_decision(self, results):
-    #    # 4 for LONG, 4 for SHORT (all based on latest audit)
-    #    long_filters = ["EMA Cloud", "Momentum", "Liquidity Pool", "VWAP Divergence"]
-    #    short_filters = ["MACD", "Candle Confirmation", "Fractal Zone", "ATR Momentum Burst"]
-    #    long_votes = sum(results.get(f, False) for f in long_filters)
-    #    short_votes = sum(results.get(f, False) for f in short_filters)
-    #    if long_votes - short_votes >= 2:
-    #        return "LONG"
-    #    elif short_votes - long_votes >= 2:
-    #        return "SHORT"
-    #    else:
-    #        return None  # VETO
-
-    # ===== Main signal method =====
+    def get_signal_direction(self, results):
+        """
+        Calculate the sum of weights for all PASSED filters for both LONG and SHORT,
+        and return "LONG", "SHORT" or "NEUTRAL".
+        """
+        long_sum = sum(
+            self.filter_weights_long[f] for f, v in results.items() if v and f in self.filter_weights_long
+        )
+        short_sum = sum(
+            self.filter_weights_short[f] for f, v in results.items() if v and f in self.filter_weights_short
+        )
+        if long_sum > short_sum:
+            return "LONG"
+        elif short_sum > long_sum:
+            return "SHORT"
+        else:
+            return "NEUTRAL"
 
     def analyze(self):
         if self.df.empty:
             print(f"[{self.symbol}] Error: DataFrame empty.")
             return None
 
-        # Run all checks, collect results
         checks = {
             "Fractal Zone": self._check_fractal_zone,
             "EMA Cloud": self._check_ema_cloud,
@@ -154,39 +122,30 @@ class SmartFilter:
                 results[name] = False
 
         score = sum(results.values())
-
-        # PASSES + WEIGHTS CALCULATION (for new GK set)
         passed_gk = [f for f in self.gatekeepers if results.get(f, False)]
         passes = len(passed_gk)
-        total_gk_weight = sum(self.filter_weights[f] for f in self.gatekeepers)
-        passed_weight = sum(self.filter_weights[f] for f in passed_gk)
+        total_gk_weight = sum(self.filter_weights_long[f] for f in self.gatekeepers)
+        passed_weight = sum(self.filter_weights_long[f] for f in passed_gk)
         confidence = round(self._safe_divide(100 * passed_weight, total_gk_weight), 1)
 
-        # === Super-GK Hard Blockers: Order Book Wall + Resting Order Density ===
         orderbook_ok = self._order_book_wall_passed()
         resting_density_ok = self._resting_order_density_passed()
 
-        # New: Direction decided by 4+4 vote (no bias proposal)
-        # final_bias = self._directional_decision(results)
-        # print(f"[{self.symbol}] Directional Votes: LONG={sum(results.get(f, False) for f in ['EMA Cloud', 'Momentum', 'Liquidity Pool', 'VWAP Divergence'])} "
-        #      f"SHORT={sum(results.get(f, False) for f in ['MACD', 'Candle Confirmation', 'Fractal Zone', 'ATR Momentum Burst'])} "
-        #      f"| Final Bias: {final_bias or 'VETO'}")
+        # --- Direction logic: use only PASSED filter weights for each side ---
+        signal_direction = self.get_signal_direction(results)
 
-        # Validate signal based on the new signal direction system
         valid_signal = (
-            signal_direction in ["LONG", "SHORT"]  # Ensure the direction is either LONG or SHORT
+            signal_direction in ["LONG", "SHORT"]
             and score >= self.min_score
             and passes >= self.required_passed
             and orderbook_ok
             and resting_density_ok
         )
 
-        # Get the price for the valid signal (the most recent closing price)
-        if valid_signal:
-            price = self.df['close'].iat[-1]
+        price = self.df['close'].iat[-1] if valid_signal else None
 
         message = (
-            f"{final_bias or 'NO-SIGNAL'} on {self.symbol} @ {price:.6f} "
+            f"{signal_direction or 'NO-SIGNAL'} on {self.symbol} @ {price:.6f} "
             f"| Score: {score}/23 | Passed: {passes}/{len(self.gatekeepers)} "
             f"| Confidence: {confidence}% (Weighted: {passed_weight:.1f}/{total_gk_weight:.1f})"
         )
@@ -206,7 +165,7 @@ class SmartFilter:
             "passed_weight": round(passed_weight, 1),
             "total_weight": round(total_gk_weight, 1),
             "confidence": confidence,
-            "bias": final_bias,
+            "bias": signal_direction,
             "price": price,
             "valid_signal": valid_signal,
             "message": message,
@@ -231,63 +190,45 @@ class SmartFilter:
     def volume_surge_confirmed(self):
         return self._check_volume_spike() and self._check_5m_volume_trend()
 
-    
     def _check_volume_spike(self):
         avg = self.df['volume'].rolling(10).mean().iat[-1]
         std = self.df['volume'].rolling(10).std().iat[-1]
         zscore = self._safe_divide(self.df['volume'].iat[-1] - avg, std)
         return zscore > 1.5
-    
-        return self.df['volume'].iat[-1] > self.volume_multiplier * avg
 
     def _check_5m_volume_trend(self):
         if self.df5m is None or len(self.df5m) < 2:
             return False
         return self.df5m['volume'].iat[-1] > self.df5m['volume'].iat[-2]
 
-    
     def _check_fractal_zone(self, buffer_pct=0.005):
         fractal_low = self.df['low'].rolling(20).min().iat[-1]
         return self.df['close'].iat[-1] > fractal_low * (1 + buffer_pct)
-    
     
     def _check_ema_cloud(self):
         return (
             self.df['ema20'].iat[-1] > self.df['ema50'].iat[-1] and
             self.df['ema20'].iat[-1] > self.df['ema20'].iat[-2]
         )
-    
-    
+
     def _check_macd(self):
         e12 = self.df['close'].ewm(span=12).mean()
         e26 = self.df['close'].ewm(span=26).mean()
         macd = e12 - e26
         signal = macd.ewm(span=9).mean()
         return macd.iat[-1] > signal.iat[-1] and macd.iat[-1] > macd.iat[-2]
-    
-        e26 = self.df['close'].ewm(span=26).mean()
-        macd = e12 - e26
-        sig = macd.ewm(span=9).mean()
-        return macd.iat[-1] > sig.iat[-1]
 
-    
     def _check_momentum(self, roc_window=3):
         return self.df['close'].pct_change(roc_window).iat[-1] > 0
-    
-    
+
     def _check_hats(self):
         ha_close = (self.df['open'] + self.df['high'] + self.df['low'] + self.df['close']) / 4
         return ha_close.iat[-1] > ha_close.iat[-2]
-    
-        return ha.iat[-1] > ha.iat[-2]
 
-    
     def _check_vwap_divergence(self):
         diff = self.df['close'].iat[-1] - self.df['vwap'].iat[-1]
         return diff > 0 and diff / self.df['vwap'].iat[-1] > 0.001 and self.df['volume'].iat[-1] > self.df['volume'].rolling(10).mean().iat[-1]
-    
-        return diff > 0 and diff / self.df['vwap'].iat[-1] > 0.001
-    
+
     def _check_mtf_volume_agreement(self):
         if self.df3m is None or self.df5m is None:
             return False
@@ -305,29 +246,21 @@ class SmartFilter:
             self.df['low'].iat[-1] > self.df['low'].iat[-3]
         )
 
-    
     def _check_ema_structure(self):
         e20, e50, e200 = self.df['ema20'].iat[-1], self.df['ema50'].iat[-1], self.df['ema200'].iat[-1]
         slope20 = e20 > self.df['ema20'].iat[-3]
         slope50 = e50 > self.df['ema50'].iat[-3]
         slope200 = e200 > self.df['ema200'].iat[-3]
         return e20 > e50 > e200 and slope20 and slope50
-    
-        slope = all(self.df[f'ema{x}'].iat[-1] > self.df[f'ema{x}'].iat[-2] for x in (20, 50, 200))
-        return cond and slope
 
     def _check_chop_zone(self):
         return (self.df['close'].diff() > 0).sum() > 7
 
-    
     def _check_candle_close(self):
         body = abs(self.df['close'].iat[-1] - self.df['open'].iat[-1])
         rng = self.df['high'].iat[-1] - self.df['low'].iat[-1]
         avg_body = abs(self.df['close'] - self.df['open']).rolling(5).mean().iat[-1]
         return body > 0.5 * rng and body > avg_body
-    
-        rng = self.df['high'].iat[-1] - self.df['low'].iat[-1]
-        return body > 0.5 * rng
 
     def _check_wick_dominance(self):
         body = abs(self.df['close'].iat[-1] - self.df['open'].iat[-1])
@@ -379,12 +312,10 @@ class SmartFilter:
         avg = sum(self._depth_history) / len(self._depth_history)
         return self._safe_divide(opp, avg) < wall_factor
 
-    
     def _check_trend_continuation(self):
         slope = self.df['ema20'].iat[-1] - self.df['ema20'].iat[-3]
         return slope > 0
-    
-    
+
     def _check_volatility_model(self, low_pct=0.01, high_pct=0.05, period=14):
         tr = pd.concat([
             self.df['high'] - self.df['low'],
@@ -394,16 +325,7 @@ class SmartFilter:
         atr = tr.rolling(period).mean().iat[-1]
         atr_pct = self._safe_divide(atr, self.df['close'].iat[-1])
         return low_pct <= atr_pct <= high_pct
-    
-        high_prev = (self.df['high'] - self.df['close'].shift()).abs()
-        low_prev = (self.df['low'] - self.df['close'].shift()).abs()
-        tr = pd.concat([high_low, high_prev, low_prev], axis=1).max(axis=1)
-        atr = tr.rolling(period).mean().iat[-1]
-        last = self.df['close'].iat[-1]
-        atr_pct = self._safe_divide(atr, last)
-        return low_pct <= atr_pct <= high_pct
 
-    
     def _check_atr_momentum_burst(self, atr_period=14, burst_threshold=1.5):
         tr = pd.concat([
             self.df['high'] - self.df['low'],
@@ -414,25 +336,12 @@ class SmartFilter:
         momentum = self.df['close'].diff()
         burst = self._safe_divide(momentum.abs().iat[-1], atr.iat[-1])
         return burst > burst_threshold
-    
-        high_prev = (self.df['high'] - self.df['close'].shift()).abs()
-        low_prev = (self.df['low'] - self.df['close'].shift()).abs()
-        tr = pd.concat([high_low, high_prev, low_prev], axis=1).max(axis=1)
-        atr = tr.rolling(atr_period).mean()
-        momentum = self.df['close'].diff()
-        burst = (momentum.abs() / atr).iat[-1]
-        return burst > burst_threshold
 
-    
     def _check_volatility_squeeze(self, window=20):
         bb_high = self.df['close'].rolling(window).max()
         bb_low = self.df['close'].rolling(window).min()
         bb_width = (bb_high - bb_low) / self.df['close']
         return bb_width.iat[-1] < 0.02
-    
-        rolling_low = self.df['low'].rolling(window).min()
-        range_pct = (rolling_high - rolling_low) / self.df['close']
-        return range_pct.iat[-1] < 0.02
 
     def _fetch_order_book(self, depth=100):
         for sym in (self.symbol, self.symbol.replace('-', '/')):
