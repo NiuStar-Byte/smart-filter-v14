@@ -64,6 +64,20 @@ class SmartFilter:
         self.df["ema200"] = self.df["close"].ewm(span=200).mean()
         self.df["vwap"] = (self.df["close"] * self.df["volume"]).cumsum() / self.df["volume"].cumsum()
 
+    @property
+    def filter_weights(self):
+        """
+        Returns the correct filter weights dict based on the current bias.
+        Requires self.bias to be set before accessing this property.
+        """
+        direction = getattr(self, "bias", None)
+        if direction == "LONG":
+            return self.filter_weights_long
+        elif direction == "SHORT":
+            return self.filter_weights_short
+        else:
+            return {}
+            
     def get_signal_direction(self, results):
         """
         Calculate the sum of weights for all PASSED filters for both LONG and SHORT,
