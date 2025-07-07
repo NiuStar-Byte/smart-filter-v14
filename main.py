@@ -15,23 +15,7 @@ from signal_debug_log import dump_signal_debug_txt, log_fired_signal
 from kucoin_orderbook import get_order_wall_delta
 from pec_engine import run_pec_check, export_pec_log
 
-
 # PEC backtest fires ONLY when backtest mode is enabled.
-
-# Assuming `smart_filter_instance` is an instance of the SmartFilter class
-signal_direction = smart_filter_instance.get_signal_direction()
-
-# Logic to take action based on signal direction
-if signal_direction == "LONG":
-    # Execute LONG trade logic
-    print("Signal direction is LONG. Proceed with LONG trade logic.")
-elif signal_direction == "SHORT":
-    # Execute SHORT trade logic
-    print("Signal direction is SHORT. Proceed with SHORT trade logic.")
-else:
-    # If direction is NEUTRAL, no action taken
-    print("Signal direction is NEUTRAL. No action taken.")
-
 TOKENS = [
     "SKATE-USDT", "LA-USDT", "SPK-USDT", "ZKJ-USDT", "IP-USDT",
     "AERO-USDT", "BMT-USDT", "LQTY-USDT", "X-USDT", "RAY-USDT",
