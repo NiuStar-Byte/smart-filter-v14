@@ -45,15 +45,16 @@ class SmartFilter:
         self.required_passed = required_passed
         self.volume_multiplier = volume_multiplier
 
+        # Initialize updated filter weights
+        self.updated_filter_weights_long = {}
+        self.updated_filter_weights_short = {}
+        
         self.df["ema20"] = self.df["close"].ewm(span=20).mean()
         self.df["ema50"] = self.df["close"].ewm(span=50).mean()
         self.df["ema200"] = self.df["close"].ewm(span=200).mean()
         self.df["vwap"] = (self.df["close"] * self.df["volume"]).cumsum() / self.df["volume"].cumsum()
 
-        # Initialize updated filter weights
-        self.updated_filter_weights_long = {}
-        self.updated_filter_weights_short = {}
-        
+
         # Update the weights for LONG and SHORT directions based on the previous patch
         self.updated_filter_weights_long = {
             "MACD": 5.0, "Volume Spike": 4.8, "Fractal Zone": 4.5, "EMA Cloud": 5.0, "Momentum": 4.0, "ATR Momentum Burst": 3.8,
@@ -71,6 +72,9 @@ class SmartFilter:
             "Smart Money Bias": 2.0, "Absorption": 2.0, "Wick Dominance": 1.5
         }
 
+        # You can initialize more attributes as per your system requirements
+        self.gatekeepers = kwargs.get("gatekeepers", None)  # Example, if you have gatekeepers
+        
         # --- Expanded gatekeeper list ---
         self.gatekeepers = [
             "Fractal Zone", "EMA Cloud", "MACD", "Momentum", "HATS",
