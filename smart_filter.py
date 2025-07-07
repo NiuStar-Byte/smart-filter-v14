@@ -27,7 +27,6 @@ class SmartFilter:
     
     def __init__(
         self,
-        kwargs = None,
         symbol: str,
         df: pd.DataFrame,
         df3m: pd.DataFrame = None,
@@ -35,11 +34,11 @@ class SmartFilter:
         tf: str = None,
         min_score: int = 12,
         required_passed: int = 10,      # NEW: now 10 (for 17 gatekeepers)
-        volume_multiplier: float = 2.0
+        volume_multiplier: float = 2.0,
+        kwargs = None
     ):
         if kwargs is None:
             kwargs = {}  # Make sure kwargs is initialized
-        self.gatekeepers = kwargs.get("gatekeepers", None)  # Now it's properly set
 
         self.symbol = symbol
         self.df = df.copy()
