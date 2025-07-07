@@ -8,7 +8,23 @@ class SmartFilter:
     then decides whether a valid LONG / SHORT signal exists,
     using pure directional logic from 4 filters per side (June 2025 Golden Rules).
     """
+    
+    # Function to calculate and determine signal direction based on total weights
+    def calculate_signal_direction(filter_weights_long, filter_weights_short):
+        """
+        This function compares the total weight of passed LONG filters against passed SHORT filters and
+        returns the direction (LONG or SHORT) based on the weight comparison.
+        """
+        total_weight_long = sum(filter_weights_long.values())
+        total_weight_short = sum(filter_weights_short.values())
 
+        if total_weight_long > total_weight_short:
+            return "LONG"
+        elif total_weight_short > total_weight_long:
+            return "SHORT"
+        else:
+            return "NEUTRAL"
+    
     def __init__(
         self,
         symbol: str,
@@ -16,7 +32,7 @@ class SmartFilter:
         df3m: pd.DataFrame = None,
         df5m: pd.DataFrame = None,
         tf: str = None,
-        min_score: int = 9,
+        min_score: int = 12,
         required_passed: int = 10,      # NEW: now 10 (for 17 gatekeepers)
         volume_multiplier: float = 2.0
     ):
@@ -34,30 +50,21 @@ class SmartFilter:
         self.df["ema200"] = self.df["close"].ewm(span=200).mean()
         self.df["vwap"] = (self.df["close"] * self.df["volume"]).cumsum() / self.df["volume"].cumsum()
 
-        self.filter_weights = {
-            "Fractal Zone": 4.5,
-            "EMA Cloud": 4.2,
-            "MACD": 5.0,
-            "Momentum": 4.0,
-            "HATS": 3.6,
-            "Volume Spike": 4.8,
-            "VWAP Divergence": 2.8,
-            "MTF Volume Agreement": 3.8,
-            "HH/LL Trend": 3.5,
-            "EMA Structure": 3.3,
-            "Chop Zone": 2.6,
-            "Candle Confirmation": 3.0,
-            "Wick Dominance": 1.2,
-            "Absorption": 1.5,
-            "Support/Resistance": 1.9,
-            "Smart Money Bias": 1.8,
-            "Liquidity Pool": 2.5,
-            "Spread Filter": 2.7,
-            "Liquidity Awareness": 3.2,
-            "Trend Continuation": 3.7,
-            "Volatility Model": 3.4,
-            "ATR Momentum Burst": 3.9,
-            "Volatility Squeeze": 3.1
+        # Update the weights for LONG and SHORT directions based on the previous patch
+        self.updated_filter_weights_long = {
+            "MACD": 5.0, "Volume Spike": 4.8, "Fractal Zone": 4.5, "EMA Cloud": 5.0, "Momentum": 4.0, "ATR Momentum Burst": 3.8,
+            "MTF Volume Agreement": 3.8, "Trend Continuation": 4.7, "HATS": 4.2, "HH/LL Trend": 4.5, "Volatility Model": 3.4,
+            "EMA Structure": 3.3, "Liquidity Awareness": 3.2, "Volatility Squeeze": 3.1, "Candle Confirmation": 3.8,
+            "VWAP Divergence": 2.8, "Spread Filter": 2.7, "Chop Zone": 2.6, "Liquidity Pool": 2.5, "Support/Resistance": 2.0,
+            "Smart Money Bias": 1.9, "Absorption": 1.7, "Wick Dominance": 1.5
+        }
+
+        self.updated_filter_weights_short = {
+            "MACD": 3.0, "Volume Spike": 4.8, "Fractal Zone": 4.5, "EMA Cloud": 5.0, "Momentum": 4.0, "ATR Momentum Burst": 4.3,
+            "MTF Volume Agreement": 3.8, "Trend Continuation": 4.7, "HATS": 4.6, "HH/LL Trend": 4.5, "Volatility Model": 3.4,
+            "EMA Structure": 3.3, "Liquidity Awareness": 3.6, "Volatility Squeeze": 3.1, "Candle Confirmation": 3.8,
+            "VWAP Divergence": 3.0, "Spread Filter": 2.7, "Chop Zone": 2.6, "Liquidity Pool": 2.5, "Support/Resistance": 2.1,
+            "Smart Money Bias": 2.0, "Absorption": 2.0, "Wick Dominance": 1.5
         }
 
         # --- Expanded gatekeeper list ---
@@ -70,20 +77,28 @@ class SmartFilter:
             "ATR Momentum Burst", "Volatility Squeeze"
         ]
 
-    # ===== Pure Directional Decision Engine (4+4 logic) =====
+    def get_signal_direction(self):
+        """
+        This function uses the updated weights to calculate the current signal direction
+        and returns LONG, SHORT, or NEUTRAL.
+        """
+        signal_direction = calculate_signal_direction(self.updated_filter_weights_long, self.updated_filter_weights_short)
+        return signal_direction
 
-    def _directional_decision(self, results):
-        # 4 for LONG, 4 for SHORT (all based on latest audit)
-        long_filters = ["EMA Cloud", "Momentum", "Liquidity Pool", "VWAP Divergence"]
-        short_filters = ["MACD", "Candle Confirmation", "Fractal Zone", "ATR Momentum Burst"]
-        long_votes = sum(results.get(f, False) for f in long_filters)
-        short_votes = sum(results.get(f, False) for f in short_filters)
-        if long_votes - short_votes >= 2:
-            return "LONG"
-        elif short_votes - long_votes >= 2:
-            return "SHORT"
-        else:
-            return None  # VETO
+    
+    # ===== Pure Directional Decision Engine (4+4 logic) =====
+    # def _directional_decision(self, results):
+    #    # 4 for LONG, 4 for SHORT (all based on latest audit)
+    #    long_filters = ["EMA Cloud", "Momentum", "Liquidity Pool", "VWAP Divergence"]
+    #    short_filters = ["MACD", "Candle Confirmation", "Fractal Zone", "ATR Momentum Burst"]
+    #    long_votes = sum(results.get(f, False) for f in long_filters)
+    #    short_votes = sum(results.get(f, False) for f in short_filters)
+    #    if long_votes - short_votes >= 2:
+    #        return "LONG"
+    #    elif short_votes - long_votes >= 2:
+    #        return "SHORT"
+    #    else:
+    #        return None  # VETO
 
     # ===== Main signal method =====
 
@@ -141,19 +156,23 @@ class SmartFilter:
         resting_density_ok = self._resting_order_density_passed()
 
         # New: Direction decided by 4+4 vote (no bias proposal)
-        final_bias = self._directional_decision(results)
-        print(f"[{self.symbol}] Directional Votes: LONG={sum(results.get(f, False) for f in ['EMA Cloud', 'Momentum', 'Liquidity Pool', 'VWAP Divergence'])} "
-              f"SHORT={sum(results.get(f, False) for f in ['MACD', 'Candle Confirmation', 'Fractal Zone', 'ATR Momentum Burst'])} "
-              f"| Final Bias: {final_bias or 'VETO'}")
+        # final_bias = self._directional_decision(results)
+        # print(f"[{self.symbol}] Directional Votes: LONG={sum(results.get(f, False) for f in ['EMA Cloud', 'Momentum', 'Liquidity Pool', 'VWAP Divergence'])} "
+        #      f"SHORT={sum(results.get(f, False) for f in ['MACD', 'Candle Confirmation', 'Fractal Zone', 'ATR Momentum Burst'])} "
+        #      f"| Final Bias: {final_bias or 'VETO'}")
 
+        # Validate signal based on the new signal direction system
         valid_signal = (
-            final_bias is not None
+            signal_direction in ["LONG", "SHORT"]  # Ensure the direction is either LONG or SHORT
             and score >= self.min_score
             and passes >= self.required_passed
             and orderbook_ok
             and resting_density_ok
         )
-        price = self.df['close'].iat[-1]
+
+        # Get the price for the valid signal (the most recent closing price)
+        if valid_signal:
+            price = self.df['close'].iat[-1]
 
         message = (
             f"{final_bias or 'NO-SIGNAL'} on {self.symbol} @ {price:.6f} "
@@ -220,7 +239,6 @@ class SmartFilter:
         fractal_low = self.df['low'].rolling(20).min().iat[-1]
         return self.df['close'].iat[-1] > fractal_low * (1 + buffer_pct)
     
-
     
     def _check_ema_cloud(self):
         return (
@@ -228,7 +246,6 @@ class SmartFilter:
             self.df['ema20'].iat[-1] > self.df['ema20'].iat[-2]
         )
     
-
     
     def _check_macd(self):
         e12 = self.df['close'].ewm(span=12).mean()
@@ -246,7 +263,6 @@ class SmartFilter:
     def _check_momentum(self, roc_window=3):
         return self.df['close'].pct_change(roc_window).iat[-1] > 0
     
-
     
     def _check_hats(self):
         ha_close = (self.df['open'] + self.df['high'] + self.df['low'] + self.df['close']) / 4
@@ -357,7 +373,6 @@ class SmartFilter:
         slope = self.df['ema20'].iat[-1] - self.df['ema20'].iat[-3]
         return slope > 0
     
-
     
     def _check_volatility_model(self, low_pct=0.01, high_pct=0.05, period=14):
         tr = pd.concat([
