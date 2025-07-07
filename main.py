@@ -15,7 +15,6 @@ from signal_debug_log import dump_signal_debug_txt, log_fired_signal
 from kucoin_orderbook import get_order_wall_delta
 from pec_engine import run_pec_check, export_pec_log
 
-# PEC backtest fires ONLY when backtest mode is enabled.
 TOKENS = [
     "SKATE-USDT", "LA-USDT", "SPK-USDT", "ZKJ-USDT", "IP-USDT",
     "AERO-USDT", "BMT-USDT", "LQTY-USDT", "X-USDT", "RAY-USDT",
@@ -112,6 +111,7 @@ def run():
                         orderbook_result = get_order_wall_delta(symbol)
                         density_result = get_resting_order_density(symbol)
                         bias = res3.get("bias", "NEUTRAL")
+                        sf3.bias = bias  # Set bias for property
                         if not super_gk_aligned(bias, orderbook_result, density_result):
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT")
                             continue
@@ -132,7 +132,6 @@ def run():
                         pec_candidates.append(
                             ("3min", symbol, res3.get("price"), bias, df3, entry_idx)
                         )
-                        # --- Add log_fired_signal for each fired signal ---
                         log_fired_signal(
                             symbol=symbol,
                             tf="3min",
@@ -141,10 +140,10 @@ def run():
                         )
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             log_fired_signal(
-                            symbol=res3.get("symbol"),
-                            tf=res3.get("tf"),
-                            signal_type=res3.get("bias"),
-                            entry_idx=entry_idx,
+                                symbol=res3.get("symbol"),
+                                tf=res3.get("tf"),
+                                signal_type=res3.get("bias"),
+                                entry_idx=entry_idx,
                             )
                             send_telegram_alert(
                                 numbered_signal=numbered_signal,
@@ -179,6 +178,7 @@ def run():
                         orderbook_result = get_order_wall_delta(symbol)
                         density_result = get_resting_order_density(symbol)
                         bias = res5.get("bias", "NEUTRAL")
+                        sf5.bias = bias  # Set bias for property
                         if not super_gk_aligned(bias, orderbook_result, density_result):
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT")
                             continue
@@ -199,7 +199,6 @@ def run():
                         pec_candidates.append(
                             ("5min", symbol, res5.get("price"), bias, df5, entry_idx)
                         )
-                        # --- Add log_fired_signal for each fired signal ---
                         log_fired_signal(
                             symbol=symbol,
                             tf="5min",
@@ -208,10 +207,10 @@ def run():
                         )
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             log_fired_signal(
-                            symbol=res5.get("symbol"),
-                            tf=res5.get("tf"),
-                            signal_type=res5.get("bias"),
-                            entry_idx=entry_idx,
+                                symbol=res5.get("symbol"),
+                                tf=res5.get("tf"),
+                                signal_type=res5.get("bias"),
+                                entry_idx=entry_idx,
                             )
                             send_telegram_alert(
                                 numbered_signal=numbered_signal,
@@ -256,7 +255,6 @@ def run():
         time.sleep(60)
 
 if __name__ == "__main__":
-    # Mode switch based on Railway variable
     if os.getenv("PEC_BACKTEST_ONLY", "false").lower() == "true":
         from pec_backtest import run_pec_backtest
         run_pec_backtest(
@@ -265,4 +263,3 @@ if __name__ == "__main__":
         )
     else:
         run()
-
