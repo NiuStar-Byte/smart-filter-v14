@@ -116,13 +116,18 @@ def run():
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT")
                             continue
                         print(f"[LOG] Sending 3min alert for {res3['symbol']}")
+
+                        filter_results_long = res3.get("filter_results_long", {})
+                        filter_results_short = res3.get("filter_results_short", {})
+
                         valid_debugs.append({
                             "symbol": res3["symbol"],
                             "tf": res3["tf"],
                             "bias": res3["bias"],
                             "filter_weights": sf3.filter_weights,
                             "gatekeepers": sf3.gatekeepers,
-                            "results": res3["filter_results"],
+                            "results_long": filter_results_long,
+                            "results_short": filter_results_short,
                             "caption": f"Signal debug log for {res3.get('symbol')} {res3.get('tf')}",
                             "orderbook_result": orderbook_result,
                             "density_result": density_result,
@@ -183,13 +188,18 @@ def run():
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT")
                             continue
                         print(f"[LOG] Sending 5min alert for {res5['symbol']}")
+
+                        filter_results_long = res5.get("filter_results_long", {})
+                        filter_results_short = res5.get("filter_results_short", {})
+
                         valid_debugs.append({
                             "symbol": res5["symbol"],
                             "tf": res5["tf"],
                             "bias": res5["bias"],
                             "filter_weights": sf5.filter_weights,
                             "gatekeepers": sf5.gatekeepers,
-                            "results": res5["filter_results"],
+                            "results_long": filter_results_long,
+                            "results_short": filter_results_short,
                             "caption": f"Signal debug log for {res5.get('symbol')} {res5.get('tf')}",
                             "orderbook_result": orderbook_result,
                             "density_result": density_result,
@@ -242,7 +252,8 @@ def run():
                     bias=debug_info["bias"],
                     filter_weights=debug_info["filter_weights"],
                     gatekeepers=debug_info["gatekeepers"],
-                    results=debug_info["results"],
+                    results_long=debug_info.get("results_long", {}),
+                    results_short=debug_info.get("results_short", {}),
                     orderbook_result=debug_info.get("orderbook_result"),
                     density_result=debug_info.get("density_result")
                 )
