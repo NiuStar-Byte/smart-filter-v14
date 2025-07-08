@@ -9,20 +9,51 @@ import os
 import datetime
 import uuid
 
+def is_duplicate_signal(new_row, csv_path="fired_signals_temp.csv"):
+    """
+    Checks if the last row in the CSV matches the new signal (ignoring uuid and fired_time).
+    new_row: [uuid, symbol, tf, signal_type, fired_time, entry_idx]
+    """
+    import os
+    import csv
+    if not os.path.exists(csv_path):
+        return False
+    try:
+        with open(csv_path, "r") as file:
+            reader = list(csv.reader(file))
+            if len(reader) < 2:
+                return False  # Only header or empty
+            last_row = reader[-1]
+            # Compare symbol, tf, signal_type, entry_idx (indices 1,2,3,5)
+            return (
+                new_row[1] == last_row[1] and
+                new_row[2] == last_row[2] and
+                new_row[3] == last_row[3] and
+                str(new_row[5]) == str(last_row[5])
+            )
+    except Exception as e:
+        print(f"[ERROR] Failed to check for duplicate signal: {e}")
+        return False
+
 def log_fired_signal(symbol, tf, signal_type, fired_time, entry_idx, csv_path="fired_signals_temp.csv"):
     """
-    Appends a fired signal with a UUID to the fired_signals_temp.csv file.
+    Appends a fired signal with a UUID to the fired_signals_temp.csv file, unless it's a duplicate.
     """
     try:
         fired_uuid = str(uuid.uuid4())
         file_exists = os.path.isfile(csv_path)
         abs_path = os.path.abspath(csv_path)
+        new_row = [fired_uuid, symbol, tf, signal_type, fired_time, entry_idx]
+        # Only write if not a duplicate (ignoring uuid and fired_time)
+        if is_duplicate_signal(new_row, csv_path):
+            print(f"[FIRED] Duplicate signal detected. Not logging: {symbol}, {tf}, {signal_type}, {entry_idx}")
+            return None
         with open(csv_path, mode='a', newline='') as file:
             writer = csv.writer(file)
             # Write header if file is empty
             if not file_exists or os.stat(csv_path).st_size == 0:
                 writer.writerow(['uuid','symbol','tf','signal_type','fired_time','entry_idx'])
-            writer.writerow([fired_uuid, symbol, tf, signal_type, fired_time, entry_idx])
+            writer.writerow(new_row)
             file.flush()
             os.fsync(file.fileno())
         print(f"[FIRED] Logged: {fired_uuid}, {symbol}, {tf}, {signal_type}, {fired_time}, {entry_idx}")
