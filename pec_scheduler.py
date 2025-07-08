@@ -12,6 +12,7 @@ TOKENS = [
     "AERO-USDT", "BMT-USDT", "LQTY-USDT", "X-USDT", "RAY-USDT",
     "EPT-USDT", "ELDE-USDT", "MAGIC-USDT", "ACTSOL-USDT", "FUN-USDT"
 ]
+PEC_WINDOW_MINUTES = 720     # Adjust as needed
 PEC_BARS = 5
 OHLCV_LIMIT = 1000           # Adjust as needed
 INTERVAL_SECONDS = 60        # 1 minute
@@ -27,7 +28,7 @@ def run_pec_scheduler():
         print("[INFO] Running PEC backtest...")
         run_pec_backtest(
             TOKENS, get_ohlcv, get_local_wib,
-            PEC_BARS, OHLCV_LIMIT
+            PEC_WINDOW_MINUTES, PEC_BARS, OHLCV_LIMIT
         )
         time.sleep(60)  # Wait before running the next cycle
 
@@ -51,7 +52,7 @@ def main():
                 print(f"[{datetime.now()}] [SCHEDULER] Running PEC backtest for all tokens...")
                 
                 # Run PEC backtest with updated logic for Exit Time and # BAR Exit
-                results = run_pec_backtest(TOKENS, get_ohlcv, get_local_wib, PEC_BARS, OHLCV_LIMIT)
+                results = run_pec_backtest(TOKENS, get_ohlcv, get_local_wib, PEC_WINDOW_MINUTES, PEC_BARS, OHLCV_LIMIT)
                 
                 # Here you can send the results or save them, for now we just print the completion message
                 print(f"[{datetime.now()}] [SCHEDULER] PEC backtest completed successfully.")
