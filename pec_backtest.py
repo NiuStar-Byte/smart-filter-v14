@@ -62,8 +62,9 @@ def log_fired_signal(symbol, tf, signal_type, fired_time, entry_idx, csv_path="f
 import pandas as pd
 import pytz
 
+import pytz
+
 def load_fired_signals(minutes_limit=None):
-    wib = pytz.timezone('Asia/Jakarta')
     signals = []
     try:
         with open("fired_signals_temp.csv", "r") as file:
@@ -71,14 +72,13 @@ def load_fired_signals(minutes_limit=None):
             for line in file:
                 columns = line.strip().split(",")
                 uuid_, symbol, tf, signal_type, fired_time, entry_idx = columns
-                # Parse fired_time as WIB, then convert to UTC
+                # Parse fired_time as UTC-aware datetime
                 fired_dt = pd.to_datetime(fired_time)
                 if fired_dt.tzinfo is None:
-                    fired_dt = wib.localize(fired_dt)
-                fired_dt_utc = fired_dt.astimezone(pytz.UTC)
+                    fired_dt = fired_dt.replace(tzinfo=pytz.UTC)  # treat as UTC
                 if minutes_limit is not None:
                     now = pd.Timestamp.utcnow().replace(tzinfo=pytz.UTC)
-                    if (now - fired_dt_utc).total_seconds() > minutes_limit * 60:
+                    if (now - fired_dt).total_seconds() > minutes_limit * 60:
                         continue
                 signals.append({
                     "uuid": uuid_,
@@ -232,7 +232,8 @@ def run_pec_backtest(
 
     save_to_csv(pec_blocks, pec_file)
     print(f"[DEBUG] {pec_file} written, {len(pec_blocks)} signals.")
-
+    
+    print(f"[DEBUG] Fired times after filtering: {[s['fired_time'] for s in signals]}")
     print("[DEBUG] Sending PEC fired-signal file to Telegram...")
     send_telegram_file(pec_file, caption=f"PEC results for FIRED signals from last {MINUTES_LIMIT} minutes [{timestamp}]")
     print("[BACKTEST PEC] All done. PEC logs grouped in", pec_file)
