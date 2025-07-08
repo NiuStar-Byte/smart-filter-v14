@@ -16,8 +16,8 @@ class SmartFilter:
         df3m: pd.DataFrame = None,
         df5m: pd.DataFrame = None,
         tf: str = None,
-        min_score: int = 13,
-        required_passed: int = 11,      # NEW: now 10 (for 17 gatekeepers)
+        min_score: int = 12,
+        required_passed: int = 10,      # NEW: now 10 (for 17 gatekeepers)
         volume_multiplier: float = 2.0,
         kwargs = None
     ):
@@ -77,17 +77,17 @@ class SmartFilter:
             return self.filter_weights_short
         else:
             return {}
-
-    def get_signal_direction(self, results_long, results_short):
+            
+    def get_signal_direction(self, results):
         """
         Calculate the sum of weights for all PASSED filters for both LONG and SHORT,
         and return "LONG", "SHORT" or "NEUTRAL".
         """
         long_sum = sum(
-            self.filter_weights_long[f] for f, v in results_long.items() if v and f in self.filter_weights_long
+            self.filter_weights_long[f] for f, v in results.items() if v and f in self.filter_weights_long
         )
         short_sum = sum(
-            self.filter_weights_short[f] for f, v in results_short.items() if v and f in self.filter_weights_short
+            self.filter_weights_short[f] for f, v in results.items() if v and f in self.filter_weights_short
         )
         if long_sum > short_sum:
             return "LONG"
@@ -101,107 +101,53 @@ class SmartFilter:
             print(f"[{self.symbol}] Error: DataFrame empty.")
             return None
 
-        # List of all filters and which require direction
-        direction_aware_filters = {
-            "MACD": self._check_macd,
-            "ATR Momentum Burst": self._check_atr_momentum_burst,
-            "HATS": self._check_hats,
-            "Liquidity Awareness": self._check_liquidity_awareness,
-            "VWAP Divergence": self._check_vwap_divergence,
-            "Support/Resistance": self._check_support_resistance,
-            "Smart Money Bias": self._check_smart_money_bias,
-            "Absorption": self._check_absorption
-        }
-
         checks = {
             "Fractal Zone": self._check_fractal_zone,
             "EMA Cloud": self._check_ema_cloud,
-            "MACD": None,  # handled below
+            "MACD": self._check_macd,
             "Momentum": self._check_momentum,
-            "HATS": None,
+            "HATS": self._check_hats,
             "Volume Spike": self.volume_surge_confirmed if self.tf == "3min" else self._check_volume_spike,
-            "VWAP Divergence": None,
+            "VWAP Divergence": self._check_vwap_divergence,
             "MTF Volume Agreement": self._check_mtf_volume_agreement,
             "HH/LL Trend": self._check_hh_ll,
             "EMA Structure": self._check_ema_structure,
             "Chop Zone": self._check_chop_zone,
             "Candle Confirmation": self._check_candle_close,
             "Wick Dominance": self._check_wick_dominance,
-            "Absorption": None,
-            "Support/Resistance": None,
-            "Smart Money Bias": None,
+            "Absorption": self._check_absorption,
+            "Support/Resistance": self._check_support_resistance,
+            "Smart Money Bias": self._check_smart_money_bias,
             "Liquidity Pool": self._check_liquidity_pool,
             "Spread Filter": self._check_spread_filter,
-            "Liquidity Awareness": None,
+            "Liquidity Awareness": self._check_liquidity_awareness,
             "Trend Continuation": self._check_trend_continuation,
             "Volatility Model": self._check_volatility_model,
-            "ATR Momentum Burst": None,
+            "ATR Momentum Burst": self._check_atr_momentum_burst,
             "Volatility Squeeze": self._check_volatility_squeeze
         }
 
-        # Run all filters for both directions where needed
-        results_long = {}
-        results_short = {}
-
+        results = {}
         for name, fn in checks.items():
-            if name in direction_aware_filters:
-                try:
-                    results_long[name] = direction_aware_filters[name](direction="LONG")
-                except Exception as e:
-                    print(f"[{self.symbol}] {name} LONG ERROR: {e}")
-                    results_long[name] = False
-                try:
-                    results_short[name] = direction_aware_filters[name](direction="SHORT")
-                except Exception as e:
-                    print(f"[{self.symbol}] {name} SHORT ERROR: {e}")
-                    results_short[name] = False
-            else:
-                try:
-                    val = bool(fn())
-                except Exception as e:
-                    print(f"[{self.symbol}] {name} ERROR: {e}")
-                    val = False
-                results_long[name] = val
-                results_short[name] = val
+            try:
+                results[name] = bool(fn())
+            except Exception as e:
+                print(f"[{self.symbol}] {name} ERROR: {e}")
+                results[name] = False
 
-        score_long = sum(results_long.values())
-        score_short = sum(results_short.values())
-
-        # Gatekeeper logic (must be passed for signal)
-        passed_gk_long = [f for f in self.gatekeepers if results_long.get(f, False)]
-        passed_gk_short = [f for f in self.gatekeepers if results_short.get(f, False)]
-        passes_long = len(passed_gk_long)
-        passes_short = len(passed_gk_short)
-
-        # Determine bias and weights
-        signal_direction = self.get_signal_direction(results_long, results_short)
-        self.bias = signal_direction  # Enable dynamic filter_weights
-
-        # Use the passed_gk for the selected direction for confidence calculation
-        if signal_direction == "LONG":
-            total_gk_weight = sum(self.filter_weights_long.get(f, 0) for f in self.gatekeepers)
-            passed_weight = sum(self.filter_weights_long.get(f, 0) for f in passed_gk_long)
-            score = score_long
-            passes = passes_long
-        elif signal_direction == "SHORT":
-            total_gk_weight = sum(self.filter_weights_short.get(f, 0) for f in self.gatekeepers)
-            passed_weight = sum(self.filter_weights_short.get(f, 0) for f in passed_gk_short)
-            score = score_short
-            passes = passes_short
-        else:
-            total_gk_weight = max(
-                sum(self.filter_weights_long.get(f, 0) for f in self.gatekeepers),
-                sum(self.filter_weights_short.get(f, 0) for f in self.gatekeepers)
-            )
-            passed_weight = 0
-            score = max(score_long, score_short)
-            passes = max(passes_long, passes_short)
-
-        confidence = round(self._safe_divide(100 * passed_weight, total_gk_weight), 1) if total_gk_weight else 0.0
+        score = sum(results.values())
+        passed_gk = [f for f in self.gatekeepers if results.get(f, False)]
+        passes = len(passed_gk)
+        total_gk_weight = sum(self.filter_weights_long[f] for f in self.gatekeepers)
+        passed_weight = sum(self.filter_weights_long[f] for f in passed_gk)
+        confidence = round(self._safe_divide(100 * passed_weight, total_gk_weight), 1)
 
         orderbook_ok = self._order_book_wall_passed()
         resting_density_ok = self._resting_order_density_passed()
-        
+
+        # --- Direction logic: use only PASSED filter weights for each side ---
+        signal_direction = self.get_signal_direction(results)
+
         valid_signal = (
             signal_direction in ["LONG", "SHORT"]
             and score >= self.min_score
@@ -237,8 +183,7 @@ class SmartFilter:
             "price": price,
             "valid_signal": valid_signal,
             "message": message,
-            "filter_results_long": results_long,
-            "filter_results_short": results_short,
+            "filter_results": results
         }
 
     # === Super-GK logic stubs ===
@@ -280,8 +225,6 @@ class SmartFilter:
             self.df['ema20'].iat[-1] > self.df['ema20'].iat[-2]
         )
 
-    # BACK TO ORIGINAL, NO DIFFERENT PASS FORMULA OF === DIRECTION-AWARE FILTERS ===
-
     def _check_macd(self):
         e12 = self.df['close'].ewm(span=12).mean()
         e26 = self.df['close'].ewm(span=26).mean()
@@ -289,65 +232,16 @@ class SmartFilter:
         signal = macd.ewm(span=9).mean()
         return macd.iat[-1] > signal.iat[-1] and macd.iat[-1] > macd.iat[-2]
 
-    def _check_atr_momentum_burst(self, atr_period=14, burst_threshold=1.5):
-        tr = pd.concat([
-            self.df['high'] - self.df['low'],
-            (self.df['high'] - self.df['close'].shift()).abs(),
-            (self.df['low'] - self.df['close'].shift()).abs()
-        ], axis=1).max(axis=1)
-        atr = tr.rolling(atr_period).mean()
-        momentum = self.df['close'].diff()
-        burst = self._safe_divide(momentum.abs().iat[-1], atr.iat[-1])
-        return burst > burst_threshold
+    def _check_momentum(self, roc_window=3):
+        return self.df['close'].pct_change(roc_window).iat[-1] > 0
 
     def _check_hats(self):
         ha_close = (self.df['open'] + self.df['high'] + self.df['low'] + self.df['close']) / 4
         return ha_close.iat[-1] > ha_close.iat[-2]
 
-    def _check_liquidity_awareness(self, band_pct=0.005, wall_factor=5, history_len=20):
-        bids, asks = self._fetch_order_book(depth=100)
-        if bids is None or asks is None:
-            return True
-        mid = (bids['price'].iloc[0] + asks['price'].iloc[0]) / 2
-        low, high = mid * (1 - band_pct), mid * (1 + band_pct)
-        bid_depth = bids[bids['price'] >= low]['size'].sum()
-        ask_depth = asks[asks['price'] <= high]['size'].sum()
-        last = self.df['close'].iat[-1]
-        opp = ask_depth if last > self.df['open'].iat[-1] else bid_depth
-
-        if not hasattr(self, '_depth_history'):
-            self._depth_history = []
-        self._depth_history.append(opp)
-        if len(self._depth_history) > history_len:
-            self._depth_history.pop(0)
-
-        avg = sum(self._depth_history) / len(self._depth_history)
-        return self._safe_divide(opp, avg) < wall_factor
-
     def _check_vwap_divergence(self):
         diff = self.df['close'].iat[-1] - self.df['vwap'].iat[-1]
         return diff > 0 and diff / self.df['vwap'].iat[-1] > 0.001 and self.df['volume'].iat[-1] > self.df['volume'].rolling(10).mean().iat[-1]
-    
-    def _check_support_resistance(self):
-        swing = self.df['low'].rolling(5).min().iat[-3]
-        return abs(self.df['close'].iat[-1] - swing) / swing < 0.01
-
-    def _check_smart_money_bias(self):
-        last = self.df['close'].iat[-1]
-        open_ = self.df['open'].iat[-1]
-        vwap = self.df['vwap'].iat[-1]
-        return last > open_ and last > vwap
-
-    def _check_absorption(self):
-        low_under = self.df['low'].iat[-1] < self.df['open'].iat[-1]
-        close_up = self.df['close'].iat[-1] > self.df['open'].iat[-1]
-        vol_spike = self.df['volume'].iat[-1] > self.volume_multiplier * self.df['volume'].rolling(10).mean().iat[-1]
-        return low_under and close_up and vol_spike
-
-    # === REST OF UNCHANGED FILTERS ===
-
-    def _check_momentum(self, roc_window=3):
-        return self.df['close'].pct_change(roc_window).iat[-1] > 0
 
     def _check_mtf_volume_agreement(self):
         if self.df3m is None or self.df5m is None:
@@ -388,13 +282,49 @@ class SmartFilter:
         lower = min(self.df['close'].iat[-1], self.df['open'].iat[-1]) - self.df['low'].iat[-1]
         return body > 0.6 * rng and lower < 0.2 * rng
 
-    def _check_liquidity_pool(self):
-        bids, asks = self._fetch_order_book(depth=100)
-        return bids is not None and asks is not None
+    def _check_absorption(self):
+        low_under = self.df['low'].iat[-1] < self.df['open'].iat[-1]
+        close_up = self.df['close'].iat[-1] > self.df['open'].iat[-1]
+        vol_spike = self.df['volume'].iat[-1] > self.volume_multiplier * self.df['volume'].rolling(10).mean().iat[-1]
+        return low_under and close_up and vol_spike
+
+    def _check_support_resistance(self):
+        swing = self.df['low'].rolling(5).min().iat[-3]
+        return abs(self.df['close'].iat[-1] - swing) / swing < 0.01
+
+    def _check_smart_money_bias(self):
+        last = self.df['close'].iat[-1]
+        open_ = self.df['open'].iat[-1]
+        vwap = self.df['vwap'].iat[-1]
+        return last > open_ and last > vwap
 
     def _check_spread_filter(self):
         spread = self.df['high'].iat[-1] - self.df['low'].iat[-1]
         return spread < 0.02 * self.df['close'].iat[-1]
+
+    def _check_liquidity_pool(self):
+        bids, asks = self._fetch_order_book(depth=100)
+        return bids is not None and asks is not None
+
+    def _check_liquidity_awareness(self, band_pct=0.005, wall_factor=5, history_len=20):
+        bids, asks = self._fetch_order_book(depth=100)
+        if bids is None or asks is None:
+            return True
+        mid = (bids['price'].iloc[0] + asks['price'].iloc[0]) / 2
+        low, high = mid * (1 - band_pct), mid * (1 + band_pct)
+        bid_depth = bids[bids['price'] >= low]['size'].sum()
+        ask_depth = asks[asks['price'] <= high]['size'].sum()
+        last = self.df['close'].iat[-1]
+        opp = ask_depth if last > self.df['open'].iat[-1] else bid_depth
+
+        if not hasattr(self, '_depth_history'):
+            self._depth_history = []
+        self._depth_history.append(opp)
+        if len(self._depth_history) > history_len:
+            self._depth_history.pop(0)
+
+        avg = sum(self._depth_history) / len(self._depth_history)
+        return self._safe_divide(opp, avg) < wall_factor
 
     def _check_trend_continuation(self):
         slope = self.df['ema20'].iat[-1] - self.df['ema20'].iat[-3]
@@ -409,6 +339,17 @@ class SmartFilter:
         atr = tr.rolling(period).mean().iat[-1]
         atr_pct = self._safe_divide(atr, self.df['close'].iat[-1])
         return low_pct <= atr_pct <= high_pct
+
+    def _check_atr_momentum_burst(self, atr_period=14, burst_threshold=1.5):
+        tr = pd.concat([
+            self.df['high'] - self.df['low'],
+            (self.df['high'] - self.df['close'].shift()).abs(),
+            (self.df['low'] - self.df['close'].shift()).abs()
+        ], axis=1).max(axis=1)
+        atr = tr.rolling(atr_period).mean()
+        momentum = self.df['close'].diff()
+        burst = self._safe_divide(momentum.abs().iat[-1], atr.iat[-1])
+        return burst > burst_threshold
 
     def _check_volatility_squeeze(self, window=20):
         bb_high = self.df['close'].rolling(window).max()
