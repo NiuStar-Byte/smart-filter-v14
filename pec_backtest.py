@@ -59,7 +59,11 @@ def log_fired_signal(symbol, tf, signal_type, fired_time, entry_idx, csv_path="f
         print(f"[ERROR] Failed to log fired signal: {e}")
         return None
 
+import pandas as pd
+import pytz
+
 def load_fired_signals(minutes_limit=None):
+    wib = pytz.timezone('Asia/Jakarta')
     signals = []
     try:
         with open("fired_signals_temp.csv", "r") as file:
@@ -67,10 +71,14 @@ def load_fired_signals(minutes_limit=None):
             for line in file:
                 columns = line.strip().split(",")
                 uuid_, symbol, tf, signal_type, fired_time, entry_idx = columns
+                # Parse fired_time as WIB, then convert to UTC
                 fired_dt = pd.to_datetime(fired_time)
+                if fired_dt.tzinfo is None:
+                    fired_dt = wib.localize(fired_dt)
+                fired_dt_utc = fired_dt.astimezone(pytz.UTC)
                 if minutes_limit is not None:
-                    now = pd.Timestamp.utcnow()
-                    if (now - fired_dt).total_seconds() > minutes_limit * 60:
+                    now = pd.Timestamp.utcnow().replace(tzinfo=pytz.UTC)
+                    if (now - fired_dt_utc).total_seconds() > minutes_limit * 60:
                         continue
                 signals.append({
                     "uuid": uuid_,
