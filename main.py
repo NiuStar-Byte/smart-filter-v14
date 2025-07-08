@@ -246,24 +246,27 @@ def run():
         if valid_debugs:
             num = min(len(valid_debugs), 2)
             for debug_info in random.sample(valid_debugs, num):
-                dump_signal_debug_txt(
-                    symbol=debug_info["symbol"],
-                    tf=debug_info["tf"],
-                    bias=debug_info["bias"],
-                    filter_weights=debug_info["filter_weights"],
-                    gatekeepers=debug_info["gatekeepers"],
-                    results_long=debug_info.get("results_long", {}),
-                    results_short=debug_info.get("results_short", {}),
-                    orderbook_result=debug_info.get("orderbook_result"),
-                    density_result=debug_info.get("density_result")
-                )
-                send_telegram_file(
-                    "signal_debug_temp.txt",
-                    caption=debug_info["caption"]
-                )
+                try:
+                    dump_signal_debug_txt(
+                        symbol=debug_info["symbol"],
+                        tf=debug_info["tf"],
+                        bias=debug_info["bias"],
+                        filter_weights=debug_info["filter_weights"],
+                        gatekeepers=debug_info["gatekeepers"],
+                        results_long=debug_info.get("results_long", {}),
+                        results_short=debug_info.get("results_short", {}),
+                        orderbook_result=debug_info.get("orderbook_result"),
+                        density_result=debug_info.get("density_result")
+                    )
+                    send_telegram_file(
+                        "signal_debug_temp.txt",
+                        caption=debug_info["caption"]
+                    )
+                except Exception as e:
+                    print(f"[ERROR] Exception in Telegram debug send: {e}")
+        else:
+            print("[DEBUG] valid_debugs is empty — no debug files to send to Telegram.")
 
-        print("[INFO] ✅ Cycle complete. Sleeping 60 seconds...\n")
-        time.sleep(60)
 
 if __name__ == "__main__":
     if os.getenv("PEC_BACKTEST_ONLY", "false").lower() == "true":
