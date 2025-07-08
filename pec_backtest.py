@@ -232,7 +232,12 @@ def run_pec_backtest(
 
     save_to_csv(pec_blocks, pec_file)
     print(f"[DEBUG] {pec_file} written, {len(pec_blocks)} signals.")
-    
+    print(f"[DEBUG] Raw line: {line}")
+    print(f"[DEBUG] Total lines read: {total_lines}, Signals after filter: {len(signals)}")
+    print(f"[DEBUG] Columns: {columns}")
+    print(f"[DEBUG] fired_time (raw): {fired_time}")
+    print(f"[DEBUG] fired_dt (parsed): {fired_dt} (tzinfo: {fired_dt.tzinfo})")
+    print(f"[DEBUG] Now: {now} (tzinfo: {now.tzinfo})")  # Place after 'now' is defined
     print(f"[DEBUG] Fired times after filtering: {[s['fired_time'] for s in signals]}")
     print("[DEBUG] Sending PEC fired-signal file to Telegram...")
     send_telegram_file(pec_file, caption=f"PEC results for FIRED signals from last {MINUTES_LIMIT} minutes [{timestamp}]")
