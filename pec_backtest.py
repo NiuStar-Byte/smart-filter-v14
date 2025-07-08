@@ -13,16 +13,24 @@ def log_fired_signal(symbol, tf, signal_type, fired_time, entry_idx, csv_path="f
     """
     Appends a fired signal with a UUID to the fired_signals_temp.csv file.
     """
-    fired_uuid = str(uuid.uuid4())
-    file_exists = os.path.isfile(csv_path)
-    with open(csv_path, mode='a', newline='') as file:
-        writer = csv.writer(file)
-        # Write header if file is empty
-        if not file_exists or os.stat(csv_path).st_size == 0:
-            writer.writerow(['uuid','symbol','tf','signal_type','fired_time','entry_idx'])
-        writer.writerow([fired_uuid, symbol, tf, signal_type, fired_time, entry_idx])
-    print(f"[FIRED] Logged: {fired_uuid}, {symbol}, {tf}, {signal_type}, {fired_time}, {entry_idx}")
-    return fired_uuid
+    try:
+        fired_uuid = str(uuid.uuid4())
+        file_exists = os.path.isfile(csv_path)
+        abs_path = os.path.abspath(csv_path)
+        with open(csv_path, mode='a', newline='') as file:
+            writer = csv.writer(file)
+            # Write header if file is empty
+            if not file_exists or os.stat(csv_path).st_size == 0:
+                writer.writerow(['uuid','symbol','tf','signal_type','fired_time','entry_idx'])
+            writer.writerow([fired_uuid, symbol, tf, signal_type, fired_time, entry_idx])
+            file.flush()
+            os.fsync(file.fileno())
+        print(f"[FIRED] Logged: {fired_uuid}, {symbol}, {tf}, {signal_type}, {fired_time}, {entry_idx}")
+        print(f"[DEBUG] Written to: {abs_path}")
+        return fired_uuid
+    except Exception as e:
+        print(f"[ERROR] Failed to log fired signal: {e}")
+        return None
 
 def load_fired_signals():
     """Load successfully fired signals from the CSV for backtesting"""
