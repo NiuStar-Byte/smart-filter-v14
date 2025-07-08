@@ -8,15 +8,43 @@ from telegram_alert import send_telegram_file
 import os
 import datetime
 import uuid
+import pytz
 
+# Add these timezone helpers at the top of your script
+wib = pytz.timezone('Asia/Jakarta')
+utc = pytz.UTC
 # Set this to limit simulation to only recent fired signals (e.g., 720 minutes = 12 hours)
 MINUTES_LIMIT = 720
+
+def to_wib(dt):
+    if dt is None:
+        return ""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=utc)
+    return dt.astimezone(wib)
+
+def to_utc(dt):
+    if dt is None:
+        return ""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=utc)
+    return dt.astimezone(utc)
 
 def log_fired_signal(symbol, tf, signal_type, fired_time, entry_idx, csv_path="fired_signals_temp.csv"):
     try:
         fired_uuid = str(uuid.uuid4())
         file_exists = os.path.isfile(csv_path)
         abs_path = os.path.abspath(csv_path)
+
+        # Ensure fired_time is always local (WIB) and formatted
+        import pytz
+        from datetime import datetime
+        wib = pytz.timezone('Asia/Jakarta')
+        if isinstance(fired_time, datetime):
+            if fired_time.tzinfo is None:
+                fired_time = wib.localize(fired_time)
+            fired_time = fired_time.astimezone(wib).strftime('%Y-%m-%d %H:%M:%S')
+
         with open(csv_path, mode='a', newline='') as file:
             writer = csv.writer(file)
             if not file_exists or os.stat(csv_path).st_size == 0:
@@ -158,15 +186,24 @@ def run_pec_backtest(
             pnl_abs = 100 * (entry_price - exit_price) / entry_price
         pnl_pct = 100 * pnl_abs / 100
         win_loss = "WIN" if pnl_abs > 0 else "LOSS"
+        
         exit_time = times[exit_idx]
         bar_exit = PEC_BARS
         signal_time = times[entry_idx].replace(microsecond=0)
 
+        entry_time_utc = times[entry_idx]
+        exit_time_utc = times[exit_idx]
+        signal_time_utc = times[entry_idx]  # Use the correct signal_time if available
+
+        entry_time_str = to_wib(entry_time_utc).strftime("%Y-%m-%d %H:%M:%S")      # ENTRY TIME in WIB
+        exit_time_str = to_utc(exit_time_utc).strftime("%Y-%m-%d %H:%M:%S")        # EXIT TIME in UTC
+        signal_time_str = to_utc(signal_time_utc).strftime("%Y-%m-%d %H:%M:%S")    # SIGNAL TIME in UTC
+        
         pec_result = {
             'signal_type': signal_type,
             'symbol': symbol,
             'tf': tf,
-            'entry_time': signal_time.strftime("%Y-%m-%d %H:%M:%S"),
+            'entry_time': entry_time_str,      # local time (WIB)
             'entry_price': entry_price,
             'exit_price': exit_price,
             'pnl_abs': pnl_abs,
@@ -179,9 +216,9 @@ def run_pec_backtest(
             'filter_results': filter_pass_str,
             'gk_flags': gk_pass_str,
             'win_loss': win_loss,
-            'exit_time': exit_time.strftime("%Y-%m-%d %H:%M:%S"),
+            'exit_time': exit_time_str,        # UTC
             'exit_bar': bar_exit,
-            'signal_time': signal_time.strftime("%Y-%m-%d %H:%M:%S"),
+            'signal_time': signal_time_str,    # UTC
         }
         pec_blocks.append(pec_result)
 
