@@ -266,6 +266,16 @@ def run():
             except Exception as e:
                 print(f"[FATAL] Exception in debug sending block: {e}")
 
+            # Print contents of fired_signals_temp.csv (for debugging)
+            try:
+                with open("fired_signals_temp.csv") as f:
+                    print("\n[DEBUG] === Contents of fired_signals_temp.csv ===")
+                    print(f.read())
+            except FileNotFoundError:
+                print("[DEBUG] fired_signals_temp.csv does not exist yet.")
+            except Exception as e:
+                print(f"[DEBUG] Error reading fired_signals_temp.csv: {e}")
+            
             print("[INFO] ✅ Cycle complete. Sleeping 60 seconds...\n")
             time.sleep(60)
         except Exception as e:
