@@ -280,19 +280,16 @@ class SmartFilter:
             self.df['ema20'].iat[-1] > self.df['ema20'].iat[-2]
         )
 
-    # === DIRECTION-AWARE FILTERS ===
+    # BACK TO ORIGINAL, NO DIFFERENT PASS FORMULA OF === DIRECTION-AWARE FILTERS ===
 
-    def _check_macd(self, direction="LONG"):
+    def _check_macd(self):
         e12 = self.df['close'].ewm(span=12).mean()
         e26 = self.df['close'].ewm(span=26).mean()
         macd = e12 - e26
         signal = macd.ewm(span=9).mean()
-        if direction == "LONG":
-            return macd.iat[-1] > signal.iat[-1] and macd.iat[-1] > macd.iat[-2]
-        else:  # SHORT
-            return macd.iat[-1] < signal.iat[-1] and macd.iat[-1] < macd.iat[-2]
+        return macd.iat[-1] > signal.iat[-1] and macd.iat[-1] > macd.iat[-2]
 
-    def _check_atr_momentum_burst(self, direction="LONG", atr_period=14):
+    def _check_atr_momentum_burst(self, atr_period=14, burst_threshold=1.5):
         tr = pd.concat([
             self.df['high'] - self.df['low'],
             (self.df['high'] - self.df['close'].shift()).abs(),
@@ -301,19 +298,13 @@ class SmartFilter:
         atr = tr.rolling(atr_period).mean()
         momentum = self.df['close'].diff()
         burst = self._safe_divide(momentum.abs().iat[-1], atr.iat[-1])
-        if direction == "LONG":
-            return burst > 1.5  # Example threshold for LONG
-        else:
-            return burst > 1.7  # Slightly stricter for SHORT
+        return burst > burst_threshold
 
-    def _check_hats(self, direction="LONG"):
+    def _check_hats(self):
         ha_close = (self.df['open'] + self.df['high'] + self.df['low'] + self.df['close']) / 4
-        if direction == "LONG":
-            return ha_close.iat[-1] > ha_close.iat[-2]
-        else:
-            return ha_close.iat[-1] < ha_close.iat[-2]
+        return ha_close.iat[-1] > ha_close.iat[-2]
 
-    def _check_liquidity_awareness(self, direction="LONG", band_pct=0.005, wall_factor_long=5, wall_factor_short=4, history_len=20):
+    def _check_liquidity_awareness(self, band_pct=0.005, wall_factor=5, history_len=20):
         bids, asks = self._fetch_order_book(depth=100)
         if bids is None or asks is None:
             return True
@@ -331,46 +322,27 @@ class SmartFilter:
             self._depth_history.pop(0)
 
         avg = sum(self._depth_history) / len(self._depth_history)
-        if direction == "LONG":
-            return self._safe_divide(opp, avg) < wall_factor_long
-        else:
-            return self._safe_divide(opp, avg) < wall_factor_short
+        return self._safe_divide(opp, avg) < wall_factor
 
-    def _check_vwap_divergence(self, direction="LONG"):
+    def _check_vwap_divergence(self):
         diff = self.df['close'].iat[-1] - self.df['vwap'].iat[-1]
-        avg_vol = self.df['volume'].rolling(10).mean().iat[-1]
-        if direction == "LONG":
-            return diff > 0 and diff / self.df['vwap'].iat[-1] > 0.001 and self.df['volume'].iat[-1] > avg_vol
-        else:
-            return diff < 0 and abs(diff) / self.df['vwap'].iat[-1] > 0.001 and self.df['volume'].iat[-1] > avg_vol
+        return diff > 0 and diff / self.df['vwap'].iat[-1] > 0.001 and self.df['volume'].iat[-1] > self.df['volume'].rolling(10).mean().iat[-1]
+    
+    def _check_support_resistance(self):
+        swing = self.df['low'].rolling(5).min().iat[-3]
+        return abs(self.df['close'].iat[-1] - swing) / swing < 0.01
 
-    def _check_support_resistance(self, direction="LONG"):
-        if direction == "LONG":
-            swing = self.df['low'].rolling(5).min().iat[-3]
-            return abs(self.df['close'].iat[-1] - swing) / swing < 0.01
-        else:
-            swing = self.df['high'].rolling(5).max().iat[-3]
-            return abs(self.df['close'].iat[-1] - swing) / swing < 0.01
-
-    def _check_smart_money_bias(self, direction="LONG"):
+    def _check_smart_money_bias(self):
         last = self.df['close'].iat[-1]
         open_ = self.df['open'].iat[-1]
         vwap = self.df['vwap'].iat[-1]
-        if direction == "LONG":
-            return last > open_ and last > vwap
-        else:
-            return last < open_ and last < vwap
+        return last > open_ and last > vwap
 
-    def _check_absorption(self, direction="LONG"):
+    def _check_absorption(self):
+        low_under = self.df['low'].iat[-1] < self.df['open'].iat[-1]
+        close_up = self.df['close'].iat[-1] > self.df['open'].iat[-1]
         vol_spike = self.df['volume'].iat[-1] > self.volume_multiplier * self.df['volume'].rolling(10).mean().iat[-1]
-        if direction == "LONG":
-            low_under = self.df['low'].iat[-1] < self.df['open'].iat[-1]
-            close_up = self.df['close'].iat[-1] > self.df['open'].iat[-1]
-            return low_under and close_up and vol_spike
-        else:
-            high_over = self.df['high'].iat[-1] > self.df['open'].iat[-1]
-            close_down = self.df['close'].iat[-1] < self.df['open'].iat[-1]
-            return high_over and close_down and vol_spike
+        return low_under and close_up and vol_spike
 
     # === REST OF UNCHANGED FILTERS ===
 
