@@ -138,16 +138,17 @@ class SmartFilter:
         score = sum(results.values())
         passed_gk = [f for f in self.gatekeepers if results.get(f, False)]
         passes = len(passed_gk)
-        total_gk_weight = sum(self.filter_weights_long[f] for f in self.gatekeepers)
-        passed_weight = sum(self.filter_weights_long[f] for f in passed_gk)
+
+        signal_direction = self.get_signal_direction(results)
+        self.bias = signal_direction  # Enable dynamic filter_weights
+
+        total_gk_weight = sum(self.filter_weights.get(f, 0) for f in self.gatekeepers)
+        passed_weight = sum(self.filter_weights.get(f, 0) for f in passed_gk)
         confidence = round(self._safe_divide(100 * passed_weight, total_gk_weight), 1)
 
         orderbook_ok = self._order_book_wall_passed()
         resting_density_ok = self._resting_order_density_passed()
-
-        # --- Direction logic: use only PASSED filter weights for each side ---
-        signal_direction = self.get_signal_direction(results)
-
+        
         valid_signal = (
             signal_direction in ["LONG", "SHORT"]
             and score >= self.min_score
