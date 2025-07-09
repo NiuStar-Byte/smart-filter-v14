@@ -10,7 +10,7 @@ from datetime import datetime
 
 from kucoin_data import get_ohlcv
 from smart_filter import SmartFilter
-from telegram_alert import send_telegram_alert, send_telegram_file
+from telegram_alert import send_telegram_alert, send_telegram_file, log_fired_signal_txt, send_txt_to_telegram
 from signal_debug_log import dump_signal_debug_txt, log_fired_signal
 from kucoin_orderbook import get_order_wall_delta
 from pec_engine import run_pec_check, export_pec_log
@@ -142,12 +142,24 @@ def run():
                                 signal_type=res3.get("bias"),
                                 entry_idx=entry_idx
                             )
+                            log_fired_signal_txt(
+                                symbol=symbol,
+                                tf="3min",
+                                signal_type=res3.get("bias"),
+                                entry_idx=entry_idx
+                            )
                             if os.getenv("DRY_RUN", "false").lower() != "true":
                                 log_fired_signal(
                                     symbol=res3.get("symbol"),
                                     tf=res3.get("tf"),
                                     signal_type=res3.get("bias"),
                                     entry_idx=entry_idx,
+                                )
+                                log_fired_signal_txt(
+                                    symbol=res3.get("symbol"),
+                                    tf=res3.get("tf"),
+                                    signal_type=res3.get("bias"),
+                                    entry_idx=entry_idx
                                 )
                                 send_telegram_alert(
                                     numbered_signal=numbered_signal,
@@ -212,12 +224,24 @@ def run():
                                 signal_type=res5.get("bias"),
                                 entry_idx=entry_idx
                             )
+                            log_fired_signal_txt(
+                                symbol=symbol,
+                                tf="5min",
+                                signal_type=res5.get("bias"),
+                                entry_idx=entry_idx
+                            )
                             if os.getenv("DRY_RUN", "false").lower() != "true":
                                 log_fired_signal(
                                     symbol=res5.get("symbol"),
                                     tf=res5.get("tf"),
                                     signal_type=res5.get("bias"),
                                     entry_idx=entry_idx,
+                                )
+                                log_fired_signal_txt(
+                                    symbol=res5.get("symbol"),
+                                    tf=res5.get("tf"),
+                                    signal_type=res5.get("bias"),
+                                    entry_idx=entry_idx
                                 )
                                 send_telegram_alert(
                                     numbered_signal=numbered_signal,
@@ -281,6 +305,12 @@ def run():
                 print("[DEBUG] fired_signals_temp.csv does not exist yet.")
             except Exception as e:
                 print(f"[DEBUG] Error reading fired_signals_temp.csv: {e}")
+            
+            # Send fired signals TXT file to Telegram
+            try:
+                send_txt_to_telegram()
+            except Exception as e:
+                print(f"[ERROR] Failed to send TXT file to Telegram: {e}")
             
             print("[INFO] ✅ Cycle complete. Sleeping 60 seconds...\n")
             time.sleep(60)
