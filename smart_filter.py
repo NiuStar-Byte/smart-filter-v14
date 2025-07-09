@@ -78,16 +78,16 @@ class SmartFilter:
         else:
             return {}
             
-    def get_signal_direction(self, results):
+    def get_signal_direction(self, results_long, results_short):
         """
         Calculate the sum of weights for all PASSED filters for both LONG and SHORT,
         and return "LONG", "SHORT" or "NEUTRAL".
         """
         long_sum = sum(
-            self.filter_weights_long[f] for f, v in results.items() if v and f in self.filter_weights_long
+            self.filter_weights_long.get(f, 0) for f, v in results_long.items() if v and f in self.filter_weights_long
         )
         short_sum = sum(
-            self.filter_weights_short[f] for f, v in results.items() if v and f in self.filter_weights_short
+            self.filter_weights_short.get(f, 0) for f, v in results_short.items() if v and f in self.filter_weights_short
         )
         if long_sum > short_sum:
             return "LONG"
