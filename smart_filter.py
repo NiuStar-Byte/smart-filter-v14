@@ -127,7 +127,7 @@ class SmartFilter:
             "Volatility Squeeze": self._check_volatility_squeeze
         }
 
-        # Run all filters just once (no per-direction logic)
+        # Run all filters just once (no direction-aware logic)
         results = {}
 
         for name, fn in checks.items():
@@ -137,26 +137,50 @@ class SmartFilter:
                 print(f"[{self.symbol}] {name} ERROR: {e}")
                 results[name] = False
 
-        score = sum(results.values())
-        passed_gk = [f for f in self.gatekeepers if results.get(f, False)]
-        passes = len(passed_gk)
+        # For debug/export compatibility, build results_long and results_short as copies
+        results_long = dict(results)
+        results_short = dict(results)
 
-        # Determine bias using your existing logic (usually sum of weights for each side)
-        signal_direction = self.get_signal_direction(results)
-        self.bias = signal_direction  # For dynamic filter_weights property
+        # Compute total scores and gatekeeper passes for each direction
+        score_long = sum(results_long.values())
+        score_short = sum(results_short.values())
 
+        passed_gk_long = [f for f in self.gatekeepers if results_long.get(f, False)]
+        passed_gk_short = [f for f in self.gatekeepers if results_short.get(f, False)]
+        passes_long = len(passed_gk_long)
+        passes_short = len(passed_gk_short)
+
+        # Calculate weighted scores and confidence per direction
+        total_gk_weight_long = sum(self.filter_weights_long.get(f, 0) for f in self.gatekeepers)
+        total_gk_weight_short = sum(self.filter_weights_short.get(f, 0) for f in self.gatekeepers)
+        passed_weight_long = sum(self.filter_weights_long.get(f, 0) for f in passed_gk_long)
+        passed_weight_short = sum(self.filter_weights_short.get(f, 0) for f in passed_gk_short)
+        confidence_long = round(self._safe_divide(100 * passed_weight_long, total_gk_weight_long), 1) if total_gk_weight_long else 0.0
+        confidence_short = round(self._safe_divide(100 * passed_weight_short, total_gk_weight_short), 1) if total_gk_weight_short else 0.0
+
+        # Determine which direction wins (using your preferred logic)
+        signal_direction = self.get_signal_direction(results_long, results_short)
+        self.bias = signal_direction
+
+        # Select summary stats based on direction
         if signal_direction == "LONG":
-            total_gk_weight = sum(self.filter_weights_long.get(f, 0) for f in self.gatekeepers)
-            passed_weight = sum(self.filter_weights_long.get(f, 0) for f in passed_gk)
+            score = score_long
+            passes = passes_long
+            confidence = confidence_long
+            passed_weight = passed_weight_long
+            total_gk_weight = total_gk_weight_long
         elif signal_direction == "SHORT":
-            total_gk_weight = sum(self.filter_weights_short.get(f, 0) for f in self.gatekeepers)
-            passed_weight = sum(self.filter_weights_short.get(f, 0) for f in passed_gk)
+            score = score_short
+            passes = passes_short
+            confidence = confidence_short
+            passed_weight = passed_weight_short
+            total_gk_weight = total_gk_weight_short
         else:
-            total_gk_weight = max(
-                sum(self.filter_weights_long.get(f, 0) for f in self.gatekeepers),
-                sum(self.filter_weights_short.get(f, 0) for f in self.gatekeepers)
-            )
-            passed_weight = 0
+            score = max(score_long, score_short)
+            passes = max(passes_long, passes_short)
+            confidence = max(confidence_long, confidence_short)
+            passed_weight = max(passed_weight_long, passed_weight_short)
+            total_gk_weight = max(total_gk_weight_long, total_gk_weight_short)
 
         confidence = round(self._safe_divide(100 * passed_weight, total_gk_weight), 1) if total_gk_weight else 0.0
 
