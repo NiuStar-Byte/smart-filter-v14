@@ -1,9 +1,8 @@
 import os
 import requests
+from tg_config import BOT_TOKEN, CHAT_ID
 
 # ——— CONFIG ——————————————————————————
-BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "7100609549:AAHmeFe0RondzYyPKNuGTTp8HNAuT0PbNJs")
-CHAT_ID   = os.getenv("TELEGRAM_CHAT_ID",   "-1002857433223")
 SEND_URL  = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 SEND_FILE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendDocument"
 
@@ -92,3 +91,22 @@ def send_telegram_file(filepath, caption=None):
         print(f"📄 File sent to Telegram: {filepath}")
     except requests.RequestException as e:
         print(f"❗ Telegram file send error: {e} — response: {getattr(resp, 'text', '')}")
+
+def send_csv_to_telegram(csv_path):
+    url = SEND_FILE_URL
+    try:
+        with open(csv_path, "rb") as csvfile:
+            files = {"document": csvfile}
+            data = {"chat_id": CHAT_ID, "caption": "Fired Signals CSV"}
+            response = requests.post(url, data=data, files=files)
+        if response.status_code == 200:
+            print("CSV sent successfully!")
+        else:
+            print(f"Failed to send CSV: {response.text}")
+    except FileNotFoundError:
+        print(f"File {csv_path} not found.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+if __name__ == "__main__":
+    send_csv_to_telegram("fired_signals_temp.csv")
