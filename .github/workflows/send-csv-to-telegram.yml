@@ -1,0 +1,35 @@
+name: Send CSV to Telegram
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  send-csv:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install requests
+        run: pip install requests
+
+      - name: Create tg_config.py from secrets
+        run: |
+          echo "BOT_TOKEN = '${{ secrets.TELEGRAM_BOT_TOKEN }}'" > tg_config.py
+          echo "CHAT_ID = '${{ secrets.TELEGRAM_CHAT_ID }}'" >> tg_config.py
+
+      # Uncomment the next lines if you need to generate the CSV file
+      # - name: Generate CSV
+      #   run: python make_csv.py
+
+      - name: Send CSV to Telegram
+        run: python telegram_alert.py
