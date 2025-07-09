@@ -246,6 +246,9 @@ def run():
                     num = min(len(valid_debugs), 2)
                     for debug_info in random.sample(valid_debugs, num):
                         try:
+                            print("LONG:", debug_info["filter_weights_long"])
+                            print("SHORT:", debug_info["filter_weights_short"])
+                    
                             dump_signal_debug_txt(
                                 symbol=debug_info["symbol"],
                                 tf=debug_info["tf"],
