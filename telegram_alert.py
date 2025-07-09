@@ -108,5 +108,66 @@ def send_csv_to_telegram(csv_path):
     except Exception as e:
         print(f"An error occurred: {e}")
 
+def log_fired_signal_txt(symbol, tf, signal_type, entry_idx, txt_path="fired_signals_temp.txt"):
+    """
+    Log fired signal to TXT file in CSV format.
+    Generates UUID and fired_time, writes header only once, appends CSV row as string.
+    """
+    import uuid, os
+    from datetime import datetime
+    
+    print(f"[DEBUG] log_fired_signal_txt called: {symbol}, {tf}, {signal_type}, {entry_idx}")
+    
+    # Generate UUID and timestamp
+    fired_uuid = str(uuid.uuid4())
+    fired_time = datetime.utcnow().isoformat()
+    
+    # Prepare header and row
+    header = "uuid,symbol,tf,signal_type,fired_time,entry_idx"
+    row = f"{fired_uuid},{symbol},{tf},{signal_type},{fired_time},{entry_idx}"
+    
+    # Check if we need to write header (file is empty or missing)
+    write_header = False
+    try:
+        if os.path.exists(txt_path):
+            with open(txt_path, "r") as f:
+                content = f.read().strip()
+                if content == "":
+                    write_header = True
+        else:
+            write_header = True
+    except Exception:
+        write_header = True
+    
+    # Write to file
+    try:
+        with open(txt_path, "a") as f:
+            if write_header:
+                print(f"[DEBUG] Writing header to {txt_path}")
+                f.write(header + "\n")
+            print(f"[DEBUG] Writing row to {txt_path}: {row}")
+            f.write(row + "\n")
+        
+        # Print to log as required
+        print(f"[FIRED] Logged to TXT: {fired_uuid}, {symbol}, {tf}, {signal_type}, {fired_time}, {entry_idx}")
+        
+    except Exception as e:
+        print(f"[ERROR] log_fired_signal_txt failed: {e}")
+
+def send_txt_to_telegram(txt_path="fired_signals_temp.txt", caption="Signals as TXT"):
+    """
+    Send TXT file to Telegram using existing file sending logic.
+    """
+    if not os.path.exists(txt_path):
+        print(f"[ERROR] TXT file not found: {txt_path}")
+        return
+        
+    try:
+        send_telegram_file(txt_path, caption)
+        print(f"[INFO] TXT file sent to Telegram: {txt_path}")
+    except Exception as e:
+        print(f"[ERROR] Failed to send TXT file to Telegram: {e}")
+
 if __name__ == "__main__":
-    send_csv_to_telegram("fired_signals_temp.csv")
+    # send_csv_to_telegram("fired_signals_temp.csv")  # Commented out - now using TXT files
+    pass
