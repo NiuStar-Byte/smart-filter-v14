@@ -1,5 +1,6 @@
 import logging
 from telegram import Bot
+from tg_config import BOT_TOKEN, CHAT_ID
 
 # Set up logging to a text file
 logging.basicConfig(
@@ -7,10 +8,6 @@ logging.basicConfig(
     level=logging.DEBUG, 
     format="%(asctime)s - %(message)s"
 )
-
-# Telegram Bot configuration (Replace with your actual token and chat_id)
-BOT_TOKEN = "7100609549:AAHmeFe0RondzYyPKNuGTTp8HNAuT0PbNJs"  # Your bot token
-CHAT_ID = "-1002857433223"  # Your chat ID
 
 def send_logs_to_telegram(message):
     """
