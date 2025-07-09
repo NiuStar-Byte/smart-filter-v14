@@ -188,7 +188,7 @@ class SmartFilter:
         resting_density_ok = self._resting_order_density_passed()
 
         # --- Direction logic: use only PASSED filter weights for each side ---
-        signal_direction = self.get_signal_direction(results)
+        signal_direction = self.get_signal_direction(results_long, results_short)
 
         valid_signal = (
             signal_direction in ["LONG", "SHORT"]
