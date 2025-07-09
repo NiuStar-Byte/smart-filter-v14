@@ -98,7 +98,7 @@ def send_csv_to_telegram(csv_path):
         with open(csv_path, "rb") as csvfile:
             files = {"document": csvfile}
             data = {"chat_id": CHAT_ID, "caption": "Fired Signals CSV"}
-            response = requests.post(url, data=data, files=files)
+            response = requests.post(url, data=data, files=files, timeout=20)
         if response.status_code == 200:
             print("CSV sent successfully!")
         else:
