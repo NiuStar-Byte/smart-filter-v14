@@ -266,6 +266,8 @@ class SmartFilter:
         else:
             print(f"[{self.symbol}] ❌ No signal.")
 
+        print("DEBUG SUMS:", getattr(self, '_debug_sums', {}))
+        
         return {
             "symbol": self.symbol,
             "tf": self.tf,
