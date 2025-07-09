@@ -4,14 +4,10 @@ from datetime import datetime
 def dump_signal_debug_txt(*args, **kwargs):
     pass
 
-def dump_signal_debug_txt(symbol, tf, bias, filter_weights, gatekeepers,
+def dump_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weights_short, gatekeepers,
                          results_long=None, results_short=None,
                          orderbook_result=None, density_result=None,
                          results=None):
-    """
-    Dumps per-filter debug info for a single signal, for both LONG and SHORT biases if provided,
-    to 'signal_debug_temp.txt' (tab-separated), and appends validation verdict & timestamp.
-    """
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with open("signal_debug_temp.txt", "w") as f:
         f.write(f"# Signal Debug Export (created: {timestamp})\n")
@@ -25,7 +21,7 @@ def dump_signal_debug_txt(symbol, tf, bias, filter_weights, gatekeepers,
                     "Timeframe": tf,
                     "SignalType": "LONG",
                     "Filter Name": fname,
-                    "Weight": filter_weights.get(fname, 0),
+                    "Weight": filter_weights_long.get(fname, 0),
                     "GateKeeper": fname in gatekeepers,
                     "Result": res,
                     "PASSES": "PASS" if fname in gatekeepers and res else ""
@@ -46,7 +42,7 @@ def dump_signal_debug_txt(symbol, tf, bias, filter_weights, gatekeepers,
                     "Timeframe": tf,
                     "SignalType": "SHORT",
                     "Filter Name": fname,
-                    "Weight": filter_weights.get(fname, 0),
+                    "Weight": filter_weights_short.get(fname, 0),
                     "GateKeeper": fname in gatekeepers,
                     "Result": res,
                     "PASSES": "PASS" if fname in gatekeepers and res else ""
@@ -67,7 +63,7 @@ def dump_signal_debug_txt(symbol, tf, bias, filter_weights, gatekeepers,
                     "Timeframe": tf,
                     "SignalType": bias,
                     "Filter Name": fname,
-                    "Weight": filter_weights.get(fname, 0),
+                    "Weight": filter_weights_long.get(fname, 0),  # or whichever is appropriate
                     "GateKeeper": fname in gatekeepers,
                     "Result": res,
                     "PASSES": "PASS" if fname in gatekeepers and res else ""
