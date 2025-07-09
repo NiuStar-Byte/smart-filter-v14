@@ -35,6 +35,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+tg_config.py
 
 # Testing
 .pytest_cache/
