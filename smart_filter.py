@@ -127,7 +127,9 @@ class SmartFilter:
             "Volatility Squeeze": self._check_volatility_squeeze
         }
 
+        # Run all filters just once (no per-direction logic)
         results = {}
+
         for name, fn in checks.items():
             try:
                 results[name] = bool(fn())
@@ -138,9 +140,25 @@ class SmartFilter:
         score = sum(results.values())
         passed_gk = [f for f in self.gatekeepers if results.get(f, False)]
         passes = len(passed_gk)
-        total_gk_weight = sum(self.filter_weights_long[f] for f in self.gatekeepers)
-        passed_weight = sum(self.filter_weights_long[f] for f in passed_gk)
-        confidence = round(self._safe_divide(100 * passed_weight, total_gk_weight), 1)
+
+        # Determine bias using your existing logic (usually sum of weights for each side)
+        signal_direction = self.get_signal_direction(results)
+        self.bias = signal_direction  # For dynamic filter_weights property
+
+        if signal_direction == "LONG":
+            total_gk_weight = sum(self.filter_weights_long.get(f, 0) for f in self.gatekeepers)
+            passed_weight = sum(self.filter_weights_long.get(f, 0) for f in passed_gk)
+        elif signal_direction == "SHORT":
+            total_gk_weight = sum(self.filter_weights_short.get(f, 0) for f in self.gatekeepers)
+            passed_weight = sum(self.filter_weights_short.get(f, 0) for f in passed_gk)
+        else:
+            total_gk_weight = max(
+                sum(self.filter_weights_long.get(f, 0) for f in self.gatekeepers),
+                sum(self.filter_weights_short.get(f, 0) for f in self.gatekeepers)
+            )
+            passed_weight = 0
+
+        confidence = round(self._safe_divide(100 * passed_weight, total_gk_weight), 1) if total_gk_weight else 0.0
 
         orderbook_ok = self._order_book_wall_passed()
         resting_density_ok = self._resting_order_density_passed()
@@ -183,7 +201,12 @@ class SmartFilter:
             "price": price,
             "valid_signal": valid_signal,
             "message": message,
-            "filter_results": results
+            "filter_results": results,
+
+            # --- PATCH FOR DEBUG COMPATIBILITY ---
+            "results": results,  # legacy for signal_debug_log.py
+            "filter_results_long": results,  # not truly per-direction, but fills debug
+            "filter_results_short": results, # not truly per-direction, but fills debug
         }
 
     # === Super-GK logic stubs ===
