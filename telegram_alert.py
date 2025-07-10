@@ -91,3 +91,4 @@ def send_telegram_file(filepath, caption=None):
         print(f"📄 File sent to Telegram: {filepath}")
     except requests.RequestException as e:
         print(f"❗ Telegram file send error: {e} — response: {getattr(resp, 'text', '')}")
+
