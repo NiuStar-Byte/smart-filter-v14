@@ -36,19 +36,19 @@ class SmartFilter:
 
         # Weights for filters
         self.filter_weights_long = {
-            "MACD": 4.3, "Volume Spike": 4.8, "Fractal Zone": 4.5, "EMA Cloud": 5.0, "Momentum": 4.0, "ATR Momentum Burst": 3.9,
-            "MTF Volume Agreement": 3.8, "Trend Continuation": 4.7, "HATS": 4.3, "HH/LL Trend": 4.5, "Volatility Model": 3.4,
-            "EMA Structure": 3.3, "Liquidity Awareness": 3.3, "Volatility Squeeze": 3.1, "Candle Confirmation": 3.8,
+            "MACD": 5.0, "Volume Spike": 4.8, "Fractal Zone": 4.5, "EMA Cloud": 5.0, "Momentum": 4.0, "ATR Momentum Burst": 3.8,
+            "MTF Volume Agreement": 3.8, "Trend Continuation": 4.7, "HATS": 4.2, "HH/LL Trend": 4.5, "Volatility Model": 3.4,
+            "EMA Structure": 3.3, "Liquidity Awareness": 3.2, "Volatility Squeeze": 3.1, "Candle Confirmation": 3.8,
             "VWAP Divergence": 2.8, "Spread Filter": 2.7, "Chop Zone": 2.6, "Liquidity Pool": 2.5, "Support/Resistance": 2.0,
-            "Smart Money Bias": 1.9, "Absorption": 1.8, "Wick Dominance": 1.5
+            "Smart Money Bias": 1.9, "Absorption": 1.7, "Wick Dominance": 1.5
         }
 
         self.filter_weights_short = {
-            "MACD": 3.2, "Volume Spike": 4.8, "Fractal Zone": 4.5, "EMA Cloud": 5.0, "Momentum": 4.0, "ATR Momentum Burst": 4.1,
-            "MTF Volume Agreement": 3.8, "Trend Continuation": 4.7, "HATS": 4.5, "HH/LL Trend": 4.5, "Volatility Model": 3.4,
-            "EMA Structure": 3.3, "Liquidity Awareness": 3.5, "Volatility Squeeze": 3.1, "Candle Confirmation": 3.8,
+            "MACD": 3.0, "Volume Spike": 4.8, "Fractal Zone": 4.5, "EMA Cloud": 5.0, "Momentum": 4.0, "ATR Momentum Burst": 4.3,
+            "MTF Volume Agreement": 3.8, "Trend Continuation": 4.7, "HATS": 4.6, "HH/LL Trend": 4.5, "Volatility Model": 3.4,
+            "EMA Structure": 3.3, "Liquidity Awareness": 3.6, "Volatility Squeeze": 3.1, "Candle Confirmation": 3.8,
             "VWAP Divergence": 3.0, "Spread Filter": 2.7, "Chop Zone": 2.6, "Liquidity Pool": 2.5, "Support/Resistance": 2.1,
-            "Smart Money Bias": 2.0, "Absorption": 1.9, "Wick Dominance": 1.5
+            "Smart Money Bias": 2.0, "Absorption": 2.0, "Wick Dominance": 1.5
         }
 
         self.gatekeepers = [
@@ -478,3 +478,81 @@ class SmartFilter:
             except Exception:
                 continue
         return None, None
+
+def superGK_check(self, symbol, signal_direction):
+    # Fetch order book data (Bid/Ask details)
+    bids, asks = self._fetch_order_book(symbol)
+
+    # Check if order book data is available
+    if bids is None or asks is None:
+        print(f"Signal blocked due to missing order book data for {symbol}")
+        return False  # Block the signal if no order book data is available
+
+    # Calculate bid and ask wall sizes (order wall delta)
+    bid_wall = self.get_order_wall_delta(symbol, side='bid')
+    ask_wall = self.get_order_wall_delta(symbol, side='ask')
+
+    # Check market liquidity (Resting Density)
+    resting_density = self.get_resting_density(symbol)
+    bid_density = resting_density['bid_density']
+    ask_density = resting_density['ask_density']
+
+    # Market strength check based on liquidity (if density is too low, block)
+    if bid_density < self.liquidity_threshold or ask_density < self.liquidity_threshold:
+        print(f"Signal blocked due to low liquidity for {symbol}")
+        return False  # Block signal due to insufficient liquidity
+
+    # Further check based on bid/ask wall delta
+    if bid_wall < ask_wall:
+        print(f"Signal blocked due to weak buy-side support for {symbol}")
+        return False  # Block signal if ask wall is stronger
+
+    # Determine signal based on liquidity and market depth
+    if bid_density > ask_density:
+        print(f"Signal passed for LONG: Strong bid-side liquidity for {symbol}")
+        return True  # Allow LONG signal if bid-side liquidity is stronger
+    elif ask_density > bid_density:
+        print(f"Signal passed for SHORT: Strong ask-side liquidity for {symbol}")
+        return True  # Allow SHORT signal if ask-side liquidity is stronger
+    else:
+        print(f"Signal blocked due to neutral market conditions for {symbol}")
+        return False  # Block signal if market liquidity is balanced
+
+def superGK_check(self, symbol, signal_direction):
+    # Fetch order book data (Bid/Ask details)
+    bids, asks = self._fetch_order_book(symbol)
+
+    # Check if order book data is available
+    if bids is None or asks is None:
+        print(f"Signal blocked due to missing order book data for {symbol}")
+        return False  # Block the signal if no order book data is available
+
+    # Calculate bid and ask wall sizes (order wall delta)
+    bid_wall = self.get_order_wall_delta(symbol, side='bid')
+    ask_wall = self.get_order_wall_delta(symbol, side='ask')
+
+    # Check market liquidity (Resting Density)
+    resting_density = self.get_resting_density(symbol)
+    bid_density = resting_density['bid_density']
+    ask_density = resting_density['ask_density']
+
+    # Market strength check based on liquidity (if density is too low, block)
+    if bid_density < self.liquidity_threshold or ask_density < self.liquidity_threshold:
+        print(f"Signal blocked due to low liquidity for {symbol}")
+        return False  # Block signal due to insufficient liquidity
+
+    # Further check based on bid/ask wall delta
+    if bid_wall < ask_wall:
+        print(f"Signal blocked due to weak buy-side support for {symbol}")
+        return False  # Block signal if ask wall is stronger
+
+    # Determine signal based on liquidity and market depth
+    if bid_density > ask_density:
+        print(f"Signal passed for LONG: Strong bid-side liquidity for {symbol}")
+        return True  # Allow LONG signal if bid-side liquidity is stronger
+    elif ask_density > bid_density:
+        print(f"Signal passed for SHORT: Strong ask-side liquidity for {symbol}")
+        return True  # Allow SHORT signal if ask-side liquidity is stronger
+    else:
+        print(f"Signal blocked due to neutral market conditions for {symbol}")
+        return False  # Block signal if market liquidity is balanced
