@@ -10,7 +10,7 @@ from datetime import datetime
 
 from kucoin_data import get_ohlcv
 from smart_filter import SmartFilter
-from telegram_alert import send_telegram_alert, send_telegram_file, log_fired_signal_txt, send_txt_to_telegram
+from telegram_alert import send_telegram_alert, send_telegram_file, send_txt_to_telegram
 from signal_debug_log import dump_signal_debug_txt, log_fired_signal
 from kucoin_orderbook import get_order_wall_delta
 from pec_engine import run_pec_check, export_pec_log
