@@ -323,11 +323,19 @@ def run():
             time.sleep(10)
 
 if __name__ == "__main__":
-    if os.getenv("PEC_BACKTEST_ONLY", "false").lower() == "true":
-        from pec_backtest import run_pec_backtest
-        run_pec_backtest(
-            TOKENS, get_ohlcv, get_local_wib,
-            PEC_WINDOW_MINUTES, PEC_BARS, OHLCV_LIMIT
-        )
-    else:
-        run()
+    try:
+        pec_backtest = os.getenv("PEC_BACKTEST_ONLY", "false").strip().lower()
+        if pec_backtest == "true":
+            print("[INFO] Running PEC Backtest mode...")
+            from pec_backtest import run_pec_backtest
+            run_pec_backtest(
+                TOKENS, get_ohlcv, get_local_wib,
+                PEC_WINDOW_MINUTES, PEC_BARS, OHLCV_LIMIT
+            )
+        else:
+            print("[INFO] Running live Smart Filter engine...")
+            run()
+    except Exception as e:
+        import traceback
+        print(f"[FATAL] Exception in __main__ block: {e}")
+        traceback.print_exc()
