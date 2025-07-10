@@ -6,10 +6,6 @@ from tg_config import BOT_TOKEN, CHAT_ID
 SEND_URL  = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 SEND_FILE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendDocument"
 
-def send_txt_to_telegram():
-    # Dummy placeholder to avoid ImportError
-    print("[WARN] send_txt_to_telegram() called, but not implemented in telegram_alert.py.")
-
 def send_telegram_alert(
     numbered_signal: str,
     symbol: str,
@@ -95,4 +91,3 @@ def send_telegram_file(filepath, caption=None):
         print(f"📄 File sent to Telegram: {filepath}")
     except requests.RequestException as e:
         print(f"❗ Telegram file send error: {e} — response: {getattr(resp, 'text', '')}")
-
