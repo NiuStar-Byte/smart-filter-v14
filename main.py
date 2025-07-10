@@ -330,7 +330,7 @@ if __name__ == "__main__":
             from pec_backtest import run_pec_backtest
             run_pec_backtest(
                 TOKENS, get_ohlcv, get_local_wib,
-                PEC_WINDOW_MINUTES, PEC_BARS, OHLCV_LIMIT
+                PEC_BARS, OHLCV_LIMIT
             )
         else:
             print("[INFO] Running live Smart Filter engine...")
