@@ -5,8 +5,9 @@ import numpy as np
 class SmartFilter:
     """
     Core scanner that evaluates 23+ technical / order-flow filters,
-    then decides whether a valid LONG / SHORT signal exists,
-    using pure directional logic from 4 filters per side (June 2025 Golden Rules).
+    set min treshold of filters to pass (true), set gate keepers (GK) among filters & min threshold to pass (passes),
+    use separate weights of potential LONG / SHORT then decides whether a valid LONG / SHORT signal exists based on total weight,
+    use order book & resting density as SuperGK (blocking/passing) signals fired to Telegram,
     """
 
     def __init__(
@@ -16,8 +17,8 @@ class SmartFilter:
         df3m: pd.DataFrame = None,
         df5m: pd.DataFrame = None,
         tf: str = None,
-        min_score: int = 14,
-        required_passed: int = 12,      # NEW: now 10 (for 17 gatekeepers)
+        min_score: int = 15,
+        required_passed: int = 12,      # NEW: now 12 (for 17 gatekeepers)
         volume_multiplier: float = 2.0,
         kwargs = None
     ):
@@ -35,19 +36,19 @@ class SmartFilter:
 
         # Weights for filters
         self.filter_weights_long = {
-            "MACD": 5.0, "Volume Spike": 4.8, "Fractal Zone": 4.5, "EMA Cloud": 5.0, "Momentum": 4.0, "ATR Momentum Burst": 3.8,
-            "MTF Volume Agreement": 3.8, "Trend Continuation": 4.7, "HATS": 4.2, "HH/LL Trend": 4.5, "Volatility Model": 3.4,
-            "EMA Structure": 3.3, "Liquidity Awareness": 3.2, "Volatility Squeeze": 3.1, "Candle Confirmation": 3.8,
+            "MACD": 4.3, "Volume Spike": 4.8, "Fractal Zone": 4.5, "EMA Cloud": 5.0, "Momentum": 4.0, "ATR Momentum Burst": 3.9,
+            "MTF Volume Agreement": 3.8, "Trend Continuation": 4.7, "HATS": 4.3, "HH/LL Trend": 4.5, "Volatility Model": 3.4,
+            "EMA Structure": 3.3, "Liquidity Awareness": 3.3, "Volatility Squeeze": 3.1, "Candle Confirmation": 3.8,
             "VWAP Divergence": 2.8, "Spread Filter": 2.7, "Chop Zone": 2.6, "Liquidity Pool": 2.5, "Support/Resistance": 2.0,
-            "Smart Money Bias": 1.9, "Absorption": 1.7, "Wick Dominance": 1.5
+            "Smart Money Bias": 1.9, "Absorption": 1.8, "Wick Dominance": 1.5
         }
 
         self.filter_weights_short = {
-            "MACD": 3.0, "Volume Spike": 4.8, "Fractal Zone": 4.5, "EMA Cloud": 5.0, "Momentum": 4.0, "ATR Momentum Burst": 4.3,
-            "MTF Volume Agreement": 3.8, "Trend Continuation": 4.7, "HATS": 4.6, "HH/LL Trend": 4.5, "Volatility Model": 3.4,
-            "EMA Structure": 3.3, "Liquidity Awareness": 3.6, "Volatility Squeeze": 3.1, "Candle Confirmation": 3.8,
+            "MACD": 3.2, "Volume Spike": 4.8, "Fractal Zone": 4.5, "EMA Cloud": 5.0, "Momentum": 4.0, "ATR Momentum Burst": 4.1,
+            "MTF Volume Agreement": 3.8, "Trend Continuation": 4.7, "HATS": 4.5, "HH/LL Trend": 4.5, "Volatility Model": 3.4,
+            "EMA Structure": 3.3, "Liquidity Awareness": 3.5, "Volatility Squeeze": 3.1, "Candle Confirmation": 3.8,
             "VWAP Divergence": 3.0, "Spread Filter": 2.7, "Chop Zone": 2.6, "Liquidity Pool": 2.5, "Support/Resistance": 2.1,
-            "Smart Money Bias": 2.0, "Absorption": 2.0, "Wick Dominance": 1.5
+            "Smart Money Bias": 2.0, "Absorption": 1.9, "Wick Dominance": 1.5
         }
 
         self.gatekeepers = [
