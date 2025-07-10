@@ -5,8 +5,9 @@ import numpy as np
 class SmartFilter:
     """
     Core scanner that evaluates 23+ technical / order-flow filters,
-    then decides whether a valid LONG / SHORT signal exists,
-    using pure directional logic from 4 filters per side (June 2025 Golden Rules).
+    set min treshold of filters to pass (true), set gate keepers (GK) among filters & min threshold to pass (passes),
+    use separate weights of potential LONG / SHORT then decides whether a valid LONG / SHORT signal exists based on total weight,
+    use order book & resting density as SuperGK (blocking/passing) signals fired to Telegram,
     """
 
     def __init__(
@@ -17,7 +18,7 @@ class SmartFilter:
         df5m: pd.DataFrame = None,
         tf: str = None,
         min_score: int = 15,
-        required_passed: int = 12,      # NEW: now 10 (for 17 gatekeepers)
+        required_passed: int = 12,      # NEW: now 12 (for 17 gatekeepers)
         volume_multiplier: float = 2.0,
         kwargs = None
     ):
