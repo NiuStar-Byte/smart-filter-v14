@@ -1,5 +1,6 @@
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
+import pytz
 
 def dump_signal_debug_txt(*args, **kwargs):
     pass
@@ -132,7 +133,7 @@ def log_fired_signal(symbol, tf, signal_type, entry_idx):
 
     log_file = "fired_signals_temp.csv"
     header = ["uuid", "symbol", "tf", "signal_type", "fired_time", "entry_idx"]
-    fired_time = datetime.utcnow().isoformat()
+    fired_time = datetime.now(pytz.UTC).isoformat()
     row = [
         str(uuid.uuid4()),
         symbol,
@@ -180,3 +181,97 @@ def print_fired_signals_csv():
             print(content)
     except Exception as e:
         print(f"[ERROR] Could not read fired_signals_temp.csv: {e}")
+
+def get_recent_signals_wib(minutes=720):
+    """
+    Filter signals from fired_signals_temp.csv based on WIB time reference.
+    
+    Args:
+        minutes (int): Number of minutes to look back from current WIB time (default 720)
+    
+    Returns:
+        list: List of signal records within the specified time window
+    """
+    import csv
+    
+    # Define WIB timezone (UTC+07:00)
+    wib_tz = pytz.timezone('Asia/Jakarta')
+    utc_tz = pytz.UTC
+    
+    # Get current WIB time and calculate threshold
+    wib_now = datetime.now(wib_tz)
+    threshold_wib = wib_now - timedelta(minutes=minutes)
+    
+    # Convert threshold to UTC for comparison with fired_time
+    threshold_utc = threshold_wib.astimezone(utc_tz)
+    
+    print(f"[DEBUG] WIB Now: {wib_now.isoformat()}")
+    print(f"[DEBUG] Filtering signals fired after: {threshold_wib.isoformat()} (WIB)")
+    print(f"[DEBUG] UTC threshold for comparison: {threshold_utc.isoformat()}")
+    
+    recent_signals = []
+    
+    try:
+        with open("fired_signals_temp.csv", "r", newline='') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                try:
+                    # Parse fired_time (stored in UTC)
+                    fired_time_str = row.get('fired_time', '')
+                    if not fired_time_str:
+                        continue
+                    
+                    # Handle both ISO format with and without timezone info
+                    if fired_time_str.endswith('Z'):
+                        fired_time_str = fired_time_str[:-1] + '+00:00'
+                    elif '+' not in fired_time_str and 'T' in fired_time_str:
+                        # Assume UTC if no timezone specified
+                        fired_time_utc = datetime.fromisoformat(fired_time_str).replace(tzinfo=utc_tz)
+                    else:
+                        fired_time_utc = datetime.fromisoformat(fired_time_str)
+                        if fired_time_utc.tzinfo is None:
+                            fired_time_utc = fired_time_utc.replace(tzinfo=utc_tz)
+                    
+                    # Compare with threshold
+                    if fired_time_utc >= threshold_utc:
+                        recent_signals.append(dict(row))
+                        print(f"[DEBUG] INCLUDED: {row.get('symbol')} {row.get('signal_type')} at {fired_time_str}")
+                    else:
+                        print(f"[DEBUG] EXCLUDED: {row.get('symbol')} {row.get('signal_type')} at {fired_time_str} (too old)")
+                        
+                except Exception as e:
+                    print(f"[WARNING] Could not parse signal record: {row}, error: {e}")
+                    continue
+                    
+    except FileNotFoundError:
+        print("[DEBUG] fired_signals_temp.csv not found")
+    except Exception as e:
+        print(f"[ERROR] Error reading fired_signals_temp.csv: {e}")
+    
+    print(f"[DEBUG] Found {len(recent_signals)} signals within last {minutes} minutes (WIB time)")
+    return recent_signals
+
+def print_recent_signals_csv(minutes=720):
+    """
+    Print signals from fired_signals_temp.csv that are within the specified time window
+    based on WIB time reference.
+    
+    Args:
+        minutes (int): Number of minutes to look back from current WIB time (default 720)
+    """
+    print(f"\n[DEBUG] === Recent signals within last {minutes} minutes (WIB time reference) ===")
+    recent_signals = get_recent_signals_wib(minutes)
+    
+    if not recent_signals:
+        print("No recent signals found.")
+        return
+    
+    # Print header
+    if recent_signals:
+        headers = list(recent_signals[0].keys())
+        print(",".join(headers))
+        
+        # Print each signal
+        for signal in recent_signals:
+            values = [str(signal.get(h, '')) for h in headers]
+            print(",".join(values))
