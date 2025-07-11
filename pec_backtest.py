@@ -2,6 +2,7 @@
 
 import pandas as pd
 import csv
+import re
 from smart_filter import SmartFilter
 from pec_engine import run_pec_check
 from telegram_alert import send_telegram_file
@@ -9,10 +10,94 @@ import os
 import datetime
 import uuid
 from collections import defaultdict
+from datetime import timezone
 
 # Set this to limit simulation to only recent fired signals (e.g., 720 minutes = 12 hours)
 MINUTES_LIMIT = 720
 
+# Configuration: Log file path for reading fired signals
+# Can be changed to point to different log files if needed
+FIRED_SIGNALS_LOG_PATH = "logs.txt"
+
+def load_fired_signals_from_log(log_file_path=None, minutes_limit=None):
+    """
+    Parse fired signals from log file, extracting only those from the last 'minutes_limit' minutes (UTC).
+    Expected log format: [FIRED] Logged: {uuid}, {symbol}, {tf}, {signal_type}, {fired_time}, {entry_idx}
+    
+    Args:
+        log_file_path (str): Path to log file. If None, uses FIRED_SIGNALS_LOG_PATH.
+        minutes_limit (int): Only include signals from last N minutes. If None, includes all.
+    
+    Returns:
+        list: List of signal dictionaries matching the format expected by PEC backtest.
+    """
+    signals = []
+    
+    if log_file_path is None:
+        log_file_path = FIRED_SIGNALS_LOG_PATH
+    
+    try:
+        if not os.path.exists(log_file_path):
+            print(f"[LOG_PARSER] Log file not found: {log_file_path}")
+            return signals
+            
+        with open(log_file_path, 'r') as file:
+            log_content = file.read()
+        
+        # Regex pattern to match FIRED log entries
+        # Pattern: [FIRED] Logged: uuid, symbol, tf, signal_type, fired_time, entry_idx
+        pattern = r'\[FIRED\] Logged: ([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*(\d+)'
+        
+        lines = log_content.split('\n')
+        now_utc = datetime.datetime.now(timezone.utc)
+        
+        if minutes_limit is not None:
+            cutoff_time = now_utc - datetime.timedelta(minutes=minutes_limit)
+        else:
+            cutoff_time = None
+        
+        for line in lines:
+            match = re.search(pattern, line.strip())
+            if match:
+                uuid_val, symbol, tf, signal_type, fired_time_str, entry_idx = match.groups()
+                
+                try:
+                    # Parse the fired_time - handle various formats
+                    if 'T' in fired_time_str:
+                        # ISO format: 2024-01-01T12:00:00 or 2024-01-01T12:00:00+00:00
+                        if '+' in fired_time_str or 'Z' in fired_time_str:
+                            fired_dt = datetime.datetime.fromisoformat(fired_time_str.replace('Z', '+00:00'))
+                        else:
+                            fired_dt = datetime.datetime.fromisoformat(fired_time_str).replace(tzinfo=timezone.utc)
+                    else:
+                        # Try parsing as simple datetime string
+                        fired_dt = datetime.datetime.strptime(fired_time_str, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+                    
+                    # Filter by time limit if specified
+                    if cutoff_time is None or fired_dt >= cutoff_time:
+                        signals.append({
+                            "uuid": uuid_val.strip(),
+                            "symbol": symbol.strip(),
+                            "tf": tf.strip(),
+                            "signal_type": signal_type.strip(),
+                            "fired_time": fired_time_str.strip(),
+                            "entry_idx": int(entry_idx.strip())
+                        })
+                        
+                except Exception as e:
+                    print(f"[LOG_PARSER] Failed to parse signal line: {line.strip()}")
+                    print(f"[LOG_PARSER] Error: {e}")
+                    continue
+        
+        print(f"[LOG_PARSER] Found {len(signals)} fired signals in log file from last {minutes_limit or 'all'} minutes")
+        
+    except Exception as e:
+        print(f"[LOG_PARSER] Error reading log file {log_file_path}: {e}")
+    
+    return signals
+
+# OBSOLETE: CSV-based signal loading (kept for backward compatibility)
+# This function is now replaced by load_fired_signals_from_log()
 def log_fired_signal(symbol, tf, signal_type, fired_time, entry_idx, csv_path="fired_signals_temp.csv"):
     try:
         fired_uuid = str(uuid.uuid4())
@@ -32,6 +117,8 @@ def log_fired_signal(symbol, tf, signal_type, fired_time, entry_idx, csv_path="f
         print(f"[ERROR] Failed to log fired signal: {e}")
         return None
 
+# OBSOLETE: CSV-based signal loading (kept for backward compatibility)
+# This function is now replaced by load_fired_signals_from_log()
 def load_fired_signals(minutes_limit=None):
     signals = []
     try:
@@ -109,8 +196,8 @@ def run_pec_backtest(
 
     print(f"[BACKTEST PEC] Running PEC simulation for FIRED signals from last {MINUTES_LIMIT} minutes...")
 
-    # 1. Load fired signals and group by (symbol, tf)
-    signals = load_fired_signals(minutes_limit=MINUTES_LIMIT)
+    # 1. Load fired signals from log file and group by (symbol, tf)
+    signals = load_fired_signals_from_log(minutes_limit=MINUTES_LIMIT)
     signals_by_symbol_tf = defaultdict(list)
     for sig in signals:
         signals_by_symbol_tf[(sig["symbol"], sig["tf"])].append(sig)
