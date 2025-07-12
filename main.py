@@ -15,10 +15,13 @@ from signal_debug_log import dump_signal_debug_txt, log_fired_signal
 from kucoin_orderbook import get_order_wall_delta
 from pec_engine import run_pec_check, export_pec_log
 
+
 TOKENS = [
     "SKATE-USDT", "LA-USDT", "SPK-USDT", "ZKJ-USDT", "IP-USDT",
     "AERO-USDT", "BMT-USDT", "LQTY-USDT", "X-USDT", "RAY-USDT",
-    "EPT-USDT", "ELDE-USDT", "MAGIC-USDT", "ACTSOL-USDT", "FUN-USDT"
+    "EPT-USDT", "ELDE-USDT", "MAGIC-USDT", "ACTSOL-USDT", "FUN-USDT",
+    "CROSS-USDT", "KNC-USDT", "TANSSI-USDT", "ARK-USDT", "PORTAL-USDT",
+    "SKYAI-USDT", "ICNT-USDT", "OMNI-USDT", "PARTI-USDT", "VINE-USDT"
 ]
 COOLDOWN = {"3min": 540, "5min": 900}
 last_sent = {}
