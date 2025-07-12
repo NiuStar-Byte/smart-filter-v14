@@ -133,8 +133,11 @@ def get_resting_order_density(
 TOKENS = [
     "SKATE-USDT", "LA-USDT", "SPK-USDT", "ZKJ-USDT", "IP-USDT",
     "AERO-USDT", "BMT-USDT", "LQTY-USDT", "X-USDT", "RAY-USDT",
-    "EPT-USDT", "ELDE-USDT", "MAGIC-USDT", "ACTSOL-USDT", "FUN-USDT"
+    "EPT-USDT", "ELDE-USDT", "MAGIC-USDT", "ACTSOL-USDT", "FUN-USDT",
+    "CROSS-USDT", "KNC-USDT", "TANSSI-USDT", "ARK-USDT", "PORTAL-USDT",
+    "SKYAI-USDT", "ICNT-USDT", "OMNI-USDT", "PARTI-USDT", "VINE-USDT"
 ]
+
 
 for symbol in TOKENS:
     result = get_order_wall_delta(symbol)
