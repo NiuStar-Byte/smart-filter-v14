@@ -5,6 +5,8 @@ import pandas as pd
 import re
 import os
 import datetime
+import pytz
+import uuid
 from datetime import timezone
 from collections import defaultdict
 from smart_filter import SmartFilter
@@ -21,12 +23,14 @@ FIRED_SIGNALS_LOG_PATH = "logs.txt"
 
 def load_fired_signals_from_log(log_file_path=None, minutes_limit=None):
     """
-    Parse fired signals from log file, extracting only those from the last 'minutes_limit' minutes (UTC).
+    Parse fired signals from log file, extracting only those from the last 'minutes_limit' minutes (LOCAL TIME).
     Expected log format: [FIRED] Logged: {uuid}, {symbol}, {tf}, {signal_type}, {fired_time}, {entry_idx}
+    
+    Note: The timestamps in logs are in LOCAL TIME (WIB - Asia/Jakarta), not UTC.
     
     Args:
         log_file_path (str): Path to log file. If None, uses FIRED_SIGNALS_LOG_PATH.
-        minutes_limit (int): Only include signals from last N minutes. If None, includes all.
+        minutes_limit (int): Only include signals from last N minutes in local time. If None, includes all.
     
     Returns:
         list: List of signal dictionaries matching the format expected by PEC backtest.
@@ -49,10 +53,13 @@ def load_fired_signals_from_log(log_file_path=None, minutes_limit=None):
         pattern = r'\[FIRED\] Logged: ([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*(\d+)'
         
         lines = log_content.split('\n')
-        now_utc = datetime.datetime.now(timezone.utc)
+        
+        # Use local time (WIB) instead of UTC for time calculations
+        wib_tz = pytz.timezone('Asia/Jakarta')
+        now_local = datetime.datetime.now(wib_tz)
         
         if minutes_limit is not None:
-            cutoff_time = now_utc - datetime.timedelta(minutes=minutes_limit)
+            cutoff_time = now_local - datetime.timedelta(minutes=minutes_limit)
         else:
             cutoff_time = None
         
@@ -67,14 +74,20 @@ def load_fired_signals_from_log(log_file_path=None, minutes_limit=None):
                         # ISO format: 2024-01-01T12:00:00 or 2024-01-01T12:00:00+00:00
                         if '+' in fired_time_str or 'Z' in fired_time_str:
                             fired_dt = datetime.datetime.fromisoformat(fired_time_str.replace('Z', '+00:00'))
+                            # Convert UTC to local time (WIB) for comparison
+                            if fired_dt.tzinfo is None:
+                                fired_dt = fired_dt.replace(tzinfo=timezone.utc)
+                            fired_dt_local = fired_dt.astimezone(wib_tz)
                         else:
-                            fired_dt = datetime.datetime.fromisoformat(fired_time_str).replace(tzinfo=timezone.utc)
+                            # Assume local time if no timezone info
+                            fired_dt_local = wib_tz.localize(datetime.datetime.fromisoformat(fired_time_str))
                     else:
-                        # Try parsing as simple datetime string
-                        fired_dt = datetime.datetime.strptime(fired_time_str, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+                        # Try parsing as simple datetime string, assume local time
+                        naive_dt = datetime.datetime.strptime(fired_time_str, '%Y-%m-%d %H:%M:%S')
+                        fired_dt_local = wib_tz.localize(naive_dt)
                     
-                    # Filter by time limit if specified
-                    if cutoff_time is None or fired_dt >= cutoff_time:
+                    # Filter by time limit if specified (using local time)
+                    if cutoff_time is None or fired_dt_local >= cutoff_time:
                         signals.append({
                             "uuid": uuid_val.strip(),
                             "symbol": symbol.strip(),
@@ -89,7 +102,7 @@ def load_fired_signals_from_log(log_file_path=None, minutes_limit=None):
                     print(f"[LOG_PARSER] Error: {e}")
                     continue
         
-        print(f"[LOG_PARSER] Found {len(signals)} fired signals in log file from last {minutes_limit or 'all'} minutes")
+        print(f"[LOG_PARSER] Found {len(signals)} fired signals in log file from last {minutes_limit or 'all'} minutes (local time)")
         
     except Exception as e:
         print(f"[LOG_PARSER] Error reading log file {log_file_path}: {e}")
@@ -180,117 +193,126 @@ def run_pec_backtest(
     """
     Run PEC backtest using log-based fired signal parsing.
     
+    This function bypasses token scanning and processes only symbols that have fired signals
+    in the logs from the last PEC_WINDOW_MINUTES (in local time).
+    
     Args:
-        TOKENS: List of trading symbols
+        TOKENS: List of trading symbols (used for validation only)
         get_ohlcv: Function to fetch OHLCV data
         get_local_wib: Function to convert timezone to WIB
-        PEC_WINDOW_MINUTES: Time window in minutes to look back for fired signals
+        PEC_WINDOW_MINUTES: Time window in minutes to look back for fired signals (local time)
         PEC_BARS: Number of bars to simulate after signal entry
         OHLCV_LIMIT: Limit for OHLCV data fetching
     """
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
     pec_file = f"pec_results_{timestamp}.csv"  # Updated naming format
 
-    print(f"[BACKTEST PEC] Running PEC simulation for FIRED signals from last {PEC_WINDOW_MINUTES} minutes...")
-
+    print(f"[BACKTEST PEC] Running PEC simulation for FIRED signals from last {PEC_WINDOW_MINUTES} minutes (local time)...")
 
     # 1. Load fired signals from logs instead of CSV
     signals = load_fired_signals_from_log(minutes_limit=PEC_WINDOW_MINUTES)
     print(f"[BACKTEST PEC] Loaded {len(signals)} fired signals from logs")
     
+    if not signals:
+        print("[BACKTEST PEC] No fired signals found in the specified time window. Creating empty results file.")
+        # Create empty CSV file and send to Telegram
+        save_to_csv([], pec_file)
+        send_telegram_file(pec_file, caption=f"PEC results from last {PEC_WINDOW_MINUTES} minutes (local time) [{timestamp}] - No signals found")
+        return
+    
+    # Group signals by symbol and timeframe
     signals_by_symbol_tf = defaultdict(list)
+    unique_symbols = set()
     for sig in signals:
         signals_by_symbol_tf[(sig["symbol"], sig["tf"])].append(sig)
+        unique_symbols.add(sig["symbol"])
 
+    print(f"[BACKTEST PEC] Processing {len(unique_symbols)} unique symbols with fired signals (bypassing token scanning)")
+    
     pec_blocks = []
 
-    # 2. Loop over all tokens and timeframes
-    timeframes = ["3m", "5m"]  # <-- adjust this list if you use other timeframes
-    for symbol in TOKENS:
-        for tf in timeframes:
-            relevant_signals = signals_by_symbol_tf.get((symbol, tf), [])
-            if not relevant_signals:
-                print(f"[BACKTEST PEC] Skipping {symbol} {tf} (no fired signals)")
+    # 2. Process only symbols that have fired signals (bypass token scanning)
+    for (symbol, tf), relevant_signals in signals_by_symbol_tf.items():
+        print(f"[BACKTEST PEC] Processing {symbol} {tf} ({len(relevant_signals)} signals)...")
+        
+        for signal in relevant_signals:
+            entry_idx = signal["entry_idx"]
+            fired_time = pd.to_datetime(signal["fired_time"])
+
+            df = get_ohlcv(symbol, interval=tf, limit=OHLCV_LIMIT)
+            if df is None or df.empty or entry_idx >= len(df):
+                print(f"[PEC] No data or entry_idx out of range for {symbol} {tf}. Skipping.")
                 continue
-            print(f"[BACKTEST PEC] {symbol} {tf} ...")
-            for signal in relevant_signals:
-                entry_idx = signal["entry_idx"]
-                fired_time = pd.to_datetime(signal["fired_time"])
 
-                df = get_ohlcv(symbol, interval=tf, limit=OHLCV_LIMIT)
-                if df is None or df.empty or entry_idx >= len(df):
-                    print(f"[PEC] No data or entry_idx out of range for {symbol} {tf}. Skipping.")
-                    continue
+            times = pd.to_datetime(df.index)
+            if not pd.Timestamp(times[entry_idx]).floor('s') == fired_time.floor('s'):
+                print(f"[PEC] entry_idx time mismatch for {symbol} {tf} @ idx {entry_idx}. Skipping.")
+                continue
 
-                times = pd.to_datetime(df.index)
-                if not pd.Timestamp(times[entry_idx]).floor('s') == fired_time.floor('s'):
-                    print(f"[PEC] entry_idx time mismatch for {symbol} {tf} @ idx {entry_idx}. Skipping.")
-                    continue
+            df_slice = df.iloc[:entry_idx+1]
+            sf = SmartFilter(symbol, df_slice, df3m=df_slice, df5m=df_slice, tf=tf)
+            res = sf.analyze()
+            if not (isinstance(res, dict) and res.get("valid_signal") is True):
+                print(f"[PEC] Signal not valid at idx {entry_idx} for {symbol} {tf}. Skipping.")
+                continue
 
-                df_slice = df.iloc[:entry_idx+1]
-                sf = SmartFilter(symbol, df_slice, df3m=df_slice, df5m=df_slice, tf=tf)
-                res = sf.analyze()
-                if not (isinstance(res, dict) and res.get("valid_signal") is True):
-                    print(f"[PEC] Signal not valid at idx {entry_idx} for {symbol} {tf}. Skipping.")
-                    continue
+            if entry_idx + PEC_BARS >= len(df):
+                print(f"[PEC] Not enough bars for exit simulation for {symbol} {tf} @ idx {entry_idx}. Skipping.")
+                continue
 
-                if entry_idx + PEC_BARS >= len(df):
-                    print(f"[PEC] Not enough bars for exit simulation for {symbol} {tf} @ idx {entry_idx}. Skipping.")
-                    continue
+            entry_price = float(df["close"].iloc[entry_idx])
+            exit_idx = entry_idx + PEC_BARS
+            exit_price = float(df["close"].iloc[exit_idx])
+            signal_type = res.get("bias", "LONG").upper()
+            score = res.get("score")
+            score_max = res.get("score_max")
+            passes = res.get("passes")
+            gk_total = res.get("gatekeepers_total")
+            confidence = res.get("confidence")
+            weighted = res.get("passed_weight")
+            total_weight = res.get("total_weight")
+            filter_results = res.get("filter_results", {})
+            filter_passes = {k: ("✅" if v else "❌") for k, v in filter_results.items()}
+            filter_pass_str = ", ".join(f"{k}:{v}" for k, v in filter_passes.items())
+            gk_flags = getattr(sf, "gatekeepers", [])
+            gk_pass_str = ", ".join(str(gk) for gk in gk_flags)
+            if signal_type == "LONG":
+                pnl_abs = 100 * (exit_price - entry_price) / entry_price
+            else:
+                pnl_abs = 100 * (entry_price - exit_price) / entry_price
+            pnl_pct = 100 * pnl_abs / 100
+            win_loss = "WIN" if pnl_abs > 0 else "LOSS"
+            exit_time = times[exit_idx]
+            bar_exit = PEC_BARS
+            signal_time = times[entry_idx].replace(microsecond=0)
 
-                entry_price = float(df["close"].iloc[entry_idx])
-                exit_idx = entry_idx + PEC_BARS
-                exit_price = float(df["close"].iloc[exit_idx])
-                signal_type = res.get("bias", "LONG").upper()
-                score = res.get("score")
-                score_max = res.get("score_max")
-                passes = res.get("passes")
-                gk_total = res.get("gatekeepers_total")
-                confidence = res.get("confidence")
-                weighted = res.get("passed_weight")
-                total_weight = res.get("total_weight")
-                filter_results = res.get("filter_results", {})
-                filter_passes = {k: ("✅" if v else "❌") for k, v in filter_results.items()}
-                filter_pass_str = ", ".join(f"{k}:{v}" for k, v in filter_passes.items())
-                gk_flags = getattr(sf, "gatekeepers", [])
-                gk_pass_str = ", ".join(str(gk) for gk in gk_flags)
-                if signal_type == "LONG":
-                    pnl_abs = 100 * (exit_price - entry_price) / entry_price
-                else:
-                    pnl_abs = 100 * (entry_price - exit_price) / entry_price
-                pnl_pct = 100 * pnl_abs / 100
-                win_loss = "WIN" if pnl_abs > 0 else "LOSS"
-                exit_time = times[exit_idx]
-                bar_exit = PEC_BARS
-                signal_time = times[entry_idx].replace(microsecond=0)
-
-                pec_result = {
-                    'signal_type': signal_type,
-                    'symbol': symbol,
-                    'tf': tf,
-                    'entry_time': signal_time.strftime("%Y-%m-%d %H:%M:%S"),
-                    'entry_price': entry_price,
-                    'exit_price': exit_price,
-                    'pnl_abs': pnl_abs,
-                    'pnl_pct': pnl_pct,
-                    'score': score,
-                    'score_max': score_max,
-                    'confidence': confidence,
-                    'weighted_confidence': weighted,
-                    'gatekeepers_passed': passes,
-                    'filter_results': filter_pass_str,
-                    'gk_flags': gk_pass_str,
-                    'win_loss': win_loss,
-                    'exit_time': exit_time.strftime("%Y-%m-%d %H:%M:%S"),
-                    'exit_bar': bar_exit,
-                    'signal_time': signal_time.strftime("%Y-%m-%d %H:%M:%S"),
-                }
-                pec_blocks.append(pec_result)
-            print(f"[BACKTEST PEC] Done for {symbol} {tf}.")
+            pec_result = {
+                'signal_type': signal_type,
+                'symbol': symbol,
+                'tf': tf,
+                'entry_time': signal_time.strftime("%Y-%m-%d %H:%M:%S"),
+                'entry_price': entry_price,
+                'exit_price': exit_price,
+                'pnl_abs': pnl_abs,
+                'pnl_pct': pnl_pct,
+                'score': score,
+                'score_max': score_max,
+                'confidence': confidence,
+                'weighted_confidence': weighted,
+                'gatekeepers_passed': passes,
+                'filter_results': filter_pass_str,
+                'gk_flags': gk_pass_str,
+                'win_loss': win_loss,
+                'exit_time': exit_time.strftime("%Y-%m-%d %H:%M:%S"),
+                'exit_bar': bar_exit,
+                'signal_time': signal_time.strftime("%Y-%m-%d %H:%M:%S"),
+            }
+            pec_blocks.append(pec_result)
+        print(f"[BACKTEST PEC] Done for {symbol} {tf}.")
 
     save_to_csv(pec_blocks, pec_file)
     print(f"[BACKTEST PEC] Completed PEC backtest. Output: {pec_file} with {len(pec_blocks)} signals processed.")
 
     print("[DEBUG] Sending PEC results file to Telegram...")
-    send_telegram_file(pec_file, caption=f"PEC results from last {PEC_WINDOW_MINUTES} minutes [{timestamp}]")
+    send_telegram_file(pec_file, caption=f"PEC results from last {PEC_WINDOW_MINUTES} minutes (local time) [{timestamp}]")
     print("[BACKTEST PEC] All done. PEC results saved to", pec_file)
