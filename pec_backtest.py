@@ -1,19 +1,18 @@
 # pec_backtest.py
 
 import pandas as pd
-import csv
 import re
+import os
+import datetime
+from datetime import timezone
+from collections import defaultdict
 from smart_filter import SmartFilter
 from pec_engine import run_pec_check
 from telegram_alert import send_telegram_file
-import os
-import datetime
-import uuid
-from collections import defaultdict
-from datetime import timezone
 
 # Set this to limit simulation to only recent fired signals (e.g., 720 minutes = 12 hours)
 MINUTES_LIMIT = 720
+
 
 # Configuration: Log file path for reading fired signals
 # Can be changed to point to different log files if needed
@@ -98,7 +97,12 @@ def load_fired_signals_from_log(log_file_path=None, minutes_limit=None):
 
 # OBSOLETE: CSV-based signal loading (kept for backward compatibility)
 # This function is now replaced by load_fired_signals_from_log()
+
 def log_fired_signal(symbol, tf, signal_type, fired_time, entry_idx, csv_path="fired_signals_temp.csv"):
+    """
+    DEPRECATED: This function is kept for backward compatibility but should not be used.
+    The new workflow uses log-based parsing instead of CSV files.
+    """
     try:
         fired_uuid = str(uuid.uuid4())
         file_exists = os.path.isfile(csv_path)
@@ -120,41 +124,21 @@ def log_fired_signal(symbol, tf, signal_type, fired_time, entry_idx, csv_path="f
 # OBSOLETE: CSV-based signal loading (kept for backward compatibility)
 # This function is now replaced by load_fired_signals_from_log()
 def load_fired_signals(minutes_limit=None):
-    signals = []
-    try:
-        with open("fired_signals_temp.csv", "r") as file:
-            next(file)  # Skip header
-            for line in file:
-                columns = line.strip().split(",")
-                if len(columns) < 6:
-                    continue
-                uuid_, symbol, tf, signal_type, fired_time, entry_idx = columns
-                fired_dt = pd.to_datetime(fired_time)
-                if minutes_limit is not None:
-                    now = pd.Timestamp.utcnow()
-                    if (now - fired_dt).total_seconds() > minutes_limit * 60:
-                        continue
-                signals.append({
-                    "uuid": uuid_,
-                    "symbol": symbol,
-                    "tf": tf,
-                    "signal_type": signal_type,
-                    "fired_time": fired_time,
-                    "entry_idx": int(entry_idx)
-                })
-    except Exception as e:
-        print(f"[ERROR] Failed to load fired signals: {e}")
-    return signals
+    """
+    DEPRECATED: Use parse_fired_signals_from_logs() instead.
+    This function is kept for backward compatibility.
+    """
+    print("[WARNING] load_fired_signals() is deprecated. Use parse_fired_signals_from_logs() for log-based parsing.")
+    return parse_fired_signals_from_logs(minutes_limit or MINUTES_LIMIT)
 
 def save_to_csv(results, filename="pec_results.csv"):
     headers = ["Signal Type", "Symbol", "TF", "Entry Time", "Entry Price", "Exit Price",
                "PnL ($)", "PnL (%)", "Score", "Max Score", "Confidence", "Weighted Confidence",
                "Gatekeepers Passed", "Filter Results", "GK Flags", "Result", "Exit Time", "# BAR Exit", "Signal Time"]
 
-    with open(filename, mode='a', newline='') as file:
+    with open(filename, mode='w', newline='') as file:  # Changed from 'a' to 'w' to overwrite
         writer = csv.writer(file)
-        if file.tell() == 0:
-            writer.writerow(headers)
+        writer.writerow(headers)  # Always write header for new file
         for result in results:
             signal_time = result.get("signal_time")
             if isinstance(signal_time, (datetime.datetime, pd.Timestamp)):
@@ -182,22 +166,37 @@ def save_to_csv(results, filename="pec_results.csv"):
                 result.get('exit_bar', ''),
                 signal_time or ''
             ])
-    print(f"[{datetime.datetime.now()}] [SCHEDULER] PEC results saved to {filename}")
+    print(f"[{datetime.datetime.now()}] [PEC_BACKTEST] PEC results saved to {filename} ({len(results)} signals)")
 
 def run_pec_backtest(
     TOKENS,
     get_ohlcv,
     get_local_wib,
+    PEC_WINDOW_MINUTES,  # Renamed from PEC_BARS to match function signature expectations
     PEC_BARS,
     OHLCV_LIMIT,
 ):
+    """
+    Run PEC backtest using log-based fired signal parsing.
+    
+    Args:
+        TOKENS: List of trading symbols
+        get_ohlcv: Function to fetch OHLCV data
+        get_local_wib: Function to convert timezone to WIB
+        PEC_WINDOW_MINUTES: Time window in minutes to look back for fired signals
+        PEC_BARS: Number of bars to simulate after signal entry
+        OHLCV_LIMIT: Limit for OHLCV data fetching
+    """
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
-    pec_file = f"pec_fired_results_{timestamp}.csv"
+    pec_file = f"pec_results_{timestamp}.csv"  # Updated naming format
 
-    print(f"[BACKTEST PEC] Running PEC simulation for FIRED signals from last {MINUTES_LIMIT} minutes...")
+    print(f"[BACKTEST PEC] Running PEC simulation for FIRED signals from last {PEC_WINDOW_MINUTES} minutes...")
 
-    # 1. Load fired signals from log file and group by (symbol, tf)
-    signals = load_fired_signals_from_log(minutes_limit=MINUTES_LIMIT)
+
+    # 1. Load fired signals from logs instead of CSV
+    signals = parse_fired_signals_from_logs(minutes_limit=PEC_WINDOW_MINUTES)
+    print(f"[BACKTEST PEC] Loaded {len(signals)} fired signals from logs")
+    
     signals_by_symbol_tf = defaultdict(list)
     for sig in signals:
         signals_by_symbol_tf[(sig["symbol"], sig["tf"])].append(sig)
@@ -289,8 +288,8 @@ def run_pec_backtest(
             print(f"[BACKTEST PEC] Done for {symbol} {tf}.")
 
     save_to_csv(pec_blocks, pec_file)
-    print(f"[DEBUG] {pec_file} written, {len(pec_blocks)} signals.")
+    print(f"[BACKTEST PEC] Completed PEC backtest. Output: {pec_file} with {len(pec_blocks)} signals processed.")
 
-    print("[DEBUG] Sending PEC fired-signal file to Telegram...")
-    send_telegram_file(pec_file, caption=f"PEC results for FIRED signals from last {MINUTES_LIMIT} minutes [{timestamp}]")
-    print("[BACKTEST PEC] All done. PEC logs grouped in", pec_file)
+    print("[DEBUG] Sending PEC results file to Telegram...")
+    send_telegram_file(pec_file, caption=f"PEC results from last {PEC_WINDOW_MINUTES} minutes [{timestamp}]")
+    print("[BACKTEST PEC] All done. PEC results saved to", pec_file)

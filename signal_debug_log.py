@@ -125,22 +125,30 @@ def dump_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weights_
             f.write("\n" + line)
 
 def log_fired_signal(symbol, tf, signal_type, entry_idx):
+    """
+    Log fired signal information to console for log-based parsing.
+    
+    This function now primarily logs to console with [FIRED] prefix for
+    log-based parsing by the PEC system, replacing the previous CSV approach.
+    
+    The CSV logging is maintained for backward compatibility but deprecated.
+    """
     import csv, uuid, os
     from datetime import datetime
 
     print(f"[DEBUG] log_fired_signal called: {symbol}, {tf}, {signal_type}, {entry_idx}")
 
+    # Generate fired signal entry for log-based parsing
+    fired_uuid = str(uuid.uuid4())
+    fired_time = datetime.utcnow().isoformat()
+    
+    # PRIMARY: Log to console for log-based parsing (NEW APPROACH)
+    print(f"[FIRED] Logged: {fired_uuid}, {symbol}, {tf}, {signal_type}, {fired_time}, {entry_idx}")
+
+    # DEPRECATED: CSV logging kept for backward compatibility
     log_file = "fired_signals_temp.csv"
     header = ["uuid", "symbol", "tf", "signal_type", "fired_time", "entry_idx"]
-    fired_time = datetime.utcnow().isoformat()
-    row = [
-        str(uuid.uuid4()),
-        symbol,
-        tf,
-        signal_type,
-        fired_time,
-        entry_idx
-    ]
+    row = [fired_uuid, symbol, tf, signal_type, fired_time, entry_idx]
 
     print("[DEBUG] Current working directory:", os.getcwd())
     print("[DEBUG] Contents of cwd:", os.listdir())

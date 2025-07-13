@@ -46,3 +46,10 @@ htmlcov/
 *.tmp
 *.temp
 signal_debug_temp.txt
+
+# Deprecated CSV files (replaced by log-based parsing)
+fired_signals_temp.csv
+
+# Test files
+test_*.py
+sample_*.txt
