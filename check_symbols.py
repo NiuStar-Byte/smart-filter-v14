@@ -7,7 +7,7 @@ TOKENS = [
     "FUN-USDT", "SNT-USDT", "X-USDT", "BANK-USDT", "RAY-USDT",
     "REX-USDT", "EPT-USDT", "ELDE-USDT", "MAGIC-USDT", "ACT-USDT",
     "CROSS-USDT", "KNC-USDT", "AIN-USDT", "ARK-USDT", "PORTAL-USDT",
-    "SKYAI-USDT", "ICNT-USDT", "OMNI-USDT", "PARTI-USDT", "VINE-USDT"
+    "BANANAS31-USDT", "ICNT-USDT", "OMNI-USDT", "PARTI-USDT", "VINE-USDT"
 ]
 
 # Load market symbols from each exchange
