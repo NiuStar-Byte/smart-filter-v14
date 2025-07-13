@@ -11,6 +11,18 @@ from smart_filter import SmartFilter
 from pec_engine import run_pec_check
 from telegram_alert import send_telegram_file
 
+# Configuration: Timeframes to process in PEC backtest
+# Can be imported/modified externally without editing this file
+# Try to import from main.py if available, otherwise use default
+try:
+    from main import COOLDOWN
+    # Extract timeframes from COOLDOWN keys and convert format
+    _main_timeframes = list(COOLDOWN.keys())
+    CONFIG_TIMEFRAMES = _main_timeframes if _main_timeframes else ["3min", "5min"]
+except ImportError:
+    # Default timeframes if main.py is not available or doesn't have COOLDOWN
+    CONFIG_TIMEFRAMES = ["3min", "5min"]
+
 # Set this to limit simulation to only recent fired signals (e.g., 720 minutes = 12 hours)
 MINUTES_LIMIT = 720
 
@@ -205,9 +217,8 @@ def run_pec_backtest(
     pec_blocks = []
 
     # 2. Loop over all tokens and timeframes
-    timeframes = ["3m", "5m"]  # <-- adjust this list if you use other timeframes
     for symbol in TOKENS:
-        for tf in timeframes:
+        for tf in CONFIG_TIMEFRAMES:
             relevant_signals = signals_by_symbol_tf.get((symbol, tf), [])
             if not relevant_signals:
                 print(f"[BACKTEST PEC] Skipping {symbol} {tf} (no fired signals)")
