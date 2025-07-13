@@ -15,10 +15,13 @@ from signal_debug_log import dump_signal_debug_txt, log_fired_signal
 from kucoin_orderbook import get_order_wall_delta
 from pec_engine import run_pec_check, export_pec_log
 
+
 TOKENS = [
     "SKATE-USDT", "LA-USDT", "SPK-USDT", "ZKJ-USDT", "IP-USDT",
     "AERO-USDT", "BMT-USDT", "LQTY-USDT", "X-USDT", "RAY-USDT",
-    "EPT-USDT", "ELDE-USDT", "MAGIC-USDT", "ACTSOL-USDT", "FUN-USDT"
+    "EPT-USDT", "ELDE-USDT", "MAGIC-USDT", "ACTSOL-USDT", "FUN-USDT",
+    "CROSS-USDT", "KNC-USDT", "AIN-USDT", "ARK-USDT", "PORTAL-USDT",
+    "BANANAS31-USDT", "ICNT-USDT", "OMNI-USDT", "PARTI-USDT", "VINE-USDT"
 ]
 COOLDOWN = {"3min": 540, "5min": 900}
 last_sent = {}
@@ -292,7 +295,7 @@ if __name__ == "__main__":
         from pec_backtest import run_pec_backtest
         run_pec_backtest(
             TOKENS, get_ohlcv, get_local_wib,
-            PEC_WINDOW_MINUTES, PEC_BARS, OHLCV_LIMIT
+            PEC_BARS, OHLCV_LIMIT
         )
     else:
         run()
