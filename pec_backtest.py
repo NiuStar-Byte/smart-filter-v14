@@ -21,17 +21,19 @@ FIRED_SIGNALS_LOG_PATH = "logs.txt"
 
 def load_fired_signals_from_log(log_file_path=None, minutes_limit=None):
     """
-    Parse fired signals from log file, extracting only those from the last 'minutes_limit' minutes (UTC).
-    Expected log format: [FIRED] Logged: {uuid}, {symbol}, {tf}, {signal_type}, {fired_time}, {entry_idx}
+    Parse fired signals from LIVE MODE LOGS, extracting only those from the last 'minutes_limit' minutes.
+    Expected log format: [FIRED] Logged: {uuid}, {symbol}, {tf}, {signal_type}, {local_timestamp}, {other_field}
     
     Args:
         log_file_path (str): Path to log file. If None, uses FIRED_SIGNALS_LOG_PATH.
-        minutes_limit (int): Only include signals from last N minutes. If None, includes all.
+        minutes_limit (int): Only include signals from last N minutes using local timestamp. If None, includes all.
     
     Returns:
-        list: List of signal dictionaries matching the format expected by PEC backtest.
+        tuple: (signals_list, unique_symbols_set, unique_timeframes_set)
     """
     signals = []
+    unique_symbols = set()
+    unique_timeframes = set()
     
     if log_file_path is None:
         log_file_path = FIRED_SIGNALS_LOG_PATH
@@ -39,13 +41,13 @@ def load_fired_signals_from_log(log_file_path=None, minutes_limit=None):
     try:
         if not os.path.exists(log_file_path):
             print(f"[LOG_PARSER] Log file not found: {log_file_path}")
-            return signals
+            return signals, unique_symbols, unique_timeframes
             
         with open(log_file_path, 'r') as file:
             log_content = file.read()
         
-        # Regex pattern to match FIRED log entries
-        # Pattern: [FIRED] Logged: uuid, symbol, tf, signal_type, fired_time, entry_idx
+        # Regex pattern to match FIRED log entries from LIVE MODE
+        # Pattern: [FIRED] Logged: uuid, symbol, tf, signal_type, local_timestamp, other_field
         pattern = r'\[FIRED\] Logged: ([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*(\d+)'
         
         lines = log_content.split('\n')
@@ -62,23 +64,30 @@ def load_fired_signals_from_log(log_file_path=None, minutes_limit=None):
                 uuid_val, symbol, tf, signal_type, fired_time_str, entry_idx = match.groups()
                 
                 try:
-                    # Parse the fired_time - handle various formats
+                    # Parse the local timestamp - handle ISO format with microseconds
                     if 'T' in fired_time_str:
-                        # ISO format: 2024-01-01T12:00:00 or 2024-01-01T12:00:00+00:00
+                        # ISO format: 2025-07-13T09:10:28.802346 or with timezone
                         if '+' in fired_time_str or 'Z' in fired_time_str:
                             fired_dt = datetime.datetime.fromisoformat(fired_time_str.replace('Z', '+00:00'))
                         else:
+                            # Treat as UTC if no timezone specified
                             fired_dt = datetime.datetime.fromisoformat(fired_time_str).replace(tzinfo=timezone.utc)
                     else:
                         # Try parsing as simple datetime string
                         fired_dt = datetime.datetime.strptime(fired_time_str, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
                     
-                    # Filter by time limit if specified
+                    # Always collect symbols and timeframes for automated processing
+                    symbol_clean = symbol.strip()
+                    tf_clean = tf.strip()
+                    unique_symbols.add(symbol_clean)
+                    unique_timeframes.add(tf_clean)
+                    
+                    # Filter by time limit if specified (using local timestamp from logs)
                     if cutoff_time is None or fired_dt >= cutoff_time:
                         signals.append({
                             "uuid": uuid_val.strip(),
-                            "symbol": symbol.strip(),
-                            "tf": tf.strip(),
+                            "symbol": symbol_clean,
+                            "tf": tf_clean,
                             "signal_type": signal_type.strip(),
                             "fired_time": fired_time_str.strip(),
                             "entry_idx": int(entry_idx.strip())
@@ -89,12 +98,14 @@ def load_fired_signals_from_log(log_file_path=None, minutes_limit=None):
                     print(f"[LOG_PARSER] Error: {e}")
                     continue
         
-        print(f"[LOG_PARSER] Found {len(signals)} fired signals in log file from last {minutes_limit or 'all'} minutes")
+        print(f"[LOG_PARSER] Found {len(signals)} fired signals from LIVE MODE LOGS from last {minutes_limit or 'all'} minutes")
+        print(f"[LOG_PARSER] Discovered {len(unique_symbols)} unique symbols: {sorted(unique_symbols)}")
+        print(f"[LOG_PARSER] Discovered {len(unique_timeframes)} unique timeframes: {sorted(unique_timeframes)}")
         
     except Exception as e:
         print(f"[LOG_PARSER] Error reading log file {log_file_path}: {e}")
     
-    return signals
+    return signals, unique_symbols, unique_timeframes
 
 # OBSOLETE: CSV-based signal loading (kept for backward compatibility)
 # This function is now replaced by load_fired_signals_from_log()
@@ -126,11 +137,12 @@ def log_fired_signal(symbol, tf, signal_type, fired_time, entry_idx, csv_path="f
 # This function is now replaced by load_fired_signals_from_log()
 def load_fired_signals(minutes_limit=None):
     """
-    DEPRECATED: Use parse_fired_signals_from_logs() instead.
-    This function is kept for backward compatibility.
+    DEPRECATED: Use load_fired_signals_from_log() instead.
+    This function is kept for backward compatibility and now uses LIVE MODE log parsing.
     """
-    print("[WARNING] load_fired_signals() is deprecated. Use parse_fired_signals_from_logs() for log-based parsing.")
-    return parse_fired_signals_from_logs(minutes_limit or MINUTES_LIMIT)
+    print("[WARNING] load_fired_signals() is deprecated. Use load_fired_signals_from_log() for LIVE MODE log-based parsing.")
+    signals, _, _ = load_fired_signals_from_log(minutes_limit=minutes_limit or MINUTES_LIMIT)
+    return signals
 
 def save_to_csv(results, filename="pec_results.csv"):
     headers = ["Signal Type", "Symbol", "TF", "Entry Time", "Entry Price", "Exit Price",
@@ -178,25 +190,29 @@ def run_pec_backtest(
     OHLCV_LIMIT,
 ):
     """
-    Run PEC backtest using log-based fired signal parsing.
+    Run PEC backtest using LIVE MODE log-based fired signal parsing.
+    Automatically detects all symbols and timeframes from the logs - no manual configuration needed.
     
     Args:
-        TOKENS: List of trading symbols
+        TOKENS: List of trading symbols (DEPRECATED - now auto-detected from logs)
         get_ohlcv: Function to fetch OHLCV data
         get_local_wib: Function to convert timezone to WIB
-        PEC_WINDOW_MINUTES: Time window in minutes to look back for fired signals
+        PEC_WINDOW_MINUTES: Time window in minutes to look back for fired signals (default 720 = 12 hours)
         PEC_BARS: Number of bars to simulate after signal entry
         OHLCV_LIMIT: Limit for OHLCV data fetching
     """
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
     pec_file = f"pec_results_{timestamp}.csv"  # Updated naming format
 
-    print(f"[BACKTEST PEC] Running PEC simulation for FIRED signals from last {PEC_WINDOW_MINUTES} minutes...")
+    print(f"[BACKTEST PEC] Running PEC simulation for FIRED signals from LIVE MODE LOGS (last {PEC_WINDOW_MINUTES} minutes)...")
 
-
-    # 1. Load fired signals from logs instead of CSV
-    signals = load_fired_signals_from_log(minutes_limit=PEC_WINDOW_MINUTES)
-    print(f"[BACKTEST PEC] Loaded {len(signals)} fired signals from logs")
+    # 1. Load fired signals from LIVE MODE logs and auto-detect symbols/timeframes
+    signals, discovered_symbols, discovered_timeframes = load_fired_signals_from_log(minutes_limit=PEC_WINDOW_MINUTES)
+    print(f"[BACKTEST PEC] Loaded {len(signals)} fired signals from LIVE MODE LOGS")
+    
+    if not signals:
+        print("[BACKTEST PEC] No fired signals found in LIVE MODE LOGS. Nothing to process.")
+        return
     
     signals_by_symbol_tf = defaultdict(list)
     for sig in signals:
@@ -204,15 +220,17 @@ def run_pec_backtest(
 
     pec_blocks = []
 
-    # 2. Loop over all tokens and timeframes
-    timeframes = ["3m", "5m"]  # <-- adjust this list if you use other timeframes
-    for symbol in TOKENS:
-        for tf in timeframes:
+    # 2. Process ALL discovered symbols and timeframes automatically (no hardcoding)
+    print(f"[BACKTEST PEC] Processing {len(discovered_symbols)} symbols and {len(discovered_timeframes)} timeframes...")
+    
+    for symbol in sorted(discovered_symbols):
+        for tf in sorted(discovered_timeframes):
             relevant_signals = signals_by_symbol_tf.get((symbol, tf), [])
             if not relevant_signals:
-                print(f"[BACKTEST PEC] Skipping {symbol} {tf} (no fired signals)")
-                continue
-            print(f"[BACKTEST PEC] {symbol} {tf} ...")
+                continue  # Skip if no signals for this symbol/tf combination
+                
+            print(f"[BACKTEST PEC] Processing {symbol} {tf} ({len(relevant_signals)} signals)...")
+            
             for signal in relevant_signals:
                 entry_idx = signal["entry_idx"]
                 fired_time = pd.to_datetime(signal["fired_time"])
@@ -241,7 +259,8 @@ def run_pec_backtest(
                 entry_price = float(df["close"].iloc[entry_idx])
                 exit_idx = entry_idx + PEC_BARS
                 exit_price = float(df["close"].iloc[exit_idx])
-                signal_type = res.get("bias", "LONG").upper()
+                # Use signal_type from logs instead of analyzing again
+                signal_type = signal.get("signal_type", "LONG").upper()
                 score = res.get("score")
                 score_max = res.get("score_max")
                 passes = res.get("passes")
@@ -254,10 +273,13 @@ def run_pec_backtest(
                 filter_pass_str = ", ".join(f"{k}:{v}" for k, v in filter_passes.items())
                 gk_flags = getattr(sf, "gatekeepers", [])
                 gk_pass_str = ", ".join(str(gk) for gk in gk_flags)
+                
+                # Calculate PnL based on signal direction from logs
                 if signal_type == "LONG":
                     pnl_abs = 100 * (exit_price - entry_price) / entry_price
                 else:
                     pnl_abs = 100 * (entry_price - exit_price) / entry_price
+                    
                 pnl_pct = 100 * pnl_abs / 100
                 win_loss = "WIN" if pnl_abs > 0 else "LOSS"
                 exit_time = times[exit_idx]
@@ -288,9 +310,15 @@ def run_pec_backtest(
                 pec_blocks.append(pec_result)
             print(f"[BACKTEST PEC] Done for {symbol} {tf}.")
 
+    # 3. Combine all LONG and SHORT signals into single CSV output
     save_to_csv(pec_blocks, pec_file)
     print(f"[BACKTEST PEC] Completed PEC backtest. Output: {pec_file} with {len(pec_blocks)} signals processed.")
+    
+    # Summary of processed signals by type
+    long_signals = [r for r in pec_blocks if r['signal_type'] == 'LONG']
+    short_signals = [r for r in pec_blocks if r['signal_type'] == 'SHORT']
+    print(f"[BACKTEST PEC] Combined results: {len(long_signals)} LONG signals, {len(short_signals)} SHORT signals")
 
     print("[DEBUG] Sending PEC results file to Telegram...")
-    send_telegram_file(pec_file, caption=f"PEC results from last {PEC_WINDOW_MINUTES} minutes [{timestamp}]")
+    send_telegram_file(pec_file, caption=f"PEC results from LIVE MODE logs (last {PEC_WINDOW_MINUTES} minutes) [{timestamp}]")
     print("[BACKTEST PEC] All done. PEC results saved to", pec_file)
