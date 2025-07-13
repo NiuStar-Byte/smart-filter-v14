@@ -241,7 +241,12 @@ def run_pec_backtest(
                 if df is None or df.empty or entry_idx >= len(df):
                     print(f"[PEC] No data or entry_idx out of range for {symbol} {tf}. Skipping.")
                     continue
-
+                    
+                print(f"[DEBUG] Fired_time from log: {fired_time}")
+                print(f"[DEBUG] Fired_time floored: {fired_time.floor('5T')}")
+                print(f"[DEBUG] Last 5 DataFrame bars: {df.index[-5:]}")
+                print(f"[DEBUG] DataFrame bar at entry_idx ({entry_idx}): {df.index[entry_idx]}")
+    
                 times = pd.to_datetime(df.index)
                 if not pd.Timestamp(times[entry_idx]).floor('s') == fired_time.floor('s'):
                     print(f"[PEC] entry_idx time mismatch for {symbol} {tf} @ idx {entry_idx}. Skipping.")
