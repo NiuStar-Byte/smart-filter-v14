@@ -19,6 +19,78 @@ MINUTES_LIMIT = 720
 # Can be changed to point to different log files if needed
 FIRED_SIGNALS_LOG_PATH = "logs.txt"
 
+def floor_fired_time_to_interval(fired_time_str, tf):
+    """
+    Parse and floor fired_time to the matching OHLCV interval based on timeframe.
+    
+    Args:
+        fired_time_str (str): Fired time string from logs
+        tf (str): Timeframe ('3min', '5min', etc.)
+    
+    Returns:
+        pd.Timestamp: Floored timestamp aligned to the interval
+    """
+    try:
+        # Parse the fired time - handle ISO format with microseconds
+        if 'T' in fired_time_str:
+            # ISO format: 2025-07-13T09:10:28.802346 or with timezone
+            if '+' in fired_time_str or 'Z' in fired_time_str:
+                fired_dt = datetime.datetime.fromisoformat(fired_time_str.replace('Z', '+00:00'))
+            else:
+                # Treat as UTC if no timezone specified
+                fired_dt = datetime.datetime.fromisoformat(fired_time_str).replace(tzinfo=timezone.utc)
+        else:
+            # Try parsing as simple datetime string
+            fired_dt = datetime.datetime.strptime(fired_time_str, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+        
+        fired_dt = pd.Timestamp(fired_dt)
+        
+        # Floor based on timeframe
+        if tf in ('3min', '3m'):
+            return fired_dt.floor('3T')
+        elif tf in ('5min', '5m'):
+            return fired_dt.floor('5T')
+        else:
+            return fired_dt.floor('5T')  # default to 5min
+            
+    except Exception as e:
+        print(f"[ERROR] Failed to parse fired_time '{fired_time_str}': {e}")
+        return None
+
+def find_timestamp_based_entry_idx(df, fired_time_floored):
+    """
+    Find the entry_idx based on timestamp alignment instead of log-based index.
+    Locates the bar where df.index == fired_time_floored and returns its integer index.
+    
+    Args:
+        df (pd.DataFrame): OHLCV DataFrame with DatetimeIndex
+        fired_time_floored (pd.Timestamp): Floored fired time
+    
+    Returns:
+        int or None: Integer index where the timestamp matches, or None if not found
+    """
+    if df is None or df.empty:
+        return None
+        
+    if not isinstance(df.index, pd.DatetimeIndex):
+        print(f"[ERROR] DataFrame index is not DatetimeIndex: {type(df.index)}")
+        return None
+    
+    # Ensure timezone compatibility
+    df_index = df.index
+    if df_index.tz is None and fired_time_floored.tz is not None:
+        df_index = df_index.tz_localize('UTC')
+    elif df_index.tz is not None and fired_time_floored.tz is None:
+        fired_time_floored = fired_time_floored.tz_localize('UTC')
+    
+    # Look for exact match first
+    matches = df_index == fired_time_floored
+    if matches.any():
+        return matches.argmax()  # First True index
+    
+    # If no exact match, this signal should be skipped as per requirements
+    return None
+
 def load_fired_signals_from_log(log_file_path=None, minutes_limit=None):
     """
     Parse fired signals from LIVE MODE LOGS, extracting only those from the last 'minutes_limit' minutes.
@@ -234,35 +306,37 @@ def run_pec_backtest(
             print(f"[BACKTEST PEC] Processing {symbol} {tf} ({len(relevant_signals)} signals)...")
             
             for signal in relevant_signals:
-                entry_idx = signal["entry_idx"]
-                fired_time = pd.to_datetime(signal["fired_time"])
+                # Parse and floor the fired_time instead of using log-based entry_idx
+                fired_time_floored = floor_fired_time_to_interval(signal["fired_time"], tf)
+                if fired_time_floored is None:
+                    print(f"[PEC] Failed to parse fired_time for {symbol} {tf}. Skipping.")
+                    continue
 
+                # Fetch OHLCV data and ensure it has a DatetimeIndex
                 df = get_ohlcv(symbol, interval=tf, limit=OHLCV_LIMIT)
-                if df is None or df.empty or entry_idx >= len(df):
-                    print(f"[PEC] No data or entry_idx out of range for {symbol} {tf}. Skipping.")
+                if df is None or df.empty:
+                    print(f"[PEC] No OHLCV data for {symbol} {tf}. Skipping.")
                     continue
-                    
-                print(f"[DEBUG] Fired_time from log: {fired_time}")
-                print(f"[DEBUG] Fired_time floored: {fired_time.floor('5T')}")
-                print(f"[DEBUG] Last 5 DataFrame bars: {df.index[-5:]}")
-                print(f"[DEBUG] DataFrame bar at entry_idx ({entry_idx}): {df.index[entry_idx]}")
-    
-                times = pd.to_datetime(df.index)
-
-                # --- Debug prints for time alignment ---
-                floor_str = '3T' if tf in ('3min', '3m') else '5T'
-                print(f"[DEBUG] Fired_time from log: {fired_time}")
-                print(f"[DEBUG] Fired_time floored: {fired_time.floor(floor_str)}")
-                print(f"[DEBUG] First DataFrame bar: {times[0]}")
-                print(f"[DEBUG] Last 5 DataFrame bars: {times[-5:]}")
-                print(f"[DEBUG] DataFrame bar at entry_idx ({entry_idx}): {times[entry_idx]}")
-                print(f"[DEBUG] entry_idx: {entry_idx}, DataFrame length: {len(df)}")
-                # --- End debug prints ---
-
-                if not pd.Timestamp(times[entry_idx]).floor('s') == fired_time.floor('s'):
-                    print(f"[PEC] entry_idx time mismatch for {symbol} {tf} @ idx {entry_idx}. Skipping.")
+                
+                # Ensure DataFrame has DatetimeIndex  
+                if not isinstance(df.index, pd.DatetimeIndex):
+                    print(f"[PEC] DataFrame index is not DatetimeIndex for {symbol} {tf}. Skipping.")
                     continue
 
+                # Find the entry_idx based on timestamp alignment
+                entry_idx = find_timestamp_based_entry_idx(df, fired_time_floored)
+                if entry_idx is None:
+                    print(f"[PEC] Fired time {fired_time_floored} not found in DataFrame for {symbol} {tf}. Skipping.")
+                    continue
+
+                print(f"[PEC] Processing {symbol} {tf} at {fired_time_floored} (entry_idx: {entry_idx})")
+
+                # Check if there are enough bars for exit simulation
+                if entry_idx + PEC_BARS >= len(df):
+                    print(f"[PEC] Not enough bars for exit simulation for {symbol} {tf} @ idx {entry_idx}. Skipping.")
+                    continue
+
+                # Use the new entry_idx for all subsequent processing
                 df_slice = df.iloc[:entry_idx+1]
                 sf = SmartFilter(symbol, df_slice, df3m=df_slice, df5m=df_slice, tf=tf)
                 res = sf.analyze()
@@ -270,13 +344,10 @@ def run_pec_backtest(
                     print(f"[PEC] Signal not valid at idx {entry_idx} for {symbol} {tf}. Skipping.")
                     continue
 
-                if entry_idx + PEC_BARS >= len(df):
-                    print(f"[PEC] Not enough bars for exit simulation for {symbol} {tf} @ idx {entry_idx}. Skipping.")
-                    continue
-
                 entry_price = float(df["close"].iloc[entry_idx])
                 exit_idx = entry_idx + PEC_BARS
                 exit_price = float(df["close"].iloc[exit_idx])
+                
                 # Use signal_type from logs instead of analyzing again
                 signal_type = signal.get("signal_type", "LONG").upper()
                 score = res.get("score")
@@ -300,9 +371,9 @@ def run_pec_backtest(
                     
                 pnl_pct = 100 * pnl_abs / 100
                 win_loss = "WIN" if pnl_abs > 0 else "LOSS"
-                exit_time = times[exit_idx]
+                exit_time = df.index[exit_idx]
                 bar_exit = PEC_BARS
-                signal_time = times[entry_idx].replace(microsecond=0)
+                signal_time = df.index[entry_idx].replace(microsecond=0)
 
                 pec_result = {
                     'signal_type': signal_type,
