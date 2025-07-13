@@ -17,7 +17,7 @@ class SmartFilter:
         df3m: pd.DataFrame = None,
         df5m: pd.DataFrame = None,
         tf: str = None,
-        min_score: int = 15,
+        min_score: int = 16,
         required_passed: int = 12,      # NEW: now 12 (for 17 gatekeepers)
         volume_multiplier: float = 2.0,
         kwargs = None
