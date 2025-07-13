@@ -194,7 +194,7 @@ def run_pec_backtest(
 
 
     # 1. Load fired signals from logs instead of CSV
-    signals = parse_fired_signals_from_logs(minutes_limit=PEC_WINDOW_MINUTES)
+    signals = load_fired_signals_from_log(minutes_limit=PEC_WINDOW_MINUTES)
     print(f"[BACKTEST PEC] Loaded {len(signals)} fired signals from logs")
     
     signals_by_symbol_tf = defaultdict(list)
