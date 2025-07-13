@@ -248,6 +248,17 @@ def run_pec_backtest(
                 print(f"[DEBUG] DataFrame bar at entry_idx ({entry_idx}): {df.index[entry_idx]}")
     
                 times = pd.to_datetime(df.index)
+
+                # --- Debug prints for time alignment ---
+                floor_str = '3T' if tf in ('3min', '3m') else '5T'
+                print(f"[DEBUG] Fired_time from log: {fired_time}")
+                print(f"[DEBUG] Fired_time floored: {fired_time.floor(floor_str)}")
+                print(f"[DEBUG] First DataFrame bar: {times[0]}")
+                print(f"[DEBUG] Last 5 DataFrame bars: {times[-5:]}")
+                print(f"[DEBUG] DataFrame bar at entry_idx ({entry_idx}): {times[entry_idx]}")
+                print(f"[DEBUG] entry_idx: {entry_idx}, DataFrame length: {len(df)}")
+                # --- End debug prints ---
+
                 if not pd.Timestamp(times[entry_idx]).floor('s') == fired_time.floor('s'):
                     print(f"[PEC] entry_idx time mismatch for {symbol} {tf} @ idx {entry_idx}. Skipping.")
                     continue
