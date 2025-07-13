@@ -1,34 +1,30 @@
 import requests
 import pandas as pd
 
-# Supported spot timeframes mapping to KuCoin spot API 'type'
 TF_MAP = {
     "2min": "2min",
     "3min": "3min",
     "5min": "5min"
 }
-
-# Futures timeframes mapping to granularity (in minutes)
 FUTURES_GRAN = {
     "2min": 2,
     "3min": 3,
     "5min": 5
 }
-
-# Binance interval mapping (fallback)
 BINANCE_INTERVAL = {
     "3min": "3m",
     "5min": "5m"
 }
 
-def fetch_ohlcv(symbol: str, tf: str, limit: int = 100) -> pd.DataFrame | None:
+def fetch_ohlcv(symbol: str, tf: str, limit: int = 120) -> pd.DataFrame | None:
     """
-    Internal: Fetch OHLCV data for a given symbol & timeframe key (tf).
+    Fetch OHLCV data for a given symbol & timeframe key (tf).
     Tries (in order):
       1) KuCoin Spot
       2) KuCoin Futures
       3) Binance Spot
     Returns a DataFrame [open, high, low, close, volume] or None.
+    NOTE: The limit should be >= max_entry_idx + PEC_BARS + 1 (e.g., 120 if you will process signals up to the last bar and look ahead 5 bars).
     """
     # 1) Spot
     if tf in TF_MAP:
@@ -44,10 +40,17 @@ def fetch_ohlcv(symbol: str, tf: str, limit: int = 100) -> pd.DataFrame | None:
                 df[["open","high","low","close","volume"]] = df[["open","high","low","close","volume"]].astype(float)
                 df["timestamp"] = pd.to_datetime(df["timestamp"], unit="s")
                 df.set_index("timestamp", inplace=True)
-                return df[["open","high","low","close","volume"]]
-            except Exception:
+                df = df[["open","high","low","close","volume"]]
+                if len(df) < limit:
+                    print(f"[WARNING] {symbol} {tf}: Fetched only {len(df)} bars, less than requested {limit}.")
+                if not df.index.is_monotonic_increasing:
+                    print(f"[WARNING] {symbol} {tf}: Timestamps not sorted!")
+                if df.index.duplicated().any():
+                    print(f"[WARNING] {symbol} {tf}: Duplicate timestamps found!")
+                return df
+            except Exception as e:
+                print(f"[ERROR] KuCoin Spot fetch failed for {symbol} {tf}: {e}")
                 continue
-
     # 2) Futures
     if tf in FUTURES_GRAN:
         for sym in (symbol, symbol.replace('-', '/')):
@@ -63,10 +66,17 @@ def fetch_ohlcv(symbol: str, tf: str, limit: int = 100) -> pd.DataFrame | None:
                 df[["open","high","low","close","volume"]] = df[["open","high","low","close","volume"]].astype(float)
                 df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms")
                 df.set_index("timestamp", inplace=True)
-                return df[["open","high","low","close","volume"]]
-            except Exception:
+                df = df[["open","high","low","close","volume"]]
+                if len(df) < limit:
+                    print(f"[WARNING] {symbol} {tf} Futures: Fetched only {len(df)} bars, less than requested {limit}.")
+                if not df.index.is_monotonic_increasing:
+                    print(f"[WARNING] {symbol} {tf}: Timestamps not sorted!")
+                if df.index.duplicated().any():
+                    print(f"[WARNING] {symbol} {tf}: Duplicate timestamps found!")
+                return df
+            except Exception as e:
+                print(f"[ERROR] KuCoin Futures fetch failed for {symbol} {tf}: {e}")
                 continue
-
     # 3) Binance fallback
     b_interval = BINANCE_INTERVAL.get(tf)
     if b_interval:
@@ -87,20 +97,28 @@ def fetch_ohlcv(symbol: str, tf: str, limit: int = 100) -> pd.DataFrame | None:
                 df[["open","high","low","close","volume"]] = df[["open","high","low","close","volume"]].astype(float)
                 df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms")
                 df.set_index("timestamp", inplace=True)
+                if len(df) < limit:
+                    print(f"[WARNING] {symbol} {tf} Binance: Fetched only {len(df)} bars, less than requested {limit}.")
+                if not df.index.is_monotonic_increasing:
+                    print(f"[WARNING] {symbol} {tf}: Timestamps not sorted!")
+                if df.index.duplicated().any():
+                    print(f"[WARNING] {symbol} {tf}: Duplicate timestamps found!")
                 return df
-        except Exception:
-            pass
-
+        except Exception as e:
+            print(f"[ERROR] Binance fetch failed for {symbol} {tf}: {e}")
     print(f"[{symbol}] No OHLCV data fetched for any endpoint.")
-    return None
+    return pd.DataFrame(columns=["open","high","low","close","volume"])
 
-def get_ohlcv(symbol: str, interval: str, limit: int = 100) -> pd.DataFrame | None:
+def get_ohlcv(symbol: str, interval: str, limit: int = 120) -> pd.DataFrame | None:
     """
     Public alias matching main.py signature.
       interval: one of "2min","3min","5min"
       limit: number of bars for Binance fallback
+      Default is 120 (enough for PEC lookahead from last signal bar)
     """
     return fetch_ohlcv(symbol, tf=interval, limit=limit)
+
+# (Orderbook and tick functions unchanged)
 
 # ====== NEW ORDERBOOK & TICK DATA FUNCTIONS ======
 
