@@ -182,7 +182,8 @@ def save_to_csv(results, filename="pec_results.csv"):
                 signal_time or ''
             ])
     print(f"[{datetime.datetime.now()}] [PEC_BACKTEST] PEC results appended to {filename} ({len(results)} signals)")
-    
+
+print(">>> ENTERED pec_backtest.py", flush=True)
 def run_pec_backtest(
     TOKENS,
     get_ohlcv,
@@ -191,6 +192,8 @@ def run_pec_backtest(
     PEC_BARS,
     OHLCV_LIMIT,
 ):
+    print(">>> ENTERED run_pec_backtest", flush=True)
+    
     """
     Run PEC backtest using LIVE MODE log-based fired signal parsing.
     Automatically detects all symbols and timeframes from the logs - no manual configuration needed.
