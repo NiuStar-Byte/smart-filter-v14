@@ -1,5 +1,7 @@
 # main.py
 
+print("[INFO] main.py script started.", flush=True)
+
 from signal_debug_log import dump_signal_debug_txt, log_fired_signal
 import os
 import time
@@ -11,10 +13,8 @@ from datetime import datetime
 from kucoin_data import get_ohlcv
 from smart_filter import SmartFilter
 from telegram_alert import send_telegram_alert, send_telegram_file
-from signal_debug_log import dump_signal_debug_txt, log_fired_signal
 from kucoin_orderbook import get_order_wall_delta
 from pec_engine import run_pec_check, export_pec_log
-
 
 TOKENS = [
     "SKATE-USDT", "LA-USDT", "SPK-USDT", "ZKJ-USDT", "IP-USDT",
@@ -62,19 +62,21 @@ def log_orderbook_and_density(symbol):
             f"buy_wall={result['buy_wall']} | "
             f"sell_wall={result['sell_wall']} | "
             f"wall_delta={result['wall_delta']} | "
-            f"midprice={result['midprice']}"
+            f"midprice={result['midprice']}",
+            flush=True
         )
     except Exception as e:
-        print(f"[OrderBookDeltaLog] {symbol} ERROR: {e}")
+        print(f"[OrderBookDeltaLog] {symbol} ERROR: {e}", flush=True)
     try:
         dens = get_resting_order_density(symbol)
         print(
             f"[RestingOrderDensityLog] {symbol} | "
             f"bid_density={dens['bid_density']:.2f} | ask_density={dens['ask_density']:.2f} | "
-            f"bid_levels={dens['bid_levels']} | ask_levels={dens['ask_levels']} | midprice={dens['midprice']}"
+            f"bid_levels={dens['bid_levels']} | ask_levels={dens['ask_levels']} | midprice={dens['midprice']}",
+            flush=True
         )
     except Exception as e:
-        print(f"[RestingOrderDensityLog] {symbol} ERROR: {e}")
+        print(f"[RestingOrderDensityLog] {symbol} ERROR: {e}", flush=True)
 
 def super_gk_aligned(bias, orderbook_result, density_result):
     wall_delta = orderbook_result.get('wall_delta', 0) if orderbook_result else 0
@@ -88,7 +90,7 @@ def super_gk_aligned(bias, orderbook_result, density_result):
     return True
 
 def run():
-    print("[INFO] Starting Smart Filter engine (LIVE MODE)...\n")
+    print("[INFO] Starting Smart Filter engine (LIVE MODE)...\n", flush=True)
     while True:
         try:
             now = time.time()
@@ -96,7 +98,7 @@ def run():
             pec_candidates = []
 
             for idx, symbol in enumerate(TOKENS, start=1):
-                print(f"[INFO] Checking {symbol}...\n")
+                print(f"[INFO] Checking {symbol}...\n", flush=True)
                 df3 = get_ohlcv(symbol, interval="3min", limit=OHLCV_LIMIT)
                 df5 = get_ohlcv(symbol, interval="5min", limit=OHLCV_LIMIT)
                 if df3 is None or df3.empty or df5 is None or df5.empty:
@@ -117,9 +119,9 @@ def run():
                             bias = res3.get("bias", "NEUTRAL")
                             sf3.bias = bias  # Set bias for property
                             if not super_gk_aligned(bias, orderbook_result, density_result):
-                                print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT")
+                                print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
                                 continue
-                            print(f"[LOG] Sending 3min alert for {res3['symbol']}")
+                            print(f"[LOG] Sending 3min alert for {res3['symbol']}", flush=True)
 
                             valid_debugs.append({
                                 "symbol": res3["symbol"],
@@ -168,9 +170,9 @@ def run():
                                 )
                             last_sent[key3] = now
                     else:
-                        print(f"[INFO] No valid 3min signal for {symbol}.")
+                        print(f"[INFO] No valid 3min signal for {symbol}.", flush=True)
                 except Exception as e:
-                    print(f"[ERROR] Exception in processing 3min for {symbol}: {e}")
+                    print(f"[ERROR] Exception in processing 3min for {symbol}: {e}", flush=True)
 
                 # --- 5min TF ---
                 try:
@@ -187,9 +189,9 @@ def run():
                             bias = res5.get("bias", "NEUTRAL")
                             sf5.bias = bias  # Set bias for property
                             if not super_gk_aligned(bias, orderbook_result, density_result):
-                                print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT")
+                                print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
                                 continue
-                            print(f"[LOG] Sending 5min alert for {res5['symbol']}")
+                            print(f"[LOG] Sending 5min alert for {res5['symbol']}", flush=True)
 
                             valid_debugs.append({
                                 "symbol": res5["symbol"],
@@ -238,19 +240,19 @@ def run():
                                 )
                             last_sent[key5] = now
                     else:
-                        print(f"[INFO] No valid 5min signal for {symbol}.")
+                        print(f"[INFO] No valid 5min signal for {symbol}.", flush=True)
                 except Exception as e:
-                    print(f"[ERROR] Exception in processing 5min for {symbol}: {e}")
+                    print(f"[ERROR] Exception in processing 5min for {symbol}: {e}", flush=True)
 
             # --- Send up to 2 debug files to Telegram (Signal Debug txt sampling) ---
             try:
                 if valid_debugs:
-                    print(f"[DEBUG] About to send {min(len(valid_debugs), 2)} debug files to Telegram.")
+                    print(f"[DEBUG] About to send {min(len(valid_debugs), 2)} debug files to Telegram.", flush=True)
                     num = min(len(valid_debugs), 2)
                     for debug_info in random.sample(valid_debugs, num):
                         try:
-                            print("LONG:", debug_info["filter_weights_long"])
-                            print("SHORT:", debug_info["filter_weights_short"])
+                            print("LONG:", debug_info["filter_weights_long"], flush=True)
+                            print("SHORT:", debug_info["filter_weights_short"], flush=True)
                     
                             dump_signal_debug_txt(
                                 symbol=debug_info["symbol"],
@@ -269,25 +271,25 @@ def run():
                                 caption=debug_info["caption"]
                             )
                         except Exception as e:
-                            print(f"[ERROR] Exception in Telegram debug send: {e}")
+                            print(f"[ERROR] Exception in Telegram debug send: {e}", flush=True)
                 else:
-                    print("[DEBUG] valid_debugs is empty — no debug files to send to Telegram.")
+                    print("[DEBUG] valid_debugs is empty — no debug files to send to Telegram.", flush=True)
             except Exception as e:
-                print(f"[FATAL] Exception in debug sending block: {e}")
+                print(f"[FATAL] Exception in debug sending block: {e}", flush=True)
 
             # Print summary of fired signals (log-based, no CSV dependency)
             if valid_debugs:
-                print(f"[DEBUG] Processed {len(valid_debugs)} valid signals this cycle")
+                print(f"[DEBUG] Processed {len(valid_debugs)} valid signals this cycle", flush=True)
             else:
-                print("[DEBUG] No valid signals processed this cycle")
+                print("[DEBUG] No valid signals processed this cycle", flush=True)
             
-            print("[INFO] ✅ Cycle complete. Sleeping 60 seconds...\n")
+            print("[INFO] ✅ Cycle complete. Sleeping 60 seconds...\n", flush=True)
             time.sleep(60)
         except Exception as e:
-            print(f"[FATAL] Exception in main loop: {e}")
+            print(f"[FATAL] Exception in main loop: {e}", flush=True)
             import traceback
             traceback.print_exc()
-            print("[INFO] Sleeping 10 seconds before retrying main loop...\n")
+            print("[INFO] Sleeping 10 seconds before retrying main loop...\n", flush=True)
             time.sleep(10)
 
 if __name__ == "__main__":
