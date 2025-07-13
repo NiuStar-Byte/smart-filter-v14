@@ -149,9 +149,11 @@ def save_to_csv(results, filename="pec_results.csv"):
                "PnL ($)", "PnL (%)", "Score", "Max Score", "Confidence", "Weighted Confidence",
                "Gatekeepers Passed", "Filter Results", "GK Flags", "Result", "Exit Time", "# BAR Exit", "Signal Time"]
 
-    with open(filename, mode='w', newline='') as file:  # Changed from 'a' to 'w' to overwrite
+    file_exists = os.path.isfile(filename)
+    with open(filename, mode='a', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(headers)  # Always write header for new file
+        if not file_exists or os.stat(filename).st_size == 0:
+            writer.writerow(headers)  # Write header only if file doesn't exist or is empty
         for result in results:
             signal_time = result.get("signal_time")
             if isinstance(signal_time, (datetime.datetime, pd.Timestamp)):
@@ -179,8 +181,8 @@ def save_to_csv(results, filename="pec_results.csv"):
                 result.get('exit_bar', ''),
                 signal_time or ''
             ])
-    print(f"[{datetime.datetime.now()}] [PEC_BACKTEST] PEC results saved to {filename} ({len(results)} signals)")
-
+    print(f"[{datetime.datetime.now()}] [PEC_BACKTEST] PEC results appended to {filename} ({len(results)} signals)")
+    
 def run_pec_backtest(
     TOKENS,
     get_ohlcv,
