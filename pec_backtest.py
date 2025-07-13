@@ -13,15 +13,24 @@ from telegram_alert import send_telegram_file
 
 # Configuration: Timeframes to process in PEC backtest
 # Can be imported/modified externally without editing this file
-# Try to import from main.py if available, otherwise use default
-try:
-    from main import COOLDOWN
-    # Extract timeframes from COOLDOWN keys and convert format
-    _main_timeframes = list(COOLDOWN.keys())
-    CONFIG_TIMEFRAMES = _main_timeframes if _main_timeframes else ["3min", "5min"]
-except ImportError:
-    # Default timeframes if main.py is not available or doesn't have COOLDOWN
-    CONFIG_TIMEFRAMES = ["3min", "5min"]
+# 
+# Usage examples:
+#   1. Automatic: Imports timeframes from main.py COOLDOWN keys
+#   2. External override: Set CONFIG_TIMEFRAMES before importing this module
+#   3. Default fallback: Uses ["3min", "5min"] if no other source available
+#
+# External code can override CONFIG_TIMEFRAMES by setting it before importing
+CONFIG_TIMEFRAMES = None  # Will be set below if not already set externally
+
+if CONFIG_TIMEFRAMES is None:
+    try:
+        from main import COOLDOWN
+        # Extract timeframes from COOLDOWN keys
+        _main_timeframes = list(COOLDOWN.keys())
+        CONFIG_TIMEFRAMES = _main_timeframes if _main_timeframes else ["3min", "5min"]
+    except ImportError:
+        # Default timeframes if main.py is not available or doesn't have COOLDOWN
+        CONFIG_TIMEFRAMES = ["3min", "5min"]
 
 # Set this to limit simulation to only recent fired signals (e.g., 720 minutes = 12 hours)
 MINUTES_LIMIT = 720
