@@ -22,14 +22,19 @@ FIRED_SIGNALS_LOG_PATH = "logs.txt"
 def load_fired_signals_from_log(log_file_path=None, minutes_limit=None):
     """
     Parse fired signals from LIVE MODE LOGS, extracting only those from the last 'minutes_limit' minutes.
-    Expected log format: [FIRED] Logged: {uuid}, {symbol}, {tf}, {signal_type}, {local_timestamp}, {other_field}
+    Expected log format: [FIRED] Logged: {uuid}, {symbol}, {tf}, {signal_type}, {entry_time_utc}, {entry_idx}
     
     Args:
         log_file_path (str): Path to log file. If None, uses FIRED_SIGNALS_LOG_PATH.
-        minutes_limit (int): Only include signals from last N minutes using local timestamp. If None, includes all.
+        minutes_limit (int): Only include signals from last N minutes using entry_time (UTC). If None, includes all.
     
     Returns:
         tuple: (signals_list, unique_symbols_set, unique_timeframes_set)
+        
+    Note: 
+        - The log file timestamp may be in local time (Asia/Jakarta, UTC+7)
+        - But the 'entry_time' field in signal content is in UTC
+        - Filtering is based on 'entry_time' field compared to current UTC time
     """
     signals = []
     unique_symbols = set()
@@ -47,34 +52,34 @@ def load_fired_signals_from_log(log_file_path=None, minutes_limit=None):
             log_content = file.read()
         
         # Regex pattern to match FIRED log entries from LIVE MODE
-        # Pattern: [FIRED] Logged: uuid, symbol, tf, signal_type, local_timestamp, other_field
+        # Pattern: [FIRED] Logged: uuid, symbol, tf, signal_type, entry_time_utc, entry_idx
         pattern = r'\[FIRED\] Logged: ([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*(\d+)'
         
         lines = log_content.split('\n')
         now_utc = datetime.datetime.now(timezone.utc)
         
         if minutes_limit is not None:
-            cutoff_time = now_utc - datetime.timedelta(minutes=minutes_limit)
+            cutoff_time_utc = now_utc - datetime.timedelta(minutes=minutes_limit)
         else:
-            cutoff_time = None
+            cutoff_time_utc = None
         
         for line in lines:
             match = re.search(pattern, line.strip())
             if match:
-                uuid_val, symbol, tf, signal_type, fired_time_str, entry_idx = match.groups()
+                uuid_val, symbol, tf, signal_type, entry_time_utc_str, entry_idx = match.groups()
                 
                 try:
-                    # Parse the local timestamp - handle ISO format with microseconds
-                    if 'T' in fired_time_str:
+                    # Parse the entry_time field as UTC - handle ISO format with microseconds
+                    if 'T' in entry_time_utc_str:
                         # ISO format: 2025-07-13T09:10:28.802346 or with timezone
-                        if '+' in fired_time_str or 'Z' in fired_time_str:
-                            fired_dt = datetime.datetime.fromisoformat(fired_time_str.replace('Z', '+00:00'))
+                        if '+' in entry_time_utc_str or 'Z' in entry_time_utc_str:
+                            entry_time_utc = datetime.datetime.fromisoformat(entry_time_utc_str.replace('Z', '+00:00'))
                         else:
-                            # Treat as UTC if no timezone specified
-                            fired_dt = datetime.datetime.fromisoformat(fired_time_str).replace(tzinfo=timezone.utc)
+                            # Treat as UTC if no timezone specified (this is the expected case)
+                            entry_time_utc = datetime.datetime.fromisoformat(entry_time_utc_str).replace(tzinfo=timezone.utc)
                     else:
-                        # Try parsing as simple datetime string
-                        fired_dt = datetime.datetime.strptime(fired_time_str, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+                        # Try parsing as simple datetime string and treat as UTC
+                        entry_time_utc = datetime.datetime.strptime(entry_time_utc_str, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
                     
                     # Always collect symbols and timeframes for automated processing
                     symbol_clean = symbol.strip()
@@ -82,14 +87,14 @@ def load_fired_signals_from_log(log_file_path=None, minutes_limit=None):
                     unique_symbols.add(symbol_clean)
                     unique_timeframes.add(tf_clean)
                     
-                    # Filter by time limit if specified (using local timestamp from logs)
-                    if cutoff_time is None or fired_dt >= cutoff_time:
+                    # Filter by time limit if specified (using entry_time in UTC, compared to current UTC time)
+                    if cutoff_time_utc is None or entry_time_utc >= cutoff_time_utc:
                         signals.append({
                             "uuid": uuid_val.strip(),
                             "symbol": symbol_clean,
                             "tf": tf_clean,
                             "signal_type": signal_type.strip(),
-                            "fired_time": fired_time_str.strip(),
+                            "entry_time": entry_time_utc_str.strip(),  # Keep original UTC string for CSV output
                             "entry_idx": int(entry_idx.strip())
                         })
                         
@@ -139,6 +144,8 @@ def load_fired_signals(minutes_limit=None):
     """
     DEPRECATED: Use load_fired_signals_from_log() instead.
     This function is kept for backward compatibility and now uses LIVE MODE log parsing.
+    
+    Note: Filtering is now based on entry_time (UTC) rather than local log timestamps.
     """
     print("[WARNING] load_fired_signals() is deprecated. Use load_fired_signals_from_log() for LIVE MODE log-based parsing.")
     signals, _, _ = load_fired_signals_from_log(minutes_limit=minutes_limit or MINUTES_LIMIT)
@@ -191,10 +198,10 @@ def run_pec_backtest(
 ):
     """
     Run PEC backtest using LIVE MODE log-based fired signal parsing.
-    Automatically detects all symbols and timeframes from the logs - no manual configuration needed.
+    Filters results to only include tokens from the TOKENS list.
     
     Args:
-        TOKENS: List of trading symbols (DEPRECATED - now auto-detected from logs)
+        TOKENS: List of trading symbols to filter results (only these tokens will be processed)
         get_ohlcv: Function to fetch OHLCV data
         get_local_wib: Function to convert timezone to WIB
         PEC_WINDOW_MINUTES: Time window in minutes to look back for fired signals (default 720 = 12 hours)
@@ -214,16 +221,23 @@ def run_pec_backtest(
         print("[BACKTEST PEC] No fired signals found in LIVE MODE LOGS. Nothing to process.")
         return
     
+    # Filter discovered symbols to only include those in TOKENS list
+    filtered_symbols = [symbol for symbol in discovered_symbols if symbol in TOKENS]
+    print(f"[BACKTEST PEC] Filtering to {len(filtered_symbols)} symbols from TOKENS list: {sorted(filtered_symbols)}")
+    print(f"[BACKTEST PEC] Excluded symbols: {sorted(set(discovered_symbols) - set(TOKENS))}")
+    
     signals_by_symbol_tf = defaultdict(list)
     for sig in signals:
-        signals_by_symbol_tf[(sig["symbol"], sig["tf"])].append(sig)
+        # Only include signals for symbols in TOKENS list
+        if sig["symbol"] in TOKENS:
+            signals_by_symbol_tf[(sig["symbol"], sig["tf"])].append(sig)
 
     pec_blocks = []
 
-    # 2. Process ALL discovered symbols and timeframes automatically (no hardcoding)
-    print(f"[BACKTEST PEC] Processing {len(discovered_symbols)} symbols and {len(discovered_timeframes)} timeframes...")
+    # 2. Process only symbols that are in TOKENS list
+    print(f"[BACKTEST PEC] Processing {len(filtered_symbols)} symbols and {len(discovered_timeframes)} timeframes...")
     
-    for symbol in sorted(discovered_symbols):
+    for symbol in sorted(filtered_symbols):
         for tf in sorted(discovered_timeframes):
             relevant_signals = signals_by_symbol_tf.get((symbol, tf), [])
             if not relevant_signals:
@@ -233,7 +247,9 @@ def run_pec_backtest(
             
             for signal in relevant_signals:
                 entry_idx = signal["entry_idx"]
-                fired_time = pd.to_datetime(signal["fired_time"])
+                # Use the original UTC entry_time string from signal
+                original_entry_time_utc = signal["entry_time"]  # This is the original UTC string
+                fired_time = pd.to_datetime(original_entry_time_utc)
 
                 df = get_ohlcv(symbol, interval=tf, limit=OHLCV_LIMIT)
                 if df is None or df.empty or entry_idx >= len(df):
@@ -290,7 +306,7 @@ def run_pec_backtest(
                     'signal_type': signal_type,
                     'symbol': symbol,
                     'tf': tf,
-                    'entry_time': signal_time.strftime("%Y-%m-%d %H:%M:%S"),
+                    'entry_time': original_entry_time_utc,  # Preserve original UTC string from logs
                     'entry_price': entry_price,
                     'exit_price': exit_price,
                     'pnl_abs': pnl_abs,
