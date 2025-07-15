@@ -36,19 +36,19 @@ class SmartFilter:
 
         # Weights for filters
         self.filter_weights_long = {
-            "MACD": 4.3, "Volume Spike": 4.8, "Fractal Zone": 4.5, "EMA Cloud": 5.0, "Momentum": 4.0, "ATR Momentum Burst": 3.9,
-            "MTF Volume Agreement": 3.8, "Trend Continuation": 4.7, "HATS": 4.3, "HH/LL Trend": 4.5, "Volatility Model": 3.4,
-            "EMA Structure": 3.3, "Liquidity Awareness": 3.3, "Volatility Squeeze": 3.1, "Candle Confirmation": 3.8,
-            "VWAP Divergence": 2.8, "Spread Filter": 2.7, "Chop Zone": 2.6, "Liquidity Pool": 2.5, "Support/Resistance": 2.0,
-            "Smart Money Bias": 1.9, "Absorption": 1.8, "Wick Dominance": 1.5
+            "MACD": 4.3, "Volume Spike": 4.6, "Fractal Zone": 4.4, "EMA Cloud": 4.9, "Momentum": 3.8, "ATR Momentum Burst": 3.9,
+            "MTF Volume Agreement": 3.8, "Trend Continuation": 4.7, "HATS": 4.6, "HH/LL Trend": 4.5, "Volatility Model": 3.4,
+            "EMA Structure": 3.3, "Liquidity Awareness": 3.2, "Volatility Squeeze": 3.1, "Candle Confirmation": 3.8,
+            "VWAP Divergence": 2.9, "Spread Filter": 2.7, "Chop Zone": 2.6, "Liquidity Pool": 2.5, "Support/Resistance": 2.4,
+            "Smart Money Bias": 2.2, "Absorption": 2.1, "Wick Dominance": 1.9
         }
 
         self.filter_weights_short = {
-            "MACD": 3.2, "Volume Spike": 4.8, "Fractal Zone": 4.5, "EMA Cloud": 5.0, "Momentum": 4.0, "ATR Momentum Burst": 4.1,
-            "MTF Volume Agreement": 3.8, "Trend Continuation": 4.7, "HATS": 4.5, "HH/LL Trend": 4.5, "Volatility Model": 3.4,
-            "EMA Structure": 3.3, "Liquidity Awareness": 3.5, "Volatility Squeeze": 3.1, "Candle Confirmation": 3.8,
-            "VWAP Divergence": 3.0, "Spread Filter": 2.7, "Chop Zone": 2.6, "Liquidity Pool": 2.5, "Support/Resistance": 2.1,
-            "Smart Money Bias": 2.0, "Absorption": 1.9, "Wick Dominance": 1.5
+            "MACD": 4.1, "Volume Spike": 4.8, "Fractal Zone": 4.6, "EMA Cloud": 4.7, "Momentum": 3.7, "ATR Momentum Burst": 4.1,
+            "MTF Volume Agreement": 3.6, "Trend Continuation": 4.5, "HATS": 4.4, "HH/LL Trend": 4.3, "Volatility Model": 3.5,
+            "EMA Structure": 3.1, "Liquidity Awareness": 3.4, "Volatility Squeeze": 2.9, "Candle Confirmation": 3.8,
+            "VWAP Divergence": 2.7, "Spread Filter": 2.9, "Chop Zone": 2.8, "Liquidity Pool": 2.7, "Support/Resistance": 2.6,
+            "Smart Money Bias": 2.4, "Absorption": 1.9, "Wick Dominance": 2.1
         }
 
         self.gatekeepers = [
