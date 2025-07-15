@@ -5,6 +5,7 @@ import pandas as pd
 import re
 import os
 import datetime
+import numpy as np
 from datetime import timezone
 from collections import defaultdict
 from smart_filter import SmartFilter
@@ -48,7 +49,7 @@ def find_closest_ohlcv_bar(fired_time_utc, ohlcv_df, tf):
             ohlcv_times = pd.to_datetime(ohlcv_df.index).tz_convert('UTC')
         
         # Find the closest bar by absolute time difference
-        time_diffs = (ohlcv_times - fired_time_utc).abs()
+        time_diffs = np.abs(ohlcv_times - fired_time_utc)
         closest_idx = time_diffs.idxmin()
         closest_bar_idx = ohlcv_df.index.get_loc(closest_idx)
         closest_bar_time = ohlcv_times[closest_idx]
