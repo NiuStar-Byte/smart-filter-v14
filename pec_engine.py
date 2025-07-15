@@ -10,6 +10,47 @@ import pytz  # To handle time zone conversion
 # Set timezone to WIB (Western Indonesian Time)
 WIB = pytz.timezone('Asia/Jakarta')
 
+def find_closest_ohlcv_bar(fired_time_utc, ohlcv_df, tf):
+    """
+    Find the closest OHLCV bar to the fired time using timestamp matching.
+    
+    Args:
+        fired_time_utc: pd.Timestamp or datetime in UTC
+        ohlcv_df: DataFrame with datetime index in UTC
+        tf: timeframe string ('3min', '5min', etc.)
+    
+    Returns:
+        tuple: (bar_index, bar_time, time_diff_minutes) or (None, None, None) if no match
+    """
+    try:
+        if not isinstance(fired_time_utc, pd.Timestamp):
+            fired_time_utc = pd.Timestamp(fired_time_utc)
+        
+        # Ensure fired_time is in UTC
+        if fired_time_utc.tz is None:
+            fired_time_utc = fired_time_utc.tz_localize('UTC')
+        elif fired_time_utc.tz != pd.Timestamp.now().tz_localize('UTC').tz:
+            fired_time_utc = fired_time_utc.tz_convert('UTC')
+        
+        # Ensure OHLCV index is in UTC
+        if ohlcv_df.index.tz is None:
+            ohlcv_times = pd.to_datetime(ohlcv_df.index).tz_localize('UTC')
+        else:
+            ohlcv_times = pd.to_datetime(ohlcv_df.index).tz_convert('UTC')
+        
+        # Find the closest bar by absolute time difference
+        time_diffs = (ohlcv_times - fired_time_utc).abs()
+        closest_idx = time_diffs.idxmin()
+        closest_bar_idx = ohlcv_df.index.get_loc(closest_idx)
+        closest_bar_time = ohlcv_times[closest_idx]
+        time_diff_minutes = abs((closest_bar_time - fired_time_utc).total_seconds() / 60)
+        
+        return closest_bar_idx, closest_bar_time, time_diff_minutes
+        
+    except Exception as e:
+        print(f"[TIMESTAMP_MATCH_ERROR] Failed to match timestamp: {e}")
+        return None, None, None
+
 def process_signal_in_pec(signal, df):
     """
     Process a single fired signal for backtesting.
@@ -56,7 +97,7 @@ def process_signal_in_pec(signal, df):
 
 def run_pec_check(
     symbol,
-    entry_idx,
+    fired_time_utc,     # NEW: Use timestamp instead of entry_idx
     tf,
     signal_type,
     entry_price,
@@ -71,7 +112,7 @@ def run_pec_check(
     Perform post-entry quality control (PEC) simulation for a fired signal.
     Args:
         symbol: str, e.g. "SPK-USDT"
-        entry_idx: int, index of entry bar in ohlcv_df
+        fired_time_utc: pd.Timestamp in UTC, timestamp when signal was fired
         tf: str, e.g. "3min"
         signal_type: "LONG" or "SHORT"
         entry_price: float, actual entry price
@@ -82,10 +123,18 @@ def run_pec_check(
         result: dict with key stats & verdicts, PLUS diagnostics
     """
     try:
-        print(f"[PEC_ENGINE] Starting PEC check for {symbol} at index {entry_idx}.")
+        print(f"[PEC_ENGINE] Starting PEC check for {symbol} using timestamp matching.")
+
+        # Find the entry bar using timestamp matching
+        entry_idx, matched_bar_time, time_diff_minutes = find_closest_ohlcv_bar(fired_time_utc, ohlcv_df, tf)
+        
+        if entry_idx is None:
+            return {"status": "timestamp matching failed", "error": "Could not match fired_time to OHLCV bar"}
+
+        print(f"[PEC_ENGINE] Matched signal to bar index {entry_idx} (time diff: {time_diff_minutes:.2f} min)")
 
         # Capture Signal Time in UTC
-        signal_time_utc = datetime.now(pytz.utc)  # Capture time in UTC first
+        signal_time_utc = fired_time_utc if isinstance(fired_time_utc, pd.Timestamp) else pd.Timestamp(fired_time_utc)
         signal_time = signal_time_utc.astimezone(WIB)  # Convert to WIB time zone
 
         # Get the relevant data for backtest
@@ -94,8 +143,8 @@ def run_pec_check(
             print(f"[PEC_ENGINE] Not enough data for PEC: {symbol} at index {entry_idx}.")
             return {"status": "not enough data for PEC"}
 
-        # ENTRY TIME from OHLCV
-        entry_time = str(ohlcv_df.index[entry_idx].tz_localize('UTC').astimezone(WIB))  # Convert entry time to WIB
+        # ENTRY TIME from matched OHLCV bar
+        entry_time = str(matched_bar_time.astimezone(WIB))  # Convert entry time to WIB
 
         # Calculate MFE and MAE for the trade
         if signal_type == "LONG":
@@ -109,11 +158,15 @@ def run_pec_check(
 
         print(f"[PEC_ENGINE] MFE: {max_up:.2f}%, MAE: {max_dn:.2f}%, Final Return: {final_ret:.2f}%")
 
-        # Capture the signal time
-        signal_time = datetime.datetime.now()  # Current datetime when the signal is fired
-
-        # Get the entry time (datetime index from OHLCV data)
-        entry_time = str(ohlcv_df.index[entry_idx].tz_localize('UTC').astimezone(WIB))  # Convert entry time to WIB
+        # Count favorable bars
+        up_bars = 0
+        for i in range(1, len(pec_data)):
+            if signal_type == "LONG":
+                if pec_data["close"].iloc[i] > pec_data["close"].iloc[0]:
+                    up_bars += 1
+            else:
+                if pec_data["close"].iloc[i] < pec_data["close"].iloc[0]:
+                    up_bars += 1
 
         # Entry Follow-Through: Did it move at least +0.5% in your favor?
         follow_through = False  # Disabled follow-through condition
@@ -132,33 +185,7 @@ def run_pec_check(
         condition_met = False  # Disabled condition logic
 
         # Log the exit conditions to both the file and Telegram
-        log_exit_conditions(exit_time, exit_price, follow_through, stop_survival, vol_pass, condition_met)
-        
-        try:
-            # Disabled exit checks here
-            # if follow_through:  # Assuming exit is based on the follow-through condition
-            #     exit_price = pec_data["close"].max()  # Exit price (take profit condition)
-            #     exit_time = ohlcv_df.index[entry_idx + pec_bars]  # Exit time is the timestamp of the exit bar
-
-            # if stop_survival:  # Check if trailing stop condition met
-            #     if pec_data["close"].iloc[-1] < pec_data["close"].iloc[-2] * 0.995:
-            #         exit_price = pec_data["close"].iloc[-1]
-            #         exit_time = ohlcv_df.index[entry_idx + pec_bars]  # Exit time when the condition is met
-
-            # if volume_condition:  # Check if volume condition met
-            #     if pec_data["volume"].iloc[-1] > pec_data["volume"].mean():
-            #         exit_price = pec_data["close"].iloc[-1]
-            #         exit_time = ohlcv_df.index[entry_idx + pec_bars]  # Exit time when volume condition met
-
-            # Add this log statement just before calling log_exit_conditions
-            logging.debug("Preparing to log exit conditions.")
-            
-            # Log exit conditions
-            log_exit_conditions(exit_time, exit_price, follow_through, stop_survival, vol_pass, condition_met)
-        
-        except Exception as e:
-            logging.error(f"Error in logging exit conditions: {e}")
-        
+        log_exit_conditions(exit_time, exit_price, follow_through, survived, vol_pass, condition_met)
         # Format diagnostics for filter-level pass/fail
         filter_diag_str = ""
         if filter_result is not None and isinstance(filter_result, dict):
@@ -166,7 +193,7 @@ def run_pec_check(
             for fname, fval in filter_result.items():
                 filter_diag_str += f"\n    {fname}: {'✅' if fval else '❌'}"
 
-        summary = f"""# PEC for {symbol} {tf} {signal_type} @ {entry_price:.5f} (Fired: {ohlcv_df.index[entry_idx]})
+        summary = f"""# PEC for {symbol} {tf} {signal_type} @ {entry_price:.5f} (Fired: {matched_bar_time})
 - Follow-Through: {'✅' if follow_through else '❌'} (MaxFavorable={max_up:.2f}%)
 - Max Adverse Excursion: {max_dn:.2f}%
 - Final Return: {final_ret:.2f}%
