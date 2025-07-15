@@ -125,6 +125,9 @@ def run():
                                 continue
                             print(f"[LOG] Sending 3min alert for {res3['symbol']}", flush=True)
 
+                            # Get the current UTC time as the fired time
+                            fired_time_utc = datetime.utcnow()
+                            
                             valid_debugs.append({
                                 "symbol": res3["symbol"],
                                 "tf": res3["tf"],
@@ -137,25 +140,26 @@ def run():
                                 "caption": f"Signal debug log for {res3.get('symbol')} {res3.get('tf')}",
                                 "orderbook_result": orderbook_result,
                                 "density_result": density_result,
-                                "entry_price": res3.get("price")
+                                "entry_price": res3.get("price"),
+                                "fired_time_utc": fired_time_utc
                             })
+                            
+                            # DEPRECATED: Still calculate entry_idx for backward compatibility
                             entry_idx = df3.index.get_loc(df3.index[-1])
+                            
                             pec_candidates.append(
-                                ("3min", symbol, res3.get("price"), bias, df3, entry_idx)
+                                ("3min", symbol, res3.get("price"), bias, df3, fired_time_utc)  # Use fired_time instead of entry_idx
                             )
+                            
+                            # Log with both fired_time (primary) and entry_idx (deprecated compatibility)
                             log_fired_signal(
                                 symbol=symbol,
                                 tf="3min",
                                 signal_type=res3.get("bias"),
-                                entry_idx=entry_idx
+                                entry_idx=entry_idx,  # Kept for backward compatibility
+                                fired_time=fired_time_utc  # Primary timestamp-based approach
                             )
                             if os.getenv("DRY_RUN", "false").lower() != "true":
-                                log_fired_signal(
-                                    symbol=res3.get("symbol"),
-                                    tf=res3.get("tf"),
-                                    signal_type=res3.get("bias"),
-                                    entry_idx=entry_idx,
-                                )
                                 send_telegram_alert(
                                     numbered_signal=numbered_signal,
                                     symbol=res3.get("symbol"),
@@ -195,6 +199,9 @@ def run():
                                 continue
                             print(f"[LOG] Sending 5min alert for {res5['symbol']}", flush=True)
 
+                            # Get the current UTC time as the fired time
+                            fired_time_utc = datetime.utcnow()
+                            
                             valid_debugs.append({
                                 "symbol": res5["symbol"],
                                 "tf": res5["tf"],
@@ -207,25 +214,26 @@ def run():
                                 "caption": f"Signal debug log for {res5.get('symbol')} {res5.get('tf')}",
                                 "orderbook_result": orderbook_result,
                                 "density_result": density_result,
-                                "entry_price": res5.get("price")
+                                "entry_price": res5.get("price"),
+                                "fired_time_utc": fired_time_utc
                             })
+                            
+                            # DEPRECATED: Still calculate entry_idx for backward compatibility
                             entry_idx = df5.index.get_loc(df5.index[-1])
+                            
                             pec_candidates.append(
-                                ("5min", symbol, res5.get("price"), bias, df5, entry_idx)
+                                ("5min", symbol, res5.get("price"), bias, df5, fired_time_utc)  # Use fired_time instead of entry_idx
                             )
+                            
+                            # Log with both fired_time (primary) and entry_idx (deprecated compatibility)
                             log_fired_signal(
                                 symbol=symbol,
                                 tf="5min",
                                 signal_type=res5.get("bias"),
-                                entry_idx=entry_idx
+                                entry_idx=entry_idx,  # Kept for backward compatibility
+                                fired_time=fired_time_utc  # Primary timestamp-based approach
                             )
                             if os.getenv("DRY_RUN", "false").lower() != "true":
-                                log_fired_signal(
-                                    symbol=res5.get("symbol"),
-                                    tf=res5.get("tf"),
-                                    signal_type=res5.get("bias"),
-                                    entry_idx=entry_idx,
-                                )
                                 send_telegram_alert(
                                     numbered_signal=numbered_signal,
                                     symbol=res5.get("symbol"),

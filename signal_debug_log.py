@@ -124,7 +124,7 @@ def dump_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weights_
         for line in verdict_lines:
             f.write("\n" + line)
 
-def log_fired_signal(symbol, tf, signal_type, entry_idx):
+def log_fired_signal(symbol, tf, signal_type, entry_idx=None, fired_time=None):
     """
     Log fired signal information to console for log-based parsing.
     
@@ -132,23 +132,41 @@ def log_fired_signal(symbol, tf, signal_type, entry_idx):
     log-based parsing by the PEC system, replacing the previous CSV approach.
     
     The CSV logging is maintained for backward compatibility but deprecated.
+    
+    Args:
+        symbol: Trading symbol (e.g., "BTC-USDT")
+        tf: Timeframe (e.g., "3min", "5min")
+        signal_type: Signal direction ("LONG" or "SHORT")
+        entry_idx: DEPRECATED - Index position in DataFrame (kept for backward compatibility)
+        fired_time: UTC timestamp when signal was fired (preferred method)
     """
     import csv, uuid, os
     from datetime import datetime
 
-    print(f"[DEBUG] log_fired_signal called: {symbol}, {tf}, {signal_type}, {entry_idx}")
+    print(f"[DEBUG] log_fired_signal called: {symbol}, {tf}, {signal_type}, entry_idx={entry_idx}, fired_time={fired_time}")
 
     # Generate fired signal entry for log-based parsing
     fired_uuid = str(uuid.uuid4())
-    fired_time = datetime.utcnow().isoformat()
+    
+    # Use provided fired_time or generate current UTC time
+    if fired_time is not None:
+        if isinstance(fired_time, str):
+            fired_time_str = fired_time
+        else:
+            fired_time_str = fired_time.isoformat() if hasattr(fired_time, 'isoformat') else str(fired_time)
+    else:
+        fired_time_str = datetime.utcnow().isoformat()
+    
+    # Keep entry_idx for backward compatibility, but mark as deprecated
+    entry_idx_compat = entry_idx if entry_idx is not None else -1
     
     # PRIMARY: Log to console for log-based parsing (NEW APPROACH)
-    print(f"[FIRED] Logged: {fired_uuid}, {symbol}, {tf}, {signal_type}, {fired_time}, {entry_idx}")
+    print(f"[FIRED] Logged: {fired_uuid}, {symbol}, {tf}, {signal_type}, {fired_time_str}, {entry_idx_compat}")
 
     # DEPRECATED: CSV logging kept for backward compatibility
     log_file = "fired_signals_temp.csv"
     header = ["uuid", "symbol", "tf", "signal_type", "fired_time", "entry_idx"]
-    row = [fired_uuid, symbol, tf, signal_type, fired_time, entry_idx]
+    row = [fired_uuid, symbol, tf, signal_type, fired_time_str, entry_idx_compat]
 
     print("[DEBUG] Current working directory:", os.getcwd())
     print("[DEBUG] Contents of cwd:", os.listdir())
@@ -179,6 +197,8 @@ def log_fired_signal(symbol, tf, signal_type, entry_idx):
         print("[DEBUG] CSV write completed successfully.")
     except Exception as e:
         print(f"[ERROR] log_fired_signal failed: {e}")
+
+    return fired_uuid
 
 def print_fired_signals_csv():
     print("\n[DEBUG] === Contents of fired_signals_temp.csv ===")
