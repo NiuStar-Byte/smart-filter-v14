@@ -241,12 +241,15 @@ def run_pec_backtest(
     Run PEC backtest using LIVE MODE log-based fired signal parsing.
     Automatically detects all symbols and timeframes from the logs - no manual configuration needed.
     
+    Only uses fired signals from logs.txt without any filter re-validation or re-analysis.
+    Finds closest OHLCV bar by timestamp and calculates PnL for next 5 bars.
+    
     Args:
         TOKENS: List of trading symbols (DEPRECATED - now auto-detected from logs)
         get_ohlcv: Function to fetch OHLCV data
         get_local_wib: Function to convert timezone to WIB
         PEC_WINDOW_MINUTES: Time window in minutes to look back for fired signals (default 720 = 12 hours)
-        PEC_BARS: Number of bars to simulate after signal entry
+        PEC_BARS: DEPRECATED - Always uses 5 bars for PnL calculation as per requirements
         OHLCV_LIMIT: Limit for OHLCV data fetching
     """
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
