@@ -19,10 +19,56 @@ MINUTES_LIMIT = 720
 # Can be changed to point to different log files if needed
 FIRED_SIGNALS_LOG_PATH = "logs.txt"
 
+def find_closest_ohlcv_bar(fired_time_utc, ohlcv_df, tf):
+    """
+    Find the closest OHLCV bar to the fired time using timestamp matching.
+    
+    Args:
+        fired_time_utc: pd.Timestamp or datetime in UTC
+        ohlcv_df: DataFrame with datetime index in UTC
+        tf: timeframe string ('3min', '5min', etc.)
+    
+    Returns:
+        tuple: (bar_index, bar_time, time_diff_minutes) or (None, None, None) if no match
+    """
+    try:
+        if not isinstance(fired_time_utc, pd.Timestamp):
+            fired_time_utc = pd.Timestamp(fired_time_utc)
+        
+        # Ensure fired_time is in UTC
+        if fired_time_utc.tz is None:
+            fired_time_utc = fired_time_utc.tz_localize('UTC')
+        elif fired_time_utc.tz != pd.Timestamp.now().tz_localize('UTC').tz:
+            fired_time_utc = fired_time_utc.tz_convert('UTC')
+        
+        # Ensure OHLCV index is in UTC
+        if ohlcv_df.index.tz is None:
+            ohlcv_times = pd.to_datetime(ohlcv_df.index).tz_localize('UTC')
+        else:
+            ohlcv_times = pd.to_datetime(ohlcv_df.index).tz_convert('UTC')
+        
+        # Find the closest bar by absolute time difference
+        time_diffs = (ohlcv_times - fired_time_utc).abs()
+        closest_idx = time_diffs.idxmin()
+        closest_bar_idx = ohlcv_df.index.get_loc(closest_idx)
+        closest_bar_time = ohlcv_times[closest_idx]
+        time_diff_minutes = abs((closest_bar_time - fired_time_utc).total_seconds() / 60)
+        
+        # Log the matching details
+        print(f"[TIMESTAMP_MATCH] Signal fired: {fired_time_utc}")
+        print(f"[TIMESTAMP_MATCH] Closest bar: {closest_bar_time} (idx: {closest_bar_idx})")
+        print(f"[TIMESTAMP_MATCH] Time difference: {time_diff_minutes:.2f} minutes")
+        
+        return closest_bar_idx, closest_bar_time, time_diff_minutes
+        
+    except Exception as e:
+        print(f"[TIMESTAMP_MATCH_ERROR] Failed to match timestamp: {e}")
+        return None, None, None
+
 def load_fired_signals_from_log(log_file_path=None, minutes_limit=None):
     """
     Parse fired signals from LIVE MODE LOGS, extracting only those from the last 'minutes_limit' minutes.
-    Expected log format: [FIRED] Logged: {uuid}, {symbol}, {tf}, {signal_type}, {local_timestamp}, {other_field}
+    Expected log format: [FIRED] Logged: {uuid}, {symbol}, {tf}, {signal_type}, {local_timestamp}, {entry_idx}
     
     Args:
         log_file_path (str): Path to log file. If None, uses FIRED_SIGNALS_LOG_PATH.
@@ -237,40 +283,42 @@ def run_pec_backtest(
             print(f"[BACKTEST PEC] Processing {symbol} {tf} ({len(relevant_signals)} signals)...")
             
             for signal in relevant_signals:
-                entry_idx = signal["entry_idx"]
-                fired_time = pd.to_datetime(signal["fired_time"])
+                fired_time_utc = pd.to_datetime(signal["fired_time"])
+                entry_idx_deprecated = signal.get("entry_idx")  # Keep for backward compatibility only
 
                 df = get_ohlcv(symbol, interval=tf, limit=OHLCV_LIMIT)
-                if df is None or df.empty or entry_idx >= len(df):
-                    print(f"[PEC] No data or entry_idx out of range for {symbol} {tf}. Skipping.")
+                if df is None or df.empty:
+                    print(f"[PEC] No OHLCV data available for {symbol} {tf}. Skipping.")
                     continue
-                    
-                print(f"[DEBUG] Fired_time from log: {fired_time}")
-                print(f"[DEBUG] Fired_time floored: {fired_time.floor('5T')}")
-                print(f"[DEBUG] Last 5 DataFrame bars: {df.index[-5:]}")
-                print(f"[DEBUG] DataFrame bar at entry_idx ({entry_idx}): {df.index[entry_idx]}")
-    
-                times = pd.to_datetime(df.index)
-
-                # --- Debug prints for time alignment ---
-                floor_str = '3T' if tf in ('3min', '3m') else '5T'
-                print(f"[DEBUG] Fired_time from log: {fired_time}")
-                print(f"[DEBUG] Fired_time floored: {fired_time.floor(floor_str)}")
-                print(f"[DEBUG] First DataFrame bar: {times[0]}")
-                print(f"[DEBUG] Last 5 DataFrame bars: {times[-5:]}")
-                print(f"[DEBUG] DataFrame bar at entry_idx ({entry_idx}): {times[entry_idx]}")
-                print(f"[DEBUG] entry_idx: {entry_idx}, DataFrame length: {len(df)}")
-                # --- End debug prints ---
-
-                if not pd.Timestamp(times[entry_idx]).floor('s') == fired_time.floor('s'):
-                    print(f"[PEC] entry_idx time mismatch for {symbol} {tf} @ idx {entry_idx}. Skipping.")
+                
+                # NEW: Use timestamp-based matching instead of entry_idx
+                entry_idx, matched_bar_time, time_diff_minutes = find_closest_ohlcv_bar(fired_time_utc, df, tf)
+                
+                if entry_idx is None:
+                    print(f"[PEC] Failed to match timestamp for {symbol} {tf} fired at {fired_time_utc}. Skipping.")
                     continue
-
+                
+                # Validate time difference (should be reasonable for the timeframe)
+                max_allowed_diff = 3 if tf in ('3min', '3m') else 5  # minutes
+                if time_diff_minutes > max_allowed_diff:
+                    print(f"[PEC] Time difference too large ({time_diff_minutes:.2f} min > {max_allowed_diff} min) for {symbol} {tf}. Skipping.")
+                    continue
+                
+                # Debug comparison with deprecated entry_idx if available
+                if entry_idx_deprecated is not None and entry_idx_deprecated < len(df):
+                    deprecated_bar_time = pd.to_datetime(df.index[entry_idx_deprecated])
+                    print(f"[DEBUG] Timestamp match vs deprecated entry_idx:")
+                    print(f"[DEBUG]   Timestamp match: idx={entry_idx}, time={matched_bar_time}")
+                    print(f"[DEBUG]   Deprecated idx:  idx={entry_idx_deprecated}, time={deprecated_bar_time}")
+                    if abs(entry_idx - entry_idx_deprecated) > 1:
+                        print(f"[WARNING] Large difference between timestamp matching and deprecated entry_idx!")
+                
+                # Use timestamp-matched entry point for simulation
                 df_slice = df.iloc[:entry_idx+1]
                 sf = SmartFilter(symbol, df_slice, df3m=df_slice, df5m=df_slice, tf=tf)
                 res = sf.analyze()
                 if not (isinstance(res, dict) and res.get("valid_signal") is True):
-                    print(f"[PEC] Signal not valid at idx {entry_idx} for {symbol} {tf}. Skipping.")
+                    print(f"[PEC] Signal not valid at timestamp-matched idx {entry_idx} for {symbol} {tf}. Skipping.")
                     continue
 
                 if entry_idx + PEC_BARS >= len(df):
@@ -303,9 +351,11 @@ def run_pec_backtest(
                     
                 pnl_pct = 100 * pnl_abs / 100
                 win_loss = "WIN" if pnl_abs > 0 else "LOSS"
-                exit_time = times[exit_idx]
+                
+                # Use timestamp-matched times for reporting (converted to local for display)
+                exit_time = pd.to_datetime(df.index[exit_idx])
                 bar_exit = PEC_BARS
-                signal_time = times[entry_idx].replace(microsecond=0)
+                signal_time = matched_bar_time.replace(microsecond=0)  # Use the matched bar time
 
                 pec_result = {
                     'signal_type': signal_type,
@@ -328,6 +378,8 @@ def run_pec_backtest(
                     'exit_bar': bar_exit,
                     'signal_time': signal_time.strftime("%Y-%m-%d %H:%M:%S"),
                 }
+                
+                print(f"[PEC_SUCCESS] {symbol} {tf} {signal_type}: Entry@{entry_price:.6f} -> Exit@{exit_price:.6f} = {pnl_abs:+.2f}% ({win_loss})")
                 pec_blocks.append(pec_result)
             print(f"[BACKTEST PEC] Done for {symbol} {tf}.")
 
