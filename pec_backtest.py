@@ -188,9 +188,9 @@ def load_fired_signals(minutes_limit=None):
     return signals
 
 def save_to_csv(results, filename="pec_results.csv"):
+    # Simplified headers for logs-only backtest (removed filter-related metrics)
     headers = ["Signal Type", "Symbol", "TF", "Entry Time", "Entry Price", "Exit Price",
-               "PnL ($)", "PnL (%)", "Score", "Max Score", "Confidence", "Weighted Confidence",
-               "Gatekeepers Passed", "Filter Results", "GK Flags", "Result", "Exit Time", "# BAR Exit", "Signal Time"]
+               "PnL ($)", "PnL (%)", "Result", "Exit Time", "# BAR Exit", "Signal Time"]
 
     file_exists = os.path.isfile(filename)
     with open(filename, mode='a', newline='') as file:
@@ -212,13 +212,6 @@ def save_to_csv(results, filename="pec_results.csv"):
                 result.get('exit_price', ''),
                 result.get('pnl_abs', ''),
                 result.get('pnl_pct', ''),
-                result.get('score', ''),
-                result.get('score_max', ''),
-                result.get('confidence', ''),
-                result.get('weighted_confidence', ''),
-                result.get('gatekeepers_passed', ''),
-                result.get('filter_results', ''),
-                result.get('gk_flags', ''),
                 result.get('win_loss', ''),
                 result.get('exit_time', ''),
                 result.get('exit_bar', ''),
@@ -348,13 +341,6 @@ def run_pec_backtest(
                     'exit_price': exit_price,
                     'pnl_abs': pnl_abs,
                     'pnl_pct': pnl_pct,
-                    'score': 'N/A',  # No filter analysis performed
-                    'score_max': 'N/A',  # No filter analysis performed  
-                    'confidence': 'N/A',  # No filter analysis performed
-                    'weighted_confidence': 'N/A',  # No filter analysis performed
-                    'gatekeepers_passed': 'N/A',  # No filter analysis performed
-                    'filter_results': 'N/A',  # No filter analysis performed
-                    'gk_flags': 'N/A',  # No filter analysis performed
                     'win_loss': win_loss,
                     'exit_time': exit_time.strftime("%Y-%m-%d %H:%M:%S"),
                     'exit_bar': bar_exit,
