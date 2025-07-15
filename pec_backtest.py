@@ -23,46 +23,43 @@ FIRED_SIGNALS_LOG_PATH = "logs.txt"
 def find_closest_ohlcv_bar(fired_time_utc, ohlcv_df, tf):
     """
     Find the closest OHLCV bar to the fired time using timestamp matching.
-    
+
     Args:
         fired_time_utc: pd.Timestamp or datetime in UTC
         ohlcv_df: DataFrame with datetime index in UTC
         tf: timeframe string ('3min', '5min', etc.)
-    
+
     Returns:
         tuple: (bar_index, bar_time, time_diff_minutes) or (None, None, None) if no match
     """
     try:
+        import numpy as np
+        import pandas as pd
+
+        # Ensure fired_time_utc is a pd.Timestamp and timezone-naive
         if not isinstance(fired_time_utc, pd.Timestamp):
             fired_time_utc = pd.Timestamp(fired_time_utc)
-        
-        # Ensure fired_time is in UTC
-        if fired_time_utc.tz is None:
-            fired_time_utc = fired_time_utc.tz_localize('UTC')
-        elif fired_time_utc.tz != pd.Timestamp.now().tz_localize('UTC').tz:
-            fired_time_utc = fired_time_utc.tz_convert('UTC')
-        
-        # Ensure OHLCV index is in UTC
-        if ohlcv_df.index.tz is None:
-            ohlcv_times = pd.to_datetime(ohlcv_df.index).tz_localize('UTC')
-        else:
-            ohlcv_times = pd.to_datetime(ohlcv_df.index).tz_convert('UTC')
-        
-        # Find the closest bar by absolute time difference
+        if fired_time_utc.tzinfo is not None:
+            fired_time_utc = fired_time_utc.tz_convert(None)
+
+        # Ensure OHLCV index is datetime and timezone-naive
+        ohlcv_times = pd.to_datetime(ohlcv_df.index)
+        if ohlcv_times.tz is not None:
+            ohlcv_times = ohlcv_times.tz_convert(None)
+
+        # Calculate absolute time difference and find closest bar (integer index)
         time_diffs = np.abs(ohlcv_times - fired_time_utc)
-        time_diffs = pd.Series(time_diffs, index=ohlcv_times)
-        closest_idx = time_diffs.idxmin()
-        closest_bar_idx = ohlcv_df.index.get_loc(closest_idx)
-        closest_bar_time = ohlcv_times[closest_idx]
+        closest_bar_idx = time_diffs.argmin()  # Always an integer
+        closest_bar_time = ohlcv_times[closest_bar_idx]
         time_diff_minutes = abs((closest_bar_time - fired_time_utc).total_seconds() / 60)
-        
+
         # Log the matching details
         print(f"[TIMESTAMP_MATCH] Signal fired: {fired_time_utc}")
         print(f"[TIMESTAMP_MATCH] Closest bar: {closest_bar_time} (idx: {closest_bar_idx})")
         print(f"[TIMESTAMP_MATCH] Time difference: {time_diff_minutes:.2f} minutes")
-        
+
         return closest_bar_idx, closest_bar_time, time_diff_minutes
-        
+
     except Exception as e:
         print(f"[TIMESTAMP_MATCH_ERROR] Failed to match timestamp: {e}")
         return None, None, None
