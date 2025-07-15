@@ -50,6 +50,7 @@ def find_closest_ohlcv_bar(fired_time_utc, ohlcv_df, tf):
         
         # Find the closest bar by absolute time difference
         time_diffs = np.abs(ohlcv_times - fired_time_utc)
+        time_diffs = pd.Series(time_diffs, index=ohlcv_times)
         closest_idx = time_diffs.idxmin()
         closest_bar_idx = ohlcv_df.index.get_loc(closest_idx)
         closest_bar_time = ohlcv_times[closest_idx]
