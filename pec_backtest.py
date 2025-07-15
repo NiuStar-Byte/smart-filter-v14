@@ -8,8 +8,6 @@ import datetime
 import numpy as np
 from datetime import timezone
 from collections import defaultdict
-from smart_filter import SmartFilter
-from pec_engine import run_pec_check
 from telegram_alert import send_telegram_file
 
 # Set this to limit simulation to only recent fired signals (e.g., 720 minutes = 12 hours)
@@ -312,35 +310,17 @@ def run_pec_backtest(
                     if abs(entry_idx - entry_idx_deprecated) > 1:
                         print(f"[WARNING] Large difference between timestamp matching and deprecated entry_idx!")
                 
-                # Use timestamp-matched entry point for simulation
-                df_slice = df.iloc[:entry_idx+1]
-                sf = SmartFilter(symbol, df_slice, df3m=df_slice, df5m=df_slice, tf=tf)
-                res = sf.analyze()
-                if not (isinstance(res, dict) and res.get("valid_signal") is True):
-                    print(f"[PEC] Signal not valid at timestamp-matched idx {entry_idx} for {symbol} {tf}. Skipping.")
-                    continue
-
-                if entry_idx + PEC_BARS >= len(df):
+                # Check if enough bars available for PnL calculation (5 bars as per requirements)
+                bars_needed = 5  # Fixed to 5 bars as per problem statement
+                if entry_idx + bars_needed >= len(df):
                     print(f"[PEC] Not enough bars for exit simulation for {symbol} {tf} @ idx {entry_idx}. Skipping.")
                     continue
 
                 entry_price = float(df["close"].iloc[entry_idx])
-                exit_idx = entry_idx + PEC_BARS
+                exit_idx = entry_idx + bars_needed
                 exit_price = float(df["close"].iloc[exit_idx])
                 # Use signal_type from logs instead of analyzing again
                 signal_type = signal.get("signal_type", "LONG").upper()
-                score = res.get("score")
-                score_max = res.get("score_max")
-                passes = res.get("passes")
-                gk_total = res.get("gatekeepers_total")
-                confidence = res.get("confidence")
-                weighted = res.get("passed_weight")
-                total_weight = res.get("total_weight")
-                filter_results = res.get("filter_results", {})
-                filter_passes = {k: ("✅" if v else "❌") for k, v in filter_results.items()}
-                filter_pass_str = ", ".join(f"{k}:{v}" for k, v in filter_passes.items())
-                gk_flags = getattr(sf, "gatekeepers", [])
-                gk_pass_str = ", ".join(str(gk) for gk in gk_flags)
                 
                 # Calculate PnL based on signal direction from logs
                 if signal_type == "LONG":
@@ -353,7 +333,7 @@ def run_pec_backtest(
                 
                 # Use timestamp-matched times for reporting (converted to local for display)
                 exit_time = pd.to_datetime(df.index[exit_idx])
-                bar_exit = PEC_BARS
+                bar_exit = bars_needed
                 signal_time = matched_bar_time.replace(microsecond=0)  # Use the matched bar time
 
                 pec_result = {
@@ -365,13 +345,13 @@ def run_pec_backtest(
                     'exit_price': exit_price,
                     'pnl_abs': pnl_abs,
                     'pnl_pct': pnl_pct,
-                    'score': score,
-                    'score_max': score_max,
-                    'confidence': confidence,
-                    'weighted_confidence': weighted,
-                    'gatekeepers_passed': passes,
-                    'filter_results': filter_pass_str,
-                    'gk_flags': gk_pass_str,
+                    'score': 'N/A',  # No filter analysis performed
+                    'score_max': 'N/A',  # No filter analysis performed  
+                    'confidence': 'N/A',  # No filter analysis performed
+                    'weighted_confidence': 'N/A',  # No filter analysis performed
+                    'gatekeepers_passed': 'N/A',  # No filter analysis performed
+                    'filter_results': 'N/A',  # No filter analysis performed
+                    'gk_flags': 'N/A',  # No filter analysis performed
                     'win_loss': win_loss,
                     'exit_time': exit_time.strftime("%Y-%m-%d %H:%M:%S"),
                     'exit_bar': bar_exit,
