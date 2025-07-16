@@ -271,7 +271,7 @@ def run_pec_backtest(
             print(f"[BACKTEST PEC] Processing {symbol} {tf} ({len(relevant_signals)} signals)...")
             
             for signal in relevant_signals:
-                fired_time_utc = pd.to_datetime(signal["fired_time"])
+                fired_time_utc = pd.to_datetime(signal["entry_time"])
                 entry_idx_deprecated = signal.get("entry_idx")  # Keep for backward compatibility only
 
                 df = get_ohlcv(symbol, interval=tf, limit=OHLCV_LIMIT)
