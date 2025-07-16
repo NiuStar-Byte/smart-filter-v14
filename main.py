@@ -156,8 +156,15 @@ def run():
                                 symbol=symbol,
                                 tf="3min",
                                 signal_type=res3.get("bias"),
-                                entry_idx=entry_idx,  # Kept for backward compatibility
-                                fired_time=fired_time_utc  # Primary timestamp-based approach
+                                entry_idx=entry_idx,
+                                fired_time=fired_time_utc,
+                                score=res3.get("score"),
+                                max_score=res3.get("score_max"),
+                                passed=res3.get("passes"),
+                                max_passed=res3.get("gatekeepers_total"),
+                                weights=res3.get("passed_weight"),
+                                max_weights=res3.get("total_weight"),
+                                confidence_rate=res3.get("confidence")
                             )
                             if os.getenv("DRY_RUN", "false").lower() != "true":
                                 send_telegram_alert(
@@ -232,6 +239,13 @@ def run():
                                 signal_type=res5.get("bias"),
                                 entry_idx=entry_idx,  # Kept for backward compatibility
                                 fired_time=fired_time_utc  # Primary timestamp-based approach
+                                score=res5.get("score"),
+                                max_score=res5.get("score_max"),
+                                passed=res5.get("passes"),
+                                max_passed=res5.get("gatekeepers_total"),
+                                weights=res5.get("passed_weight"),
+                                max_weights=res5.get("total_weight"),
+                                confidence_rate=res5.get("confidence")
                             )
                             if os.getenv("DRY_RUN", "false").lower() != "true":
                                 send_telegram_alert(
