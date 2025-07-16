@@ -238,7 +238,7 @@ def run():
                                 tf="5min",
                                 signal_type=res5.get("bias"),
                                 entry_idx=entry_idx,  # Kept for backward compatibility
-                                fired_time=fired_time_utc  # Primary timestamp-based approach
+                                fired_time=fired_time_utc,  # Primary timestamp-based approach
                                 score=res5.get("score"),
                                 max_score=res5.get("score_max"),
                                 passed=res5.get("passes"),
