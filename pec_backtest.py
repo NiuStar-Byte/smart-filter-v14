@@ -8,8 +8,6 @@ import datetime
 import numpy as np
 from datetime import timezone
 from collections import defaultdict
-from smart_filter import SmartFilter
-from pec_engine import run_pec_check
 from telegram_alert import send_telegram_file
 
 # Set this to limit simulation to only recent fired signals (e.g., 720 minutes = 12 hours)
@@ -190,9 +188,9 @@ def load_fired_signals(minutes_limit=None):
     return signals
 
 def save_to_csv(results, filename="pec_results.csv"):
+    # Simplified headers for logs-only backtest (removed filter-related metrics)
     headers = ["Signal Type", "Symbol", "TF", "Entry Time", "Entry Price", "Exit Price",
-               "PnL ($)", "PnL (%)", "Score", "Max Score", "Confidence", "Weighted Confidence",
-               "Gatekeepers Passed", "Filter Results", "GK Flags", "Result", "Exit Time", "# BAR Exit", "Signal Time"]
+               "PnL ($)", "PnL (%)", "Result", "Exit Time", "# BAR Exit", "Signal Time"]
 
     file_exists = os.path.isfile(filename)
     with open(filename, mode='a', newline='') as file:
@@ -214,13 +212,6 @@ def save_to_csv(results, filename="pec_results.csv"):
                 result.get('exit_price', ''),
                 result.get('pnl_abs', ''),
                 result.get('pnl_pct', ''),
-                result.get('score', ''),
-                result.get('score_max', ''),
-                result.get('confidence', ''),
-                result.get('weighted_confidence', ''),
-                result.get('gatekeepers_passed', ''),
-                result.get('filter_results', ''),
-                result.get('gk_flags', ''),
                 result.get('win_loss', ''),
                 result.get('exit_time', ''),
                 result.get('exit_bar', ''),
@@ -243,12 +234,15 @@ def run_pec_backtest(
     Run PEC backtest using LIVE MODE log-based fired signal parsing.
     Automatically detects all symbols and timeframes from the logs - no manual configuration needed.
     
+    Only uses fired signals from logs.txt without any filter re-validation or re-analysis.
+    Finds closest OHLCV bar by timestamp and calculates PnL for next 5 bars.
+    
     Args:
         TOKENS: List of trading symbols (DEPRECATED - now auto-detected from logs)
         get_ohlcv: Function to fetch OHLCV data
         get_local_wib: Function to convert timezone to WIB
         PEC_WINDOW_MINUTES: Time window in minutes to look back for fired signals (default 720 = 12 hours)
-        PEC_BARS: Number of bars to simulate after signal entry
+        PEC_BARS: DEPRECATED - Always uses 5 bars for PnL calculation as per requirements
         OHLCV_LIMIT: Limit for OHLCV data fetching
     """
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
@@ -312,35 +306,17 @@ def run_pec_backtest(
                     if abs(entry_idx - entry_idx_deprecated) > 1:
                         print(f"[WARNING] Large difference between timestamp matching and deprecated entry_idx!")
                 
-                # Use timestamp-matched entry point for simulation
-                df_slice = df.iloc[:entry_idx+1]
-                sf = SmartFilter(symbol, df_slice, df3m=df_slice, df5m=df_slice, tf=tf)
-                res = sf.analyze()
-                if not (isinstance(res, dict) and res.get("valid_signal") is True):
-                    print(f"[PEC] Signal not valid at timestamp-matched idx {entry_idx} for {symbol} {tf}. Skipping.")
-                    continue
-
-                if entry_idx + PEC_BARS >= len(df):
+                # Check if enough bars available for PnL calculation (5 bars as per requirements)
+                bars_needed = 5  # Fixed to 5 bars as per problem statement
+                if entry_idx + bars_needed >= len(df):
                     print(f"[PEC] Not enough bars for exit simulation for {symbol} {tf} @ idx {entry_idx}. Skipping.")
                     continue
 
                 entry_price = float(df["close"].iloc[entry_idx])
-                exit_idx = entry_idx + PEC_BARS
+                exit_idx = entry_idx + bars_needed
                 exit_price = float(df["close"].iloc[exit_idx])
                 # Use signal_type from logs instead of analyzing again
                 signal_type = signal.get("signal_type", "LONG").upper()
-                score = res.get("score")
-                score_max = res.get("score_max")
-                passes = res.get("passes")
-                gk_total = res.get("gatekeepers_total")
-                confidence = res.get("confidence")
-                weighted = res.get("passed_weight")
-                total_weight = res.get("total_weight")
-                filter_results = res.get("filter_results", {})
-                filter_passes = {k: ("✅" if v else "❌") for k, v in filter_results.items()}
-                filter_pass_str = ", ".join(f"{k}:{v}" for k, v in filter_passes.items())
-                gk_flags = getattr(sf, "gatekeepers", [])
-                gk_pass_str = ", ".join(str(gk) for gk in gk_flags)
                 
                 # Calculate PnL based on signal direction from logs
                 if signal_type == "LONG":
@@ -353,7 +329,7 @@ def run_pec_backtest(
                 
                 # Use timestamp-matched times for reporting (converted to local for display)
                 exit_time = pd.to_datetime(df.index[exit_idx])
-                bar_exit = PEC_BARS
+                bar_exit = bars_needed
                 signal_time = matched_bar_time.replace(microsecond=0)  # Use the matched bar time
 
                 pec_result = {
@@ -365,13 +341,6 @@ def run_pec_backtest(
                     'exit_price': exit_price,
                     'pnl_abs': pnl_abs,
                     'pnl_pct': pnl_pct,
-                    'score': score,
-                    'score_max': score_max,
-                    'confidence': confidence,
-                    'weighted_confidence': weighted,
-                    'gatekeepers_passed': passes,
-                    'filter_results': filter_pass_str,
-                    'gk_flags': gk_pass_str,
                     'win_loss': win_loss,
                     'exit_time': exit_time.strftime("%Y-%m-%d %H:%M:%S"),
                     'exit_bar': bar_exit,
