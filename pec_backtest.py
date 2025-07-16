@@ -9,6 +9,7 @@ import numpy as np
 from datetime import timezone
 from collections import defaultdict
 from telegram_alert import send_telegram_file
+from signal_debug_log import parse_fired_log_line
 
 # Set this to limit simulation to only recent fired signals (e.g., 720 minutes = 12 hours)
 MINUTES_LIMIT = 720
@@ -64,15 +65,8 @@ def find_closest_ohlcv_bar(fired_time_utc, ohlcv_df, tf):
 
 def load_fired_signals_from_log(log_file_path=None, minutes_limit=None):
     """
-    Parse fired signals from LIVE MODE LOGS, extracting only those from the last 'minutes_limit' minutes.
-    Expected log format: [FIRED] Logged: {uuid}, {symbol}, {tf}, {signal_type}, {local_timestamp}, {entry_idx}
-    
-    Args:
-        log_file_path (str): Path to log file. If None, uses FIRED_SIGNALS_LOG_PATH.
-        minutes_limit (int): Only include signals from last N minutes using local timestamp. If None, includes all.
-    
-    Returns:
-        tuple: (signals_list, unique_symbols_set, unique_timeframes_set)
+    Parse fired signals from LIVE MODE LOGS, extracting those from the last 'minutes_limit' minutes.
+    Uses the full log parser for all fields.
     """
     signals = []
     unique_symbols = set()
@@ -85,61 +79,46 @@ def load_fired_signals_from_log(log_file_path=None, minutes_limit=None):
         if not os.path.exists(log_file_path):
             print(f"[LOG_PARSER] Log file not found: {log_file_path}")
             return signals, unique_symbols, unique_timeframes
-            
+
         with open(log_file_path, 'r') as file:
-            log_content = file.read()
+            lines = file.readlines()
         
-        # Regex pattern to match FIRED log entries from LIVE MODE
-        # Pattern: [FIRED] Logged: uuid, symbol, tf, signal_type, local_timestamp, other_field
-        pattern = r'\[FIRED\] Logged: ([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*(\d+)'
-        
-        lines = log_content.split('\n')
         now_utc = datetime.datetime.now(timezone.utc)
-        
+        cutoff_time = None
         if minutes_limit is not None:
             cutoff_time = now_utc - datetime.timedelta(minutes=minutes_limit)
-        else:
-            cutoff_time = None
-        
+
         for line in lines:
-            match = re.search(pattern, line.strip())
-            if match:
-                uuid_val, symbol, tf, signal_type, fired_time_str, entry_idx = match.groups()
-                
-                try:
-                    # Parse the local timestamp - handle ISO format with microseconds
-                    if 'T' in fired_time_str:
-                        # ISO format: 2025-07-13T09:10:28.802346 or with timezone
-                        if '+' in fired_time_str or 'Z' in fired_time_str:
-                            fired_dt = datetime.datetime.fromisoformat(fired_time_str.replace('Z', '+00:00'))
-                        else:
-                            # Treat as UTC if no timezone specified
-                            fired_dt = datetime.datetime.fromisoformat(fired_time_str).replace(tzinfo=timezone.utc)
+            line = line.strip()
+            if not line:
+                continue
+
+            result = parse_fired_log_line(line)
+            if not result or not result.get("symbol"):
+                continue
+
+            symbol_clean = result.get("symbol", "").strip()
+            tf_clean = result.get("tf", "").strip()
+            unique_symbols.add(symbol_clean)
+            unique_timeframes.add(tf_clean)
+
+            # Get the correct time field for filtering (entry_time is ISO format)
+            fired_time_str = result.get("entry_time", "")
+            try:
+                if 'T' in fired_time_str:
+                    # ISO format
+                    if '+' in fired_time_str or 'Z' in fired_time_str:
+                        fired_dt = datetime.datetime.fromisoformat(fired_time_str.replace('Z', '+00:00'))
                     else:
-                        # Try parsing as simple datetime string
-                        fired_dt = datetime.datetime.strptime(fired_time_str, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
-                    
-                    # Always collect symbols and timeframes for automated processing
-                    symbol_clean = symbol.strip()
-                    tf_clean = tf.strip()
-                    unique_symbols.add(symbol_clean)
-                    unique_timeframes.add(tf_clean)
-                    
-                    # Filter by time limit if specified (using local timestamp from logs)
-                    if cutoff_time is None or fired_dt >= cutoff_time:
-                        signals.append({
-                            "uuid": uuid_val.strip(),
-                            "symbol": symbol_clean,
-                            "tf": tf_clean,
-                            "signal_type": signal_type.strip(),
-                            "fired_time": fired_time_str.strip(),
-                            "entry_idx": int(entry_idx.strip())
-                        })
-                        
-                except Exception as e:
-                    print(f"[LOG_PARSER] Failed to parse signal line: {line.strip()}")
-                    print(f"[LOG_PARSER] Error: {e}")
-                    continue
+                        fired_dt = datetime.datetime.fromisoformat(fired_time_str).replace(tzinfo=timezone.utc)
+                else:
+                    fired_dt = datetime.datetime.strptime(fired_time_str, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+            except Exception as e:
+                print(f"[LOG_PARSER] Failed to parse time from: {fired_time_str}")
+                continue
+
+            if cutoff_time is None or fired_dt >= cutoff_time:
+                signals.append(result)
         
         print(f"[LOG_PARSER] Found {len(signals)} fired signals from LIVE MODE LOGS from last {minutes_limit or 'all'} minutes")
         print(f"[LOG_PARSER] Discovered {len(unique_symbols)} unique symbols: {sorted(unique_symbols)}")
@@ -149,6 +128,7 @@ def load_fired_signals_from_log(log_file_path=None, minutes_limit=None):
         print(f"[LOG_PARSER] Error reading log file {log_file_path}: {e}")
     
     return signals, unique_symbols, unique_timeframes
+
 
 # OBSOLETE: CSV-based signal loading (kept for backward compatibility)
 # This function is now replaced by load_fired_signals_from_log()
