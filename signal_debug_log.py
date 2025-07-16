@@ -3,6 +3,49 @@ from datetime import datetime
 import csv
 import uuid
 import os
+import re
+
+def parse_fired_log_line(line):
+    """
+    Parses a [FIRED] log line and returns a dict with all required fields.
+    Supports fields: SCORE, MAX SCORE, PASSED, MAX PASSED, WEIGHTS, MAX WEIGHTS, CONFIDENCE RATE.
+    Returns empty string for missing values (backward compatibility).
+    Example line:
+    [FIRED] Logged: 86ff64e8-ad63-4961-820b-d6ac9afaef46, AERO-USDT, 5min, LONG, 2025-07-16T11:44:16.217760, 99, SCORE: 17, MAX SCORE: 23, PASSED: 14, MAX PASSED: 17, WEIGHTS: 54.7, MAX WEIGHTS: 65.8, CONFIDENCE RATE: 83.1%
+    """
+    result = {}
+
+    # First part: id, symbol, tf, signal_type, entry_time, entry_price
+    match = re.match(
+        r'\[FIRED\] Logged: ([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+)',
+        line)
+    if not match:
+        return None  # Not a valid [FIRED] line
+    result['uuid'] = match.group(1)
+    result['symbol'] = match.group(2)
+    result['tf'] = match.group(3)
+    result['signal_type'] = match.group(4)
+    result['entry_time'] = match.group(5)
+    result['entry_price'] = match.group(6)
+
+    # Extract additional fields using regex
+    def extract(pattern, line, default=''):
+        m = re.search(pattern, line)
+        return m.group(1) if m else default
+
+    result['score'] = extract(r'SCORE:\s*([0-9\.]+)', line)
+    result['max_score'] = extract(r'MAX SCORE:\s*([0-9\.]+)', line)
+    result['passed'] = extract(r'PASSED:\s*([0-9\.]+)', line)
+    result['max_passed'] = extract(r'MAX PASSED:\s*([0-9\.]+)', line)
+    result['weights'] = extract(r'WEIGHTS:\s*([0-9\.]+)', line)
+    result['max_weights'] = extract(r'MAX WEIGHTS:\s*([0-9\.]+)', line)
+    result['confidence_rate'] = extract(r'CONFIDENCE RATE:\s*([0-9\.]+%?)', line)
+
+    # Backward compatibility: if any missing, set to ''
+    for field in ['score', 'max_score', 'passed', 'max_passed', 'weights', 'max_weights', 'confidence_rate']:
+        if field not in result or result[field] is None:
+            result[field] = ''
+    return result
 
 def dump_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weights_short, gatekeepers,
                          results_long=None, results_short=None,
