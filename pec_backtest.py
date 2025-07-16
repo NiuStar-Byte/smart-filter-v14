@@ -187,16 +187,24 @@ def load_fired_signals(minutes_limit=None):
     signals, _, _ = load_fired_signals_from_log(minutes_limit=minutes_limit or MINUTES_LIMIT)
     return signals
 
+import csv
+import os
+import datetime
+import pandas as pd
+
 def save_to_csv(results, filename="pec_results.csv"):
-    # Simplified headers for logs-only backtest (removed filter-related metrics)
-    headers = ["Signal Type", "Symbol", "TF", "Entry Time", "Entry Price", "Exit Price",
-               "PnL ($)", "PnL (%)", "Result", "Exit Time", "# BAR Exit", "Signal Time"]
+    headers = [
+        "Signal Type", "Symbol", "TF", "Entry Time", "Entry Price", "Exit Price",
+        "PnL ($)", "PnL (%)", "score", "max_score", "passed", "max_passed",
+        "weights", "max_weights", "confidence_rate", "Result", "Exit Time",
+        "# BAR Exit", "Signal Time"
+    ]
 
     file_exists = os.path.isfile(filename)
     with open(filename, mode='a', newline='') as file:
         writer = csv.writer(file)
         if not file_exists or os.stat(filename).st_size == 0:
-            writer.writerow(headers)  # Write header only if file doesn't exist or is empty
+            writer.writerow(headers)
         for result in results:
             signal_time = result.get("signal_time")
             if isinstance(signal_time, (datetime.datetime, pd.Timestamp)):
@@ -212,13 +220,20 @@ def save_to_csv(results, filename="pec_results.csv"):
                 result.get('exit_price', ''),
                 result.get('pnl_abs', ''),
                 result.get('pnl_pct', ''),
+                result.get('score', ''),
+                result.get('max_score', ''),
+                result.get('passed', ''),
+                result.get('max_passed', ''),
+                result.get('weights', ''),
+                result.get('max_weights', ''),
+                result.get('confidence_rate', ''),
                 result.get('win_loss', ''),
                 result.get('exit_time', ''),
                 result.get('exit_bar', ''),
                 signal_time or ''
             ])
     print(f"[{datetime.datetime.now()}] [PEC_BACKTEST] PEC results appended to {filename} ({len(results)} signals)")
-
+    
 print(">>> ENTERED pec_backtest.py", flush=True)
 def run_pec_backtest(
     TOKENS,
