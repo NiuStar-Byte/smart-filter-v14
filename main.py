@@ -283,6 +283,91 @@ def run():
                 except Exception as e:
                     print(f"[ERROR] Exception in processing 5min for {symbol}: {e}", flush=True)
 
+    def run_strategy():
+        try:
+            # Call the functions you want to process
+            macd_pass = smart_filter_instance._check_macd(direction="LONG")
+            print(f"MACD pass for LONG: {macd_pass}")
+
+            atr_momentum_pass = smart_filter_instance._check_atr_momentum_burst()
+            print(f"ATR Momentum Burst pass: {atr_momentum_pass}")
+
+            momentum_pass = smart_filter_instance._check_momentum()
+            print(f"Momentum pass: {momentum_pass}")
+
+            hats_pass = smart_filter_instance._check_hats()
+            print(f"HATS pass: {hats_pass}")
+
+            vwap_divergence_pass = smart_filter_instance._check_vwap_divergence()
+            print(f"VWAP Divergence pass: {vwap_divergence_pass}")
+
+            mtf_volume_agreement_pass = smart_filter_instance._check_mtf_volume_agreement()
+            print(f"MTF Volume Agreement pass: {mtf_volume_agreement_pass}")
+
+            hh_ll_trend_pass = smart_filter_instance._check_hh_ll()
+            print(f"HH/LL Trend pass: {hh_ll_trend_pass}")
+
+            ema_structure_pass = smart_filter_instance._check_ema_structure()
+            print(f"EMA Structure pass: {ema_structure_pass}")
+
+            chop_zone_pass = smart_filter_instance._check_chop_zone()
+            print(f"Chop Zone pass: {chop_zone_pass}")
+
+            candle_confirmation_pass = smart_filter_instance._check_candle_close()
+            print(f"Candle Confirmation pass: {candle_confirmation_pass}")
+
+            wick_dominance_pass = smart_filter_instance._check_wick_dominance()
+            print(f"Wick Dominance pass: {wick_dominance_pass}")
+
+            absorption_pass = smart_filter_instance._check_absorption()
+            print(f"Absorption pass: {absorption_pass}")
+
+            support_resistance_pass = smart_filter_instance._check_support_resistance()
+            print(f"Support/Resistance pass: {support_resistance_pass}")
+
+            smart_money_bias_pass = smart_filter_instance._check_smart_money_bias()
+            print(f"Smart Money Bias pass: {smart_money_bias_pass}")
+
+            spread_filter_pass = smart_filter_instance._check_spread_filter()
+            print(f"Spread Filter pass: {spread_filter_pass}")
+
+            liquidity_pool_pass = smart_filter_instance._check_liquidity_pool()
+            print(f"Liquidity Pool pass: {liquidity_pool_pass}")
+
+            liquidity_awareness_pass = smart_filter_instance._check_liquidity_awareness()
+            print(f"Liquidity Awareness pass: {liquidity_awareness_pass}")
+
+            trend_continuation_pass = smart_filter_instance._check_trend_continuation()
+            print(f"Trend Continuation pass: {trend_continuation_pass}")
+
+            volatility_model_pass = smart_filter_instance._check_volatility_model()
+            print(f"Volatility Model pass: {volatility_model_pass}")
+
+            atr_momentum_burst_pass = smart_filter_instance._check_atr_momentum_burst()
+            print(f"ATR Momentum Burst pass: {atr_momentum_burst_pass}")
+
+            volatility_squeeze_pass = smart_filter_instance._check_volatility_squeeze()
+            print(f"Volatility Squeeze pass: {volatility_squeeze_pass}")
+
+            # Example of using the SuperGK feature
+            orderbook_result = smart_filter_instance.get_order_wall_delta(symbol)
+            density_result = smart_filter_instance.get_resting_order_density(symbol)
+            super_gk_check = smart_filter_instance.super_gk_aligned(bias="LONG", orderbook_result=orderbook_result, density_result=density_result)
+            print(f"SuperGK Check: {super_gk_check}")
+
+            # Define further strategy logic here, e.g., if all filters pass, issue buy/sell signal
+            if macd_pass and atr_momentum_pass and momentum_pass and hats_pass and super_gk_check:
+                print("Conditions met, proceed with trade execution")
+                # Here, integrate trade execution logic like calling Binance or Kucoin API to execute orders
+
+        except Exception as e:
+            print(f"Error in strategy execution: {e}")
+
+    # Run strategy at defined intervals
+    while True:
+        run_strategy()
+        time.sleep(60)  # Example: Check every minute
+
             # --- Send up to 2 debug files to Telegram (Signal Debug txt sampling) ---
             try:
                 if valid_debugs:
