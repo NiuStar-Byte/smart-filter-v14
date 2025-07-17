@@ -58,7 +58,7 @@ def send_telegram_alert(
         f"📊 Score: {score}/{score_max}\n"
         f"🎯 Passed: {passed}/{gatekeepers_total}\n"
         f"{confidence_icon} Confidence: {confidence:.1f}%\n"
-        f"🏋️‍♀️ Weighted: {weighted_str})"
+        f"🏋️‍♀️ Weighted: {weighted_str}"
     )
 
     payload = {
