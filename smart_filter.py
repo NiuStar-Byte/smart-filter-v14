@@ -336,35 +336,35 @@ class SmartFilter:
             self.df['ema20'].iat[-1] > self.df['ema20'].iat[-2]
         )
 
-def _check_macd(self):
-    e12 = self.df['close'].ewm(span=12).mean()
-    e26 = self.df['close'].ewm(span=26).mean()
-    macd = e12 - e26
-    signal = macd.ewm(span=9).mean()
+    def _check_macd(self):
+        e12 = self.df['close'].ewm(span=12).mean()
+        e26 = self.df['close'].ewm(span=26).mean()
+        macd = e12 - e26
+        signal = macd.ewm(span=9).mean()
 
-    # Conditions for LONG (Bullish)
-    condition_1_long = macd.iat[-1] > signal.iat[-1]  # MACD above Signal Line
-    condition_2_long = macd.iat[-1] > macd.iat[-2]   # MACD is rising
-    condition_3_long = self.df['close'].iat[-1] > self.df['close'].iat[-2]  # Price action rising
-    condition_4_long = macd.iat[-1] > signal.iat[-1] and macd.iat[-1] > macd.iat[-2]  # MACD Divergence
+        # Conditions for LONG (Bullish)
+        condition_1_long = macd.iat[-1] > signal.iat[-1]  # MACD above Signal Line
+        condition_2_long = macd.iat[-1] > macd.iat[-2]   # MACD is rising
+        condition_3_long = self.df['close'].iat[-1] > self.df['close'].iat[-2]  # Price action rising
+        condition_4_long = macd.iat[-1] > signal.iat[-1] and macd.iat[-1] > macd.iat[-2]  # MACD Divergence
 
-    # Conditions for SHORT (Bearish)
-    condition_1_short = macd.iat[-1] < signal.iat[-1]  # MACD below Signal Line
-    condition_2_short = macd.iat[-1] < macd.iat[-2]   # MACD is falling
-    condition_3_short = self.df['close'].iat[-1] < self.df['close'].iat[-2]  # Price action falling
-    condition_4_short = macd.iat[-1] < signal.iat[-1] and macd.iat[-1] < macd.iat[-2]  # MACD Divergence
+        # Conditions for SHORT (Bearish)
+        condition_1_short = macd.iat[-1] < signal.iat[-1]  # MACD below Signal Line
+        condition_2_short = macd.iat[-1] < macd.iat[-2]   # MACD is falling
+        condition_3_short = self.df['close'].iat[-1] < self.df['close'].iat[-2]  # Price action falling
+        condition_4_short = macd.iat[-1] < signal.iat[-1] and macd.iat[-1] < macd.iat[-2]  # MACD Divergence
 
-    # Count the number of conditions met for LONG and SHORT
-    long_conditions_met = sum([condition_1_long, condition_2_long, condition_3_long, condition_4_long])
-    short_conditions_met = sum([condition_1_short, condition_2_short, condition_3_short, condition_4_short])
+        # Count the number of conditions met for LONG and SHORT
+        long_conditions_met = sum([condition_1_long, condition_2_long, condition_3_long, condition_4_long])
+        short_conditions_met = sum([condition_1_short, condition_2_short, condition_3_short, condition_4_short])
 
-    # If 3 out of 4 conditions are met, we pass the filter
-    if long_conditions_met >= 3:
-        return True  # LONG is valid
-    elif short_conditions_met >= 3:
-        return True  # SHORT is valid
-    else:
-        return False  # Neither LONG nor SHORT is valid
+        # If 3 out of 4 conditions are met, we pass the filter
+        if long_conditions_met >= 3:
+            return True  # LONG is valid
+        elif short_conditions_met >= 3:
+            return True  # SHORT is valid
+        else:
+            return False  # Neither LONG nor SHORT is valid
 
     def _check_macd_long(self):
         e12 = self.df['close'].ewm(span=12).mean()
