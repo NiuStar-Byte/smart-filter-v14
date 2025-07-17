@@ -333,12 +333,68 @@ class SmartFilter:
             self.df['ema20'].iat[-1] > self.df['ema20'].iat[-2]
         )
 
-    def _check_macd(self):
+def _check_macd(self):
+    e12 = self.df['close'].ewm(span=12).mean()
+    e26 = self.df['close'].ewm(span=26).mean()
+    macd = e12 - e26
+    signal = macd.ewm(span=9).mean()
+
+    # Conditions for LONG (Bullish)
+    condition_1_long = macd.iat[-1] > signal.iat[-1]  # MACD above Signal Line
+    condition_2_long = macd.iat[-1] > macd.iat[-2]   # MACD is rising
+    condition_3_long = self.df['close'].iat[-1] > self.df['close'].iat[-2]  # Price action rising
+    condition_4_long = macd.iat[-1] > signal.iat[-1] and macd.iat[-1] > macd.iat[-2]  # MACD Divergence
+
+    # Conditions for SHORT (Bearish)
+    condition_1_short = macd.iat[-1] < signal.iat[-1]  # MACD below Signal Line
+    condition_2_short = macd.iat[-1] < macd.iat[-2]   # MACD is falling
+    condition_3_short = self.df['close'].iat[-1] < self.df['close'].iat[-2]  # Price action falling
+    condition_4_short = macd.iat[-1] < signal.iat[-1] and macd.iat[-1] < macd.iat[-2]  # MACD Divergence
+
+    # Count the number of conditions met for LONG and SHORT
+    long_conditions_met = sum([condition_1_long, condition_2_long, condition_3_long, condition_4_long])
+    short_conditions_met = sum([condition_1_short, condition_2_short, condition_3_short, condition_4_short])
+
+    # If 3 out of 4 conditions are met, we pass the filter
+    if long_conditions_met >= 3:
+        return True  # LONG is valid
+    elif short_conditions_met >= 3:
+        return True  # SHORT is valid
+    else:
+        return False  # Neither LONG nor SHORT is valid
+
+    def _check_macd_long(self):
         e12 = self.df['close'].ewm(span=12).mean()
         e26 = self.df['close'].ewm(span=26).mean()
         macd = e12 - e26
         signal = macd.ewm(span=9).mean()
-        return macd.iat[-1] > signal.iat[-1] and macd.iat[-1] > macd.iat[-2]
+
+        # Condition 1: MACD above Signal Line (bullish crossover)
+        macd_above_signal = macd.iat[-1] > signal.iat[-1]
+        # Condition 2: MACD is rising (momentum confirmation)
+        macd_rising = macd.iat[-1] > macd.iat[-2]
+        # Condition 3: Price action confirming the trend (closing above the previous bar)
+        price_action_up = self.df['close'].iat[-1] > self.df['close'].iat[-2]
+        # Condition 4: Divergence confirmation (price rising while MACD increasing)
+        macd_divergence = (macd.iat[-1] > macd.iat[-2]) and (self.df['close'].iat[-1] > self.df['close'].iat[-2])
+        return macd_above_signal and macd_rising and price_action_up and macd_divergence
+
+    def _check_macd_short(self):
+        e12 = self.df['close'].ewm(span=12).mean()
+        e26 = self.df['close'].ewm(span=26).mean()
+        macd = e12 - e26
+        signal = macd.ewm(span=9).mean()
+
+        # Condition 1: MACD below Signal Line (bearish crossover)
+        macd_below_signal = macd.iat[-1] < signal.iat[-1]
+        # Condition 2: MACD is falling (momentum confirmation)
+        macd_falling = macd.iat[-1] < macd.iat[-2]
+        # Condition 3: Price action confirming the trend (closing below the previous bar)
+        price_action_down = self.df['close'].iat[-1] < self.df['close'].iat[-2]
+        # Condition 4: Divergence confirmation (price falling while MACD decreasing)
+        macd_divergence = (macd.iat[-1] < macd.iat[-2]) and (self.df['close'].iat[-1] < self.df['close'].iat[-2])
+        return macd_below_signal and macd_falling and price_action_down and macd_divergence
+
 
     def _check_momentum(self, roc_window=3):
         return self.df['close'].pct_change(roc_window).iat[-1] > 0
