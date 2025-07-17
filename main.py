@@ -355,18 +355,13 @@ def run():
             super_gk_check = smart_filter_instance.super_gk_aligned(bias="LONG", orderbook_result=orderbook_result, density_result=density_result)
             print(f"SuperGK Check: {super_gk_check}")
 
-            # Define further strategy logic here, e.g., if all filters pass, issue buy/sell signal
-            if macd_pass and atr_momentum_pass and momentum_pass and hats_pass and super_gk_check:
-                print("Conditions met, proceed with trade execution")
-                # Here, integrate trade execution logic like calling Binance or Kucoin API to execute orders
-
         except Exception as e:
             print(f"Error in strategy execution: {e}")
 
-    # Run strategy at defined intervals
-    while True:
-        run_strategy()
-        time.sleep(60)  # Example: Check every minute
+        # Run strategy at defined intervals
+        while True:
+            run_strategy()
+            time.sleep(60)  # Example: Check every minute
 
             # --- Send up to 2 debug files to Telegram (Signal Debug txt sampling) ---
             try:
