@@ -34,6 +34,9 @@ class SmartFilter:
         self.required_passed = required_passed
         self.volume_multiplier = volume_multiplier
 
+        # SuperGK: Liquidity and market depth based filters
+        self.liquidity_threshold = 10  # Threshold for valid liquidity conditions
+        
         # Weights for filters
         self.filter_weights_long = {
             "MACD": 4.3, "Volume Spike": 4.6, "Fractal Zone": 4.4, "EMA Cloud": 4.9, "Momentum": 3.8, "ATR Momentum Burst": 3.9,
@@ -574,41 +577,4 @@ def superGK_check(self, symbol, signal_direction):
         print(f"Signal blocked due to neutral market conditions for {symbol}")
         return False  # Block signal if market liquidity is balanced
 
-def superGK_check(self, symbol, signal_direction):
-    # Fetch order book data (Bid/Ask details)
-    bids, asks = self._fetch_order_book(symbol)
 
-    # Check if order book data is available
-    if bids is None or asks is None:
-        print(f"Signal blocked due to missing order book data for {symbol}")
-        return False  # Block the signal if no order book data is available
-
-    # Calculate bid and ask wall sizes (order wall delta)
-    bid_wall = self.get_order_wall_delta(symbol, side='bid')
-    ask_wall = self.get_order_wall_delta(symbol, side='ask')
-
-    # Check market liquidity (Resting Density)
-    resting_density = self.get_resting_density(symbol)
-    bid_density = resting_density['bid_density']
-    ask_density = resting_density['ask_density']
-
-    # Market strength check based on liquidity (if density is too low, block)
-    if bid_density < self.liquidity_threshold or ask_density < self.liquidity_threshold:
-        print(f"Signal blocked due to low liquidity for {symbol}")
-        return False  # Block signal due to insufficient liquidity
-
-    # Further check based on bid/ask wall delta
-    if bid_wall < ask_wall:
-        print(f"Signal blocked due to weak buy-side support for {symbol}")
-        return False  # Block signal if ask wall is stronger
-
-    # Determine signal based on liquidity and market depth
-    if bid_density > ask_density:
-        print(f"Signal passed for LONG: Strong bid-side liquidity for {symbol}")
-        return True  # Allow LONG signal if bid-side liquidity is stronger
-    elif ask_density > bid_density:
-        print(f"Signal passed for SHORT: Strong ask-side liquidity for {symbol}")
-        return True  # Allow SHORT signal if ask-side liquidity is stronger
-    else:
-        print(f"Signal blocked due to neutral market conditions for {symbol}")
-        return False  # Block signal if market liquidity is balanced
