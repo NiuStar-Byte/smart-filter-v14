@@ -80,15 +80,30 @@ def log_orderbook_and_density(symbol):
     except Exception as e:
         print(f"[RestingOrderDensityLog] {symbol} ERROR: {e}", flush=True)
 
+
+# def super_gk_aligned(bias, orderbook_result, density_result):
+#    wall_delta = orderbook_result.get('wall_delta', 0) if orderbook_result else 0
+#    orderbook_bias = "LONG" if wall_delta > 0 else "SHORT" if wall_delta < 0 else "NEUTRAL"
+#    bid_density = density_result.get('bid_density', 0) if density_result else 0
+#    ask_density = density_result.get('ask_density', 0) if density_result else 0
+#    density_bias = "LONG" if bid_density > ask_density else "SHORT" if ask_density > bid_density else "NEUTRAL"
+#    if (orderbook_bias != "NEUTRAL" and bias != orderbook_bias): return False
+#    if (density_bias != "NEUTRAL" and bias != density_bias): return False
+#    if orderbook_bias == "NEUTRAL" or density_bias == "NEUTRAL": return False
+#    return True
 def super_gk_aligned(bias, orderbook_result, density_result):
-    wall_delta = orderbook_result.get('wall_delta', 0) if orderbook_result else 0
-    orderbook_bias = "LONG" if wall_delta > 0 else "SHORT" if wall_delta < 0 else "NEUTRAL"
-    bid_density = density_result.get('bid_density', 0) if density_result else 0
-    ask_density = density_result.get('ask_density', 0) if density_result else 0
-    density_bias = "LONG" if bid_density > ask_density else "SHORT" if ask_density > bid_density else "NEUTRAL"
-    if (orderbook_bias != "NEUTRAL" and bias != orderbook_bias): return False
-    if (density_bias != "NEUTRAL" and bias != density_bias): return False
-    if orderbook_bias == "NEUTRAL" or density_bias == "NEUTRAL": return False
+    """
+    Check if the SuperGK conditions are aligned.
+    """
+    # SuperGK alignment logic based on liquidity and order book
+    orderbook_result = get_order_wall_delta(symbol)
+    density_result = get_resting_order_density(symbol)
+
+    # Perform the SuperGK check
+    if not superGK_check(symbol, bias):
+        print(f"[BLOCKED] Signal for {symbol} blocked by SuperGK conditions.")
+        return False
+    
     return True
 
 def run():
