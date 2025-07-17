@@ -22,9 +22,9 @@ def send_telegram_alert(
 ) -> None:
     """
     Sends a formatted Telegram message to your channel/group.
-    Format varies by timeframe (3min includes "[V19 Confirmed]").
+    Format varies by timeframe (3min includes "[Confirmed]").
     """
-    confirmed_tag = " [V19 Confirmed]" if tf == "3min" else ""
+    confirmed_tag = " [Confirmed]" if tf == "3min" else ""
 
     # --- Fix values if accidentally tuple/str ---
     if isinstance(score, (tuple, list)): score = score[0]
@@ -55,9 +55,10 @@ def send_telegram_alert(
         f"{numbered_signal}. {symbol} ({tf}){confirmed_tag}\n"
         f"📈 {signal_type} Signal\n"
         f"💰 {price:.6f}\n"
-        f"✅ Score: {score}/{score_max}\n"
-        f"📌 Passed: {passed}/{gatekeepers_total}\n"
-        f"{confidence_icon} Confidence: {confidence:.1f}% (Weighted: {weighted_str})"
+        f"📊 Score: {score}/{score_max}\n"
+        f"🎯 Passed: {passed}/{gatekeepers_total}\n"
+        f"{confidence_icon} Confidence: {confidence:.1f}%\n"
+        f"🏋️‍♀️ Weighted: {weighted_str})"
     )
 
     payload = {
