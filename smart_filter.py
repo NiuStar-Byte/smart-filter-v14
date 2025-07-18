@@ -2,6 +2,23 @@ import requests
 import pandas as pd
 import numpy as np
 
+def compute_atr(df, period=14):
+    tr = pd.concat([
+        df['high'] - df['low'],
+        (df['high'] - df['close'].shift()).abs(),
+        (df['low'] - df['close'].shift()).abs()
+    ], axis=1).max(axis=1)
+    return tr.rolling(period).mean().iat[-1]
+
+def compute_rsi(df, period=14):
+    delta = df['close'].diff()
+    up = delta.clip(lower=0)
+    down = -1 * delta.clip(upper=0)
+    ema_up = up.ewm(com=period-1, adjust=False).mean()
+    ema_down = down.ewm(com=period-1, adjust=False).mean()
+    rs = ema_up / ema_down
+    return 100 - (100 / (1 + rs)).iat[-1]
+
 class SmartFilter:
     """
     Core scanner that evaluates 23+ technical / order-flow filters,
@@ -152,6 +169,74 @@ class SmartFilter:
         else:
             return "NEUTRAL"
 
+    def superGK_check(self, signal_direction):
+        # Fetch order book data (Bid/Ask details)
+        bids, asks = self._fetch_order_book(self.symbol)
+
+        if bids is None or asks is None:
+            print(f"Signal blocked due to missing order book data for {self.symbol}")
+            return False
+
+        # Calculate bid and ask wall sizes (order wall delta)
+        bid_wall = self.get_order_wall_delta(self.symbol, side='bid')
+        ask_wall = self.get_order_wall_delta(self.symbol, side='ask')
+
+        # Check market liquidity (Resting Density)
+        resting_density = self.get_resting_density(self.symbol)
+        bid_density = resting_density['bid_density']
+        ask_density = resting_density['ask_density']
+
+        if bid_density < self.liquidity_threshold or ask_density < self.liquidity_threshold:
+            print(f"Signal blocked due to low liquidity for {self.symbol}")
+            return False
+
+        if bid_wall < ask_wall:
+            print(f"Signal blocked due to weak buy-side support for {self.symbol}")
+            return False
+
+        # --- ATR & RSI Calculations ---
+        atr = compute_atr(self.df)
+        rsi = compute_rsi(self.df)
+        price = self.df['close'].iat[-1]
+        atr_pct = atr / price if price else 0
+
+        # --- Dynamic Market Regime Logic ---
+        low_vol_threshold = 0.01   # ATR < 1% of price = low volatility
+        high_vol_threshold = 0.03  # ATR > 3% of price = high volatility
+        bull_rsi = 60
+        bear_rsi = 40
+
+        if atr_pct < low_vol_threshold:
+            print(f"Signal blocked: Volatility too low (ATR={atr:.4f}, ATR%={atr_pct:.2%})")
+            return False
+
+        if signal_direction == "LONG":
+            if rsi < bull_rsi:
+                print(f"Signal blocked: LONG but RSI not bullish enough (RSI={rsi:.2f})")
+                return False
+        elif signal_direction == "SHORT":
+            if rsi > bear_rsi:
+                print(f"Signal blocked: SHORT but RSI not bearish enough (RSI={rsi:.2f})")
+                return False
+
+        if bear_rsi < rsi < bull_rsi:
+            print(f"Signal blocked: Market is ranging (RSI={rsi:.2f})")
+            return False
+
+        if atr_pct > high_vol_threshold:
+            print(f"Signal blocked: Volatility extremely high, unstable market (ATR={atr:.4f}, ATR%={atr_pct:.2%})")
+            return False
+
+        if bid_density > ask_density:
+            print(f"Signal passed for LONG: Strong bid-side liquidity for {self.symbol}")
+            return True
+        elif ask_density > bid_density:
+            print(f"Signal passed for SHORT: Strong ask-side liquidity for {self.symbol}")
+            return True
+        else:
+            print(f"Signal blocked due to neutral market conditions for {self.symbol}")
+            return False
+    
     def analyze(self):
         if self.df.empty:
             print(f"[{self.symbol}] Error: DataFrame empty.")
@@ -479,42 +564,42 @@ class SmartFilter:
                 continue
         return None, None
 
-def superGK_check(self, symbol, signal_direction):
-    # Fetch order book data (Bid/Ask details)
-    bids, asks = self._fetch_order_book(symbol)
+# def superGK_check(self, symbol, signal_direction):
+#    # Fetch order book data (Bid/Ask details)
+#    bids, asks = self._fetch_order_book(symbol)
 
-    # Check if order book data is available
-    if bids is None or asks is None:
-        print(f"Signal blocked due to missing order book data for {symbol}")
-        return False  # Block the signal if no order book data is available
+#    # Check if order book data is available
+#    if bids is None or asks is None:
+#        print(f"Signal blocked due to missing order book data for {symbol}")
+#        return False  # Block the signal if no order book data is available
 
-    # Calculate bid and ask wall sizes (order wall delta)
-    bid_wall = self.get_order_wall_delta(symbol, side='bid')
-    ask_wall = self.get_order_wall_delta(symbol, side='ask')
+#    # Calculate bid and ask wall sizes (order wall delta)
+#    bid_wall = self.get_order_wall_delta(symbol, side='bid')
+#    ask_wall = self.get_order_wall_delta(symbol, side='ask')
 
-    # Check market liquidity (Resting Density)
-    resting_density = self.get_resting_density(symbol)
-    bid_density = resting_density['bid_density']
-    ask_density = resting_density['ask_density']
+#    # Check market liquidity (Resting Density)
+#    resting_density = self.get_resting_density(symbol)
+#    bid_density = resting_density['bid_density']
+#    ask_density = resting_density['ask_density']
 
-    # Market strength check based on liquidity (if density is too low, block)
-    if bid_density < self.liquidity_threshold or ask_density < self.liquidity_threshold:
-        print(f"Signal blocked due to low liquidity for {symbol}")
-        return False  # Block signal due to insufficient liquidity
+#    # Market strength check based on liquidity (if density is too low, block)
+#    if bid_density < self.liquidity_threshold or ask_density < self.liquidity_threshold:
+#        print(f"Signal blocked due to low liquidity for {symbol}")
+#        return False  # Block signal due to insufficient liquidity
 
-    # Further check based on bid/ask wall delta
-    if bid_wall < ask_wall:
-        print(f"Signal blocked due to weak buy-side support for {symbol}")
-        return False  # Block signal if ask wall is stronger
+#    # Further check based on bid/ask wall delta
+#    if bid_wall < ask_wall:
+#        print(f"Signal blocked due to weak buy-side support for {symbol}")
+#        return False  # Block signal if ask wall is stronger
 
-    # Determine signal based on liquidity and market depth
-    if bid_density > ask_density:
-        print(f"Signal passed for LONG: Strong bid-side liquidity for {symbol}")
-        return True  # Allow LONG signal if bid-side liquidity is stronger
-    elif ask_density > bid_density:
-        print(f"Signal passed for SHORT: Strong ask-side liquidity for {symbol}")
-        return True  # Allow SHORT signal if ask-side liquidity is stronger
-    else:
-        print(f"Signal blocked due to neutral market conditions for {symbol}")
-        return False  # Block signal if market liquidity is balanced
+#    # Determine signal based on liquidity and market depth
+#    if bid_density > ask_density:
+#        print(f"Signal passed for LONG: Strong bid-side liquidity for {symbol}")
+#        return True  # Allow LONG signal if bid-side liquidity is stronger
+#    elif ask_density > bid_density:
+#        print(f"Signal passed for SHORT: Strong ask-side liquidity for {symbol}")
+#        return True  # Allow SHORT signal if ask-side liquidity is stronger
+#    else:
+#        print(f"Signal blocked due to neutral market conditions for {symbol}")
+#        return False  # Block signal if market liquidity is balanced
 
