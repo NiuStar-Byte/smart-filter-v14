@@ -475,48 +475,57 @@ class SmartFilter:
             print(f"[{self.symbol}] Error: DataFrame empty.")
             return None
 
-        checks = {
-            "Fractal Zone": self._check_fractal_zone,
-            "EMA Cloud": self._check_ema_cloud,
-            "MACD": self._check_macd,
-            "Momentum": self._check_momentum,
-            "HATS": self._check_hats,
-            "Volume Spike": self.volume_surge_confirmed if self.tf == "3min" else self._check_volume_spike,
-            "VWAP Divergence": self._check_vwap_divergence,
-            "MTF Volume Agreement": self._check_mtf_volume_agreement,
-            "HH/LL Trend": self._check_hh_ll,
-            "EMA Structure": self._check_ema_structure,
-            "Chop Zone": self._check_chop_zone,
-            "Candle Confirmation": self._check_candle_close,
-            "Wick Dominance": self._check_wick_dominance,
-            "Absorption": self._check_absorption,
-            "Support/Resistance": self._check_support_resistance,
-            "Smart Money Bias": self._check_smart_money_bias,
-            "Liquidity Pool": self._check_liquidity_pool,
-            "Spread Filter": self._check_spread_filter,
-            "Liquidity Awareness": self._check_liquidity_awareness,
-            "Trend Continuation": self._check_trend_continuation,
-            "Volatility Model": self._check_volatility_model,
-            "ATR Momentum Burst": self._check_atr_momentum_burst,
-            "Volatility Squeeze": self._check_volatility_squeeze
+        # List all filter names
+        filter_names = [
+            "Fractal Zone", "EMA Cloud", "MACD", "Momentum", "HATS", "Volume Spike",
+            "VWAP Divergence", "MTF Volume Agreement", "HH/LL Trend", "EMA Structure",
+            "Chop Zone", "Candle Confirmation", "Wick Dominance", "Absorption",
+            "Support/Resistance", "Smart Money Bias", "Liquidity Pool", "Spread Filter",
+            "Liquidity Awareness", "Trend Continuation", "Volatility Model",
+            "ATR Momentum Burst", "Volatility Squeeze"
+        ]
+
+        # Map filter names to functions, handling timeframes if needed
+        filter_function_map = {
+            "Fractal Zone": getattr(self, "_check_fractal_zone", None),
+            "EMA Cloud": getattr(self, "_check_ema_cloud", None),
+            "MACD": getattr(self, "_check_macd", None),
+            "Momentum": getattr(self, "_check_momentum", None),
+            "HATS": getattr(self, "_check_hats", None),
+            "Volume Spike": self.volume_surge_confirmed if self.tf == "3min" else getattr(self, "_check_volume_spike", None),
+            "VWAP Divergence": getattr(self, "_check_vwap_divergence", None),
+            "MTF Volume Agreement": getattr(self, "_check_mtf_volume_agreement", None),
+            "HH/LL Trend": getattr(self, "_check_hh_ll", None),
+            "EMA Structure": getattr(self, "_check_ema_structure", None),
+            "Chop Zone": getattr(self, "_check_chop_zone", None),
+            "Candle Confirmation": getattr(self, "_check_candle_close", None),
+            "Wick Dominance": getattr(self, "_check_wick_dominance", None),
+            "Absorption": getattr(self, "_check_absorption", None),
+            "Support/Resistance": getattr(self, "_check_support_resistance", None),
+            "Smart Money Bias": getattr(self, "_check_smart_money_bias", None),
+            "Liquidity Pool": getattr(self, "_check_liquidity_pool", None),
+            "Spread Filter": getattr(self, "_check_spread_filter", None),
+            "Liquidity Awareness": getattr(self, "_check_liquidity_awareness", None),
+            "Trend Continuation": getattr(self, "_check_trend_continuation", None),
+            "Volatility Model": getattr(self, "_check_volatility_model", None),
+            "ATR Momentum Burst": getattr(self, "_check_atr_momentum_burst", None),
+            "Volatility Squeeze": getattr(self, "_check_volatility_squeeze", None)
         }
 
-        # Run all filters just once (no direction-aware logic)
+        # Build checks dict, log missing implementations
+        checks = {}
+        for name in filter_names:
+            fn = filter_function_map.get(name)
+            if fn is None:
+                print(f"[{self.symbol}] [ERROR] Filter function '{name}' not implemented or missing!")
+            else:
+                checks[name] = fn
+
         results = {}
 
         for name, fn in checks.items():
             try:
-                results[name] = bool(fn())
-            except Exception as e:
-                print(f"[{self.symbol}] {name} ERROR: {e}")
-                results[name] = False
-
-        # Example: In smart_filter.py, inside your analyze() filter loop
-
-        for name, fn in checks.items():
-            try:
                 result = fn()
-                # Refined status mapping for clarity
                 if result == "LONG":
                     status = "LONG"
                 elif result == "SHORT":
@@ -528,10 +537,12 @@ class SmartFilter:
                 else:
                     status = "NONE"
                 print(f"[{self.symbol}] Filter: {name} | Status: {status}")
-                results[name] = bool(result)
+                results[name] = {"status": status, "raw": result}
             except Exception as e:
                 print(f"[{self.symbol}] {name} ERROR: {e}")
-                results[name] = False
+                results[name] = {"status": "ERROR", "raw": None}
+
+        return results
         
         # For debug/export compatibility, build results_long and results_short as copies
         results_long = dict(results)
