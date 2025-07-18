@@ -440,13 +440,39 @@ class SmartFilter:
             return 0.0
 
     def volume_surge_confirmed(self):
-        return self._check_volume_spike() and self._check_5m_volume_trend()
+        result = self._check_volume_spike()
+        if result in ["LONG", "SHORT"] and self._check_5m_volume_trend():
+            return result
+        return None
 
-    def _check_volume_spike(self):
+    def _check_volume_spike(self, zscore_threshold=1.5):
+        # Calculate z-score of current volume vs recent (rolling 10)
         avg = self.df['volume'].rolling(10).mean().iat[-1]
         std = self.df['volume'].rolling(10).std().iat[-1]
         zscore = self._safe_divide(self.df['volume'].iat[-1] - avg, std)
-        return zscore > 1.5
+    
+        # Price direction
+        price_up = self.df['close'].iat[-1] > self.df['close'].iat[-2]
+        price_down = self.df['close'].iat[-1] < self.df['close'].iat[-2]
+    
+        # Volume trend
+        vol_up = self.df['volume'].iat[-1] > self.df['volume'].iat[-2]
+    
+        # LONG signal: volume spike + price rising + volume rising
+        long_conditions = [zscore > zscore_threshold, price_up, vol_up]
+        long_met = sum(long_conditions)
+    
+        # SHORT signal: volume spike + price falling + volume rising
+        short_conditions = [zscore > zscore_threshold, price_down, vol_up]
+        short_met = sum(short_conditions)
+
+        # Require at least 2/3 for a signal
+        if long_met >= 2:
+            return "LONG"
+        elif short_met >= 2:
+            return "SHORT"
+        else:
+            return None
 
     def _check_5m_volume_trend(self):
         if self.df5m is None or len(self.df5m) < 2:
