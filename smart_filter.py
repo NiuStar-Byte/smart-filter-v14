@@ -700,7 +700,7 @@ class SmartFilter:
         else:
             return None
         
-    def _check_hh_ll_trend(self):
+    def _check_hh_ll(self):
         high = self.df['high'].iat[-1]
         high_prev = self.df['high'].iat[-2]
         low = self.df['low'].iat[-1]
