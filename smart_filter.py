@@ -468,7 +468,29 @@ class SmartFilter:
         e26 = self.df['close'].ewm(span=26).mean()
         macd = e12 - e26
         signal = macd.ewm(span=9).mean()
-        return macd.iat[-1] > signal.iat[-1] and macd.iat[-1] > macd.iat[-2]
+
+        # LONG conditions
+        condition_1_long = macd.iat[-1] > signal.iat[-1]                # MACD above Signal Line
+        condition_2_long = macd.iat[-1] > macd.iat[-2]                  # MACD is rising
+        condition_3_long = self.df['close'].iat[-1] > self.df['close'].iat[-2]  # Price action rising
+        condition_4_long = macd.iat[-1] > signal.iat[-1] and macd.iat[-1] > macd.iat[-2]  # MACD Divergence
+
+        # SHORT conditions
+        condition_1_short = macd.iat[-1] < signal.iat[-1]                # MACD below Signal Line
+        condition_2_short = macd.iat[-1] < macd.iat[-2]                  # MACD is falling
+        condition_3_short = self.df['close'].iat[-1] < self.df['close'].iat[-2]  # Price action falling
+        condition_4_short = macd.iat[-1] < signal.iat[-1] and macd.iat[-1] < macd.iat[-2]  # MACD Divergence
+
+        long_conditions_met = sum([condition_1_long, condition_2_long, condition_3_long, condition_4_long])
+        short_conditions_met = sum([condition_1_short, condition_2_short, condition_3_short, condition_4_short])
+
+        # If 3 out of 4 conditions are met, we pass the filter
+        if long_conditions_met >= 3:
+            return "LONG"
+        elif short_conditions_met >= 3:
+            return "SHORT"
+        else:
+            return None
 
     def _check_momentum(self, roc_window=3):
         return self.df['close'].pct_change(roc_window).iat[-1] > 0
