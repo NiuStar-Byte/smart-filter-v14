@@ -41,7 +41,7 @@ class SmartFilter:
         min_score: int = 15,
         required_passed: int = 11,      # NEW: now 11 (for 17 gatekeepers)
         volume_multiplier: float = 2.0,
-        liquidity_threshold: float = 0.5,   # <-- Set a default value
+        liquidity_threshold: float = 0.2,   # <-- Set a default value
         kwargs = None
     ):
         if kwargs is None:
