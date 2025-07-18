@@ -358,7 +358,7 @@ class SmartFilter:
 #            )
 #            return False
 
-#    PARTIAL New Super-GK ONLY Liquidity (Density) & OrderBookWall
+    # PARTIAL New Super-GK ONLY Liquidity (Density) & OrderBookWall
     def superGK_check(self, signal_direction, orderbook_result, density_result):
         if orderbook_result is None or density_result is None:
             print(f"Signal blocked due to missing order book or density for {self.symbol}")
@@ -387,7 +387,7 @@ class SmartFilter:
             print(f"Signal blocked: SuperGK not aligned for {self.symbol}")
             return False
             
-#    COMPLETE New Super-GK ADX, ATR, RSI, Liquidity (Density) & OrderBookWall  
+# COMPLETE New Super-GK ADX, ATR, RSI, Liquidity (Density) & OrderBookWall  
 #    def superGK_check(self, signal_direction, orderbook_result, density_result):
         # Check if order book data is valid
 #        if (orderbook_result is None 
@@ -456,7 +456,7 @@ class SmartFilter:
  #           print(f"Signal blocked: Volatility extremely high, unstable market (ATR={atr:.4f}, ATR%={atr_pct:.2%})")
  #           return False
 
-        # Final regime decision
+    # Final regime decision
  #       if signal_direction == "LONG" and bid_density > ask_density:
  #           print(f"Signal passed for LONG: Strong bid-side liquidity for {self.symbol}")
  #           return True
@@ -544,56 +544,33 @@ class SmartFilter:
                     results_long[name] = False
                     results_short[name] = False
                     status = "NONE"
- #               print(f"[{self.symbol}] Filter: {name} | Status: {status}")
                 results_status[name] = status
+                # PER-FILTER STATUS LOGGING REMOVED
             except Exception as e:
                 print(f"[{self.symbol}] {name} ERROR: {e}")
                 results_long[name] = False
                 results_short[name] = False
                 results_status[name] = "ERROR"
 
-        # --- Calculate weight sums using the correct dicts ---
-        long_sum = sum(
-            self.filter_weights_long.get(name, 0)
-            for name, passed in results_long.items() if passed
-        )
-        short_sum = sum(
-            self.filter_weights_short.get(name, 0)
-            for name, passed in results_short.items() if passed
-        )
+        # --- Calculate weighted sums using the correct dicts ---
+        long_sum = sum(self.filter_weights_long.get(name, 0) for name, passed in results_long.items() if passed)
+        short_sum = sum(self.filter_weights_short.get(name, 0) for name, passed in results_short.items() if passed)
+
         print(f"[{self.symbol}] Total LONG weight: {long_sum}")
         print(f"[{self.symbol}] Total SHORT weight: {short_sum}")
 
-        # --- Optionally, get signal direction (if you have that method) ---
-        if hasattr(self, "get_signal_direction"):
-            direction = self.get_signal_direction(results_long, results_short)
-            print(f"[{self.symbol}] Signal Direction: {direction}")
-        else:
-            direction = None
+        # --- Get signal direction ---
+        direction = self.get_signal_direction(results_long, results_short)
+        print(f"[{self.symbol}] Signal Direction: {direction}")
+        self.bias = direction
 
-        return {
-            "results_status": results_status,
-            "results_long": results_long,
-            "results_short": results_short,
-            "long_sum": long_sum,
-            "short_sum": short_sum,
-            "direction": direction
-        }
-        
-        # For debug/export compatibility, build results_long and results_short as copies
-        results_long = dict(results)
-        results_short = dict(results)
-
-        # Compute total scores and gatekeeper passes for each direction
-        score_long = sum(results_long.values())
-        score_short = sum(results_short.values())
-
+        # Calculate gatekeeper passes for each direction
         passed_gk_long = [f for f in self.gatekeepers if results_long.get(f, False)]
         passed_gk_short = [f for f in self.gatekeepers if results_short.get(f, False)]
         passes_long = len(passed_gk_long)
         passes_short = len(passed_gk_short)
 
-        # Calculate weighted scores and confidence per direction
+        # Calculate total weights for gatekeepers
         total_gk_weight_long = sum(self.filter_weights_long.get(f, 0) for f in self.gatekeepers)
         total_gk_weight_short = sum(self.filter_weights_short.get(f, 0) for f in self.gatekeepers)
         passed_weight_long = sum(self.filter_weights_long.get(f, 0) for f in passed_gk_long)
@@ -601,25 +578,21 @@ class SmartFilter:
         confidence_long = round(self._safe_divide(100 * passed_weight_long, total_gk_weight_long), 1) if total_gk_weight_long else 0.0
         confidence_short = round(self._safe_divide(100 * passed_weight_short, total_gk_weight_short), 1) if total_gk_weight_short else 0.0
 
-        # Determine which direction wins (using your preferred logic)
-        signal_direction = self.get_signal_direction(results_long, results_short)
-        self.bias = signal_direction
-
         # Select summary stats based on direction
-        if signal_direction == "LONG":
-            score = score_long
+        if direction == "LONG":
+            score = long_sum
             passes = passes_long
             confidence = confidence_long
             passed_weight = passed_weight_long
             total_gk_weight = total_gk_weight_long
-        elif signal_direction == "SHORT":
-            score = score_short
+        elif direction == "SHORT":
+            score = short_sum
             passes = passes_short
             confidence = confidence_short
             passed_weight = passed_weight_short
             total_gk_weight = total_gk_weight_short
         else:
-            score = max(score_long, score_short)
+            score = max(long_sum, short_sum)
             passes = max(passes_long, passes_short)
             confidence = max(confidence_long, confidence_short)
             passed_weight = max(passed_weight_long, passed_weight_short)
@@ -627,29 +600,22 @@ class SmartFilter:
 
         confidence = round(self._safe_divide(100 * passed_weight, total_gk_weight), 1) if total_gk_weight else 0.0
 
+    # --- SuperGK check ---
         orderbook_result = get_order_wall_delta(self.symbol)
         density_result = get_resting_density(self.symbol)
-        super_gk_ok = self.superGK_check(signal_direction, orderbook_result, density_result)
-#        super_gk_ok = self.superGK_check(signal_direction)
-#        orderbook_ok = self._order_book_wall_passed()
-#        resting_density_ok = self._resting_order_density_passed()
-
-        # --- Direction logic: use only PASSED filter weights for each side ---
-        signal_direction = self.get_signal_direction(results_long, results_short)
+        super_gk_ok = self.superGK_check(direction, orderbook_result, density_result)
 
         valid_signal = (
-            signal_direction in ["LONG", "SHORT"]
+            direction in ["LONG", "SHORT"]
             and score >= self.min_score
             and passes >= self.required_passed
             and super_gk_ok
-#            and orderbook_ok
-#            and resting_density_ok
         )
 
         price = self.df['close'].iat[-1] if valid_signal else None
         price_str = f"{price:.6f}" if price is not None else "N/A"
         message = (
-            f"{signal_direction or 'NO-SIGNAL'} on {self.symbol} @ {price_str} "
+            f"{direction or 'NO-SIGNAL'} on {self.symbol} @ {price_str} "
             f"| Score: {score}/23 | Passed: {passes}/{len(self.gatekeepers)} "
             f"| Confidence: {confidence}% (Weighted: {passed_weight:.1f}/{total_gk_weight:.1f})"
         )
@@ -660,7 +626,8 @@ class SmartFilter:
             print(f"[{self.symbol}] ❌ No signal.")
 
         print("DEBUG SUMS:", getattr(self, '_debug_sums', {}))
-        
+
+        # Return only the summary object for main.py
         return {
             "symbol": self.symbol,
             "tf": self.tf,
@@ -671,19 +638,17 @@ class SmartFilter:
             "passed_weight": round(passed_weight, 1),
             "total_weight": round(total_gk_weight, 1),
             "confidence": confidence,
-            "bias": signal_direction,
+            "bias": direction,
             "price": price,
             "valid_signal": valid_signal,
             "message": message,
-            "filter_results": results,
-
-            # --- DEBUG SUMS FOR SIGNAL DECISION ---
+            # For debugging:
             "debug_sums": getattr(self, '_debug_sums', {}),
-
-            # --- PATCH FOR DEBUG COMPATIBILITY ---
-            "results": results,  # legacy for signal_debug_log.py
-            "filter_results_long": results,  # not truly per-direction, but fills debug
-            "filter_results_short": results, # not truly per-direction, but fills debug
+            "results_long": results_long,
+            "results_short": results_short,
+            "results_status": results_status,
+            "orderbook_result": orderbook_result,
+            "density_result": density_result,
         }
 
     # === Super-GK logic stubs ===
