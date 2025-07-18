@@ -325,8 +325,9 @@ class SmartFilter:
 
         confidence = round(self._safe_divide(100 * passed_weight, total_gk_weight), 1) if total_gk_weight else 0.0
 
-        orderbook_ok = self._order_book_wall_passed()
-        resting_density_ok = self._resting_order_density_passed()
+        super_gk_ok = self.superGK_check(signal_direction)
+#        orderbook_ok = self._order_book_wall_passed()
+#        resting_density_ok = self._resting_order_density_passed()
 
         # --- Direction logic: use only PASSED filter weights for each side ---
         signal_direction = self.get_signal_direction(results_long, results_short)
@@ -335,8 +336,9 @@ class SmartFilter:
             signal_direction in ["LONG", "SHORT"]
             and score >= self.min_score
             and passes >= self.required_passed
-            and orderbook_ok
-            and resting_density_ok
+            and super_gk_ok
+#            and orderbook_ok
+#            and resting_density_ok
         )
 
         price = self.df['close'].iat[-1] if valid_signal else None
