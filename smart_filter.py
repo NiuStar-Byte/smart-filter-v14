@@ -16,12 +16,24 @@ def compute_atr(df, period=14):
 
 def compute_rsi(df, period=14):
     delta = df['close'].diff()
-    up = delta.clip(lower=0)
-    down = -1 * delta.clip(upper=0)
-    ema_up = up.ewm(com=period-1, adjust=False).mean()
-    ema_down = down.ewm(com=period-1, adjust=False).mean()
-    rs = ema_up / ema_down
-    return 100 - (100 / (1 + rs)).iat[-1]
+    gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+    loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+    rs = gain / loss
+    rsi = 100 - (100 / (1 + rs))
+    return rsi
+
+# When you get your OHLCV dataframe:
+df['RSI'] = compute_rsi(df)
+
+# PREVIOUS COMPUTE RSI for New SuperGK
+# def compute_rsi(df, period=14):
+#    delta = df['close'].diff()
+#    up = delta.clip(lower=0)
+#    down = -1 * delta.clip(upper=0)
+#    ema_up = up.ewm(com=period-1, adjust=False).mean()
+#    ema_down = down.ewm(com=period-1, adjust=False).mean()
+#    rs = ema_up / ema_down
+#    return 100 - (100 / (1 + rs)).iat[-1]
 
 def compute_adx(df, period=14):
     high = df['high']
