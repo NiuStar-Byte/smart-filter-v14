@@ -790,7 +790,7 @@ class SmartFilter:
         else:
             return None
 
-    def _check_candle_confirmation(self):
+    def _check_candle_close(self):
         open_ = self.df['open'].iat[-1]
         high = self.df['high'].iat[-1]
         low = self.df['low'].iat[-1]
