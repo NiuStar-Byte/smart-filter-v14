@@ -210,8 +210,8 @@ class SmartFilter:
         atr_pct = atr / price if price else 0
 
         # --- Dynamic Market Regime Logic ---
-        low_vol_threshold = 0.01   # ATR < 1% of price = low volatility
-        high_vol_threshold = 0.03  # ATR > 3% of price = high volatility
+        low_vol_threshold = 0.015   # ATR < 1% of price = low volatility
+        high_vol_threshold = 0.035  # ATR > 3% of price = high volatility
         bull_rsi = 60
         bear_rsi = 40
 
@@ -538,7 +538,7 @@ class SmartFilter:
         slope = self.df['ema20'].iat[-1] - self.df['ema20'].iat[-3]
         return slope > 0
 
-    def _check_volatility_model(self, low_pct=0.01, high_pct=0.03, period=14):
+    def _check_volatility_model(self, low_pct=0.015, high_pct=0.035, period=14):
         tr = pd.concat([
             self.df['high'] - self.df['low'],
             (self.df['high'] - self.df['close'].shift()).abs(),
