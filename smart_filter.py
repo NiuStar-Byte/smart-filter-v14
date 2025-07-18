@@ -538,7 +538,7 @@ class SmartFilter:
         slope = self.df['ema20'].iat[-1] - self.df['ema20'].iat[-3]
         return slope > 0
 
-    def _check_volatility_model(self, low_pct=0.01, high_pct=0.05, period=14):
+    def _check_volatility_model(self, low_pct=0.01, high_pct=0.03, period=14):
         tr = pd.concat([
             self.df['high'] - self.df['low'],
             (self.df['high'] - self.df['close'].shift()).abs(),
