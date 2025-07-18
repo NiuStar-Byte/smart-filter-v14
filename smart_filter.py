@@ -253,6 +253,7 @@ class SmartFilter:
         else:
             return "NEUTRAL"
 
+#    PARTIAL New Super-GK ONLY RSI, Liquidity (Density) & OrderBookWall  
     def superGK_check(self, signal_direction, orderbook_result, density_result):
         if orderbook_result is None or density_result is None:
             print(f"Signal blocked due to missing order book or density for {self.symbol}")
@@ -260,27 +261,65 @@ class SmartFilter:
 
         bid_wall = orderbook_result.get('buy_wall', 0)
         ask_wall = orderbook_result.get('sell_wall', 0)
-
         bid_density = density_result.get('bid_density', 0)
         ask_density = density_result.get('ask_density', 0)
-        
+
         # Liquidity check
         if bid_density < self.liquidity_threshold or ask_density < self.liquidity_threshold:
             print(f"Signal blocked due to low liquidity for {self.symbol}")
             return False
-        
-        # LONG: bid_wall > ask_wall AND bid_density > ask_density
-        if signal_direction == "LONG" and bid_wall > ask_wall and bid_density > ask_density:
-            print(f"Signal passed for LONG: bid_wall & bid_density stronger.")
+
+        # --- RSI Check ---
+        rsi = self.df['RSI'].iat[-1] if 'RSI' in self.df.columns else None
+        if rsi is None:
+            print(f"Signal blocked: RSI data missing for {self.symbol}")
+            return False
+
+        # LONG: bid_wall > ask_wall AND bid_density > ask_density AND RSI < 70
+        if signal_direction == "LONG" and bid_wall > ask_wall and bid_density > ask_density and rsi < 70:
+            print(f"Signal passed for LONG: Wall, density, RSI < 70.")
             return True
-        # SHORT: ask_wall > bid_wall AND ask_density > bid_density
-        elif signal_direction == "SHORT" and ask_wall > bid_wall and ask_density > bid_density:
-            print(f"Signal passed for SHORT: ask_wall & ask_density stronger.")
+        # SHORT: ask_wall > bid_wall AND ask_density > bid_density AND RSI > 30
+        elif signal_direction == "SHORT" and ask_wall > bid_wall and ask_density > bid_density and rsi > 30:
+            print(f"Signal passed for SHORT: Wall, density, RSI > 30.")
             return True
         else:
-            print(f"Signal blocked: SuperGK not aligned for {self.symbol}")
+            print(
+                f"Signal blocked: SuperGK not aligned for {self.symbol} "
+                f"(bid_wall={bid_wall}, ask_wall={ask_wall}, bid_density={bid_density}, ask_density={ask_density}, RSI={rsi})"
+            )
             return False
-    
+
+#    PARTIAL New Super-GK ONLY Liquidity (Density) & OrderBookWall
+#    def superGK_check(self, signal_direction, orderbook_result, density_result):
+#        if orderbook_result is None or density_result is None:
+#            print(f"Signal blocked due to missing order book or density for {self.symbol}")
+#            return False
+
+#        bid_wall = orderbook_result.get('buy_wall', 0)
+#        ask_wall = orderbook_result.get('sell_wall', 0)
+
+#        bid_density = density_result.get('bid_density', 0)
+#        ask_density = density_result.get('ask_density', 0)
+        
+        # Liquidity check
+#        if bid_density < self.liquidity_threshold or ask_density < self.liquidity_threshold:
+#            print(f"Signal blocked due to low liquidity for {self.symbol}")
+#            return False
+        
+        # LONG: bid_wall > ask_wall AND bid_density > ask_density
+#        if signal_direction == "LONG" and bid_wall > ask_wall and bid_density > ask_density:
+#            print(f"Signal passed for LONG: bid_wall & bid_density stronger.")
+#            return True
+        # SHORT: ask_wall > bid_wall AND ask_density > bid_density
+#        elif signal_direction == "SHORT" and ask_wall > bid_wall and ask_density > bid_density:
+#            print(f"Signal passed for SHORT: ask_wall & ask_density stronger.")
+#            return True
+#        else:
+#            print(f"Signal blocked: SuperGK not aligned for {self.symbol}")
+#            return False
+            
+#    COMPLETE New Super-GK ADX, ATR, RSI, Liquidity (Density) & OrderBookWall  
 #    def superGK_check(self, signal_direction, orderbook_result, density_result):
         # Check if order book data is valid
 #        if (orderbook_result is None 
