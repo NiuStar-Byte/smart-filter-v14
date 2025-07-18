@@ -210,19 +210,19 @@ class SmartFilter:
         else:
             return {}
 
-    def _calculate_all_filters_sum(self, results, direction):
-        """
-        Calculate the sum of weights for all passed filters for the given direction.
-        """
-        weights = self.filter_weights_long if direction == "LONG" else self.filter_weights_short
-        return sum(weights.get(f, 0) for f, v in results.items() if v and f in weights)
+#    def _calculate_all_filters_sum(self, results, direction):
+#        """
+#        Calculate the sum of weights for all passed filters for the given direction.
+#        """
+#        weights = self.filter_weights_long if direction == "LONG" else self.filter_weights_short
+#        return sum(weights.get(f, 0) for f, v in results.items() if v and f in weights)
 
-    def _calculate_gatekeeper_sum(self, results, direction):
-        """
-        Calculate the sum of weights for passed gatekeeper filters for the given direction.
-        """
-        weights = self.filter_weights_long if direction == "LONG" else self.filter_weights_short
-        return sum(weights.get(f, 0) for f in self.gatekeepers if results.get(f, False))
+#    def _calculate_gatekeeper_sum(self, results, direction):
+#        """
+#        Calculate the sum of weights for passed gatekeeper filters for the given direction.
+#        """
+#        weights = self.filter_weights_long if direction == "LONG" else self.filter_weights_short
+#        return sum(weights.get(f, 0) for f in self.gatekeepers if results.get(f, False))
 
 #    def _calculate_directional_aware_sum(self, results, direction):
 #        """
@@ -230,52 +230,99 @@ class SmartFilter:
 #        """
 #        weights = self.filter_weights_long if direction == "LONG" else self.filter_weights_short
 #        return sum(weights.get(f, 0) for f in self.directional_aware_filters if results.get(f, False))
-            
+
     def get_signal_direction(self, results_long, results_short):
         """
-        Calculate three sums for both LONG and SHORT directions and return the direction
-        only if ALL THREE sums are greater for that direction. Otherwise return "NEUTRAL".
-        
-        The three sums are:
-        1. Sum of all passed filter weights
-        2. Sum of passed gatekeeper filter weights
-        3. Sum of passed directional-aware filter weights
+        Calculate two sums for both LONG and SHORT directions and return the direction
+        only if BOTH sums are greater for that direction. Otherwise return "NEUTRAL".
+
+        - Sum of weights for all passed filters (result == True)
+        - Sum of weights for passed gatekeeper filters (result == True and is_gk == True)
         """
-        # Calculate three sums for LONG direction
-        long_all_filters = self._calculate_all_filters_sum(results_long, "LONG")
-        long_gatekeepers = self._calculate_gatekeeper_sum(results_long, "LONG")
-#        long_directional = self._calculate_directional_aware_sum(results_long, "LONG")
-        
-        # Calculate three sums for SHORT direction
-        short_all_filters = self._calculate_all_filters_sum(results_short, "SHORT")
-        short_gatekeepers = self._calculate_gatekeeper_sum(results_short, "SHORT")
- #       short_directional = self._calculate_directional_aware_sum(results_short, "SHORT")
-        
-        # Store sums for debugging (accessible via instance)
+        long_all_filters = sum(
+            self.filter_weights[name]['LONG']
+            for name, passed in results_long.items()
+            if passed
+        )
+        long_gatekeepers = sum(
+            self.filter_weights[name]['LONG']
+            for name, passed in results_long.items()
+            if passed and self.is_gatekeeper(name)
+        )
+
+        short_all_filters = sum(
+            self.filter_weights[name]['SHORT']
+            for name, passed in results_short.items()
+            if passed
+        )
+        short_gatekeepers = sum(
+            self.filter_weights[name]['SHORT']
+            for name, passed in results_short.items()
+            if passed and self.is_gatekeeper(name)
+        )
+
         self._debug_sums = {
             "long_all_filters": long_all_filters,
             "long_gatekeepers": long_gatekeepers,
- #           "long_directional": long_directional,
             "short_all_filters": short_all_filters,
             "short_gatekeepers": short_gatekeepers
- #           "short_directional": short_directional
         }
-        
-        # Check if LONG wins all three comparisons
+
         if (long_all_filters > short_all_filters and 
             long_gatekeepers > short_gatekeepers):
-#            long_directional > short_directional):
             return "LONG"
-        
-        # Check if SHORT wins all three comparisons
         elif (short_all_filters > long_all_filters and 
               short_gatekeepers > long_gatekeepers):
-#              short_directional > long_directional):
             return "SHORT"
-        
-        # If neither direction wins all three, return NEUTRAL
         else:
             return "NEUTRAL"
+
+# SIGNAL DIRECTION IF USING DIRECTIONAL AWARE FILTERS
+#    def get_signal_direction(self, results_long, results_short):
+#        """
+#        Calculate three sums for both LONG and SHORT directions and return the direction
+#        only if ALL THREE sums are greater for that direction. Otherwise return "NEUTRAL".
+        
+#        The three sums are:
+#        1. Sum of all passed filter weights
+#        2. Sum of passed gatekeeper filter weights
+#        3. Sum of passed directional-aware filter weights
+#        """
+#        # Calculate three sums for LONG direction
+#        long_all_filters = self._calculate_all_filters_sum(results_long, "LONG")
+#        long_gatekeepers = self._calculate_gatekeeper_sum(results_long, "LONG")
+#        long_directional = self._calculate_directional_aware_sum(results_long, "LONG")
+        
+        # Calculate three sums for SHORT direction
+#        short_all_filters = self._calculate_all_filters_sum(results_short, "SHORT")
+#        short_gatekeepers = self._calculate_gatekeeper_sum(results_short, "SHORT")
+#        short_directional = self._calculate_directional_aware_sum(results_short, "SHORT")
+        
+        # Store sums for debugging (accessible via instance)
+#        self._debug_sums = {
+#            "long_all_filters": long_all_filters,
+#            "long_gatekeepers": long_gatekeepers,
+#            "long_directional": long_directional,
+#            "short_all_filters": short_all_filters,
+#            "short_gatekeepers": short_gatekeepers
+#            "short_directional": short_directional
+#        }
+        
+#        # Check if LONG wins all three comparisons
+#        if (long_all_filters > short_all_filters and 
+#            long_gatekeepers > short_gatekeepers):
+#            long_directional > short_directional):
+#            return "LONG"
+        
+        # Check if SHORT wins all three comparisons
+#        elif (short_all_filters > long_all_filters and 
+#              short_gatekeepers > long_gatekeepers):
+#              short_directional > long_directional):
+#            return "SHORT"
+        
+        # If neither direction wins all three, return NEUTRAL
+#        else:
+#            return "NEUTRAL"
 
 #    PARTIAL New Super-GK ONLY RSI, Liquidity (Density) & OrderBookWall  
 #    def superGK_check(self, signal_direction, orderbook_result, density_result):
