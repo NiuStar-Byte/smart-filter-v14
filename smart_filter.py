@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 from kucoin_orderbook import get_order_wall_delta
 from kucoin_density import get_resting_density
+import datetime
 
 def compute_atr(df, period=14):
     tr = pd.concat([
@@ -456,7 +457,7 @@ class SmartFilter:
  #           print(f"Signal blocked: Volatility extremely high, unstable market (ATR={atr:.4f}, ATR%={atr_pct:.2%})")
  #           return False
 
-    # Final regime decision
+ # Final regime decision
  #       if signal_direction == "LONG" and bid_density > ask_density:
  #           print(f"Signal passed for LONG: Strong bid-side liquidity for {self.symbol}")
  #           return True
@@ -466,7 +467,59 @@ class SmartFilter:
  #       else:
  #           print(f"Signal blocked due to neutral market conditions for {self.symbol}")
  #           return False
-    
+
+def export_signal_debug(self, results_long, results_short, orderbook_result, density_result, direction, verdict, filename="signal_debug_temp_current.txt"):
+    with open(filename, "w") as f:
+        now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        f.write(f"# Signal Debug Export (created: {now})\n\n")
+
+        # LONG Filter Results
+        if any(results_long.values()):
+            f.write("## LONG Filter Results\n")
+            f.write("Symbol\tTimeframe\tSignalType\tFilter Name\tWeight\tGateKeeper\tResult\tPASSES\n")
+            for name, passed in results_long.items():
+                weight = self.filter_weights_long.get(name, 0)
+                gatekeeper = name in self.gatekeepers
+                result = "PASS" if passed else ""
+                f.write(f"{self.symbol}\t{self.tf}\tLONG\t{name}\t{weight}\t{gatekeeper}\t{passed}\t{result}\n")
+            f.write("\n")
+        else:
+            f.write("(No LONG filter results)\n\n")
+
+        # SHORT Filter Results
+        if any(results_short.values()):
+            f.write("## SHORT Filter Results\n")
+            f.write("Symbol\tTimeframe\tSignalType\tFilter Name\tWeight\tGateKeeper\tResult\tPASSES\n")
+            for name, passed in results_short.items():
+                weight = self.filter_weights_short.get(name, 0)
+                gatekeeper = name in self.gatekeepers
+                result = "PASS" if passed else ""
+                f.write(f"{self.symbol}\t{self.tf}\tSHORT\t{name}\t{weight}\t{gatekeeper}\t{passed}\t{result}\n")
+            f.write("\n")
+        else:
+            f.write("(No SHORT filter results)\n\n")
+
+        # Validation Verdict
+        f.write("\n==== VALIDATION VERDICT (%s) ====\n" % now)
+        f.write(f"Signal: {direction} on {self.symbol} @ {self.tf}\n")
+
+        # OrderBook
+        wall_delta = orderbook_result.get('wall_delta', 'N/A')
+        buy_wall = orderbook_result.get('buy_wall', 'N/A')
+        sell_wall = orderbook_result.get('sell_wall', 'N/A')
+        wall_favor = "SHORT" if wall_delta < 0 else "LONG"
+        f.write(f"OrderBook Wall:     {'Aligned' if verdict['orderbook'] else 'Not Aligned'}  (wall_delta={wall_delta}, favors {wall_favor})\n")
+
+        # Resting Density
+        bid_density = density_result.get('bid_density', 'N/A')
+        ask_density = density_result.get('ask_density', 'N/A')
+        density_favor = "SHORT" if ask_density > bid_density else "LONG"
+        f.write(f"Resting Density:    {'Aligned' if verdict['density'] else 'Not Aligned'}  (bid_density={bid_density}, ask_density={ask_density}, favors {density_favor})\n")
+
+        # Final Verdict
+        f.write(f"FINAL VERDICT:      {'ALIGNED ✅' if verdict['final'] else 'BLOCKED 🚫'}\n")
+        f.write("==== END ====\n")
+
     def analyze(self):
         if self.df.empty:
             print(f"[{self.symbol}] Error: DataFrame empty.")
@@ -558,12 +611,22 @@ class SmartFilter:
 
         print(f"[{self.symbol}] Total LONG weight: {long_sum}")
         print(f"[{self.symbol}] Total SHORT weight: {short_sum}")
+        
+        # Weighted sums for info only
+        long_weight_sum = sum(self.filter_weights_long.get(name, 0) for name, passed in results_long.items() if passed)
+        short_weight_sum = sum(self.filter_weights_short.get(name, 0) for name, passed in results_short.items() if passed)
 
+        # Correct: Score is count of passed filters
+        long_score = sum(1 for passed in results_long.values() if passed)
+        short_score = sum(1 for passed in results_short.values() if passed)
+
+        print(f"[{self.symbol}] Total LONG weight: {long_weight_sum}")
+        print(f"[{self.symbol}] Total SHORT weight: {short_weight_sum}")
+        
         # --- Get signal direction ---
         direction = self.get_signal_direction(results_long, results_short)
-        print(f"[{self.symbol}] Signal Direction: {direction}")
         self.bias = direction
-
+      
         # Calculate gatekeeper passes for each direction
         passed_gk_long = [f for f in self.gatekeepers if results_long.get(f, False)]
         passed_gk_short = [f for f in self.gatekeepers if results_short.get(f, False)]
@@ -575,27 +638,25 @@ class SmartFilter:
         total_gk_weight_short = sum(self.filter_weights_short.get(f, 0) for f in self.gatekeepers)
         passed_weight_long = sum(self.filter_weights_long.get(f, 0) for f in passed_gk_long)
         passed_weight_short = sum(self.filter_weights_short.get(f, 0) for f in passed_gk_short)
-        confidence_long = round(self._safe_divide(100 * passed_weight_long, total_gk_weight_long), 1) if total_gk_weight_long else 0.0
-        confidence_short = round(self._safe_divide(100 * passed_weight_short, total_gk_weight_short), 1) if total_gk_weight_short else 0.0
 
-        # Select summary stats based on direction
+        confidence_long = round(100 * passed_weight_long / total_gk_weight_long, 1) if total_gk_weight_long else 0.0
+        confidence_short = round(100 * passed_weight_short / total_gk_weight_short, 1) if total_gk_weight_short else 0.0
+
+        # Use selected direction's stats
         if direction == "LONG":
-            score = sum(1 for name, passed in results_long.items() if passed)
+            score = long_score
             passes = passes_long
             confidence = confidence_long
             passed_weight = passed_weight_long
             total_gk_weight = total_gk_weight_long
         elif direction == "SHORT":
-            score = sum(1 for name, passed in results_short.items() if passed)
+            score = short_score
             passes = passes_short
             confidence = confidence_short
             passed_weight = passed_weight_short
             total_gk_weight = total_gk_weight_short
         else:
-            score = max(
-                sum(1 for name, passed in results_long.items() if passed),
-                sum(1 for name, passed in results_short.items() if passed)
-            )
+            score = max(long_score, short_score)
             passes = max(passes_long, passes_short)
             confidence = max(confidence_long, confidence_short)
             passed_weight = max(passed_weight_long, passed_weight_short)
@@ -603,7 +664,7 @@ class SmartFilter:
 
         confidence = round(self._safe_divide(100 * passed_weight, total_gk_weight), 1) if total_gk_weight else 0.0
 
-    # --- SuperGK check ---
+        # --- SuperGK check ---
         orderbook_result = get_order_wall_delta(self.symbol)
         density_result = get_resting_density(self.symbol)
         super_gk_ok = self.superGK_check(direction, orderbook_result, density_result)
@@ -622,7 +683,7 @@ class SmartFilter:
             f"| Score: {score}/23 | Passed: {passes}/{len(self.gatekeepers)} "
             f"| Confidence: {confidence}% (Weighted: {passed_weight:.1f}/{total_gk_weight:.1f})"
         )
-        
+
         if valid_signal:
             print(f"[{self.symbol}] ✅ FINAL SIGNAL: {message}")
         else:
@@ -630,6 +691,29 @@ class SmartFilter:
 
         print("DEBUG SUMS:", getattr(self, '_debug_sums', {}))
 
+        # --- Verdict for debug file ---
+        verdict = {
+            "orderbook": (
+                direction == "SHORT" and orderbook_result["sell_wall"] > orderbook_result["buy_wall"] or
+                direction == "LONG" and orderbook_result["buy_wall"] > orderbook_result["sell_wall"]
+            ),
+            "density": (
+                direction == "SHORT" and density_result["ask_density"] > density_result["bid_density"] or
+                direction == "LONG" and density_result["bid_density"] > density_result["ask_density"]
+            ),
+            "final": valid_signal
+        }
+
+        # Export debug file
+        self.export_signal_debug(
+            results_long,
+            results_short,
+            orderbook_result,
+            density_result,
+            direction,
+            verdict
+        )
+        
         # Return only the summary object for main.py
         return {
             "symbol": self.symbol,
