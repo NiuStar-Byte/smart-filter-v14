@@ -14,16 +14,17 @@ def compute_atr(df, period=14):
     ], axis=1).max(axis=1)
     return tr.rolling(period).mean().iat[-1]
 
-def compute_rsi(df, period=14):
-    delta = df['close'].diff()
-    gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
-    loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
-    rs = gain / loss
-    rsi = 100 - (100 / (1 + rs))
-    return rsi
+# PREVIOUS COMPUTE RSI for New SuperGK ONLY RSI Density & OrderBookWall
+# def compute_rsi(df, period=14):
+#    delta = df['close'].diff()
+#    gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+#    loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+#    rs = gain / loss
+#    rsi = 100 - (100 / (1 + rs))
+#    return rsi
 
 # When you get your OHLCV dataframe:
-df['RSI'] = compute_rsi(df)
+# df['RSI'] = compute_rsi(df)
 
 # PREVIOUS COMPUTE RSI for New SuperGK
 # def compute_rsi(df, period=14):
