@@ -112,6 +112,9 @@ class SmartFilter:
         self.df["ema21"] = self.df["close"].ewm(span=21).mean()
         self.df["ema50"] = self.df["close"].ewm(span=50).mean()
         self.df["ema200"] = self.df["close"].ewm(span=200).mean()
+        
+        # Compute RSI as part of initialization or analysis
+        self.df['RSI'] = self.compute_rsi(self.df)
 
         # ATR + ATR_MA
         self.df["atr"] = self.df["high"].sub(self.df["low"]).rolling(14).mean()
@@ -184,6 +187,14 @@ class SmartFilter:
         self.df["ema200"] = self.df["close"].ewm(span=200).mean()
         self.df["vwap"] = (self.df["close"] * self.df["volume"]).cumsum() / self.df["volume"].cumsum()
 
+    def compute_rsi(self, df, period=14):
+        delta = df['close'].diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+        rs = gain / loss
+        rsi = 100 - (100 / (1 + rs))
+        return rsi
+    
     @property
     def filter_weights(self):
         """
