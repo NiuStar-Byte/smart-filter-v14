@@ -23,6 +23,29 @@ def compute_rsi(df, period=14):
     rs = ema_up / ema_down
     return 100 - (100 / (1 + rs)).iat[-1]
 
+def compute_adx(df, period=14):
+    high = df['high']
+    low = df['low']
+    close = df['close']
+
+    plus_dm = high.diff()
+    minus_dm = low.diff().abs()
+    plus_dm[plus_dm < 0] = 0
+    minus_dm[minus_dm < 0] = 0
+
+    tr = pd.concat([
+        high - low,
+        (high - close.shift()).abs(),
+        (low - close.shift()).abs()
+    ], axis=1).max(axis=1)
+
+    atr = tr.rolling(period).mean()
+    plus_di = 100 * (plus_dm.rolling(period).mean() / atr)
+    minus_di = 100 * (minus_dm.rolling(period).mean() / atr)
+    dx = (abs(plus_di - minus_di) / (plus_di + minus_di)) * 100
+    adx = dx.rolling(period).mean()
+    return adx.iat[-1]
+
 class SmartFilter:
     """
     Core scanner that evaluates 23+ technical / order-flow filters,
@@ -203,9 +226,10 @@ class SmartFilter:
             print(f"Signal blocked due to weak sell-side support for {self.symbol}")
             return False
 
-        # --- ATR & RSI Calculations ---
+        # --- ATR RSI & ADX Calculations ---
         atr = compute_atr(self.df)
         rsi = compute_rsi(self.df)
+        adx = compute_adx(self.df)
         price = self.df['close'].iat[-1]
         atr_pct = atr / price if price else 0
 
@@ -215,6 +239,12 @@ class SmartFilter:
         bull_rsi = 60
         bear_rsi = 40
 
+        # --- ADX Filter ---
+        adx_threshold = 20
+        if adx < adx_threshold:
+            print(f"Signal blocked: Trend strength too weak (ADX={adx:.2f})")
+            return False
+    
         if atr_pct < low_vol_threshold:
             print(f"Signal blocked: Volatility too low (ATR={atr:.4f}, ATR%={atr_pct:.2%})")
             return False
