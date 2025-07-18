@@ -178,10 +178,10 @@ class SmartFilter:
         ]
 
         # Directional-aware filters are those with different weights between LONG and SHORT
-        self.directional_aware_filters = [
-            "MACD", "ATR Momentum Burst", "HATS", "Liquidity Awareness",
-            "VWAP Divergence", "Support/Resistance", "Smart Money Bias", "Absorption"
-        ]
+#        self.directional_aware_filters = [
+#            "MACD", "ATR Momentum Burst", "HATS", "Liquidity Awareness",
+#            "VWAP Divergence", "Support/Resistance", "Smart Money Bias", "Absorption"
+#        ]
 
         self.df["ema20"] = self.df["close"].ewm(span=20).mean()
         self.df["ema50"] = self.df["close"].ewm(span=50).mean()
@@ -224,12 +224,12 @@ class SmartFilter:
         weights = self.filter_weights_long if direction == "LONG" else self.filter_weights_short
         return sum(weights.get(f, 0) for f in self.gatekeepers if results.get(f, False))
 
-    def _calculate_directional_aware_sum(self, results, direction):
-        """
-        Calculate the sum of weights for passed directional-aware filters for the given direction.
-        """
-        weights = self.filter_weights_long if direction == "LONG" else self.filter_weights_short
-        return sum(weights.get(f, 0) for f in self.directional_aware_filters if results.get(f, False))
+#    def _calculate_directional_aware_sum(self, results, direction):
+#        """
+#        Calculate the sum of weights for passed directional-aware filters for the given direction.
+#        """
+#        weights = self.filter_weights_long if direction == "LONG" else self.filter_weights_short
+#        return sum(weights.get(f, 0) for f in self.directional_aware_filters if results.get(f, False))
             
     def get_signal_direction(self, results_long, results_short):
         """
