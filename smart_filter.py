@@ -94,6 +94,41 @@ class SmartFilter:
         self.df = df.copy()
         self.df3m = df3m.copy() if df3m is not None else None
         self.df5m = df5m.copy() if df5m is not None else None
+        # Essential EMAs
+        self.df["ema9"] = self.df["close"].ewm(span=9).mean()
+        self.df["ema10"] = self.df["close"].ewm(span=10).mean()
+        self.df["ema21"] = self.df["close"].ewm(span=21).mean()
+        self.df["ema50"] = self.df["close"].ewm(span=50).mean()
+        self.df["ema200"] = self.df["close"].ewm(span=200).mean()
+
+        # ATR + ATR_MA
+        self.df["atr"] = self.df["high"].sub(self.df["low"]).rolling(14).mean()
+        self.df["atr_ma"] = self.df["atr"].rolling(20).mean()
+
+        # Bollinger Bands
+        self.df = add_bollinger_bands(self.df)
+        # Keltner Channels (needs ATR column)
+        self.df = add_keltner_channels(self.df)
+
+        # Chop Zone (simple proxy: rolling std of close, or use your formula)
+        self.df["chop_zone"] = self.df["close"].rolling(14).std()
+
+        # Optional: ADX (if required in checks)
+        try:
+            self.df["adx"] = self.df.apply(lambda row: compute_adx(self.df), axis=1)
+        except Exception:
+            pass
+
+        # Bid/Ask Columns (if not present, fill with NaN or zeros)
+        if "bid" not in self.df.columns:
+            self.df["bid"] = np.nan
+        if "ask" not in self.df.columns:
+            self.df["ask"] = np.nan
+
+        # Higher Timeframe Volume (if not present, fill with NaN)
+        if "higher_tf_volume" not in self.df.columns:
+            self.df["higher_tf_volume"] = np.nan
+    
         self.tf = tf
         self.min_score = min_score
         self.required_passed = required_passed
