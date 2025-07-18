@@ -334,7 +334,7 @@ class SmartFilter:
         confidence = round(self._safe_divide(100 * passed_weight, total_gk_weight), 1) if total_gk_weight else 0.0
 
         orderbook_result = get_order_wall_delta(self.symbol)
-        density_result = get_resting_order_density(self.symbol)
+        density_result = get_resting_density(self.symbol)
         super_gk_ok = self.superGK_check(signal_direction, orderbook_result, density_result)
 #        super_gk_ok = self.superGK_check(signal_direction)
 #        orderbook_ok = self._order_book_wall_passed()
