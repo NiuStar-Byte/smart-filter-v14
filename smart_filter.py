@@ -580,19 +580,22 @@ class SmartFilter:
 
         # Select summary stats based on direction
         if direction == "LONG":
-            score = long_sum
+            score = sum(1 for name, passed in results_long.items() if passed)
             passes = passes_long
             confidence = confidence_long
             passed_weight = passed_weight_long
             total_gk_weight = total_gk_weight_long
         elif direction == "SHORT":
-            score = short_sum
+            score = sum(1 for name, passed in results_short.items() if passed)
             passes = passes_short
             confidence = confidence_short
             passed_weight = passed_weight_short
             total_gk_weight = total_gk_weight_short
         else:
-            score = max(long_sum, short_sum)
+            score = max(
+                sum(1 for name, passed in results_long.items() if passed),
+                sum(1 for name, passed in results_short.items() if passed)
+            )
             passes = max(passes_long, passes_short)
             confidence = max(confidence_long, confidence_short)
             passed_weight = max(passed_weight_long, passed_weight_short)
@@ -619,7 +622,7 @@ class SmartFilter:
             f"| Score: {score}/23 | Passed: {passes}/{len(self.gatekeepers)} "
             f"| Confidence: {confidence}% (Weighted: {passed_weight:.1f}/{total_gk_weight:.1f})"
         )
-
+        
         if valid_signal:
             print(f"[{self.symbol}] ✅ FINAL SIGNAL: {message}")
         else:
