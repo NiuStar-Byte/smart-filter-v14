@@ -1,6 +1,10 @@
+# smart_filter.py
+
 import requests
 import pandas as pd
 import numpy as np
+from kucoin_orderbook import get_order_wall_delta
+from kucoin_density import get_resting_density
 
 def compute_atr(df, period=14):
     tr = pd.concat([
