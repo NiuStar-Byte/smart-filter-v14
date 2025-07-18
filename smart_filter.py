@@ -512,37 +512,76 @@ class SmartFilter:
             "Volatility Squeeze": getattr(self, "_check_volatility_squeeze", None)
         }
 
-        # Build checks dict, log missing implementations
-        checks = {}
+        # Prepare LONG and SHORT dictionaries
+        results_long = {}
+        results_short = {}
+        results_status = {}
+
         for name in filter_names:
             fn = filter_function_map.get(name)
             if fn is None:
                 print(f"[{self.symbol}] [ERROR] Filter function '{name}' not implemented or missing!")
-            else:
-                checks[name] = fn
-
-        results = {}
-
-        for name, fn in checks.items():
+                results_long[name] = False
+                results_short[name] = False
+                results_status[name] = "ERROR"
+                continue
             try:
                 result = fn()
                 if result == "LONG":
+                    results_long[name] = True
+                    results_short[name] = False
                     status = "LONG"
                 elif result == "SHORT":
+                    results_long[name] = False
+                    results_short[name] = True
                     status = "SHORT"
                 elif result is True:
+                    results_long[name] = True
+                    results_short[name] = True
                     status = "PASS"
                 elif result is False:
+                    results_long[name] = False
+                    results_short[name] = False
                     status = "FAIL"
                 else:
+                    results_long[name] = False
+                    results_short[name] = False
                     status = "NONE"
                 print(f"[{self.symbol}] Filter: {name} | Status: {status}")
-                results[name] = {"status": status, "raw": result}
+                results_status[name] = status
             except Exception as e:
                 print(f"[{self.symbol}] {name} ERROR: {e}")
-                results[name] = {"status": "ERROR", "raw": None}
+                results_long[name] = False
+                results_short[name] = False
+                results_status[name] = "ERROR"
 
-        return results
+        # --- Calculate weight sums ---
+        long_sum = sum(
+            self.filter_weights.get(name, {}).get("LONG", 0)
+            for name, passed in results_long.items() if passed
+        )
+        short_sum = sum(
+            self.filter_weights.get(name, {}).get("SHORT", 0)
+            for name, passed in results_short.items() if passed
+        )
+        print(f"[{self.symbol}] Total LONG weight: {long_sum}")
+        print(f"[{self.symbol}] Total SHORT weight: {short_sum}")
+
+        # --- Optionally, get signal direction (if you have that method) ---
+        if hasattr(self, "get_signal_direction"):
+            direction = self.get_signal_direction(results_long, results_short)
+            print(f"[{self.symbol}] Signal Direction: {direction}")
+        else:
+            direction = None
+
+        return {
+            "results_status": results_status,
+            "results_long": results_long,
+            "results_short": results_short,
+            "long_sum": long_sum,
+            "short_sum": short_sum,
+            "direction": direction
+        }
         
         # For debug/export compatibility, build results_long and results_short as copies
         results_long = dict(results)
