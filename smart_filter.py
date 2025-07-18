@@ -544,7 +544,7 @@ class SmartFilter:
                     results_long[name] = False
                     results_short[name] = False
                     status = "NONE"
-                print(f"[{self.symbol}] Filter: {name} | Status: {status}")
+ #               print(f"[{self.symbol}] Filter: {name} | Status: {status}")
                 results_status[name] = status
             except Exception as e:
                 print(f"[{self.symbol}] {name} ERROR: {e}")
