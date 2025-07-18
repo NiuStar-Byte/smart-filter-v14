@@ -464,6 +464,28 @@ class SmartFilter:
                 print(f"[{self.symbol}] {name} ERROR: {e}")
                 results[name] = False
 
+        # Example: In smart_filter.py, inside your analyze() filter loop
+
+        for name, fn in checks.items():
+            try:
+                result = fn()
+                # Refined status mapping for clarity
+                if result == "LONG":
+                    status = "LONG"
+                elif result == "SHORT":
+                    status = "SHORT"
+                elif result is True:
+                    status = "PASS"
+                elif result is False:
+                    status = "FAIL"
+                else:
+                    status = "NONE"
+                print(f"[{self.symbol}] Filter: {name} | Status: {status}")
+                results[name] = bool(result)
+            except Exception as e:
+                print(f"[{self.symbol}] {name} ERROR: {e}")
+                results[name] = False
+        
         # For debug/export compatibility, build results_long and results_short as copies
         results_long = dict(results)
         results_short = dict(results)
