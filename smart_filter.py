@@ -254,83 +254,111 @@ class SmartFilter:
             return "NEUTRAL"
 
     def superGK_check(self, signal_direction, orderbook_result, density_result):
-        # Check if order book data is valid
-        if (orderbook_result is None 
-            or orderbook_result.get('buy_wall', 0) == 0 
-            or orderbook_result.get('sell_wall', 0) == 0):
-            print(f"Signal blocked due to missing order book data for {self.symbol}")
+        if orderbook_result is None or density_result is None:
+            print(f"Signal blocked due to missing order book or density for {self.symbol}")
             return False
 
         bid_wall = orderbook_result.get('buy_wall', 0)
         ask_wall = orderbook_result.get('sell_wall', 0)
-        midprice = orderbook_result.get('midprice', None)
 
         bid_density = density_result.get('bid_density', 0)
         ask_density = density_result.get('ask_density', 0)
-
+        
         # Liquidity check
         if bid_density < self.liquidity_threshold or ask_density < self.liquidity_threshold:
             print(f"Signal blocked due to low liquidity for {self.symbol}")
             return False
-
-        # Wall support logic
-        if signal_direction == "LONG" and bid_wall < ask_wall:
-            print(f"Signal blocked due to weak buy-side support for {self.symbol}")
-            return False
-        if signal_direction == "SHORT" and ask_wall < bid_wall:
-            print(f"Signal blocked due to weak sell-side support for {self.symbol}")
-            return False
-
-        # --- ATR RSI & ADX Calculations ---
-        atr = compute_atr(self.df)
-        rsi = compute_rsi(self.df)
-        adx = compute_adx(self.df)
-        price = self.df['close'].iat[-1]
-        atr_pct = atr / price if price else 0
-
-        # --- Dynamic Market Regime Logic ---
-        low_vol_threshold = 0.005   # ATR < 1% of price = low volatility
-        high_vol_threshold = 0.05  # ATR > 3% of price = high volatility
-        bull_rsi = 60
-        bear_rsi = 40
-
-        # --- ADX Filter ---
-        adx_threshold = 20
-        if adx < adx_threshold:
-            print(f"Signal blocked: Trend strength too weak (ADX={adx:.2f})")
-            return False
-    
-        if atr_pct < low_vol_threshold:
-            print(f"Signal blocked: Volatility too low (ATR={atr:.4f}, ATR%={atr_pct:.2%})")
-            return False
-
-        if signal_direction == "LONG":
-            if rsi < bull_rsi:
-                print(f"Signal blocked: LONG but RSI not bullish enough (RSI={rsi:.2f})")
-                return False
-        elif signal_direction == "SHORT":
-            if rsi > bear_rsi:
-                print(f"Signal blocked: SHORT but RSI not bearish enough (RSI={rsi:.2f})")
-                return False
-
-        if bear_rsi < rsi < bull_rsi:
-            print(f"Signal blocked: Market is ranging (RSI={rsi:.2f})")
-            return False
-
-        if atr_pct > high_vol_threshold:
-            print(f"Signal blocked: Volatility extremely high, unstable market (ATR={atr:.4f}, ATR%={atr_pct:.2%})")
-            return False
-
-        # Final regime decision
-        if signal_direction == "LONG" and bid_density > ask_density:
-            print(f"Signal passed for LONG: Strong bid-side liquidity for {self.symbol}")
+        
+        # LONG: bid_wall > ask_wall AND bid_density > ask_density
+        if signal_direction == "LONG" and bid_wall > ask_wall and bid_density > ask_density:
+            print(f"Signal passed for LONG: bid_wall & bid_density stronger.")
             return True
-        elif signal_direction == "SHORT" and ask_density > bid_density:
-            print(f"Signal passed for SHORT: Strong ask-side liquidity for {self.symbol}")
+        # SHORT: ask_wall > bid_wall AND ask_density > bid_density
+        elif signal_direction == "SHORT" and ask_wall > bid_wall and ask_density > bid_density:
+            print(f"Signal passed for SHORT: ask_wall & ask_density stronger.")
             return True
         else:
-            print(f"Signal blocked due to neutral market conditions for {self.symbol}")
+            print(f"Signal blocked: SuperGK not aligned for {self.symbol}")
             return False
+    
+#    def superGK_check(self, signal_direction, orderbook_result, density_result):
+        # Check if order book data is valid
+#        if (orderbook_result is None 
+#            or orderbook_result.get('buy_wall', 0) == 0 
+#            or orderbook_result.get('sell_wall', 0) == 0):
+#            print(f"Signal blocked due to missing order book data for {self.symbol}")
+#            return False
+
+#        bid_wall = orderbook_result.get('buy_wall', 0)
+#        ask_wall = orderbook_result.get('sell_wall', 0)
+#        midprice = orderbook_result.get('midprice', None)
+
+#        bid_density = density_result.get('bid_density', 0)
+#        ask_density = density_result.get('ask_density', 0)
+
+        # Liquidity check
+#        if bid_density < self.liquidity_threshold or ask_density < self.liquidity_threshold:
+#            print(f"Signal blocked due to low liquidity for {self.symbol}")
+#            return False
+
+        # Wall support logic
+#        if signal_direction == "LONG" and bid_wall < ask_wall:
+#            print(f"Signal blocked due to weak buy-side support for {self.symbol}")
+#            return False
+#        if signal_direction == "SHORT" and ask_wall < bid_wall:
+#            print(f"Signal blocked due to weak sell-side support for {self.symbol}")
+#            return False
+
+        # --- ATR RSI & ADX Calculations ---
+#        atr = compute_atr(self.df)
+#        rsi = compute_rsi(self.df)
+#        adx = compute_adx(self.df)
+#        price = self.df['close'].iat[-1]
+#        atr_pct = atr / price if price else 0
+
+        # --- Dynamic Market Regime Logic ---
+#        low_vol_threshold = 0.005   # ATR < 1% of price = low volatility
+#        high_vol_threshold = 0.05  # ATR > 3% of price = high volatility
+#        bull_rsi = 60
+#        bear_rsi = 40
+
+        # --- ADX Filter ---
+ #       adx_threshold = 20
+ #       if adx < adx_threshold:
+ #           print(f"Signal blocked: Trend strength too weak (ADX={adx:.2f})")
+ #           return False
+    
+ #       if atr_pct < low_vol_threshold:
+ #           print(f"Signal blocked: Volatility too low (ATR={atr:.4f}, ATR%={atr_pct:.2%})")
+ #           return False
+
+ #       if signal_direction == "LONG":
+ #           if rsi < bull_rsi:
+ #               print(f"Signal blocked: LONG but RSI not bullish enough (RSI={rsi:.2f})")
+ #               return False
+ #       elif signal_direction == "SHORT":
+ #           if rsi > bear_rsi:
+ #               print(f"Signal blocked: SHORT but RSI not bearish enough (RSI={rsi:.2f})")
+ #               return False
+
+ #       if bear_rsi < rsi < bull_rsi:
+ #           print(f"Signal blocked: Market is ranging (RSI={rsi:.2f})")
+ #           return False
+
+ #       if atr_pct > high_vol_threshold:
+ #           print(f"Signal blocked: Volatility extremely high, unstable market (ATR={atr:.4f}, ATR%={atr_pct:.2%})")
+ #           return False
+
+        # Final regime decision
+ #       if signal_direction == "LONG" and bid_density > ask_density:
+ #           print(f"Signal passed for LONG: Strong bid-side liquidity for {self.symbol}")
+ #           return True
+ #       elif signal_direction == "SHORT" and ask_density > bid_density:
+ #           print(f"Signal passed for SHORT: Strong ask-side liquidity for {self.symbol}")
+ #           return True
+ #       else:
+ #           print(f"Signal blocked due to neutral market conditions for {self.symbol}")
+ #           return False
     
     def analyze(self):
         if self.df.empty:
