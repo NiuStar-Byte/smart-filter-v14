@@ -235,30 +235,27 @@ class SmartFilter:
         """
         Calculate two sums for both LONG and SHORT directions and return the direction
         only if BOTH sums are greater for that direction. Otherwise return "NEUTRAL".
-
-        - Sum of weights for all passed filters (result == True)
-        - Sum of weights for passed gatekeeper filters (result == True and is_gk == True)
         """
         long_all_filters = sum(
-            self.filter_weights[name]['LONG']
+            self.filter_weights_long.get(name, 0)
             for name, passed in results_long.items()
             if passed
         )
         long_gatekeepers = sum(
-            self.filter_weights[name]['LONG']
+            self.filter_weights_long.get(name, 0)
             for name, passed in results_long.items()
-            if passed and self.is_gatekeeper(name)
+            if passed and name in self.gatekeepers
         )
 
         short_all_filters = sum(
-            self.filter_weights[name]['SHORT']
+            self.filter_weights_short.get(name, 0)
             for name, passed in results_short.items()
             if passed
         )
         short_gatekeepers = sum(
-            self.filter_weights[name]['SHORT']
+            self.filter_weights_short.get(name, 0)
             for name, passed in results_short.items()
-            if passed and self.is_gatekeeper(name)
+            if passed and name in self.gatekeepers
         )
 
         self._debug_sums = {
@@ -555,13 +552,13 @@ class SmartFilter:
                 results_short[name] = False
                 results_status[name] = "ERROR"
 
-        # --- Calculate weight sums ---
+        # --- Calculate weight sums using the correct dicts ---
         long_sum = sum(
-            self.filter_weights.get(name, {}).get("LONG", 0)
+            self.filter_weights_long.get(name, 0)
             for name, passed in results_long.items() if passed
         )
         short_sum = sum(
-            self.filter_weights.get(name, {}).get("SHORT", 0)
+            self.filter_weights_short.get(name, 0)
             for name, passed in results_short.items() if passed
         )
         print(f"[{self.symbol}] Total LONG weight: {long_sum}")
