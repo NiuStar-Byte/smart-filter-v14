@@ -210,8 +210,8 @@ class SmartFilter:
         atr_pct = atr / price if price else 0
 
         # --- Dynamic Market Regime Logic ---
-        low_vol_threshold = 0.015   # ATR < 1% of price = low volatility
-        high_vol_threshold = 0.035  # ATR > 3% of price = high volatility
+        low_vol_threshold = 0.005   # ATR < 1% of price = low volatility
+        high_vol_threshold = 0.05  # ATR > 3% of price = high volatility
         bull_rsi = 60
         bear_rsi = 40
 
