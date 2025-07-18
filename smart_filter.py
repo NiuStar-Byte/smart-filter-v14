@@ -244,33 +244,33 @@ class SmartFilter:
         # Calculate three sums for LONG direction
         long_all_filters = self._calculate_all_filters_sum(results_long, "LONG")
         long_gatekeepers = self._calculate_gatekeeper_sum(results_long, "LONG")
-        long_directional = self._calculate_directional_aware_sum(results_long, "LONG")
+#        long_directional = self._calculate_directional_aware_sum(results_long, "LONG")
         
         # Calculate three sums for SHORT direction
         short_all_filters = self._calculate_all_filters_sum(results_short, "SHORT")
         short_gatekeepers = self._calculate_gatekeeper_sum(results_short, "SHORT")
-        short_directional = self._calculate_directional_aware_sum(results_short, "SHORT")
+ #       short_directional = self._calculate_directional_aware_sum(results_short, "SHORT")
         
         # Store sums for debugging (accessible via instance)
         self._debug_sums = {
             "long_all_filters": long_all_filters,
             "long_gatekeepers": long_gatekeepers,
-            "long_directional": long_directional,
+ #           "long_directional": long_directional,
             "short_all_filters": short_all_filters,
-            "short_gatekeepers": short_gatekeepers,
-            "short_directional": short_directional
+            "short_gatekeepers": short_gatekeepers
+ #           "short_directional": short_directional
         }
         
         # Check if LONG wins all three comparisons
         if (long_all_filters > short_all_filters and 
-            long_gatekeepers > short_gatekeepers and 
-            long_directional > short_directional):
+            long_gatekeepers > short_gatekeepers):
+#            long_directional > short_directional):
             return "LONG"
         
         # Check if SHORT wins all three comparisons
         elif (short_all_filters > long_all_filters and 
-              short_gatekeepers > long_gatekeepers and 
-              short_directional > long_directional):
+              short_gatekeepers > long_gatekeepers):
+#              short_directional > long_directional):
             return "SHORT"
         
         # If neither direction wins all three, return NEUTRAL
