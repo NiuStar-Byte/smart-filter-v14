@@ -468,57 +468,57 @@ class SmartFilter:
  #           print(f"Signal blocked due to neutral market conditions for {self.symbol}")
  #           return False
 
-def export_signal_debug(self, results_long, results_short, orderbook_result, density_result, direction, verdict, filename="signal_debug_temp_current.txt"):
-    with open(filename, "w") as f:
-        now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        f.write(f"# Signal Debug Export (created: {now})\n\n")
+    def export_signal_debug(self, results_long, results_short, orderbook_result, density_result, direction, verdict, filename="signal_debug_temp_current.txt"):
+        with open(filename, "w") as f:
+            now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            f.write(f"# Signal Debug Export (created: {now})\n\n")
 
-        # LONG Filter Results
-        if any(results_long.values()):
-            f.write("## LONG Filter Results\n")
-            f.write("Symbol\tTimeframe\tSignalType\tFilter Name\tWeight\tGateKeeper\tResult\tPASSES\n")
-            for name, passed in results_long.items():
-                weight = self.filter_weights_long.get(name, 0)
-                gatekeeper = name in self.gatekeepers
-                result = "PASS" if passed else ""
-                f.write(f"{self.symbol}\t{self.tf}\tLONG\t{name}\t{weight}\t{gatekeeper}\t{passed}\t{result}\n")
-            f.write("\n")
-        else:
-            f.write("(No LONG filter results)\n\n")
+            # LONG Filter Results
+            if any(results_long.values()):
+                f.write("## LONG Filter Results\n")
+                f.write("Symbol\tTimeframe\tSignalType\tFilter Name\tWeight\tGateKeeper\tResult\tPASSES\n")
+                for name, passed in results_long.items():
+                    weight = self.filter_weights_long.get(name, 0)
+                    gatekeeper = name in self.gatekeepers
+                    result = "PASS" if passed else ""
+                    f.write(f"{self.symbol}\t{self.tf}\tLONG\t{name}\t{weight}\t{gatekeeper}\t{passed}\t{result}\n")
+                f.write("\n")
+            else:
+                f.write("(No LONG filter results)\n\n")
 
-        # SHORT Filter Results
-        if any(results_short.values()):
-            f.write("## SHORT Filter Results\n")
-            f.write("Symbol\tTimeframe\tSignalType\tFilter Name\tWeight\tGateKeeper\tResult\tPASSES\n")
-            for name, passed in results_short.items():
-                weight = self.filter_weights_short.get(name, 0)
-                gatekeeper = name in self.gatekeepers
-                result = "PASS" if passed else ""
-                f.write(f"{self.symbol}\t{self.tf}\tSHORT\t{name}\t{weight}\t{gatekeeper}\t{passed}\t{result}\n")
-            f.write("\n")
-        else:
-            f.write("(No SHORT filter results)\n\n")
+            # SHORT Filter Results
+            if any(results_short.values()):
+                f.write("## SHORT Filter Results\n")
+                f.write("Symbol\tTimeframe\tSignalType\tFilter Name\tWeight\tGateKeeper\tResult\tPASSES\n")
+                for name, passed in results_short.items():
+                    weight = self.filter_weights_short.get(name, 0)
+                    gatekeeper = name in self.gatekeepers
+                    result = "PASS" if passed else ""
+                    f.write(f"{self.symbol}\t{self.tf}\tSHORT\t{name}\t{weight}\t{gatekeeper}\t{passed}\t{result}\n")
+                f.write("\n")
+            else:
+                f.write("(No SHORT filter results)\n\n")
 
-        # Validation Verdict
-        f.write("\n==== VALIDATION VERDICT (%s) ====\n" % now)
-        f.write(f"Signal: {direction} on {self.symbol} @ {self.tf}\n")
+            # Validation Verdict
+            f.write("\n==== VALIDATION VERDICT (%s) ====\n" % now)
+            f.write(f"Signal: {direction} on {self.symbol} @ {self.tf}\n")
 
-        # OrderBook
-        wall_delta = orderbook_result.get('wall_delta', 'N/A')
-        buy_wall = orderbook_result.get('buy_wall', 'N/A')
-        sell_wall = orderbook_result.get('sell_wall', 'N/A')
-        wall_favor = "SHORT" if wall_delta < 0 else "LONG"
-        f.write(f"OrderBook Wall:     {'Aligned' if verdict['orderbook'] else 'Not Aligned'}  (wall_delta={wall_delta}, favors {wall_favor})\n")
+            # OrderBook
+            wall_delta = orderbook_result.get('wall_delta', 'N/A')
+            buy_wall = orderbook_result.get('buy_wall', 'N/A')
+            sell_wall = orderbook_result.get('sell_wall', 'N/A')
+            wall_favor = "SHORT" if wall_delta < 0 else "LONG"
+            f.write(f"OrderBook Wall:     {'Aligned' if verdict['orderbook'] else 'Not Aligned'}  (wall_delta={wall_delta}, favors {wall_favor})\n")
 
-        # Resting Density
-        bid_density = density_result.get('bid_density', 'N/A')
-        ask_density = density_result.get('ask_density', 'N/A')
-        density_favor = "SHORT" if ask_density > bid_density else "LONG"
-        f.write(f"Resting Density:    {'Aligned' if verdict['density'] else 'Not Aligned'}  (bid_density={bid_density}, ask_density={ask_density}, favors {density_favor})\n")
+            # Resting Density
+            bid_density = density_result.get('bid_density', 'N/A')
+            ask_density = density_result.get('ask_density', 'N/A')
+            density_favor = "SHORT" if ask_density > bid_density else "LONG"
+            f.write(f"Resting Density:    {'Aligned' if verdict['density'] else 'Not Aligned'}  (bid_density={bid_density}, ask_density={ask_density}, favors {density_favor})\n")
 
-        # Final Verdict
-        f.write(f"FINAL VERDICT:      {'ALIGNED ✅' if verdict['final'] else 'BLOCKED 🚫'}\n")
-        f.write("==== END ====\n")
+            # Final Verdict
+            f.write(f"FINAL VERDICT:      {'ALIGNED ✅' if verdict['final'] else 'BLOCKED 🚫'}\n")
+            f.write("==== END ====\n")
 
     def analyze(self):
         if self.df.empty:
