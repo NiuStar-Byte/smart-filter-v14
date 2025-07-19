@@ -279,7 +279,7 @@ def run():
                             print("[FIRED] SHORT filter weights:", debug_info["filter_weights_short"], flush=True)
 
                             # Use only the new debug txt export function
-                            export_signal_debug_txt_v2(
+                            export_signal_debug_txt(
                                 symbol=debug_info["symbol"],
                                 tf=debug_info["tf"],
                                 bias=debug_info["bias"],
