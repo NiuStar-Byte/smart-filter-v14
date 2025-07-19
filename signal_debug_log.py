@@ -46,16 +46,14 @@ def parse_fired_log_line(line):
         if field not in result or result[field] is None:
             result[field] = ''
     return result
-
-import pandas as pd
-from datetime import datetime
+    
 
 def export_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weights_short, gatekeepers,
                            results_long=None, results_short=None,
                            orderbook_result=None, density_result=None,
-                           results=None, filename="signal_debug_temp.txt"):
+                           results=None):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    with open(filename, "w") as f:
+    with open("signal_debug_temp.txt", "w") as f:
         f.write(f"# Signal Debug Export (created: {timestamp})\n")
 
         # --- Write LONG results if available ---
