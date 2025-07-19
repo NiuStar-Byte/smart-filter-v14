@@ -289,8 +289,8 @@ def run():
                                 results_long=debug_info.get("results_long", {}),
                                 results_short=debug_info.get("results_short", {}),
                                 orderbook_result=debug_info.get("orderbook_result"),
-                                density_result=debug_info.get("density_result"),
-                                filename="signal_debug_temp.txt"
+                                density_result=debug_info.get("density_result")
+                                # filename="signal_debug_temp.txt"
                             )
                             send_telegram_file(
                                 "signal_debug_temp.txt",
