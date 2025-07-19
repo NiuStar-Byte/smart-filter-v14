@@ -62,16 +62,14 @@ def export_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weight
         rows_long = []
         if results_long is not None:
             for fname, res in results_long.items():
-                weight = filter_weights_long.get(fname)
-                if weight is None:
-                    print(f"[WARNING] Filter '{fname}' not found in filter_weights_long map!")
+                weight = filter_weights_long.get(fname, 0)
                 rows_long.append({
                     "Symbol": symbol,
                     "Timeframe": tf,
                     "SignalType": "LONG",
                     "Filter Name": fname,
-                    "Weight": weight if weight is not None else 0,
-                    "WeightMissing": weight is None,
+                    "Weight": weight,
+                    "WeightMissing": weight == 0,
                     "GateKeeper": fname in gatekeepers,
                     "Result": res,
                     "PASSES": "PASS" if fname in gatekeepers and res else ""
@@ -85,16 +83,14 @@ def export_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weight
         rows_short = []
         if results_short is not None:
             for fname, res in results_short.items():
-                weight = filter_weights_short.get(fname)
-                if weight is None:
-                    print(f"[WARNING] Filter '{fname}' not found in filter_weights_short map!")
+                weight = filter_weights_short.get(fname, 0)
                 rows_short.append({
                     "Symbol": symbol,
                     "Timeframe": tf,
                     "SignalType": "SHORT",
                     "Filter Name": fname,
-                    "Weight": weight if weight is not None else 0,
-                    "WeightMissing": weight is None,
+                    "Weight": weight,
+                    "WeightMissing": weight == 0,
                     "GateKeeper": fname in gatekeepers,
                     "Result": res,
                     "PASSES": "PASS" if fname in gatekeepers and res else ""
@@ -119,7 +115,6 @@ def export_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weight
                 elif bias == "SHORT":
                     weight = filter_weights_short.get(fname, 0)
                 else:
-                    # fallback for NEUTRAL: use long weights, or set to 0
                     weight = filter_weights_long.get(fname, 0)
                 rows.append({
                     "Symbol": symbol,
