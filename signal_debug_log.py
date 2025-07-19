@@ -47,8 +47,8 @@ def parse_fired_log_line(line):
             result[field] = ''
     return result
 
-def export_signal_debug_txt(*args, **kwargs):
-    pass
+import pandas as pd
+from datetime import datetime
 
 def export_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weights_short, gatekeepers,
                            results_long=None, results_short=None,
@@ -58,9 +58,8 @@ def export_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weight
     with open(filename, "w") as f:
         f.write(f"# Signal Debug Export (created: {timestamp})\n")
 
-        # --- Write LONG results (with weight map check) ---
-        if results_long is not None and len(results_long) > 0:
-#        if results_long is not None:
+        # --- Write LONG results if available ---
+        if results_long and len(results_long) > 0:
             rows_long = []
             for fname, res in results_long.items():
                 rows_long.append({
@@ -68,8 +67,7 @@ def export_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weight
                     "Timeframe": tf,
                     "SignalType": "LONG",
                     "Filter Name": fname,
-                    "Weight": = filter_weights_long.get(fname, 0)
-#                    "WeightMissing": weight == 0,
+                    "Weight": filter_weights_long.get(fname, 0),
                     "GateKeeper": fname in gatekeepers,
                     "Result": res,
                     "PASSES": "PASS" if fname in gatekeepers and res else ""
@@ -80,11 +78,9 @@ def export_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weight
             df_long.to_csv(f, sep="\t", index=False)
         else:
             f.write("\n(No LONG filter results)\n")
-            
-        # --- Write SHORT results (with weight map check) ---
-        if results_short is not None and len(results_short) > 0:
 
-#        if results_short is not None:
+        # --- Write SHORT results if available ---
+        if results_short and len(results_short) > 0:
             rows_short = []
             for fname, res in results_short.items():
                 rows_short.append({
@@ -92,8 +88,7 @@ def export_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weight
                     "Timeframe": tf,
                     "SignalType": "SHORT",
                     "Filter Name": fname,
-                    weight = filter_weights_short.get(fname, 0)
-#                    "WeightMissing": weight == 0,
+                    "Weight": filter_weights_short.get(fname, 0),
                     "GateKeeper": fname in gatekeepers,
                     "Result": res,
                     "PASSES": "PASS" if fname in gatekeepers and res else ""
@@ -105,39 +100,26 @@ def export_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weight
         else:
             f.write("\n(No SHORT filter results)\n")
 
-        # --- For backward compatibility: write 'results' if no long/short provided ---
-        if (
-            (results_long is None or len(results_long) == 0) and
-            (results_short is None or len(results_short) == 0) and
-            results is not None
-        ):
+        # --- Legacy results, for backward compatibility ---
+        if (not (results_long and any(results_long.values())) and 
+            not (results_short and any(results_short.values())) and 
+            results is not None and len(results) > 0):
             rows = []
             for fname, res in results.items():
-                # Always write Weight based on bias
-                if bias == "LONG":
-                    weight = filter_weights_long.get(fname, 0)
-                elif bias == "SHORT":
-                    weight = filter_weights_short.get(fname, 0)
-                else:
-                    weight = filter_weights_long.get(fname, 0)
                 rows.append({
                     "Symbol": symbol,
                     "Timeframe": tf,
                     "SignalType": bias,
                     "Filter Name": fname,
-                    "Weight": weight,
+                    "Weight": filter_weights_long.get(fname, 0),  # or use bias to switch
                     "GateKeeper": fname in gatekeepers,
                     "Result": res,
                     "PASSES": "PASS" if fname in gatekeepers and res else ""
                 })
-            df = pd.DataFrame(rows)
-            # Always guarantee Weight column exists
-            if "Weight" not in df.columns:
-                df["Weight"] = 0
-            df = df.sort_values("Weight", ascending=False)
+            df_legacy = pd.DataFrame(rows)
+            df_legacy = df_legacy.sort_values("Weight", ascending=False)
             f.write("\n## (Legacy results)\n")
-            df.to_csv(f, sep="\t", index=False)
-    
+            df_legacy.to_csv(f, sep="\t", index=False)
 
     # ---- Automated Validation Verdict Section ----
     verdict_lines = []
@@ -222,7 +204,7 @@ def log_fired_signal(
         max_weights: Maximum possible weights (optional)
         confidence_rate: Confidence rate as a percentage (optional)
     """
-#    print(f"[DEBUG] log_fired_signal called: {symbol}, {tf}, {signal_type}, entry_idx={entry_idx}, fired_time={fired_time}")
+    print(f"[DEBUG] log_fired_signal called: {symbol}, {tf}, {signal_type}, entry_idx={entry_idx}, fired_time={fired_time}")
 
     fired_uuid = str(uuid.uuid4())
     fired_time_str = (
