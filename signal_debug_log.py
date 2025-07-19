@@ -47,16 +47,19 @@ def parse_fired_log_line(line):
             result[field] = ''
     return result
 
-def dump_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weights_short, gatekeepers,
-                         results_long=None, results_short=None,
-                         orderbook_result=None, density_result=None,
-                         results=None):
+import pandas as pd
+from datetime import datetime
+
+def export_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weights_short, gatekeepers,
+                           results_long=None, results_short=None,
+                           orderbook_result=None, density_result=None,
+                           results=None, filename="signal_debug_temp.txt"):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    with open("signal_debug_temp.txt", "w") as f:
+    with open(filename, "w") as f:
         f.write(f"# Signal Debug Export (created: {timestamp})\n")
 
-        # --- Write LONG results if available ---
-        if results_long is not None and len(results_long) > 0:
+        # --- Write LONG results if available and any True ---
+        if results_long and any(results_long.values()):
             rows_long = []
             for fname, res in results_long.items():
                 rows_long.append({
@@ -76,8 +79,8 @@ def dump_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weights_
         else:
             f.write("\n(No LONG filter results)\n")
 
-        # --- Write SHORT results if available ---
-        if results_short is not None and len(results_short) > 0:
+        # --- Write SHORT results if available and any True ---
+        if results_short and any(results_short.values()):
             rows_short = []
             for fname, res in results_short.items():
                 rows_short.append({
@@ -97,8 +100,10 @@ def dump_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weights_
         else:
             f.write("\n(No SHORT filter results)\n")
 
-        # --- For backward compatibility: write 'results' if no long/short provided ---
-        if (not results_long and not results_short) and results is not None:
+        # --- Legacy results, for backward compatibility ---
+        if (not (results_long and any(results_long.values())) and 
+            not (results_short and any(results_short.values())) and 
+            results is not None and len(results) > 0):
             rows = []
             for fname, res in results.items():
                 rows.append({
@@ -106,15 +111,15 @@ def dump_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weights_
                     "Timeframe": tf,
                     "SignalType": bias,
                     "Filter Name": fname,
-                    "Weight": filter_weights_long.get(fname, 0),  # or whichever is appropriate
+                    "Weight": filter_weights_long.get(fname, 0),  # or use bias to switch
                     "GateKeeper": fname in gatekeepers,
                     "Result": res,
                     "PASSES": "PASS" if fname in gatekeepers and res else ""
                 })
-            df = pd.DataFrame(rows)
-            df = df.sort_values("Weight", ascending=False)
+            df_legacy = pd.DataFrame(rows)
+            df_legacy = df_legacy.sort_values("Weight", ascending=False)
             f.write("\n## (Legacy results)\n")
-            df.to_csv(f, sep="\t", index=False)
+            df_legacy.to_csv(f, sep="\t", index=False)
 
     # ---- Automated Validation Verdict Section ----
     verdict_lines = []
@@ -163,7 +168,7 @@ def dump_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weights_
     verdict_lines.append("==== END ====")
 
     # Append verdict section to file
-    with open("signal_debug_temp.txt", "a") as f:
+    with open(filename, "a") as f:
         for line in verdict_lines:
             f.write("\n" + line)
 
