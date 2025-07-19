@@ -47,8 +47,8 @@ def parse_fired_log_line(line):
             result[field] = ''
     return result
 
-import pandas as pd
-from datetime import datetime
+def export_signal_debug_txt(*args, **kwargs):
+    pass
 
 def export_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weights_short, gatekeepers,
                            results_long=None, results_short=None,
