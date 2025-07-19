@@ -1,8 +1,7 @@
 # main.py
 
 print("[INFO] main.py script started.", flush=True)
-
-from signal_debug_log import dump_signal_debug_txt, log_fired_signal
+from signal_debug_log import export_signal_debug_txt, log_fired_signal
 import os
 import time
 import pandas as pd
