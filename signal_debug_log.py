@@ -111,12 +111,18 @@ def export_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weight
             results is not None and len(results) > 0):
             rows = []
             for fname, res in results.items():
+                if bias == "LONG":
+                    weight = filter_weights_long.get(fname, 0)
+                elif bias == "SHORT":
+                    weight = filter_weights_short.get(fname, 0)
+                else:
+                    weight = 0
                 rows.append({
                     "Symbol": symbol,
                     "Timeframe": tf,
                     "SignalType": bias,
                     "Filter Name": fname,
-                    "Weight": filter_weights_long.get(fname, 0),  # or use bias to switch
+                    "Weight": weight,
                     "GateKeeper": fname in gatekeepers,
                     "Result": res,
                     "PASSES": "PASS" if fname in gatekeepers and res else ""
