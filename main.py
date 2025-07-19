@@ -270,14 +270,16 @@ def run():
             # --- Send up to 2 debug files to Telegram (Signal Debug txt sampling) ---
             try:
                 if valid_debugs:
-                    print(f"[DEBUG] About to send {min(len(valid_debugs), 2)} debug files to Telegram.", flush=True)
+                    print(f"[FIRED] About to send {min(len(valid_debugs), 2)} debug files to Telegram.", flush=True)
                     num = min(len(valid_debugs), 2)
                     for debug_info in random.sample(valid_debugs, num):
                         try:
-                            print("LONG:", debug_info["filter_weights_long"], flush=True)
-                            print("SHORT:", debug_info["filter_weights_short"], flush=True)
-                    
-                            export_signal_debug_txt(
+                            # Print filter weights for transparency
+                            print("[FIRED] LONG filter weights:", debug_info["filter_weights_long"], flush=True)
+                            print("[FIRED] SHORT filter weights:", debug_info["filter_weights_short"], flush=True)
+
+                            # Use only the new debug txt export function
+                            export_signal_debug_txt_v2(
                                 symbol=debug_info["symbol"],
                                 tf=debug_info["tf"],
                                 bias=debug_info["bias"],
@@ -288,7 +290,7 @@ def run():
                                 results_short=debug_info.get("results_short", {}),
                                 orderbook_result=debug_info.get("orderbook_result"),
                                 density_result=debug_info.get("density_result"),
-                                filename="signal_debug_temp.txt"
+                                output_file="signal_debug_temp.txt"
                             )
                             send_telegram_file(
                                 "signal_debug_temp.txt",
@@ -297,18 +299,20 @@ def run():
                         except Exception as e:
                             print(f"[ERROR] Exception in Telegram debug send: {e}", flush=True)
                 else:
-                    print("[DEBUG] valid_debugs is empty — no debug files to send to Telegram.", flush=True)
+                    print("[FIRED] valid_debugs is empty — no debug files to send to Telegram.", flush=True)
             except Exception as e:
                 print(f"[FATAL] Exception in debug sending block: {e}", flush=True)
 
             # Print summary of fired signals (log-based, no CSV dependency)
             if valid_debugs:
-                print(f"[DEBUG] Processed {len(valid_debugs)} valid signals this cycle", flush=True)
+                print(f"[FIRED] Processed {len(valid_debugs)} valid signals this cycle", flush=True)
             else:
-                print("[DEBUG] No valid signals processed this cycle", flush=True)
-            
+                print("[FIRED] No valid signals processed this cycle", flush=True)
+
             print("[INFO] ✅ Cycle complete. Sleeping 60 seconds...\n", flush=True)
             time.sleep(60)
+
+        
         except Exception as e:
             print(f"[FATAL] Exception in main loop: {e}", flush=True)
             import traceback
