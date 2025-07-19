@@ -99,7 +99,7 @@ class SmartFilter:
         min_score: int = 16, # <-- NEW: now 16 (for 23 filters)
         required_passed: int = 13, # <-- NEW: now 13 (for 17 gatekeepers)
         volume_multiplier: float = 2.0,
-        liquidity_threshold: float = 0.4,   # <-- NEW: 40% Set a default value
+        liquidity_threshold: float = 0.5,   # <-- NEW: 50% Set a default value
         kwargs = None
     ):
         if kwargs is None:
