@@ -166,7 +166,7 @@ def export_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weight
     verdict_lines.append("==== END ====")
 
     # Append verdict section to file
-    with open(filename, "a") as f:
+    with open("signal_debug_temp.txt", "a") as f:
         for line in verdict_lines:
             f.write("\n" + line)
 
