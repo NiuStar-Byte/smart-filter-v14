@@ -58,9 +58,9 @@ def export_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weight
     with open(filename, "w") as f:
         f.write(f"# Signal Debug Export (created: {timestamp})\n")
 
-        # --- Write LONG results if available ---
-        if results_long and len(results_long) > 0:
-            rows_long = []
+        # --- Write LONG results (always output all filters, even if all False) ---
+        rows_long = []
+        if results_long is not None:
             for fname, res in results_long.items():
                 rows_long.append({
                     "Symbol": symbol,
@@ -79,9 +79,9 @@ def export_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weight
         else:
             f.write("\n(No LONG filter results)\n")
 
-        # --- Write SHORT results if available ---
-        if results_short and len(results_short) > 0:
-            rows_short = []
+        # --- Write SHORT results (always output all filters, even if all False) ---
+        rows_short = []
+        if results_short is not None:
             for fname, res in results_short.items():
                 rows_short.append({
                     "Symbol": symbol,
@@ -99,6 +99,7 @@ def export_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weight
             df_short.to_csv(f, sep="\t", index=False)
         else:
             f.write("\n(No SHORT filter results)\n")
+
 
         # --- Legacy results, for backward compatibility ---
         if (not (results_long and any(results_long.values())) and 
