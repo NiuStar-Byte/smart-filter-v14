@@ -277,7 +277,7 @@ def run():
                             print("LONG:", debug_info["filter_weights_long"], flush=True)
                             print("SHORT:", debug_info["filter_weights_short"], flush=True)
                     
-                            dump_signal_debug_txt(
+                            export_signal_debug_txt(
                                 symbol=debug_info["symbol"],
                                 tf=debug_info["tf"],
                                 bias=debug_info["bias"],
@@ -287,7 +287,8 @@ def run():
                                 results_long=debug_info.get("results_long", {}),
                                 results_short=debug_info.get("results_short", {}),
                                 orderbook_result=debug_info.get("orderbook_result"),
-                                density_result=debug_info.get("density_result")
+                                density_result=debug_info.get("density_result"),
+                                filename="signal_debug_temp.txt"
                             )
                             send_telegram_file(
                                 "signal_debug_temp.txt",
