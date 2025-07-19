@@ -58,16 +58,20 @@ def export_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weight
     with open(filename, "w") as f:
         f.write(f"# Signal Debug Export (created: {timestamp})\n")
 
-        # --- Write LONG results (always output all filters, even if all False) ---
+        # --- Write LONG results (with weight map check) ---
         rows_long = []
         if results_long is not None:
             for fname, res in results_long.items():
+                weight = filter_weights_long.get(fname)
+                if weight is None:
+                    print(f"[WARNING] Filter '{fname}' not found in filter_weights_long map!")
                 rows_long.append({
                     "Symbol": symbol,
                     "Timeframe": tf,
                     "SignalType": "LONG",
                     "Filter Name": fname,
-                    "Weight": filter_weights_long.get(fname, 0),
+                    "Weight": weight if weight is not None else 0,
+                    "WeightMissing": weight is None,
                     "GateKeeper": fname in gatekeepers,
                     "Result": res,
                     "PASSES": "PASS" if fname in gatekeepers and res else ""
@@ -76,19 +80,21 @@ def export_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weight
             df_long = df_long.sort_values("Weight", ascending=False)
             f.write("\n## LONG Filter Results\n")
             df_long.to_csv(f, sep="\t", index=False)
-        else:
-            f.write("\n(No LONG filter results)\n")
 
-        # --- Write SHORT results (always output all filters, even if all False) ---
+        # --- Write SHORT results (with weight map check) ---
         rows_short = []
         if results_short is not None:
             for fname, res in results_short.items():
+                weight = filter_weights_short.get(fname)
+                if weight is None:
+                    print(f"[WARNING] Filter '{fname}' not found in filter_weights_short map!")
                 rows_short.append({
                     "Symbol": symbol,
                     "Timeframe": tf,
                     "SignalType": "SHORT",
                     "Filter Name": fname,
-                    "Weight": filter_weights_short.get(fname, 0),
+                    "Weight": weight if weight is not None else 0,
+                    "WeightMissing": weight is None,
                     "GateKeeper": fname in gatekeepers,
                     "Result": res,
                     "PASSES": "PASS" if fname in gatekeepers and res else ""
@@ -97,8 +103,6 @@ def export_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weight
             df_short = df_short.sort_values("Weight", ascending=False)
             f.write("\n## SHORT Filter Results\n")
             df_short.to_csv(f, sep="\t", index=False)
-        else:
-            f.write("\n(No SHORT filter results)\n")
 
 
         # --- Legacy results, for backward compatibility ---
