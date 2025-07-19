@@ -290,7 +290,7 @@ def run():
                                 results_short=debug_info.get("results_short", {}),
                                 orderbook_result=debug_info.get("orderbook_result"),
                                 density_result=debug_info.get("density_result"),
-                                output_file="signal_debug_temp.txt"
+                                filename="signal_debug_temp.txt"
                             )
                             send_telegram_file(
                                 "signal_debug_temp.txt",
