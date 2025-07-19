@@ -105,18 +105,22 @@ def export_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weight
             df_short.to_csv(f, sep="\t", index=False)
 
 
-        # --- Legacy results, for backward compatibility ---
-        if (not (results_long and any(results_long.values())) and 
-            not (results_short and any(results_short.values())) and 
-            results is not None and len(results) > 0):
+        # --- For backward compatibility: write 'results' if no long/short provided ---
+        if (
+            (results_long is None or len(results_long) == 0) and
+            (results_short is None or len(results_short) == 0) and
+            results is not None
+        ):
             rows = []
             for fname, res in results.items():
+                # Always write Weight based on bias
                 if bias == "LONG":
                     weight = filter_weights_long.get(fname, 0)
                 elif bias == "SHORT":
                     weight = filter_weights_short.get(fname, 0)
                 else:
-                    weight = 0
+                    # fallback for NEUTRAL: use long weights, or set to 0
+                    weight = filter_weights_long.get(fname, 0)
                 rows.append({
                     "Symbol": symbol,
                     "Timeframe": tf,
@@ -127,10 +131,14 @@ def export_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weight
                     "Result": res,
                     "PASSES": "PASS" if fname in gatekeepers and res else ""
                 })
-            df_legacy = pd.DataFrame(rows)
-            df_legacy = df_legacy.sort_values("Weight", ascending=False)
+            df = pd.DataFrame(rows)
+            # Always guarantee Weight column exists
+            if "Weight" not in df.columns:
+                df["Weight"] = 0
+            df = df.sort_values("Weight", ascending=False)
             f.write("\n## (Legacy results)\n")
-            df_legacy.to_csv(f, sep="\t", index=False)
+            df.to_csv(f, sep="\t", index=False)
+    
 
     # ---- Automated Validation Verdict Section ----
     verdict_lines = []
