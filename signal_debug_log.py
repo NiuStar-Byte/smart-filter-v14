@@ -58,8 +58,8 @@ def export_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weight
     with open(filename, "w") as f:
         f.write(f"# Signal Debug Export (created: {timestamp})\n")
 
-        # --- Write LONG results if available and any True ---
-        if results_long and any(results_long.values()):
+        # --- Write LONG results if available ---
+        if results_long and len(results_long) > 0:
             rows_long = []
             for fname, res in results_long.items():
                 rows_long.append({
@@ -79,8 +79,8 @@ def export_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weight
         else:
             f.write("\n(No LONG filter results)\n")
 
-        # --- Write SHORT results if available and any True ---
-        if results_short and any(results_short.values()):
+        # --- Write SHORT results if available ---
+        if results_short and len(results_short) > 0:
             rows_short = []
             for fname, res in results_short.items():
                 rows_short.append({
