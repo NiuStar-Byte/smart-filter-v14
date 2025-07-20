@@ -882,6 +882,7 @@ class SmartFilter:
         else:
             return None
 
+    # Thighten >> Previous: long_met >= 2 & short_met >= 2
     def _check_hats(self):
         # Define your moving averages
         fast = self.df['ema10'].iat[-1]
@@ -907,38 +908,50 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 2:
+        if long_met = 3:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met = 3:
             return "SHORT"
         else:
             return None
 
-    def _check_vwap_divergence(self):
+    # CHANGES >> Previous: without min threshold 
+    def _check_vwap_divergence(self, vwap_div_threshold=0.002):
+        if len(self.df) < 2:
+            return None
+
         vwap = self.df['vwap'].iat[-1]
         vwap_prev = self.df['vwap'].iat[-2]
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
 
+        # Threshold for meaningful divergence
+        threshold = vwap_div_threshold * vwap
+
         # LONG conditions
         cond1_long = close < vwap
         cond2_long = close > close_prev
-        cond3_long = (vwap - close) > (vwap_prev - close_prev)
+        cond3_long = ((vwap - close) > (vwap_prev - close_prev)) and ((vwap - close) > threshold)
 
         # SHORT conditions
         cond1_short = close > vwap
         cond2_short = close < close_prev
-        cond3_short = (close - vwap) > (close_prev - vwap_prev)
+        cond3_short = ((close - vwap) > (close_prev - vwap_prev)) and ((close - vwap) > threshold)
 
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
+        # Optional volatility filter (uncomment if using ATR)
+        # atr = self.compute_atr(self.df)
+        # if atr < 0.005 * close:
+        #     return None
+
         if long_met >= 2:
-            return "LONG"
+            return {"signal": "LONG", "strength": long_met, "divergence": vwap - close}
         elif short_met >= 2:
-            return "SHORT"
+            return {"signal": "SHORT", "strength": short_met, "divergence": close - vwap}
         else:
-            return None
+        return None
             
     def _check_mtf_volume_agreement(self):
         # Current timeframe
