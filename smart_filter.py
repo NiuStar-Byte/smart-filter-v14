@@ -1014,7 +1014,7 @@ class SmartFilter:
         else:
             return None
 
-    # CHANGES >> Previous: no additional requirement
+    # CHANGES >> Previous: no additional requirements
     def _check_hh_ll(self, min_pct_change=0.002, require_volume=True, volatility_window=10):
         """
         Enhanced HH/LL filter (returns 'LONG'/'SHORT'/None for main loop compatibility).
@@ -1093,11 +1093,13 @@ class SmartFilter:
         ema_sep_long = min(ema9 - ema21, ema21 - ema50)
         ema_sep_short = max(ema9 - ema21, ema21 - ema50)
 
+        
         # ATR/volatility filter (filters out flat = no signal)
-        atr = self.df['high'].rolling(volatility_window).max().iat[-1] - self.df['low'].rolling(volatility_window).min().iat[-1]
-        atr_pct = atr / close if close != 0 else 0
-        if atr_pct < 0.005:  # Too flat, skip
-            return None
+        # can be modified using ATR
+        # atr = self.df['high'].rolling(volatility_window).max().iat[-1] - self.df['low'].rolling(volatility_window).min().iat[-1]
+        # atr_pct = atr / close if close != 0 else 0
+        # if atr_pct < 0.005:  # Too flat, skip
+        #    return None
 
         # LONG conditions
         cond1_long = ema9 > ema21 and ema21 > ema50 and ema_sep_long > min_ema_sep * ema50
@@ -1122,6 +1124,7 @@ class SmartFilter:
             return None
 
     # CHANGES >> Previous: without
+    
     def _check_chop_zone(self, chop_threshold=40):
         chop = self.df['chop_zone'].iat[-1]
         ema9 = self.df['ema9'].iat[-1]
@@ -1416,28 +1419,52 @@ class SmartFilter:
         else:
             return None
 
-    def _check_trend_continuation(self, ma_col='ema21'):
+    def _check_trend_continuation(self, ma_col='ema21', min_ma_change=0.001, min_price_change=0.001, volatility_window=14, require_volume=True):
+        """
+        Enhanced Trend Continuation filter.
+        - Requires minimum MA change and price change for trend strength
+        - ATR volatility filter (ignore flat/choppy markets)
+        - Optionally confirms with rising volume
+        Returns: 'LONG', 'SHORT', or None
+        """
+        if len(self.df) < 2:
+            return None
+
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
         ma = self.df[ma_col].iat[-1]
         ma_prev = self.df[ma_col].iat[-2]
+        volume = self.df['volume'].iat[-1]
+        avg_volume = self.df['volume'].rolling(volatility_window).mean().iat[-1]
 
-        # LONG conditions
+        # Percent changes
+        ma_change = (ma - ma_prev) / ma_prev if ma_prev != 0 else 0
+        price_change = (close - close_prev) / close_prev if close_prev != 0 else 0
+
+        # ATR/volatility filter
+        atr = self.df['high'].rolling(volatility_window).max().iat[-1] - self.df['low'].rolling(volatility_window).min().iat[-1]
+        atr_pct = atr / close if close != 0 else 0
+        if atr_pct < 0.005:  # Too flat, skip
+            return None
+
+        # LONG
         cond1_long = close > ma
-        cond2_long = ma > ma_prev
-        cond3_long = close > close_prev
+        cond2_long = ma_change > min_ma_change
+        cond3_long = price_change > min_price_change
+        cond4_long = (volume > avg_volume) if require_volume else True
 
-        # SHORT conditions
+        # SHORT
         cond1_short = close < ma
-        cond2_short = ma < ma_prev
-        cond3_short = close < close_prev
+        cond2_short = ma_change < -min_ma_change
+        cond3_short = price_change < -min_price_change
+        cond4_short = (volume > avg_volume) if require_volume else True
 
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
 
-        if long_met >= 2:
+        if long_met >= 3:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 3:
             return "SHORT"
         else:
             return None
