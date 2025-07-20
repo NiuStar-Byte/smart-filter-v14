@@ -96,10 +96,10 @@ class SmartFilter:
         df3m: pd.DataFrame = None,
         df5m: pd.DataFrame = None,
         tf: str = None,
-        min_score: int = 16, # <-- NEW: now 16 (for 23 filters)
-        required_passed: int = 13, # <-- NEW: now 13 (for 17 gatekeepers)
+        min_score: int = 15,
+        required_passed: int = 12,      # NEW: now 11 (for 17 gatekeepers)
         volume_multiplier: float = 2.0,
-        liquidity_threshold: float = 0.5,   # <-- NEW: 50% Set a default value
+        liquidity_threshold: float = 0.2,   # <-- Set a default value
         kwargs = None
     ):
         if kwargs is None:
@@ -664,9 +664,9 @@ class SmartFilter:
             results_long=results_long,
             results_short=results_short,
             orderbook_result=orderbook_result,
-            density_result=density_result
+            density_result=density_result,
             # results=results_status,  # only if you want legacy compatibility
-            # filename="signal_debug_temp.txt"
+            filename="signal_debug_temp.txt"
         )
         
         # Return only the summary object for main.py
@@ -714,8 +714,7 @@ class SmartFilter:
             return result
         return None
 
-    # Thighten >> Previous zscore_threshold=1.5
-    def _check_volume_spike(self, zscore_threshold=2.0):
+    def _check_volume_spike(self, zscore_threshold=1.5):
         # Calculate z-score of current volume vs recent (rolling 10)
         avg = self.df['volume'].rolling(10).mean().iat[-1]
         std = self.df['volume'].rolling(10).std().iat[-1]
@@ -749,8 +748,7 @@ class SmartFilter:
             return False
         return self.df5m['volume'].iat[-1] > self.df5m['volume'].iat[-2]
 
-    # Thighten >> Previous: buffer_pct=0.005, window=20
-    def _check_fractal_zone(self, buffer_pct=0.01, window=30):
+    def _check_fractal_zone(self, buffer_pct=0.005, window=20):
         fractal_low = self.df['low'].rolling(window).min().iat[-1]
         fractal_low_prev = self.df['low'].rolling(window).min().iat[-2]
         fractal_high = self.df['high'].rolling(window).max().iat[-1]
@@ -778,38 +776,20 @@ class SmartFilter:
             return "SHORT"
         else:
             return None
-
-    # Thighten >> Previous: without Volatility factor 
+    
     def _check_ema_cloud(self):
-        if len(self.df) < 2:
-            return None
-
         ema20 = self.df['ema20'].iat[-1]
         ema50 = self.df['ema50'].iat[-1]
         ema20_prev = self.df['ema20'].iat[-2]
         close = self.df['close'].iat[-1]
 
-        # Calculate ATR to adjust volatility
-        atr_value = compute_atr(self.df)  # or self.compute_atr(self.df) if inside class
-
-        # Prevent division by zero
-        if close == 0:
-            return None
-
-        volatility_factor = atr_value / close
-
-        if volatility_factor < 0.02:
-            adjusted_ema50 = ema50 * (1 - volatility_factor)
-            adjusted_ema20 = ema20 * (1 + volatility_factor)
-        else:
-            adjusted_ema50 = ema50 * (1 + volatility_factor)
-            adjusted_ema20 = ema20 * (1 - volatility_factor)
-
-        cond1_long = ema20 > adjusted_ema50
+        # LONG conditions
+        cond1_long = ema20 > ema50
         cond2_long = ema20 > ema20_prev
         cond3_long = close > ema20
 
-        cond1_short = ema20 < adjusted_ema50
+        # SHORT conditions
+        cond1_short = ema20 < ema50
         cond2_short = ema20 < ema20_prev
         cond3_short = close < ema20
 
@@ -823,7 +803,6 @@ class SmartFilter:
         else:
             return None
 
-    # Loosen >> Previous: all 4 conditions must met
     def _check_macd(self):
         e12 = self.df['close'].ewm(span=12).mean()
         e26 = self.df['close'].ewm(span=26).mean()
@@ -853,7 +832,6 @@ class SmartFilter:
         else:
             return None
 
-    # Thighten >> Previous: LONG momentum > 0; SHORT nomentum < 0
     def _check_momentum(self, window=10):
         # Calculate Rate of Change (ROC)
         roc = self.df['close'].pct_change(periods=window)
@@ -863,12 +841,12 @@ class SmartFilter:
         close_prev = self.df['close'].iat[-2]
 
         # LONG conditions
-        cond1_long = momentum > 0.01
+        cond1_long = momentum > 0
         cond2_long = momentum > momentum_prev
         cond3_long = close > close_prev
 
         # SHORT conditions
-        cond1_short = momentum < -0.01
+        cond1_short = momentum < 0
         cond2_short = momentum < momentum_prev
         cond3_short = close < close_prev
 
@@ -882,7 +860,6 @@ class SmartFilter:
         else:
             return None
 
-    # Thighten >> Previous: long_met >= 2 & short_met >= 2
     def _check_hats(self):
         # Define your moving averages
         fast = self.df['ema10'].iat[-1]
@@ -908,157 +885,90 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met == 3:
+        if long_met >= 2:
             return "LONG"
-        elif short_met == 3:
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
 
-    # CHANGES >> Previous: without min threshold 
-    def _check_vwap_divergence(self, vwap_div_threshold=0.002, mode="diagnostic"):
-        """
-        VWAP divergence filter.
-        Returns dict with diagnostics (signal, strength, divergence) or just 'LONG'/'SHORT' if mode='simple'.
-        """
-        if len(self.df) < 2:
-            return None
-
+    def _check_vwap_divergence(self):
         vwap = self.df['vwap'].iat[-1]
         vwap_prev = self.df['vwap'].iat[-2]
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
 
-        threshold = vwap_div_threshold * vwap
-
         # LONG conditions
         cond1_long = close < vwap
         cond2_long = close > close_prev
-        cond3_long = ((vwap - close) > (vwap_prev - close_prev)) and ((vwap - close) > threshold)
+        cond3_long = (vwap - close) > (vwap_prev - close_prev)
 
         # SHORT conditions
         cond1_short = close > vwap
         cond2_short = close < close_prev
-        cond3_short = ((close - vwap) > (close_prev - vwap_prev)) and ((close - vwap) > threshold)
+        cond3_short = (close - vwap) > (close_prev - vwap_prev)
 
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
         if long_met >= 2:
-            if mode == "diagnostic":
-                return {"signal": "LONG", "strength": long_met, "divergence": vwap - close}
-            else:
-                return "LONG"
+            return "LONG"
         elif short_met >= 2:
-            if mode == "diagnostic":
-                return {"signal": "SHORT", "strength": short_met, "divergence": close - vwap}
-            else:
-                return "SHORT"
+            return "SHORT"
         else:
             return None
-
-    # CHANGES >> Previous: without min threshold & higher TF volume
-    def _check_mtf_volume_agreement(self, volume_threshold=0.05, higher_tf_volume_threshold=0.02, mode="diagnostic"):
-        """
-        Multi-timeframe volume agreement filter.
-        Returns dict with diagnostics (signal, strength, volume_increase, higher_tf_volume_increase)
-        or just 'LONG'/'SHORT' if mode='simple'.
-        """
-        if len(self.df) < 2:
-            return None
-
+            
+    def _check_mtf_volume_agreement(self):
+        # Current timeframe
         volume = self.df['volume'].iat[-1]
         volume_prev = self.df['volume'].iat[-2]
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
 
+        # Higher timeframe (e.g., hourly or daily)
         higher_tf_volume = self.df['higher_tf_volume'].iat[-1]
         higher_tf_volume_prev = self.df['higher_tf_volume'].iat[-2]
 
-        volume_increase = (volume - volume_prev) / volume_prev if volume_prev != 0 else 0
-        higher_tf_volume_increase = (higher_tf_volume - higher_tf_volume_prev) / higher_tf_volume_prev if higher_tf_volume_prev != 0 else 0
-
-        # LONG
-        cond1_long = volume_increase > volume_threshold
-        cond2_long = higher_tf_volume_increase > higher_tf_volume_threshold
+        # LONG conditions
+        cond1_long = volume > volume_prev
+        cond2_long = higher_tf_volume > higher_tf_volume_prev
         cond3_long = close > close_prev
 
-        # SHORT
-        cond1_short = volume_increase < -volume_threshold
-        cond2_short = higher_tf_volume_increase < -higher_tf_volume_threshold
+        # SHORT conditions
+        cond1_short = volume > volume_prev
+        cond2_short = higher_tf_volume > higher_tf_volume_prev
         cond3_short = close < close_prev
 
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
         if long_met >= 2:
-            if mode == "diagnostic":
-                return {
-                    "signal": "LONG",
-                    "strength": long_met,
-                    "volume_increase": volume_increase,
-                    "higher_tf_volume_increase": higher_tf_volume_increase
-                }
-            else:
-                return "LONG"
+            return "LONG"
         elif short_met >= 2:
-            if mode == "diagnostic":
-                return {
-                    "signal": "SHORT",
-                    "strength": short_met,
-                    "volume_increase": volume_increase,
-                    "higher_tf_volume_increase": higher_tf_volume_increase
-                }
-            else:
-                return "SHORT"
+            return "SHORT"
         else:
             return None
-
-    # CHANGES >> Previous: no additional requirements
-    def _check_hh_ll(self, min_pct_change=0.002, require_volume=True, volatility_window=10):
-        """
-        Enhanced HH/LL filter (returns 'LONG'/'SHORT'/None for main loop compatibility).
-        - Requires minimum percentage change for highs/lows
-        - Optionally confirms with volume
-        - Filters out low volatility periods
-        """
-        if len(self.df) < 2:
-            return None
-
+        
+    def _check_hh_ll(self):
         high = self.df['high'].iat[-1]
         high_prev = self.df['high'].iat[-2]
         low = self.df['low'].iat[-1]
         low_prev = self.df['low'].iat[-2]
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
-        volume = self.df['volume'].iat[-1]
-        avg_volume = self.df['volume'].rolling(volatility_window).mean().iat[-1]
 
-        # Magnitude checks
-        pct_high = (high - high_prev) / high_prev if high_prev != 0 else 0
-        pct_low = (low - low_prev) / low_prev if low_prev != 0 else 0
-        pct_close = (close - close_prev) / close_prev if close_prev != 0 else 0
+        # LONG conditions: Higher Highs and Higher Lows
+        cond1_long = high > high_prev
+        cond2_long = low > low_prev
+        cond3_long = close > close_prev
 
-        # Volatility filter: ATR (Average True Range)
-        atr = self.df['high'].rolling(volatility_window).max().iat[-1] - self.df['low'].rolling(volatility_window).min().iat[-1]
-        atr_pct = atr / close if close != 0 else 0
-        if atr_pct < 0.005:  # Too flat, skip
-            return None
+        # SHORT conditions: Lower Lows and Lower Highs
+        cond1_short = low < low_prev
+        cond2_short = high < high_prev
+        cond3_short = close < close_prev
 
-        # LONG conditions
-        cond1_long = pct_high > min_pct_change
-        cond2_long = pct_low > min_pct_change
-        cond3_long = pct_close > min_pct_change
-        cond4_long = (volume > avg_volume) if require_volume else True
-
-        # SHORT conditions
-        cond1_short = pct_low < -min_pct_change
-        cond2_short = pct_high < -min_pct_change
-        cond3_short = pct_close < -min_pct_change
-        cond4_short = (volume > avg_volume) if require_volume else True
-
-        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short])
 
         if long_met >= 2:
             return "LONG"
@@ -1067,53 +977,29 @@ class SmartFilter:
         else:
             return None
 
-    # CHANGES >> Previous: without trend strength, volatility & volume confirmation
-    def _check_ema_structure(self, min_ema_sep=0.002, volatility_window=14, require_volume=True):
-        """
-        Enhanced EMA Structure filter.
-        - Requires minimum EMA separation for trend strength
-        - ATR volatility filter (ignore flat/choppy markets)
-        - Optionally confirms with rising volume
-        Returns: 'LONG', 'SHORT', or None
-        """
-        if len(self.df) < 2:
-            return None
-
+    def _check_ema_structure(self):
+        # Current values
         close = self.df['close'].iat[-1]
         ema9 = self.df['ema9'].iat[-1]
         ema21 = self.df['ema21'].iat[-1]
         ema50 = self.df['ema50'].iat[-1]
+        # Previous values
         ema9_prev = self.df['ema9'].iat[-2]
         ema21_prev = self.df['ema21'].iat[-2]
         ema50_prev = self.df['ema50'].iat[-2]
-        volume = self.df['volume'].iat[-1]
-        avg_volume = self.df['volume'].rolling(volatility_window).mean().iat[-1]
-
-        # Magnitude of EMA separation (trend power)
-        ema_sep_long = min(ema9 - ema21, ema21 - ema50)
-        ema_sep_short = max(ema9 - ema21, ema21 - ema50)
-
-        
-        # ATR/volatility filter (filters out flat = no signal)
-        atr = self.df['high'].rolling(volatility_window).max().iat[-1] - self.df['low'].rolling(volatility_window).min().iat[-1]
-        atr_pct = atr / close if close != 0 else 0
-        if atr_pct < 0.005:  # Too flat, skip
-            return None
 
         # LONG conditions
-        cond1_long = ema9 > ema21 and ema21 > ema50 and ema_sep_long > min_ema_sep * ema50
+        cond1_long = ema9 > ema21 and ema21 > ema50
         cond2_long = close > ema9 and close > ema21 and close > ema50
         cond3_long = ema9 > ema9_prev and ema21 > ema21_prev and ema50 > ema50_prev
-        cond4_long = (volume > avg_volume) if require_volume else True
 
         # SHORT conditions
-        cond1_short = ema9 < ema21 and ema21 < ema50 and abs(ema_sep_short) > min_ema_sep * ema50
+        cond1_short = ema9 < ema21 and ema21 < ema50
         cond2_short = close < ema9 and close < ema21 and close < ema50
         cond3_short = ema9 < ema9_prev and ema21 < ema21_prev and ema50 < ema50_prev
-        cond4_short = (volume > avg_volume) if require_volume else True
 
-        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short])
 
         if long_met >= 2:
             return "LONG"
@@ -1121,67 +1007,30 @@ class SmartFilter:
             return "SHORT"
         else:
             return None
-    
-    # CHANGES >> Previous: without adaptive chop &  min separation ema
-    def _check_chop_zone(
-        self,
-        base_chop_threshold=40,
-        chop_window=14,
-        min_ema_sep_pct=0.001,
-        require_adx=True,
-        volume_window=14
-    ):
-        """
-        Powerful & distinctive Chop Zone filter.
-        - Adaptive chop threshold
-        - Strong ADX filter (trend > recent average)
-        - Minimum EMA separation for trend
-        - Volume burst confirmation
-        Returns: 'LONG', 'SHORT', or None
-        """
-        if len(self.df) < max(chop_window, volume_window) + 2:
-            return None
 
+    def _check_chop_zone(self, chop_threshold=40):
         chop = self.df['chop_zone'].iat[-1]
         ema9 = self.df['ema9'].iat[-1]
         ema21 = self.df['ema21'].iat[-1]
         close = self.df['close'].iat[-1]
         adx = self.df['adx'].iat[-1] if 'adx' in self.df.columns else None
-        adx_ma = self.df['adx'].rolling(chop_window).mean().iat[-1] if adx is not None else None
-        volume = self.df['volume'].iat[-1]
-        avg_volume = self.df['volume'].rolling(volume_window).mean().iat[-1]
-
-        # Adaptive chop threshold: use max of base threshold and recent median
-        recent_chop_median = self.df['chop_zone'].rolling(chop_window).median().iat[-1]
-        adaptive_chop_threshold = max(base_chop_threshold, recent_chop_median)
 
         # Filter out choppy market
-        if chop >= adaptive_chop_threshold:
+        if chop >= chop_threshold:
             return None
 
-        # EMA separation
-        ema_sep = abs(ema9 - ema21) / ema21 if ema21 != 0 else 0
-
-        # ADX confirmation: current ADX > average
-        adx_strong = (adx > adx_ma) if (adx is not None and require_adx) else True
-
-        # Volume burst
-        volume_burst = volume > avg_volume
-
         # LONG conditions
-        cond1_long = ema9 > ema21 and ema_sep > min_ema_sep_pct
-        cond2_long = adx_strong
+        cond1_long = ema9 > ema21 if ema9 and ema21 else False
+        cond2_long = adx > 20 if adx else True  # Optional: ADX filter
         cond3_long = close > ema9
-        cond4_long = volume_burst
 
         # SHORT conditions
-        cond1_short = ema9 < ema21 and ema_sep > min_ema_sep_pct
-        cond2_short = adx_strong
+        cond1_short = ema9 < ema21 if ema9 and ema21 else False
+        cond2_short = adx > 20 if adx else True
         cond3_short = close < ema9
-        cond4_short = volume_burst
 
-        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short])
 
         if long_met >= 2:
             return "LONG"
@@ -1190,72 +1039,39 @@ class SmartFilter:
         else:
             return None
 
-    # CHANGES >> Previous: without magnitude & range breakout
-    def _check_candle_close(
-        self,
-        min_body_pct=0.002,
-        min_wick_body_ratio=2.0,
-        volume_window=10,
-        require_range_breakout=True,
-        breakout_lookback=5
-    ):
-        """
-        Enhanced Candle Close filter:
-        - Candlestick patterns with magnitude filter
-        - Volume confirmation
-        - Range breakout confirmation (optional)
-        Returns: 'LONG', 'SHORT', or None
-        """
-        if len(self.df) < breakout_lookback + 2:
-            return None
-
+    def _check_candle_close(self):
         open_ = self.df['open'].iat[-1]
         high = self.df['high'].iat[-1]
         low = self.df['low'].iat[-1]
         close = self.df['close'].iat[-1]
-        volume = self.df['volume'].iat[-1]
-        avg_volume = self.df['volume'].rolling(volume_window).mean().iat[-1]
 
         open_prev = self.df['open'].iat[-2]
         close_prev = self.df['close'].iat[-2]
 
-        body = abs(close - open_)
-        avg_price = (high + low) / 2 if (high + low) != 0 else 1
-        body_pct = body / avg_price if avg_price != 0 else 0
+        # Engulfing
+        bullish_engulfing = close > open_prev and open_ < close_prev
+        bearish_engulfing = close < open_prev and open_ > close_prev
 
+        # Pin bar / Hammer / Shooting Star
         lower_wick = open_ - low if open_ < close else close - low
         upper_wick = high - close if open_ < close else high - open_
+        body = abs(close - open_)
 
-        # Pattern detection
-        bullish_engulfing = close > open_prev and open_ < close_prev and body_pct > min_body_pct
-        bearish_engulfing = close < open_prev and open_ > close_prev and body_pct > min_body_pct
-
-        bullish_pin_bar = lower_wick > min_wick_body_ratio * body and close > open_ and body_pct > min_body_pct
-        bearish_pin_bar = upper_wick > min_wick_body_ratio * body and close < open_ and body_pct > min_body_pct
-
-        # Volume confirmation
-        volume_burst = volume > avg_volume
-
-        # Range breakout confirmation (last N bars)
-        highest_close = max([self.df['close'].iat[-i] for i in range(2, breakout_lookback + 2)])
-        lowest_close = min([self.df['close'].iat[-i] for i in range(2, breakout_lookback + 2)])
-        breakout_up = close > highest_close
-        breakout_down = close < lowest_close
+        bullish_pin_bar = lower_wick > 2 * body and close > open_
+        bearish_pin_bar = upper_wick > 2 * body and close < open_
 
         # LONG conditions
-        cond1_long = bullish_engulfing or bullish_pin_bar
-        cond2_long = close > close_prev and body_pct > min_body_pct
-        cond3_long = volume_burst
-        cond4_long = breakout_up if require_range_breakout else True
+        cond1_long = bullish_engulfing
+        cond2_long = bullish_pin_bar
+        cond3_long = close > close_prev
 
         # SHORT conditions
-        cond1_short = bearish_engulfing or bearish_pin_bar
-        cond2_short = close < close_prev and body_pct > min_body_pct
-        cond3_short = volume_burst
-        cond4_short = breakout_down if require_range_breakout else True
+        cond1_short = bearish_engulfing
+        cond2_short = bearish_pin_bar
+        cond3_short = close < close_prev
 
-        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short])
 
         if long_met >= 2:
             return "LONG"
@@ -1264,126 +1080,59 @@ class SmartFilter:
         else:
             return None
 
-    # CHANGES >> Previous: without range & configure thresholds
-    def _check_wick_dominance(
-        self,
-        min_wick_range_ratio=0.5,
-        min_wick_body_ratio=1.5,
-        volume_window=10,
-        require_range_breakout=True,
-        breakout_lookback=5
-    ):
-        """
-        Enhanced Wick Dominance filter:
-        - Dominant wick must be a meaningful part of the total range
-        - Volume confirmation
-        - Optional price breakout confirmation
-        Returns: 'LONG', 'SHORT', or None
-        """
-        if len(self.df) < breakout_lookback + 2:
-            return None
-
+    def _check_wick_dominance(self):
         open_ = self.df['open'].iat[-1]
         high = self.df['high'].iat[-1]
         low = self.df['low'].iat[-1]
         close = self.df['close'].iat[-1]
-        volume = self.df['volume'].iat[-1]
-        avg_volume = self.df['volume'].rolling(volume_window).mean().iat[-1]
 
         # Calculate candle components
         upper_wick = high - max(open_, close)
         lower_wick = min(open_, close) - low
         body = abs(close - open_)
-        range_ = high - low if high != low else 1
 
-        # Magnitude filters
-        lower_wick_ratio = lower_wick / range_
-        upper_wick_ratio = upper_wick / range_
-
-        # Volume confirmation
-        volume_burst = volume > avg_volume
-
-        # Range breakout confirmation (last N bars)
-        highest_close = max([self.df['close'].iat[-i] for i in range(2, breakout_lookback + 2)])
-        lowest_close = min([self.df['close'].iat[-i] for i in range(2, breakout_lookback + 2)])
-        breakout_up = close > highest_close
-        breakout_down = close < lowest_close
-
-        # LONG conditions: dominant lower wick + bullish close + magnitude + volume + breakout
-        cond1_long = lower_wick > min_wick_body_ratio * body
-        cond2_long = lower_wick > 2 * upper_wick
+        # LONG conditions: dominant lower wick + bullish close
+        cond1_long = lower_wick > 2 * upper_wick
+        cond2_long = lower_wick > 1.5 * body
         cond3_long = close > open_
-        cond4_long = lower_wick_ratio > min_wick_range_ratio
-        cond5_long = volume_burst
-        cond6_long = breakout_up if require_range_breakout else True
 
-        # SHORT conditions: dominant upper wick + bearish close + magnitude + volume + breakout
-        cond1_short = upper_wick > min_wick_body_ratio * body
-        cond2_short = upper_wick > 2 * lower_wick
+        # SHORT conditions: dominant upper wick + bearish close
+        cond1_short = upper_wick > 2 * lower_wick
+        cond2_short = upper_wick > 1.5 * body
         cond3_short = close < open_
-        cond4_short = upper_wick_ratio > min_wick_range_ratio
-        cond5_short = volume_burst
-        cond6_short = breakout_down if require_range_breakout else True
 
-        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long, cond5_long, cond6_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short, cond5_short, cond6_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 3:
+        if long_met >= 2:
             return "LONG"
-        elif short_met >= 3:
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
 
-    # CHANGES >> Previous: without detect vol abs near recent extremes
-    def _check_absorption(
-        self,
-        window=20,
-        buffer_pct=0.005,
-        min_vol_burst=1.2,
-        require_price_reversal=True,
-        reversal_lookback=5
-    ):
-        """
-        Enhanced Absorption filter:
-        - Detects volume absorption near recent extremes (support/resistance)
-        - Requires significant volume burst
-        - Optionally confirms with price reversal off the level
-        - Main loop compatible: returns 'LONG', 'SHORT', or None
-        """
-        if len(self.df) < window + reversal_lookback + 2:
-            return None
-
-        # Calculate proximity to support/resistance
+    def _check_absorption(self, window=20, buffer_pct=0.005):
+        # Calculate recent low/high for proximity
         low = self.df['low'].rolling(window).min().iat[-1]
         high = self.df['high'].rolling(window).max().iat[-1]
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
         volume = self.df['volume'].iat[-1]
+        volume_prev = self.df['volume'].iat[-2]
         avg_volume = self.df['volume'].rolling(window).mean().iat[-1]
 
-        # Significant volume burst
-        vol_burst = volume > min_vol_burst * avg_volume
-
-        # Price reversal confirmation: check if price bounced from support or rejected from resistance in last N bars
-        recent_closes = [self.df['close'].iat[-i] for i in range(2, reversal_lookback + 2)]
-        reversal_up = any(c > close_prev for c in recent_closes)
-        reversal_down = any(c < close_prev for c in recent_closes)
-
-        # LONG conditions (absorption at support)
+        # LONG conditions
         cond1_long = close <= low * (1 + buffer_pct)
-        cond2_long = vol_burst
+        cond2_long = volume > avg_volume and volume > volume_prev
         cond3_long = close >= close_prev
-        cond4_long = reversal_up if require_price_reversal else True
 
-        # SHORT conditions (absorption at resistance)
+        # SHORT conditions
         cond1_short = close >= high * (1 - buffer_pct)
-        cond2_short = vol_burst
+        cond2_short = volume > avg_volume and volume > volume_prev
         cond3_short = close <= close_prev
-        cond4_short = reversal_down if require_price_reversal else True
 
-        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short])
 
         if long_met >= 2:
             return "LONG"
@@ -1392,56 +1141,27 @@ class SmartFilter:
         else:
             return None
 
-    # CHANGES >> Previous: without proximity to support/resistance
-    def _check_support_resistance(
-        self,
-        window=20,
-        buffer_pct=0.005,
-        min_vol_burst=1.2,
-        require_price_reversal=True,
-        reversal_lookback=5
-    ):
-        """
-        Enhanced Support/Resistance filter:
-        - Triggers on proximity to support/resistance with configurable buffer
-        - Requires significant volume burst
-        - Optionally confirms with price reversal off the level (false breakouts)
-        - Configurable for asset/timeframe
-        Returns: 'LONG', 'SHORT', or None
-        """
-        if len(self.df) < window + reversal_lookback + 2:
-            return None
-
-        # Calculate recent support/resistance
+    def _check_support_resistance(self, window=20, buffer_pct=0.005):
+        # Calculate recent support (local min) and resistance (local max)
         support = self.df['low'].rolling(window).min().iat[-1]
         resistance = self.df['high'].rolling(window).max().iat[-1]
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
         volume = self.df['volume'].iat[-1]
-        avg_volume = self.df['volume'].rolling(window).mean().iat[-1]
+        volume_prev = self.df['volume'].iat[-2]
 
-        # Significant volume burst
-        vol_burst = volume > min_vol_burst * avg_volume
-
-        # Price reversal confirmation: did price bounce off support or reject resistance in last N bars?
-        recent_closes = [self.df['close'].iat[-i] for i in range(2, reversal_lookback + 2)]
-        reversal_up = any(c > close_prev for c in recent_closes)
-        reversal_down = any(c < close_prev for c in recent_closes)
-
-        # LONG conditions (bounce at support)
+        # LONG conditions
         cond1_long = close <= support * (1 + buffer_pct)
-        cond2_long = vol_burst
-        cond3_long = close > close_prev
-        cond4_long = reversal_up if require_price_reversal else True
+        cond2_long = close > close_prev
+        cond3_long = volume > volume_prev
 
-        # SHORT conditions (rejection at resistance)
+        # SHORT conditions
         cond1_short = close >= resistance * (1 - buffer_pct)
-        cond2_short = vol_burst
-        cond3_short = close < close_prev
-        cond4_short = reversal_down if require_price_reversal else True
+        cond2_short = close < close_prev
+        cond3_short = volume > volume_prev
 
-        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short])
 
         if long_met >= 2:
             return "LONG"
@@ -1450,62 +1170,29 @@ class SmartFilter:
         else:
             return None
 
-    # CHANGES >> Previous: without institutional window
-    def _check_smart_money_bias(
-        self,
-        volume_window=20,
-        min_vol_burst=1.25,
-        min_price_change_pct=0.002,
-        require_vwap_distance=True,
-        min_vwap_dist_pct=0.001,
-        institutional_window=20
-    ):
-        """
-        Enhanced Smart Money Bias filter:
-        - Requires significant volume burst (not just uptick)
-        - Confirms price momentum with minimum percent change
-        - VWAP confirmation, with configurable minimum distance
-        - Optionally detects institutional activity spike (volume relative to rolling max)
-        Returns: 'LONG', 'SHORT', or None
-        """
-        if len(self.df) < max(volume_window, institutional_window) + 2:
-            return None
-
+    def _check_smart_money_bias(self, volume_window=20):
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
         volume = self.df['volume'].iat[-1]
+        volume_prev = self.df['volume'].iat[-2]
         avg_volume = self.df['volume'].rolling(volume_window).mean().iat[-1]
         vwap = self.df['vwap'].iat[-1]
 
-        # Significant volume burst (not just above average)
-        vol_burst = volume > min_vol_burst * avg_volume
-
-        # Price momentum filter
-        price_change_pct = (close - close_prev) / close_prev if close_prev != 0 else 0
-
-        # VWAP distance confirmation
-        vwap_dist_pct = abs(close - vwap) / vwap if vwap != 0 else 0
-        vwap_up = close > vwap and (vwap_dist_pct > min_vwap_dist_pct if require_vwap_distance else True)
-        vwap_down = close < vwap and (vwap_dist_pct > min_vwap_dist_pct if require_vwap_distance else True)
-
-        # Institutional activity spike (volume at/near rolling max in institutional window)
-        institutional_vol_max = self.df['volume'].rolling(institutional_window).max().iat[-1]
-        institutional_spike = volume >= institutional_vol_max * 0.98  # within 2% of max
+        # Check for large volume uptick
+        large_vol = volume > avg_volume and volume > volume_prev
 
         # LONG conditions
-        cond1_long = vol_burst
-        cond2_long = price_change_pct > min_price_change_pct
-        cond3_long = vwap_up
-        cond4_long = institutional_spike
+        cond1_long = large_vol
+        cond2_long = close > close_prev
+        cond3_long = close > vwap
 
         # SHORT conditions
-        cond1_short = vol_burst
-        cond2_short = price_change_pct < -min_price_change_pct
-        cond3_short = vwap_down
-        cond4_short = institutional_spike
+        cond1_short = large_vol
+        cond2_short = close < close_prev
+        cond3_short = close < vwap
 
-        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short])
 
         if long_met >= 2:
             return "LONG"
@@ -1514,24 +1201,7 @@ class SmartFilter:
         else:
             return None
 
-    # CHANGES >> Previous: without relative spread & min volatility ratio 
-    def _check_spread_filter(
-        self,
-        window=20,
-        min_spread_zscore=1.0,
-        min_relative_spread=0.001,
-        volatility_window=20,
-        min_volatility_ratio=1.1
-    ):
-        """
-        Enhanced Spread Filter:
-        - Uses Z-score to detect significant spread outlier vs historical window
-        - Normalizes spread by price for cross-asset comparability
-        - Checks spread regime change AND volatility regime change
-        - Dynamic conditions reduce false signals in choppy markets
-        Returns: 'LONG', 'SHORT', or None
-        """
-        # Current and previous candle values
+    def _check_spread_filter(self, window=20):
         high = self.df['high'].iat[-1]
         low = self.df['low'].iat[-1]
         open_ = self.df['open'].iat[-1]
@@ -1542,44 +1212,26 @@ class SmartFilter:
         open_prev = self.df['open'].iat[-2]
         close_prev = self.df['close'].iat[-2]
 
+        spread = high - low
+        spread_prev = high_prev - low_prev
+        spread_ma = self.df['spread'].rolling(window).mean().iat[-1] if 'spread' in self.df.columns else self.df['high'].sub(self.df['low']).rolling(window).mean().iat[-1]
+
         # Add spread column if missing
         if 'spread' not in self.df.columns:
             self.df['spread'] = self.df['high'] - self.df['low']
 
-        spread = high - low
-        spread_prev = high_prev - low_prev
-        spread_ma = self.df['spread'].rolling(window).mean().iat[-1]
-        spread_std = self.df['spread'].rolling(window).std().iat[-1]
-        spread_zscore = (spread - spread_ma) / spread_std if spread_std != 0 else 0
-
-        # Normalized spread (relative to price)
-        avg_price = (high + low) / 2
-        rel_spread = spread / avg_price if avg_price != 0 else 0
-
-        # Volatility regime: ATR or stdev of spread
-        if 'atr' in self.df.columns:
-            volatility = self.df['atr'].iat[-1]
-            volatility_ma = self.df['atr'].rolling(volatility_window).mean().iat[-1]
-        else:
-            volatility = self.df['spread'].rolling(2).std().iat[-1]
-            volatility_ma = self.df['spread'].rolling(volatility_window).std().iat[-1]
-
-        volatility_ratio = volatility / volatility_ma if volatility_ma != 0 else 0
-
-        # LONG conditions: Spread outlier, volatility regime, bullish candle, normalized spread
-        cond1_long = spread_zscore > min_spread_zscore
+        # LONG conditions
+        cond1_long = spread > spread_prev
         cond2_long = close > open_
-        cond3_long = rel_spread > min_relative_spread
-        cond4_long = volatility_ratio > min_volatility_ratio
+        cond3_long = spread > spread_ma
 
-        # SHORT conditions: Spread outlier, volatility regime, bearish candle, normalized spread
-        cond1_short = spread_zscore > min_spread_zscore
+        # SHORT conditions
+        cond1_short = spread > spread_prev
         cond2_short = close < open_
-        cond3_short = rel_spread > min_relative_spread
-        cond4_short = volatility_ratio > min_volatility_ratio
+        cond3_short = spread > spread_ma
 
-        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short])
 
         if long_met >= 2:
             return "LONG"
@@ -1588,98 +1240,36 @@ class SmartFilter:
         else:
             return None
 
-    # CHANGES >> Previous: without lookback & fakeout protection
-    def _check_liquidity_pool(
-        self,
-        lookback=20,
-        min_liquidity_pool_size=0.002,   # Relative to price, e.g. 0.2%
-        volatility_window=20,
-        min_volatility_breakout=1.05,    # ATR regime filter
-        fakeout_protection=True
-    ):
-        """
-        Enhanced Liquidity Pool Detector:
-        - Detects sweep/fakeout reversals and true breakouts
-        - Filters signals with volatility regime (ATR)
-        - Only triggers on significant liquidity pools
-        - Optional fakeout protection to reduce false signals
-        Returns: 'LONG', 'SHORT', or None
-        """
+    def _check_liquidity_pool(self, lookback=20):
         close = self.df['close'].iat[-1]
         high = self.df['high'].iat[-1]
         low = self.df['low'].iat[-1]
-
-        # Identify recent liquidity pools (swing highs/lows)
+    
+        # Identify recent liquidity pools
         recent_high = self.df['high'].rolling(lookback).max().iat[-2]
         recent_low = self.df['low'].rolling(lookback).min().iat[-2]
+    
+        # LONG: break or sweep above recent high
+        cond1_long = close > recent_high
+        cond2_long = low < recent_low and close > recent_low  # sweep and reversal
+        cond3_long = close > recent_high
 
-        # Liquidity pool size (relative to price)
-        avg_price = (high + low) / 2
-        pool_size = (recent_high - recent_low) / avg_price if avg_price != 0 else 0
-        pool_big_enough = pool_size > min_liquidity_pool_size
-
-        # Volatility context
-        if 'atr' in self.df.columns:
-            atr = self.df['atr'].iat[-1]
-            atr_ma = self.df['atr'].rolling(volatility_window).mean().iat[-1]
-            atr_regime = atr / atr_ma if atr_ma != 0 else 0
-        else:
-            atr = self.df['high'].sub(self.df['low']).rolling(2).std().iat[-1]
-            atr_ma = self.df['high'].sub(self.df['low']).rolling(volatility_window).std().iat[-1]
-            atr_regime = atr / atr_ma if atr_ma != 0 else 0
-
-        volatility_ok = atr_regime > min_volatility_breakout
-
-        # Sweep/Fakeout detection
-        long_sweep = low < recent_low and close > recent_low
-        short_sweep = high > recent_high and close < recent_high
-
-        # Fakeout protection: require confirmation by next candle closing back inside pool
-        if fakeout_protection and len(self.df) >= 2:
-            prev_close = self.df['close'].iat[-2]
-            long_fakeout = (prev_close < recent_low) and (close > recent_low)
-            short_fakeout = (prev_close > recent_high) and (close < recent_high)
-        else:
-            long_fakeout = False
-            short_fakeout = False
-
-        # LONG: true breakout or sweep reversal
-        cond1_long = close > recent_high and pool_big_enough and volatility_ok
-        cond2_long = long_sweep and pool_big_enough and volatility_ok
-        cond3_long = long_fakeout and pool_big_enough and volatility_ok
-
-        # SHORT: true breakdown or sweep reversal
-        cond1_short = close < recent_low and pool_big_enough and volatility_ok
-        cond2_short = short_sweep and pool_big_enough and volatility_ok
-        cond3_short = short_fakeout and pool_big_enough and volatility_ok
+        # SHORT: break or sweep below recent low
+        cond1_short = close < recent_low
+        cond2_short = high > recent_high and close < recent_high  # sweep and reversal
+        cond3_short = close < recent_low
 
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 1:
+        if long_met >= 2:
             return "LONG"
-        elif short_met >= 1:
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
-            
-    # CHANGES >> Previous: without normalize & minimum spread change
-    def _check_liquidity_awareness(
-        self,
-        min_spread_change_pct=0.001,
-        min_volume_increase_pct=0.1,
-        require_tick_improvement=True
-    ):
-        """
-        Enhanced Liquidity Awareness filter.
-        - Requires minimum spread change and volume burst
-        - Normalizes spread by price
-        - Optionally confirms with positive tick change (bid up, ask down for LONG)
-        Returns: 'LONG', 'SHORT', or None
-        """
-        if len(self.df) < 2:
-            return None
-    
+
+    def _check_liquidity_awareness(self):
         bid = self.df['bid'].iat[-1]
         ask = self.df['ask'].iat[-1]
         bid_prev = self.df['bid'].iat[-2]
@@ -1692,29 +1282,18 @@ class SmartFilter:
         spread = ask - bid
         spread_prev = ask_prev - bid_prev
 
-        # Normalize spread change
-        avg_price = (close + close_prev) / 2 if (close + close_prev) != 0 else 1
-        spread_change_pct = (spread_prev - spread) / avg_price if avg_price != 0 else 0
-        volume_increase_pct = (volume - volume_prev) / volume_prev if volume_prev != 0 else 0
-
-        # Tick improvement for LONG (bid up, ask down), for SHORT (bid down, ask up)
-        tick_long = (bid > bid_prev) and (ask < ask_prev)
-        tick_short = (bid < bid_prev) and (ask > ask_prev)
-
         # LONG conditions
-        cond1_long = spread_change_pct > min_spread_change_pct
-        cond2_long = volume_increase_pct > min_volume_increase_pct
+        cond1_long = spread < spread_prev
+        cond2_long = volume > volume_prev
         cond3_long = close > close_prev
-        cond4_long = tick_long if require_tick_improvement else True
 
         # SHORT conditions
-        cond1_short = spread_change_pct < -min_spread_change_pct
-        cond2_short = volume_increase_pct > min_volume_increase_pct
+        cond1_short = spread > spread_prev
+        cond2_short = volume > volume_prev
         cond3_short = close < close_prev
-        cond4_short = tick_short if require_tick_improvement else True
 
-        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short])
 
         if long_met >= 2:
             return "LONG"
@@ -1722,50 +1301,25 @@ class SmartFilter:
             return "SHORT"
         else:
             return None
-    
-    # CHANGES >> Previous: without volatility & rising volume
-    def _check_trend_continuation(self, ma_col='ema21', min_ma_change=0.001, min_price_change=0.001, volatility_window=14, require_volume=True):
-        """
-        Enhanced Trend Continuation filter.
-        - Requires minimum MA change and price change for trend strength
-        - ATR volatility filter (ignore flat/choppy markets)
-        - Optionally confirms with rising volume
-        Returns: 'LONG', 'SHORT', or None
-        """
-        if len(self.df) < 2:
-            return None
 
+    def _check_trend_continuation(self, ma_col='ema21'):
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
         ma = self.df[ma_col].iat[-1]
         ma_prev = self.df[ma_col].iat[-2]
-        volume = self.df['volume'].iat[-1]
-        avg_volume = self.df['volume'].rolling(volatility_window).mean().iat[-1]
 
-        # Percent changes
-        ma_change = (ma - ma_prev) / ma_prev if ma_prev != 0 else 0
-        price_change = (close - close_prev) / close_prev if close_prev != 0 else 0
-
-        # ATR/volatility filter
-        atr = self.df['high'].rolling(volatility_window).max().iat[-1] - self.df['low'].rolling(volatility_window).min().iat[-1]
-        atr_pct = atr / close if close != 0 else 0
-        if atr_pct < 0.005:  # Too flat, skip
-            return None
-
-        # LONG
+        # LONG conditions
         cond1_long = close > ma
-        cond2_long = ma_change > min_ma_change
-        cond3_long = price_change > min_price_change
-        cond4_long = (volume > avg_volume) if require_volume else True
+        cond2_long = ma > ma_prev
+        cond3_long = close > close_prev
 
-        # SHORT
+        # SHORT conditions
         cond1_short = close < ma
-        cond2_short = ma_change < -min_ma_change
-        cond3_short = price_change < -min_price_change
-        cond4_short = (volume > avg_volume) if require_volume else True
+        cond2_short = ma < ma_prev
+        cond3_short = close < close_prev
 
-        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short])
 
         if long_met >= 2:
             return "LONG"
@@ -1774,111 +1328,25 @@ class SmartFilter:
         else:
             return None
 
-    # CHANGES >> Previous: without confirm price momentum
-    def _check_volatility_model(
-        self,
-        atr_col='atr',
-        atr_ma_col='atr_ma',
-        min_atr_burst_pct=0.05,
-        min_price_change_pct=0.002,
-        volume_window=14,
-        require_volume=True
-    ):
-        """
-        Enhanced Volatility Model filter:
-        - Requires ATR burst above recent average and minimum percent change
-        - Confirms price momentum
-        - Optionally confirms with volume burst
-        Returns: 'LONG', 'SHORT', or None
-        """
-        if len(self.df) < 2:
-            return None
-
+    def _check_volatility_model(self, atr_col='atr', atr_ma_col='atr_ma'):
         atr = self.df[atr_col].iat[-1]
         atr_prev = self.df[atr_col].iat[-2]
         atr_ma = self.df[atr_ma_col].iat[-1]
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
-        volume = self.df['volume'].iat[-1]
-        avg_volume = self.df['volume'].rolling(volume_window).mean().iat[-1]
-
-        # ATR burst filter: must be a meaningful move
-        atr_burst_pct = (atr - atr_ma) / atr_ma if atr_ma != 0 else 0
-        price_change_pct = (close - close_prev) / close_prev if close_prev != 0 else 0
-        volume_burst = volume > avg_volume if require_volume else True
 
         # LONG conditions
         cond1_long = atr > atr_prev
-        cond2_long = atr_burst_pct > min_atr_burst_pct
-        cond3_long = price_change_pct > min_price_change_pct
-        cond4_long = close > close_prev
-        cond5_long = volume_burst
+        cond2_long = close > close_prev
+        cond3_long = atr > atr_ma
 
         # SHORT conditions
         cond1_short = atr > atr_prev
-        cond2_short = atr_burst_pct > min_atr_burst_pct
-        cond3_short = price_change_pct < -min_price_change_pct
-        cond4_short = close < close_prev
-        cond5_short = volume_burst
+        cond2_short = close < close_prev
+        cond3_short = atr > atr_ma
 
-        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long, cond5_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short, cond5_short])
-
-        if long_met >= 3:
-            return "LONG"
-        elif short_met >= 3:
-            return "SHORT"
-        else:
-            return None
-
-    # CHANGES >> Previous: without volatility & rising volume
-    def _check_atr_momentum_burst(
-        self,
-        atr_period=14,
-        burst_mult=1.5,
-        min_pct_change=0.005,
-        require_volume=True,
-        volume_mult=1.2
-    ):
-        """
-        Enhanced ATR Momentum Burst filter.
-        - Normalizes price change by previous close for asset-agnostic signals.
-        - Requires ATR burst and price burst.
-        - Optionally confirms with volume burst.
-        - ATR must be above recent average for true volatility.
-        Returns: 'LONG', 'SHORT', or None
-        """
-        if len(self.df) < atr_period + 2:
-            return None
-
-        atr = self.df['atr'].iat[-1]
-        atr_prev = self.df['atr'].iat[-2]
-        atr_ma = self.df['atr'].rolling(atr_period).mean().iat[-1]
-        close = self.df['close'].iat[-1]
-        close_prev = self.df['close'].iat[-2]
-        price_change = close - close_prev
-        price_pct_change = (close - close_prev) / close_prev if close_prev != 0 else 0
-        volume = self.df['volume'].iat[-1]
-        avg_volume = self.df['volume'].rolling(atr_period).mean().iat[-1]
-
-        # Only allow signals in real volatility burst
-        if atr < atr_ma:
-            return None
-
-        # LONG conditions
-        cond1_long = price_pct_change > min_pct_change
-        cond2_long = price_change > burst_mult * atr
-        cond3_long = atr > atr_prev
-        cond4_long = (volume > volume_mult * avg_volume) if require_volume else True
-
-        # SHORT conditions
-        cond1_short = price_pct_change < -min_pct_change
-        cond2_short = price_change < -burst_mult * atr
-        cond3_short = atr > atr_prev
-        cond4_short = (volume > volume_mult * avg_volume) if require_volume else True
-
-        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short])
 
         if long_met >= 2:
             return "LONG"
@@ -1886,27 +1354,36 @@ class SmartFilter:
             return "SHORT"
         else:
             return None
-    
-    # CHANGES >> Previous: without min bb expansion & breakout lookback
-    def _check_volatility_squeeze(
-        self,
-        min_bb_expansion_pct=0.15,
-        volume_mult=1.2,
-        squeeze_window=5,
-        breakout_lookback=5
-    ):
-        """
-        Enhanced Volatility Squeeze filter:
-        - Requires BB expansion after sustained squeeze below KC
-        - Minimum percent BB width expansion
-        - Confirms with significant volume burst
-        - Price breakout above/below range for extra confirmation
-        Returns: 'LONG', 'SHORT', or None
-        """
-        if len(self.df) < max(squeeze_window, breakout_lookback) + 2:
+
+    def _check_atr_momentum_burst(self, atr_period=14, burst_mult=1.5):
+        # ATR must be calculated and present in self.df['atr']
+        atr = self.df['atr'].iat[-1]
+        atr_prev = self.df['atr'].iat[-2]
+        close = self.df['close'].iat[-1]
+        close_prev = self.df['close'].iat[-2]
+        price_change = close - close_prev
+
+        # LONG conditions
+        cond1_long = close > close_prev
+        cond2_long = price_change > burst_mult * atr
+        cond3_long = atr > atr_prev
+
+        # SHORT conditions
+        cond1_short = close < close_prev
+        cond2_short = price_change < -burst_mult * atr
+        cond3_short = atr > atr_prev
+
+        long_met = sum([cond1_long, cond2_long, cond3_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short])
+
+        if long_met >= 2:
+            return "LONG"
+        elif short_met >= 2:
+            return "SHORT"
+        else:
             return None
 
-        # Current BB/KC width
+    def _check_volatility_squeeze(self):
         bb_width = self.df['bb_upper'].iat[-1] - self.df['bb_lower'].iat[-1]
         kc_width = self.df['kc_upper'].iat[-1] - self.df['kc_lower'].iat[-1]
         bb_width_prev = self.df['bb_upper'].iat[-2] - self.df['bb_lower'].iat[-2]
@@ -1915,43 +1392,20 @@ class SmartFilter:
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
         volume = self.df['volume'].iat[-1]
-        avg_volume = self.df['volume'].rolling(squeeze_window).mean().iat[-1]
+        volume_prev = self.df['volume'].iat[-2]
 
-        # Confirm squeeze lasted several bars
-        recent_bb_kc = [
-            (self.df['bb_upper'].iat[-i] - self.df['bb_lower'].iat[-i]) <
-            (self.df['kc_upper'].iat[-i] - self.df['kc_lower'].iat[-i])
-            for i in range(2, squeeze_window + 2)
-        ]
-        sustained_squeeze = all(recent_bb_kc)
-
-        # BB expansion: must be a significant burst
-        bb_expansion_pct = (
-            (bb_width - bb_width_prev) / bb_width_prev
-            if bb_width_prev != 0 else 0
-        )
-        bb_expansion = bb_expansion_pct > min_bb_expansion_pct
-
-        squeeze_firing = bb_width > kc_width and sustained_squeeze and bb_expansion
-
-        # Volume burst
-        volume_burst = volume > volume_mult * avg_volume
-
-        # Price breakout above/below range (last N bars)
-        highest_close = max([self.df['close'].iat[-i] for i in range(2, breakout_lookback + 2)])
-        lowest_close = min([self.df['close'].iat[-i] for i in range(2, breakout_lookback + 2)])
-        price_breakout_up = close > highest_close
-        price_breakout_down = close < lowest_close
+        # Squeeze fires when BB width expands after contraction below KC width
+        squeeze_firing = bb_width > kc_width and bb_width_prev < kc_width_prev
 
         # LONG conditions
         cond1_long = squeeze_firing
-        cond2_long = volume_burst
-        cond3_long = price_breakout_up
+        cond2_long = close > close_prev
+        cond3_long = volume > volume_prev
 
         # SHORT conditions
         cond1_short = squeeze_firing
-        cond2_short = volume_burst
-        cond3_short = price_breakout_down
+        cond2_short = close < close_prev
+        cond3_short = volume > volume_prev
 
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
