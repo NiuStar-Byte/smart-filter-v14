@@ -1588,31 +1588,77 @@ class SmartFilter:
         else:
             return None
 
-    def _check_liquidity_pool(self, lookback=20):
+    # CHANGES >> Previous: without lookback & fakeout protection
+    def _check_liquidity_pool(
+        self,
+        lookback=20,
+        min_liquidity_pool_size=0.002,   # Relative to price, e.g. 0.2%
+        volatility_window=20,
+        min_volatility_breakout=1.05,    # ATR regime filter
+        fakeout_protection=True
+    ):
+        """
+        Enhanced Liquidity Pool Detector:
+        - Detects sweep/fakeout reversals and true breakouts
+        - Filters signals with volatility regime (ATR)
+        - Only triggers on significant liquidity pools
+        - Optional fakeout protection to reduce false signals
+        Returns: 'LONG', 'SHORT', or None
+        """
         close = self.df['close'].iat[-1]
         high = self.df['high'].iat[-1]
         low = self.df['low'].iat[-1]
-    
-        # Identify recent liquidity pools
+
+        # Identify recent liquidity pools (swing highs/lows)
         recent_high = self.df['high'].rolling(lookback).max().iat[-2]
         recent_low = self.df['low'].rolling(lookback).min().iat[-2]
-    
-        # LONG: break or sweep above recent high
-        cond1_long = close > recent_high
-        cond2_long = low < recent_low and close > recent_low  # sweep and reversal
-        cond3_long = close > recent_high
 
-        # SHORT: break or sweep below recent low
-        cond1_short = close < recent_low
-        cond2_short = high > recent_high and close < recent_high  # sweep and reversal
-        cond3_short = close < recent_low
+        # Liquidity pool size (relative to price)
+        avg_price = (high + low) / 2
+        pool_size = (recent_high - recent_low) / avg_price if avg_price != 0 else 0
+        pool_big_enough = pool_size > min_liquidity_pool_size
+
+        # Volatility context
+        if 'atr' in self.df.columns:
+            atr = self.df['atr'].iat[-1]
+            atr_ma = self.df['atr'].rolling(volatility_window).mean().iat[-1]
+            atr_regime = atr / atr_ma if atr_ma != 0 else 0
+        else:
+            atr = self.df['high'].sub(self.df['low']).rolling(2).std().iat[-1]
+            atr_ma = self.df['high'].sub(self.df['low']).rolling(volatility_window).std().iat[-1]
+            atr_regime = atr / atr_ma if atr_ma != 0 else 0
+
+        volatility_ok = atr_regime > min_volatility_breakout
+
+        # Sweep/Fakeout detection
+        long_sweep = low < recent_low and close > recent_low
+        short_sweep = high > recent_high and close < recent_high
+
+        # Fakeout protection: require confirmation by next candle closing back inside pool
+        if fakeout_protection and len(self.df) >= 2:
+            prev_close = self.df['close'].iat[-2]
+            long_fakeout = (prev_close < recent_low) and (close > recent_low)
+            short_fakeout = (prev_close > recent_high) and (close < recent_high)
+        else:
+            long_fakeout = False
+            short_fakeout = False
+
+        # LONG: true breakout or sweep reversal
+        cond1_long = close > recent_high and pool_big_enough and volatility_ok
+        cond2_long = long_sweep and pool_big_enough and volatility_ok
+        cond3_long = long_fakeout and pool_big_enough and volatility_ok
+
+        # SHORT: true breakdown or sweep reversal
+        cond1_short = close < recent_low and pool_big_enough and volatility_ok
+        cond2_short = short_sweep and pool_big_enough and volatility_ok
+        cond3_short = short_fakeout and pool_big_enough and volatility_ok
 
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 2:
+        if long_met >= 1:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 1:
             return "SHORT"
         else:
             return None
