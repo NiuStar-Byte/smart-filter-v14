@@ -1067,37 +1067,61 @@ class SmartFilter:
         else:
             return None
 
-    def _check_ema_structure(self):
-        # Current values
+    # CHANGES >> Previous: without trend strength, volatility & volume confirmation
+    def _check_ema_structure(self, min_ema_sep=0.002, volatility_window=14, require_volume=True):
+        """
+        Enhanced EMA Structure filter.
+        - Requires minimum EMA separation for trend strength
+        - ATR volatility filter (ignore flat/choppy markets)
+        - Optionally confirms with rising volume
+        Returns: 'LONG', 'SHORT', or None
+        """
+        if len(self.df) < 2:
+            return None
+
         close = self.df['close'].iat[-1]
         ema9 = self.df['ema9'].iat[-1]
         ema21 = self.df['ema21'].iat[-1]
         ema50 = self.df['ema50'].iat[-1]
-        # Previous values
         ema9_prev = self.df['ema9'].iat[-2]
         ema21_prev = self.df['ema21'].iat[-2]
         ema50_prev = self.df['ema50'].iat[-2]
+        volume = self.df['volume'].iat[-1]
+        avg_volume = self.df['volume'].rolling(volatility_window).mean().iat[-1]
+
+        # Magnitude of EMA separation (trend power)
+        ema_sep_long = min(ema9 - ema21, ema21 - ema50)
+        ema_sep_short = max(ema9 - ema21, ema21 - ema50)
+
+        # ATR/volatility filter (filters out flat = no signal)
+        atr = self.df['high'].rolling(volatility_window).max().iat[-1] - self.df['low'].rolling(volatility_window).min().iat[-1]
+        atr_pct = atr / close if close != 0 else 0
+        if atr_pct < 0.005:  # Too flat, skip
+            return None
 
         # LONG conditions
-        cond1_long = ema9 > ema21 and ema21 > ema50
+        cond1_long = ema9 > ema21 and ema21 > ema50 and ema_sep_long > min_ema_sep * ema50
         cond2_long = close > ema9 and close > ema21 and close > ema50
         cond3_long = ema9 > ema9_prev and ema21 > ema21_prev and ema50 > ema50_prev
+        cond4_long = (volume > avg_volume) if require_volume else True
 
         # SHORT conditions
-        cond1_short = ema9 < ema21 and ema21 < ema50
+        cond1_short = ema9 < ema21 and ema21 < ema50 and abs(ema_sep_short) > min_ema_sep * ema50
         cond2_short = close < ema9 and close < ema21 and close < ema50
         cond3_short = ema9 < ema9_prev and ema21 < ema21_prev and ema50 < ema50_prev
+        cond4_short = (volume > avg_volume) if require_volume else True
 
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
 
-        if long_met >= 2:
+        if long_met >= 3:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 3:
             return "SHORT"
         else:
             return None
 
+    # CHANGES >> Previous: without
     def _check_chop_zone(self, chop_threshold=40):
         chop = self.df['chop_zone'].iat[-1]
         ema9 = self.df['ema9'].iat[-1]
