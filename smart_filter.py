@@ -951,7 +951,7 @@ class SmartFilter:
         elif short_met >= 2:
             return {"signal": "SHORT", "strength": short_met, "divergence": close - vwap}
         else:
-        return None
+            return None
             
     def _check_mtf_volume_agreement(self):
         # Current timeframe
