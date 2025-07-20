@@ -96,8 +96,8 @@ class SmartFilter:
         df3m: pd.DataFrame = None,
         df5m: pd.DataFrame = None,
         tf: str = None,
-        min_score: int = 15, # <-- NEW: now 16 (for 23 filters)
-        required_passed: int = 12, # <-- NEW: now 12 (for 17 gatekeepers)
+        min_score: int = 16, # <-- NEW: now 16 (for 23 filters)
+        required_passed: int = 13, # <-- NEW: now 13 (for 17 gatekeepers)
         volume_multiplier: float = 2.0,
         liquidity_threshold: float = 0.5,   # <-- NEW: 50% Set a default value
         kwargs = None
@@ -1060,9 +1060,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
         short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
 
-        if long_met >= 3:
+        if long_met >= 2:
             return "LONG"
-        elif short_met >= 3:
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
@@ -1115,9 +1115,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
         short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
 
-        if long_met >= 3:
+        if long_met >= 2:
             return "LONG"
-        elif short_met >= 3:
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
@@ -1183,9 +1183,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
         short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
 
-        if long_met >= 3:
+        if long_met >= 2:
             return "LONG"
-        elif short_met >= 3:
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
@@ -1257,9 +1257,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
         short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
 
-        if long_met >= 3:
+        if long_met >= 2:
             return "LONG"
-        elif short_met >= 3:
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
@@ -1328,9 +1328,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long, cond5_long, cond6_long])
         short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short, cond5_short, cond6_short])
 
-        if long_met >= 4:
+        if long_met >= 3:
             return "LONG"
-        elif short_met >= 4:
+        elif short_met >= 3:
             return "SHORT"
         else:
             return None
@@ -1385,9 +1385,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
         short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
 
-        if long_met >= 3:
+        if long_met >= 2:
             return "LONG"
-        elif short_met >= 3:
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
@@ -1443,9 +1443,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
         short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
 
-        if long_met >= 3:
+        if long_met >= 2:
             return "LONG"
-        elif short_met >= 3:
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
@@ -1507,9 +1507,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
         short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
 
-        if long_met >= 3:
+        if long_met >= 2:
             return "LONG"
-        elif short_met >= 3:
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
@@ -1581,9 +1581,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
         short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
 
-        if long_met >= 3:
+        if long_met >= 2:
             return "LONG"
-        elif short_met >= 3:
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
@@ -1716,9 +1716,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
         short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
 
-        if long_met >= 3:
+        if long_met >= 2:
             return "LONG"
-        elif short_met >= 3:
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
@@ -1767,9 +1767,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
         short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
 
-        if long_met >= 3:
+        if long_met >= 2:
             return "LONG"
-        elif short_met >= 3:
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
@@ -1824,9 +1824,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long, cond5_long])
         short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short, cond5_short])
 
-        if long_met >= 4:
+        if long_met >= 3:
             return "LONG"
-        elif short_met >= 4:
+        elif short_met >= 3:
             return "SHORT"
         else:
             return None
@@ -1880,9 +1880,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
         short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
 
-        if long_met >= 3:
+        if long_met >= 2:
             return "LONG"
-        elif short_met >= 3:
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
