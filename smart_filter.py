@@ -1335,32 +1335,59 @@ class SmartFilter:
         else:
             return None
 
-    def _check_absorption(self, window=20, buffer_pct=0.005):
-        # Calculate recent low/high for proximity
+    # CHANGES >> Previous: without detect vol abs near recent extremes
+    def _check_absorption(
+        self,
+        window=20,
+        buffer_pct=0.005,
+        min_vol_burst=1.2,
+        require_price_reversal=True,
+        reversal_lookback=5
+    ):
+        """
+        Enhanced Absorption filter:
+        - Detects volume absorption near recent extremes (support/resistance)
+        - Requires significant volume burst
+        - Optionally confirms with price reversal off the level
+        - Main loop compatible: returns 'LONG', 'SHORT', or None
+        """
+        if len(self.df) < window + reversal_lookback + 2:
+            return None
+
+        # Calculate proximity to support/resistance
         low = self.df['low'].rolling(window).min().iat[-1]
         high = self.df['high'].rolling(window).max().iat[-1]
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
         volume = self.df['volume'].iat[-1]
-        volume_prev = self.df['volume'].iat[-2]
         avg_volume = self.df['volume'].rolling(window).mean().iat[-1]
 
-        # LONG conditions
+        # Significant volume burst
+        vol_burst = volume > min_vol_burst * avg_volume
+
+        # Price reversal confirmation: check if price bounced from support or rejected from resistance in last N bars
+        recent_closes = [self.df['close'].iat[-i] for i in range(2, reversal_lookback + 2)]
+        reversal_up = any(c > close_prev for c in recent_closes)
+        reversal_down = any(c < close_prev for c in recent_closes)
+
+        # LONG conditions (absorption at support)
         cond1_long = close <= low * (1 + buffer_pct)
-        cond2_long = volume > avg_volume and volume > volume_prev
+        cond2_long = vol_burst
         cond3_long = close >= close_prev
+        cond4_long = reversal_up if require_price_reversal else True
 
-        # SHORT conditions
+        # SHORT conditions (absorption at resistance)
         cond1_short = close >= high * (1 - buffer_pct)
-        cond2_short = volume > avg_volume and volume > volume_prev
+        cond2_short = vol_burst
         cond3_short = close <= close_prev
+        cond4_short = reversal_down if require_price_reversal else True
 
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
 
-        if long_met >= 2:
+        if long_met >= 3:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 3:
             return "SHORT"
         else:
             return None
