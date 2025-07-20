@@ -1450,33 +1450,66 @@ class SmartFilter:
         else:
             return None
 
-    def _check_smart_money_bias(self, volume_window=20):
+    # CHANGES >> Previous: without institutional window
+    def _check_smart_money_bias(
+        self,
+        volume_window=20,
+        min_vol_burst=1.25,
+        min_price_change_pct=0.002,
+        require_vwap_distance=True,
+        min_vwap_dist_pct=0.001,
+        institutional_window=20
+    ):
+        """
+        Enhanced Smart Money Bias filter:
+        - Requires significant volume burst (not just uptick)
+        - Confirms price momentum with minimum percent change
+        - VWAP confirmation, with configurable minimum distance
+        - Optionally detects institutional activity spike (volume relative to rolling max)
+        Returns: 'LONG', 'SHORT', or None
+        """
+        if len(self.df) < max(volume_window, institutional_window) + 2:
+            return None
+
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
         volume = self.df['volume'].iat[-1]
-        volume_prev = self.df['volume'].iat[-2]
         avg_volume = self.df['volume'].rolling(volume_window).mean().iat[-1]
         vwap = self.df['vwap'].iat[-1]
 
-        # Check for large volume uptick
-        large_vol = volume > avg_volume and volume > volume_prev
+        # Significant volume burst (not just above average)
+        vol_burst = volume > min_vol_burst * avg_volume
+
+        # Price momentum filter
+        price_change_pct = (close - close_prev) / close_prev if close_prev != 0 else 0
+
+        # VWAP distance confirmation
+        vwap_dist_pct = abs(close - vwap) / vwap if vwap != 0 else 0
+        vwap_up = close > vwap and (vwap_dist_pct > min_vwap_dist_pct if require_vwap_distance else True)
+        vwap_down = close < vwap and (vwap_dist_pct > min_vwap_dist_pct if require_vwap_distance else True)
+
+        # Institutional activity spike (volume at/near rolling max in institutional window)
+        institutional_vol_max = self.df['volume'].rolling(institutional_window).max().iat[-1]
+        institutional_spike = volume >= institutional_vol_max * 0.98  # within 2% of max
 
         # LONG conditions
-        cond1_long = large_vol
-        cond2_long = close > close_prev
-        cond3_long = close > vwap
+        cond1_long = vol_burst
+        cond2_long = price_change_pct > min_price_change_pct
+        cond3_long = vwap_up
+        cond4_long = institutional_spike
 
         # SHORT conditions
-        cond1_short = large_vol
-        cond2_short = close < close_prev
-        cond3_short = close < vwap
+        cond1_short = vol_burst
+        cond2_short = price_change_pct < -min_price_change_pct
+        cond3_short = vwap_down
+        cond4_short = institutional_spike
 
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
 
-        if long_met >= 2:
+        if long_met >= 3:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 3:
             return "SHORT"
         else:
             return None
