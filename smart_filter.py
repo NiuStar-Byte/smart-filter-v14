@@ -1095,11 +1095,10 @@ class SmartFilter:
 
         
         # ATR/volatility filter (filters out flat = no signal)
-        # can be modified using ATR
-        # atr = self.df['high'].rolling(volatility_window).max().iat[-1] - self.df['low'].rolling(volatility_window).min().iat[-1]
-        # atr_pct = atr / close if close != 0 else 0
-        # if atr_pct < 0.005:  # Too flat, skip
-        #    return None
+        atr = self.df['high'].rolling(volatility_window).max().iat[-1] - self.df['low'].rolling(volatility_window).min().iat[-1]
+        atr_pct = atr / close if close != 0 else 0
+        if atr_pct < 0.005:  # Too flat, skip
+            return None
 
         # LONG conditions
         cond1_long = ema9 > ema21 and ema21 > ema50 and ema_sep_long > min_ema_sep * ema50
@@ -1122,8 +1121,6 @@ class SmartFilter:
             return "SHORT"
         else:
             return None
-
-    # CHANGES >> Previous: without
     
     def _check_chop_zone(self, chop_threshold=40):
         chop = self.df['chop_zone'].iat[-1]
@@ -1418,7 +1415,8 @@ class SmartFilter:
             return "SHORT"
         else:
             return None
-
+    
+    # CHANGES >> Previous: without volatility & rising volume
     def _check_trend_continuation(self, ma_col='ema21', min_ma_change=0.001, min_price_change=0.001, volatility_window=14, require_volume=True):
         """
         Enhanced Trend Continuation filter.
@@ -1496,30 +1494,58 @@ class SmartFilter:
         else:
             return None
 
-    def _check_atr_momentum_burst(self, atr_period=14, burst_mult=1.5):
-        # ATR must be calculated and present in self.df['atr']
+    # CHANGES >> Previous: without volatility & rising volume
+    def _check_atr_momentum_burst(
+        self,
+        atr_period=14,
+        burst_mult=1.5,
+        min_pct_change=0.005,
+        require_volume=True,
+        volume_mult=1.2
+    ):
+        """
+        Enhanced ATR Momentum Burst filter.
+        - Normalizes price change by previous close for asset-agnostic signals.
+        - Requires ATR burst and price burst.
+        - Optionally confirms with volume burst.
+        - ATR must be above recent average for true volatility.
+        Returns: 'LONG', 'SHORT', or None
+        """
+        if len(self.df) < atr_period + 2:
+            return None
+
         atr = self.df['atr'].iat[-1]
         atr_prev = self.df['atr'].iat[-2]
+        atr_ma = self.df['atr'].rolling(atr_period).mean().iat[-1]
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
         price_change = close - close_prev
+        price_pct_change = (close - close_prev) / close_prev if close_prev != 0 else 0
+        volume = self.df['volume'].iat[-1]
+        avg_volume = self.df['volume'].rolling(atr_period).mean().iat[-1]
+
+        # Only allow signals in real volatility burst
+        if atr < atr_ma:
+            return None
 
         # LONG conditions
-        cond1_long = close > close_prev
+        cond1_long = price_pct_change > min_pct_change
         cond2_long = price_change > burst_mult * atr
         cond3_long = atr > atr_prev
+        cond4_long = (volume > volume_mult * avg_volume) if require_volume else True
 
         # SHORT conditions
-        cond1_short = close < close_prev
+        cond1_short = price_pct_change < -min_pct_change
         cond2_short = price_change < -burst_mult * atr
         cond3_short = atr > atr_prev
+        cond4_short = (volume > volume_mult * avg_volume) if require_volume else True
 
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
 
-        if long_met >= 2:
+        if long_met >= 3:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 3:
             return "SHORT"
         else:
             return None
