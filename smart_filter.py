@@ -1382,8 +1382,24 @@ class SmartFilter:
             return "SHORT"
         else:
             return None
-
-    def _check_liquidity_awareness(self):
+            
+    # CHANGES >> Previous: without normalize & minimum spread change
+    def _check_liquidity_awareness(
+        self,
+        min_spread_change_pct=0.001,
+        min_volume_increase_pct=0.1,
+        require_tick_improvement=True
+    ):
+        """
+        Enhanced Liquidity Awareness filter.
+        - Requires minimum spread change and volume burst
+        - Normalizes spread by price
+        - Optionally confirms with positive tick change (bid up, ask down for LONG)
+        Returns: 'LONG', 'SHORT', or None
+        """
+        if len(self.df) < 2:
+            return None
+    
         bid = self.df['bid'].iat[-1]
         ask = self.df['ask'].iat[-1]
         bid_prev = self.df['bid'].iat[-2]
@@ -1396,22 +1412,33 @@ class SmartFilter:
         spread = ask - bid
         spread_prev = ask_prev - bid_prev
 
+        # Normalize spread change
+        avg_price = (close + close_prev) / 2 if (close + close_prev) != 0 else 1
+        spread_change_pct = (spread_prev - spread) / avg_price if avg_price != 0 else 0
+        volume_increase_pct = (volume - volume_prev) / volume_prev if volume_prev != 0 else 0
+
+        # Tick improvement for LONG (bid up, ask down), for SHORT (bid down, ask up)
+        tick_long = (bid > bid_prev) and (ask < ask_prev)
+        tick_short = (bid < bid_prev) and (ask > ask_prev)
+
         # LONG conditions
-        cond1_long = spread < spread_prev
-        cond2_long = volume > volume_prev
+        cond1_long = spread_change_pct > min_spread_change_pct
+        cond2_long = volume_increase_pct > min_volume_increase_pct
         cond3_long = close > close_prev
+        cond4_long = tick_long if require_tick_improvement else True
 
         # SHORT conditions
-        cond1_short = spread > spread_prev
-        cond2_short = volume > volume_prev
+        cond1_short = spread_change_pct < -min_spread_change_pct
+        cond2_short = volume_increase_pct > min_volume_increase_pct
         cond3_short = close < close_prev
+        cond4_short = tick_short if require_tick_improvement else True
 
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
 
-        if long_met >= 2:
+        if long_met >= 3:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 3:
             return "SHORT"
         else:
             return None
