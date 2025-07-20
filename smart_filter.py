@@ -1264,33 +1264,73 @@ class SmartFilter:
         else:
             return None
 
-    def _check_wick_dominance(self):
+    # CHANGES >> Previous: without range & configure thresholds
+    def _check_wick_dominance(
+        self,
+        min_wick_range_ratio=0.5,
+        min_wick_body_ratio=1.5,
+        volume_window=10,
+        require_range_breakout=True,
+        breakout_lookback=5
+    ):
+        """
+        Enhanced Wick Dominance filter:
+        - Dominant wick must be a meaningful part of the total range
+        - Volume confirmation
+        - Optional price breakout confirmation
+        Returns: 'LONG', 'SHORT', or None
+        """
+        if len(self.df) < breakout_lookback + 2:
+            return None
+
         open_ = self.df['open'].iat[-1]
         high = self.df['high'].iat[-1]
         low = self.df['low'].iat[-1]
         close = self.df['close'].iat[-1]
+        volume = self.df['volume'].iat[-1]
+        avg_volume = self.df['volume'].rolling(volume_window).mean().iat[-1]
 
         # Calculate candle components
         upper_wick = high - max(open_, close)
         lower_wick = min(open_, close) - low
         body = abs(close - open_)
+        range_ = high - low if high != low else 1
 
-        # LONG conditions: dominant lower wick + bullish close
-        cond1_long = lower_wick > 2 * upper_wick
-        cond2_long = lower_wick > 1.5 * body
+        # Magnitude filters
+        lower_wick_ratio = lower_wick / range_
+        upper_wick_ratio = upper_wick / range_
+
+        # Volume confirmation
+        volume_burst = volume > avg_volume
+
+        # Range breakout confirmation (last N bars)
+        highest_close = max([self.df['close'].iat[-i] for i in range(2, breakout_lookback + 2)])
+        lowest_close = min([self.df['close'].iat[-i] for i in range(2, breakout_lookback + 2)])
+        breakout_up = close > highest_close
+        breakout_down = close < lowest_close
+
+        # LONG conditions: dominant lower wick + bullish close + magnitude + volume + breakout
+        cond1_long = lower_wick > min_wick_body_ratio * body
+        cond2_long = lower_wick > 2 * upper_wick
         cond3_long = close > open_
+        cond4_long = lower_wick_ratio > min_wick_range_ratio
+        cond5_long = volume_burst
+        cond6_long = breakout_up if require_range_breakout else True
 
-        # SHORT conditions: dominant upper wick + bearish close
-        cond1_short = upper_wick > 2 * lower_wick
-        cond2_short = upper_wick > 1.5 * body
+        # SHORT conditions: dominant upper wick + bearish close + magnitude + volume + breakout
+        cond1_short = upper_wick > min_wick_body_ratio * body
+        cond2_short = upper_wick > 2 * lower_wick
         cond3_short = close < open_
+        cond4_short = upper_wick_ratio > min_wick_range_ratio
+        cond5_short = volume_burst
+        cond6_short = breakout_down if require_range_breakout else True
 
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long, cond5_long, cond6_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short, cond5_short, cond6_short])
 
-        if long_met >= 2:
+        if long_met >= 4:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 4:
             return "SHORT"
         else:
             return None
