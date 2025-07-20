@@ -908,9 +908,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met = 3:
+        if long_met == 3:
             return "LONG"
-        elif short_met = 3:
+        elif short_met == 3:
             return "SHORT"
         else:
             return None
