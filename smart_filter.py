@@ -664,9 +664,9 @@ class SmartFilter:
             results_long=results_long,
             results_short=results_short,
             orderbook_result=orderbook_result,
-            density_result=density_result,
+            density_result=density_result
             # results=results_status,  # only if you want legacy compatibility
-            filename="signal_debug_temp.txt"
+            # filename="signal_debug_temp.txt"
         )
         
         # Return only the summary object for main.py
