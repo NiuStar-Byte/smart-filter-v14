@@ -1660,29 +1660,59 @@ class SmartFilter:
         else:
             return None
 
-    def _check_volatility_model(self, atr_col='atr', atr_ma_col='atr_ma'):
+    # CHANGES >> Previous: without confirm price momentum
+    def _check_volatility_model(
+        self,
+        atr_col='atr',
+        atr_ma_col='atr_ma',
+        min_atr_burst_pct=0.05,
+        min_price_change_pct=0.002,
+        volume_window=14,
+        require_volume=True
+    ):
+        """
+        Enhanced Volatility Model filter:
+        - Requires ATR burst above recent average and minimum percent change
+        - Confirms price momentum
+        - Optionally confirms with volume burst
+        Returns: 'LONG', 'SHORT', or None
+        """
+        if len(self.df) < 2:
+            return None
+
         atr = self.df[atr_col].iat[-1]
         atr_prev = self.df[atr_col].iat[-2]
         atr_ma = self.df[atr_ma_col].iat[-1]
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
+        volume = self.df['volume'].iat[-1]
+        avg_volume = self.df['volume'].rolling(volume_window).mean().iat[-1]
+
+        # ATR burst filter: must be a meaningful move
+        atr_burst_pct = (atr - atr_ma) / atr_ma if atr_ma != 0 else 0
+        price_change_pct = (close - close_prev) / close_prev if close_prev != 0 else 0
+        volume_burst = volume > avg_volume if require_volume else True
 
         # LONG conditions
         cond1_long = atr > atr_prev
-        cond2_long = close > close_prev
-        cond3_long = atr > atr_ma
+        cond2_long = atr_burst_pct > min_atr_burst_pct
+        cond3_long = price_change_pct > min_price_change_pct
+        cond4_long = close > close_prev
+        cond5_long = volume_burst
 
         # SHORT conditions
         cond1_short = atr > atr_prev
-        cond2_short = close < close_prev
-        cond3_short = atr > atr_ma
+        cond2_short = atr_burst_pct > min_atr_burst_pct
+        cond3_short = price_change_pct < -min_price_change_pct
+        cond4_short = close < close_prev
+        cond5_short = volume_burst
 
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long, cond5_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short, cond5_short])
 
-        if long_met >= 2:
+        if long_met >= 4:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 4:
             return "SHORT"
         else:
             return None
