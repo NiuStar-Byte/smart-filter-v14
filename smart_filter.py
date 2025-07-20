@@ -1514,7 +1514,24 @@ class SmartFilter:
         else:
             return None
 
-    def _check_spread_filter(self, window=20):
+    # CHANGES >> Previous: without relative spread & min volatility ratio 
+    def _check_spread_filter(
+        self,
+        window=20,
+        min_spread_zscore=1.0,
+        min_relative_spread=0.001,
+        volatility_window=20,
+        min_volatility_ratio=1.1
+    ):
+        """
+        Enhanced Spread Filter:
+        - Uses Z-score to detect significant spread outlier vs historical window
+        - Normalizes spread by price for cross-asset comparability
+        - Checks spread regime change AND volatility regime change
+        - Dynamic conditions reduce false signals in choppy markets
+        Returns: 'LONG', 'SHORT', or None
+        """
+        # Current and previous candle values
         high = self.df['high'].iat[-1]
         low = self.df['low'].iat[-1]
         open_ = self.df['open'].iat[-1]
@@ -1525,30 +1542,48 @@ class SmartFilter:
         open_prev = self.df['open'].iat[-2]
         close_prev = self.df['close'].iat[-2]
 
-        spread = high - low
-        spread_prev = high_prev - low_prev
-        spread_ma = self.df['spread'].rolling(window).mean().iat[-1] if 'spread' in self.df.columns else self.df['high'].sub(self.df['low']).rolling(window).mean().iat[-1]
-
         # Add spread column if missing
         if 'spread' not in self.df.columns:
             self.df['spread'] = self.df['high'] - self.df['low']
 
-        # LONG conditions
-        cond1_long = spread > spread_prev
+        spread = high - low
+        spread_prev = high_prev - low_prev
+        spread_ma = self.df['spread'].rolling(window).mean().iat[-1]
+        spread_std = self.df['spread'].rolling(window).std().iat[-1]
+        spread_zscore = (spread - spread_ma) / spread_std if spread_std != 0 else 0
+
+        # Normalized spread (relative to price)
+        avg_price = (high + low) / 2
+        rel_spread = spread / avg_price if avg_price != 0 else 0
+
+        # Volatility regime: ATR or stdev of spread
+        if 'atr' in self.df.columns:
+            volatility = self.df['atr'].iat[-1]
+            volatility_ma = self.df['atr'].rolling(volatility_window).mean().iat[-1]
+        else:
+            volatility = self.df['spread'].rolling(2).std().iat[-1]
+            volatility_ma = self.df['spread'].rolling(volatility_window).std().iat[-1]
+
+        volatility_ratio = volatility / volatility_ma if volatility_ma != 0 else 0
+
+        # LONG conditions: Spread outlier, volatility regime, bullish candle, normalized spread
+        cond1_long = spread_zscore > min_spread_zscore
         cond2_long = close > open_
-        cond3_long = spread > spread_ma
+        cond3_long = rel_spread > min_relative_spread
+        cond4_long = volatility_ratio > min_volatility_ratio
 
-        # SHORT conditions
-        cond1_short = spread > spread_prev
+        # SHORT conditions: Spread outlier, volatility regime, bearish candle, normalized spread
+        cond1_short = spread_zscore > min_spread_zscore
         cond2_short = close < open_
-        cond3_short = spread > spread_ma
+        cond3_short = rel_spread > min_relative_spread
+        cond4_short = volatility_ratio > min_volatility_ratio
 
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
 
-        if long_met >= 2:
+        if long_met >= 3:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 3:
             return "SHORT"
         else:
             return None
