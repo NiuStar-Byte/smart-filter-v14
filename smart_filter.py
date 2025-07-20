@@ -714,7 +714,7 @@ class SmartFilter:
             return result
         return None
 
-    # Previous zscore_threshold=1.5
+    # Previous: zscore_threshold=1.5
     def _check_volume_spike(self, zscore_threshold=2.0):
         # Calculate z-score of current volume vs recent (rolling 10)
         avg = self.df['volume'].rolling(10).mean().iat[-1]
@@ -749,7 +749,7 @@ class SmartFilter:
             return False
         return self.df5m['volume'].iat[-1] > self.df5m['volume'].iat[-2]
 
-    # Previous buffer_pct=0.005, window=20
+    # Thighten >> Previous: buffer_pct=0.005, window=20
     def _check_fractal_zone(self, buffer_pct=0.01, window=30):
         fractal_low = self.df['low'].rolling(window).min().iat[-1]
         fractal_low_prev = self.df['low'].rolling(window).min().iat[-2]
@@ -779,7 +779,7 @@ class SmartFilter:
         else:
             return None
 
-    # Previous without Volatility factor 
+    # Thighten >> Previous: without Volatility factor 
     def _check_ema_cloud(self):
         if len(self.df) < 2:
             return None
@@ -823,6 +823,7 @@ class SmartFilter:
         else:
             return None
 
+    # Loosen >> Previous: all 4 conditions must met
     def _check_macd(self):
         e12 = self.df['close'].ewm(span=12).mean()
         e26 = self.df['close'].ewm(span=26).mean()
@@ -852,6 +853,7 @@ class SmartFilter:
         else:
             return None
 
+    # Thighten >> Previous: LONG momentum > 0; SHORT nomentum < 0
     def _check_momentum(self, window=10):
         # Calculate Rate of Change (ROC)
         roc = self.df['close'].pct_change(periods=window)
@@ -861,12 +863,12 @@ class SmartFilter:
         close_prev = self.df['close'].iat[-2]
 
         # LONG conditions
-        cond1_long = momentum > 0
+        cond1_long = momentum > 0.01
         cond2_long = momentum > momentum_prev
         cond3_long = close > close_prev
 
         # SHORT conditions
-        cond1_short = momentum < 0
+        cond1_short = momentum < -0.01
         cond2_short = momentum < momentum_prev
         cond3_short = close < close_prev
 
