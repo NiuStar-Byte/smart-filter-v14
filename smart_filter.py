@@ -1190,43 +1190,76 @@ class SmartFilter:
         else:
             return None
 
-    def _check_candle_close(self):
+    # CHANGES >> Previous: without magnitude & range breakout
+    def _check_candle_close(
+        self,
+        min_body_pct=0.002,
+        min_wick_body_ratio=2.0,
+        volume_window=10,
+        require_range_breakout=True,
+        breakout_lookback=5
+    ):
+        """
+        Enhanced Candle Close filter:
+        - Candlestick patterns with magnitude filter
+        - Volume confirmation
+        - Range breakout confirmation (optional)
+        Returns: 'LONG', 'SHORT', or None
+        """
+        if len(self.df) < breakout_lookback + 2:
+            return None
+
         open_ = self.df['open'].iat[-1]
         high = self.df['high'].iat[-1]
         low = self.df['low'].iat[-1]
         close = self.df['close'].iat[-1]
+        volume = self.df['volume'].iat[-1]
+        avg_volume = self.df['volume'].rolling(volume_window).mean().iat[-1]
 
         open_prev = self.df['open'].iat[-2]
         close_prev = self.df['close'].iat[-2]
 
-        # Engulfing
-        bullish_engulfing = close > open_prev and open_ < close_prev
-        bearish_engulfing = close < open_prev and open_ > close_prev
+        body = abs(close - open_)
+        avg_price = (high + low) / 2 if (high + low) != 0 else 1
+        body_pct = body / avg_price if avg_price != 0 else 0
 
-        # Pin bar / Hammer / Shooting Star
         lower_wick = open_ - low if open_ < close else close - low
         upper_wick = high - close if open_ < close else high - open_
-        body = abs(close - open_)
 
-        bullish_pin_bar = lower_wick > 2 * body and close > open_
-        bearish_pin_bar = upper_wick > 2 * body and close < open_
+        # Pattern detection
+        bullish_engulfing = close > open_prev and open_ < close_prev and body_pct > min_body_pct
+        bearish_engulfing = close < open_prev and open_ > close_prev and body_pct > min_body_pct
+
+        bullish_pin_bar = lower_wick > min_wick_body_ratio * body and close > open_ and body_pct > min_body_pct
+        bearish_pin_bar = upper_wick > min_wick_body_ratio * body and close < open_ and body_pct > min_body_pct
+
+        # Volume confirmation
+        volume_burst = volume > avg_volume
+
+        # Range breakout confirmation (last N bars)
+        highest_close = max([self.df['close'].iat[-i] for i in range(2, breakout_lookback + 2)])
+        lowest_close = min([self.df['close'].iat[-i] for i in range(2, breakout_lookback + 2)])
+        breakout_up = close > highest_close
+        breakout_down = close < lowest_close
 
         # LONG conditions
-        cond1_long = bullish_engulfing
-        cond2_long = bullish_pin_bar
-        cond3_long = close > close_prev
+        cond1_long = bullish_engulfing or bullish_pin_bar
+        cond2_long = close > close_prev and body_pct > min_body_pct
+        cond3_long = volume_burst
+        cond4_long = breakout_up if require_range_breakout else True
 
         # SHORT conditions
-        cond1_short = bearish_engulfing
-        cond2_short = bearish_pin_bar
-        cond3_short = close < close_prev
+        cond1_short = bearish_engulfing or bearish_pin_bar
+        cond2_short = close < close_prev and body_pct > min_body_pct
+        cond3_short = volume_burst
+        cond4_short = breakout_down if require_range_breakout else True
 
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
 
-        if long_met >= 2:
+        if long_met >= 3:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 3:
             return "SHORT"
         else:
             return None
