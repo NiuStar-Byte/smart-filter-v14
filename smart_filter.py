@@ -781,31 +781,34 @@ class SmartFilter:
 
     # Previous without Volatility factor 
     def _check_ema_cloud(self):
+        if len(self.df) < 2:
+            return None
+
         ema20 = self.df['ema20'].iat[-1]
         ema50 = self.df['ema50'].iat[-1]
         ema20_prev = self.df['ema20'].iat[-2]
         close = self.df['close'].iat[-1]
 
         # Calculate ATR to adjust volatility
-        atr = self.compute_atr(self.df)  # Assuming compute_atr function is already defined
+        atr_value = compute_atr(self.df)  # or self.compute_atr(self.df) if inside class
 
-        # Calculate the volatility factor based on ATR
-        volatility_factor = atr / close  # Adjust based on ATR and price
+        # Prevent division by zero
+        if close == 0:
+            return None
 
-        # Loosen or tighten the condition based on volatility_factor
-        if volatility_factor < 0.02:  # Low volatility: tighten the filter
+        volatility_factor = atr_value / close
+
+        if volatility_factor < 0.02:
             adjusted_ema50 = ema50 * (1 - volatility_factor)
             adjusted_ema20 = ema20 * (1 + volatility_factor)
-        else:  # High volatility: loosen the filter
+        else:
             adjusted_ema50 = ema50 * (1 + volatility_factor)
             adjusted_ema20 = ema20 * (1 - volatility_factor)
 
-        # LONG conditions (tightened or loosened based on volatility)
         cond1_long = ema20 > adjusted_ema50
         cond2_long = ema20 > ema20_prev
         cond3_long = close > ema20
 
-        # SHORT conditions (tightened or loosened based on volatility)
         cond1_short = ema20 < adjusted_ema50
         cond2_short = ema20 < ema20_prev
         cond3_short = close < ema20
