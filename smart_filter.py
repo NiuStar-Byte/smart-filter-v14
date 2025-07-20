@@ -714,7 +714,8 @@ class SmartFilter:
             return result
         return None
 
-    def _check_volume_spike(self, zscore_threshold=1.5):
+    # Previous zscore_threshold=1.5
+    def _check_volume_spike(self, zscore_threshold=2.0):
         # Calculate z-score of current volume vs recent (rolling 10)
         avg = self.df['volume'].rolling(10).mean().iat[-1]
         std = self.df['volume'].rolling(10).std().iat[-1]
