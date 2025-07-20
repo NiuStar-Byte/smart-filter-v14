@@ -1576,8 +1576,27 @@ class SmartFilter:
             return "SHORT"
         else:
             return None
+    
+    # CHANGES >> Previous: without min bb expansion & breakout lookback
+    def _check_volatility_squeeze(
+        self,
+        min_bb_expansion_pct=0.15,
+        volume_mult=1.2,
+        squeeze_window=5,
+        breakout_lookback=5
+    ):
+        """
+        Enhanced Volatility Squeeze filter:
+        - Requires BB expansion after sustained squeeze below KC
+        - Minimum percent BB width expansion
+        - Confirms with significant volume burst
+        - Price breakout above/below range for extra confirmation
+        Returns: 'LONG', 'SHORT', or None
+        """
+        if len(self.df) < max(squeeze_window, breakout_lookback) + 2:
+            return None
 
-    def _check_volatility_squeeze(self):
+        # Current BB/KC width
         bb_width = self.df['bb_upper'].iat[-1] - self.df['bb_lower'].iat[-1]
         kc_width = self.df['kc_upper'].iat[-1] - self.df['kc_lower'].iat[-1]
         bb_width_prev = self.df['bb_upper'].iat[-2] - self.df['bb_lower'].iat[-2]
@@ -1586,20 +1605,43 @@ class SmartFilter:
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
         volume = self.df['volume'].iat[-1]
-        volume_prev = self.df['volume'].iat[-2]
+        avg_volume = self.df['volume'].rolling(squeeze_window).mean().iat[-1]
 
-        # Squeeze fires when BB width expands after contraction below KC width
-        squeeze_firing = bb_width > kc_width and bb_width_prev < kc_width_prev
+        # Confirm squeeze lasted several bars
+        recent_bb_kc = [
+            (self.df['bb_upper'].iat[-i] - self.df['bb_lower'].iat[-i]) <
+            (self.df['kc_upper'].iat[-i] - self.df['kc_lower'].iat[-i])
+            for i in range(2, squeeze_window + 2)
+        ]
+        sustained_squeeze = all(recent_bb_kc)
+
+        # BB expansion: must be a significant burst
+        bb_expansion_pct = (
+            (bb_width - bb_width_prev) / bb_width_prev
+            if bb_width_prev != 0 else 0
+        )
+        bb_expansion = bb_expansion_pct > min_bb_expansion_pct
+
+        squeeze_firing = bb_width > kc_width and sustained_squeeze and bb_expansion
+
+        # Volume burst
+        volume_burst = volume > volume_mult * avg_volume
+
+        # Price breakout above/below range (last N bars)
+        highest_close = max([self.df['close'].iat[-i] for i in range(2, breakout_lookback + 2)])
+        lowest_close = min([self.df['close'].iat[-i] for i in range(2, breakout_lookback + 2)])
+        price_breakout_up = close > highest_close
+        price_breakout_down = close < lowest_close
 
         # LONG conditions
         cond1_long = squeeze_firing
-        cond2_long = close > close_prev
-        cond3_long = volume > volume_prev
+        cond2_long = volume_burst
+        cond3_long = price_breakout_up
 
         # SHORT conditions
         cond1_short = squeeze_firing
-        cond2_short = close < close_prev
-        cond3_short = volume > volume_prev
+        cond2_short = volume_burst
+        cond3_short = price_breakout_down
 
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
