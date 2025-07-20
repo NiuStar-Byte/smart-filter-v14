@@ -96,8 +96,8 @@ class SmartFilter:
         df3m: pd.DataFrame = None,
         df5m: pd.DataFrame = None,
         tf: str = None,
-        min_score: int = 16, # <-- NEW: now 16 (for 23 filters)
-        required_passed: int = 13, # <-- NEW: now 13 (for 17 gatekeepers)
+        min_score: int = 15, # <-- NEW: now 16 (for 23 filters)
+        required_passed: int = 12, # <-- NEW: now 12 (for 17 gatekeepers)
         volume_multiplier: float = 2.0,
         liquidity_threshold: float = 0.5,   # <-- NEW: 50% Set a default value
         kwargs = None
@@ -1122,33 +1122,70 @@ class SmartFilter:
         else:
             return None
     
-    def _check_chop_zone(self, chop_threshold=40):
+    # CHANGES >> Previous: without adaptive chop &  min separation ema
+    def _check_chop_zone(
+        self,
+        base_chop_threshold=40,
+        chop_window=14,
+        min_ema_sep_pct=0.001,
+        require_adx=True,
+        volume_window=14
+    ):
+        """
+        Powerful & distinctive Chop Zone filter.
+        - Adaptive chop threshold
+        - Strong ADX filter (trend > recent average)
+        - Minimum EMA separation for trend
+        - Volume burst confirmation
+        Returns: 'LONG', 'SHORT', or None
+        """
+        if len(self.df) < max(chop_window, volume_window) + 2:
+            return None
+
         chop = self.df['chop_zone'].iat[-1]
         ema9 = self.df['ema9'].iat[-1]
         ema21 = self.df['ema21'].iat[-1]
         close = self.df['close'].iat[-1]
         adx = self.df['adx'].iat[-1] if 'adx' in self.df.columns else None
+        adx_ma = self.df['adx'].rolling(chop_window).mean().iat[-1] if adx is not None else None
+        volume = self.df['volume'].iat[-1]
+        avg_volume = self.df['volume'].rolling(volume_window).mean().iat[-1]
+
+        # Adaptive chop threshold: use max of base threshold and recent median
+        recent_chop_median = self.df['chop_zone'].rolling(chop_window).median().iat[-1]
+        adaptive_chop_threshold = max(base_chop_threshold, recent_chop_median)
 
         # Filter out choppy market
-        if chop >= chop_threshold:
+        if chop >= adaptive_chop_threshold:
             return None
 
+        # EMA separation
+        ema_sep = abs(ema9 - ema21) / ema21 if ema21 != 0 else 0
+
+        # ADX confirmation: current ADX > average
+        adx_strong = (adx > adx_ma) if (adx is not None and require_adx) else True
+
+        # Volume burst
+        volume_burst = volume > avg_volume
+
         # LONG conditions
-        cond1_long = ema9 > ema21 if ema9 and ema21 else False
-        cond2_long = adx > 20 if adx else True  # Optional: ADX filter
+        cond1_long = ema9 > ema21 and ema_sep > min_ema_sep_pct
+        cond2_long = adx_strong
         cond3_long = close > ema9
+        cond4_long = volume_burst
 
         # SHORT conditions
-        cond1_short = ema9 < ema21 if ema9 and ema21 else False
-        cond2_short = adx > 20 if adx else True
+        cond1_short = ema9 < ema21 and ema_sep > min_ema_sep_pct
+        cond2_short = adx_strong
         cond3_short = close < ema9
+        cond4_short = volume_burst
 
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
 
-        if long_met >= 2:
+        if long_met >= 3:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 3:
             return "SHORT"
         else:
             return None
