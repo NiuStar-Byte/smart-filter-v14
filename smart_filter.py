@@ -749,7 +749,8 @@ class SmartFilter:
             return False
         return self.df5m['volume'].iat[-1] > self.df5m['volume'].iat[-2]
 
-    def _check_fractal_zone(self, buffer_pct=0.005, window=20):
+    # Previous buffer_pct=0.005, window=20
+    def _check_fractal_zone(self, buffer_pct=0.01, window=30):
         fractal_low = self.df['low'].rolling(window).min().iat[-1]
         fractal_low_prev = self.df['low'].rolling(window).min().iat[-2]
         fractal_high = self.df['high'].rolling(window).max().iat[-1]
