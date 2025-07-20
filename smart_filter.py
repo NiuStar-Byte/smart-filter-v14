@@ -1013,31 +1013,56 @@ class SmartFilter:
                 return "SHORT"
         else:
             return None
-        
-    def _check_hh_ll(self):
+
+    # CHANGES >> Previous: no additional requirement
+    def _check_hh_ll(self, min_pct_change=0.002, require_volume=True, volatility_window=10):
+        """
+        Enhanced HH/LL filter (returns 'LONG'/'SHORT'/None for main loop compatibility).
+        - Requires minimum percentage change for highs/lows
+        - Optionally confirms with volume
+        - Filters out low volatility periods
+        """
+        if len(self.df) < 2:
+            return None
+
         high = self.df['high'].iat[-1]
         high_prev = self.df['high'].iat[-2]
         low = self.df['low'].iat[-1]
         low_prev = self.df['low'].iat[-2]
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
+        volume = self.df['volume'].iat[-1]
+        avg_volume = self.df['volume'].rolling(volatility_window).mean().iat[-1]
 
-        # LONG conditions: Higher Highs and Higher Lows
-        cond1_long = high > high_prev
-        cond2_long = low > low_prev
-        cond3_long = close > close_prev
+        # Magnitude checks
+        pct_high = (high - high_prev) / high_prev if high_prev != 0 else 0
+        pct_low = (low - low_prev) / low_prev if low_prev != 0 else 0
+        pct_close = (close - close_prev) / close_prev if close_prev != 0 else 0
 
-        # SHORT conditions: Lower Lows and Lower Highs
-        cond1_short = low < low_prev
-        cond2_short = high < high_prev
-        cond3_short = close < close_prev
+        # Volatility filter: ATR (Average True Range)
+        atr = self.df['high'].rolling(volatility_window).max().iat[-1] - self.df['low'].rolling(volatility_window).min().iat[-1]
+        atr_pct = atr / close if close != 0 else 0
+        if atr_pct < 0.005:  # Too flat, skip
+            return None
 
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
+        # LONG conditions
+        cond1_long = pct_high > min_pct_change
+        cond2_long = pct_low > min_pct_change
+        cond3_long = pct_close > min_pct_change
+        cond4_long = (volume > avg_volume) if require_volume else True
 
-        if long_met >= 2:
+        # SHORT conditions
+        cond1_short = pct_low < -min_pct_change
+        cond2_short = pct_high < -min_pct_change
+        cond3_short = pct_close < -min_pct_change
+        cond4_short = (volume > avg_volume) if require_volume else True
+
+        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
+
+        if long_met >= 3:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 3:
             return "SHORT"
         else:
             return None
