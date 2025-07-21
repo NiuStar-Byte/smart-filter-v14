@@ -823,7 +823,6 @@ class SmartFilter:
         else:
             return None
 
-
     # Loosen >> Previous: all 4 conditions must met
     def _check_macd(self):
         e12 = self.df['close'].ewm(span=12).mean()
@@ -832,16 +831,16 @@ class SmartFilter:
         signal = macd.ewm(span=9).mean()
 
         # LONG conditions
-        condition_1_long = macd.iat[-1] > signal.iat[-1]                # MACD above Signal Line
-        condition_2_long = macd.iat[-1] > macd.iat[-2]                  # MACD is rising
-        condition_3_long = self.df['close'].iat[-1] > self.df['close'].iat[-2]  # Price action rising
-        condition_4_long = macd.iat[-1] > signal.iat[-1] and macd.iat[-1] > macd.iat[-2]  # MACD Divergence
+        condition_1_long = macd.iat[-1] > signal.iat[-1]    # MACD above Signal Line
+        condition_2_long = macd.iat[-1] > macd.iat[-2]    # MACD is rising
+        condition_3_long = self.df['close'].iat[-1] > self.df['close'].iat[-2]    # Price action rising
+        condition_4_long = macd.iat[-1] > signal.iat[-1] and macd.iat[-1] > macd.iat[-2]    # MACD Divergence
 
         # SHORT conditions
-        condition_1_short = macd.iat[-1] < signal.iat[-1]                # MACD below Signal Line
-        condition_2_short = macd.iat[-1] < macd.iat[-2]                  # MACD is falling
-        condition_3_short = self.df['close'].iat[-1] < self.df['close'].iat[-2]  # Price action falling
-        condition_4_short = macd.iat[-1] < signal.iat[-1] and macd.iat[-1] < macd.iat[-2]  # MACD Divergence
+        condition_1_short = macd.iat[-1] < signal.iat[-1]    # MACD below Signal Line
+        condition_2_short = macd.iat[-1] < macd.iat[-2]    # MACD is falling
+        condition_3_short = self.df['close'].iat[-1] < self.df['close'].iat[-2]    # Price action falling
+        condition_4_short = macd.iat[-1] < signal.iat[-1] and macd.iat[-1] < macd.iat[-2]    # MACD Divergence
 
         long_conditions_met = sum([condition_1_long, condition_2_long, condition_3_long, condition_4_long])
         short_conditions_met = sum([condition_1_short, condition_2_short, condition_3_short, condition_4_short])
@@ -864,12 +863,12 @@ class SmartFilter:
         close_prev = self.df['close'].iat[-2]
 
         # LONG conditions
-        cond1_long = momentum > 0.01
+        cond1_long = momentum > 0.02
         cond2_long = momentum > momentum_prev
         cond3_long = close > close_prev
 
         # SHORT conditions
-        cond1_short = momentum < -0.01
+        cond1_short = momentum < -0.02
         cond2_short = momentum < momentum_prev
         cond3_short = close < close_prev
 
@@ -916,60 +915,102 @@ class SmartFilter:
         else:
             return None
 
-    def _check_vwap_divergence(self):
+    # CHANGES >> Previous: without min threshold 
+    def _check_vwap_divergence(self, vwap_div_threshold=0.002, mode="diagnostic"):
+        """
+        VWAP divergence filter.
+        Returns dict with diagnostics (signal, strength, divergence) or just 'LONG'/'SHORT' if mode='simple'.
+        """
+        if len(self.df) < 2:
+            return None
+
         vwap = self.df['vwap'].iat[-1]
         vwap_prev = self.df['vwap'].iat[-2]
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
 
+        threshold = vwap_div_threshold * vwap
+
         # LONG conditions
         cond1_long = close < vwap
         cond2_long = close > close_prev
-        cond3_long = (vwap - close) > (vwap_prev - close_prev)
+        cond3_long = ((vwap - close) > (vwap_prev - close_prev)) and ((vwap - close) > threshold)
 
         # SHORT conditions
         cond1_short = close > vwap
         cond2_short = close < close_prev
-        cond3_short = (close - vwap) > (close_prev - vwap_prev)
+        cond3_short = ((close - vwap) > (close_prev - vwap_prev)) and ((close - vwap) > threshold)
 
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
         if long_met >= 2:
-            return "LONG"
+            if mode == "diagnostic":
+                return {"signal": "LONG", "strength": long_met, "divergence": vwap - close}
+            else:
+                return "LONG"
         elif short_met >= 2:
-            return "SHORT"
+            if mode == "diagnostic":
+                return {"signal": "SHORT", "strength": short_met, "divergence": close - vwap}
+            else:
+                return "SHORT"
         else:
             return None
             
-    def _check_mtf_volume_agreement(self):
-        # Current timeframe
+    # CHANGES >> Previous: without min threshold & higher TF volume
+    def _check_mtf_volume_agreement(self, volume_threshold=0.05, higher_tf_volume_threshold=0.02, mode="diagnostic"):
+        """
+        Multi-timeframe volume agreement filter.
+        Returns dict with diagnostics (signal, strength, volume_increase, higher_tf_volume_increase)
+        or just 'LONG'/'SHORT' if mode='simple'.
+        """
+        if len(self.df) < 2:
+            return None
+
         volume = self.df['volume'].iat[-1]
         volume_prev = self.df['volume'].iat[-2]
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
 
-        # Higher timeframe (e.g., hourly or daily)
         higher_tf_volume = self.df['higher_tf_volume'].iat[-1]
         higher_tf_volume_prev = self.df['higher_tf_volume'].iat[-2]
 
-        # LONG conditions
-        cond1_long = volume > volume_prev
-        cond2_long = higher_tf_volume > higher_tf_volume_prev
+        volume_increase = (volume - volume_prev) / volume_prev if volume_prev != 0 else 0
+        higher_tf_volume_increase = (higher_tf_volume - higher_tf_volume_prev) / higher_tf_volume_prev if higher_tf_volume_prev != 0 else 0
+
+        # LONG
+        cond1_long = volume_increase > volume_threshold
+        cond2_long = higher_tf_volume_increase > higher_tf_volume_threshold
         cond3_long = close > close_prev
 
-        # SHORT conditions
-        cond1_short = volume > volume_prev
-        cond2_short = higher_tf_volume > higher_tf_volume_prev
+        # SHORT
+        cond1_short = volume_increase < -volume_threshold
+        cond2_short = higher_tf_volume_increase < -higher_tf_volume_threshold
         cond3_short = close < close_prev
 
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
         if long_met >= 2:
-            return "LONG"
+            if mode == "diagnostic":
+                return {
+                    "signal": "LONG",
+                    "strength": long_met,
+                    "volume_increase": volume_increase,
+                    "higher_tf_volume_increase": higher_tf_volume_increase
+                }
+            else:
+                return "LONG"
         elif short_met >= 2:
-            return "SHORT"
+            if mode == "diagnostic":
+                return {
+                    "signal": "SHORT",
+                    "strength": short_met,
+                    "volume_increase": volume_increase,
+                    "higher_tf_volume_increase": higher_tf_volume_increase
+                }
+            else:
+                return "SHORT"
         else:
             return None
         
