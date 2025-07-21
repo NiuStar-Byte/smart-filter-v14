@@ -715,7 +715,7 @@ class SmartFilter:
         return None
 
     # Thighten >> Previous zscore_threshold=1.5
-    def _check_volume_spike(self, zscore_threshold=2.0):
+    def _check_volume_spike(self, zscore_threshold=1.5):
         # Calculate z-score of current volume vs recent (rolling 10)
         avg = self.df['volume'].rolling(10).mean().iat[-1]
         std = self.df['volume'].rolling(10).std().iat[-1]
@@ -750,7 +750,7 @@ class SmartFilter:
         return self.df5m['volume'].iat[-1] > self.df5m['volume'].iat[-2]
 
     # Thighten >> Previous: buffer_pct=0.005, window=20
-    def _check_fractal_zone(self, buffer_pct=0.02, window=30):
+    def _check_fractal_zone(self, buffer_pct=0.02, window=20):
         fractal_low = self.df['low'].rolling(window).min().iat[-1]
         fractal_low_prev = self.df['low'].rolling(window).min().iat[-2]
         fractal_high = self.df['high'].rolling(window).max().iat[-1]
@@ -846,15 +846,15 @@ class SmartFilter:
         short_conditions_met = sum([condition_1_short, condition_2_short, condition_3_short, condition_4_short])
 
         # If 3 out of 4 conditions are met, we pass the filter
-        if long_conditions_met >= 4:
+        if long_conditions_met >= 3:
             return "LONG"
-        elif short_conditions_met >= 4:
+        elif short_conditions_met >= 3:
             return "SHORT"
         else:
             return None
 
     # Thighten >> Previous: LONG momentum > 0; SHORT nomentum < 0
-    def _check_momentum(self, window=20):
+    def _check_momentum(self, window=10):
         # Calculate Rate of Change (ROC)
         roc = self.df['close'].pct_change(periods=window)
         momentum = roc.iat[-1]
@@ -863,12 +863,12 @@ class SmartFilter:
         close_prev = self.df['close'].iat[-2]
 
         # LONG conditions
-        cond1_long = momentum > 0.02
+        cond1_long = momentum > 0.01
         cond2_long = momentum > momentum_prev
         cond3_long = close > close_prev
 
         # SHORT conditions
-        cond1_short = momentum < -0.02
+        cond1_short = momentum < -0.01
         cond2_short = momentum < momentum_prev
         cond3_short = close < close_prev
 
@@ -908,9 +908,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met == 3:
+        if long_met >= 2:
             return "LONG"
-        elif short_met == 3:
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
@@ -957,62 +957,37 @@ class SmartFilter:
         else:
             return None
             
-# CHANGES >> Previous: without min threshold & higher TF volume
-    def _check_mtf_volume_agreement(self, volume_threshold=0.05, higher_tf_volume_threshold=0.03, mode="diagnostic"):
-        """
-        Multi-timeframe volume agreement filter.
-        Returns dict with diagnostics (signal, strength, volume_increase, higher_tf_volume_increase)
-        or just 'LONG'/'SHORT' if mode='simple'.
-        """
-        if len(self.df) < 2:
-            return None
-
+    def _check_mtf_volume_agreement(self):
+        # Current timeframe
         volume = self.df['volume'].iat[-1]
         volume_prev = self.df['volume'].iat[-2]
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
 
+        # Higher timeframe (e.g., hourly or daily)
         higher_tf_volume = self.df['higher_tf_volume'].iat[-1]
         higher_tf_volume_prev = self.df['higher_tf_volume'].iat[-2]
 
-        volume_increase = (volume - volume_prev) / volume_prev if volume_prev != 0 else 0
-        higher_tf_volume_increase = (higher_tf_volume - higher_tf_volume_prev) / higher_tf_volume_prev if higher_tf_volume_prev != 0 else 0
-
-        # LONG
-        cond1_long = volume_increase > volume_threshold
-        cond2_long = higher_tf_volume_increase > higher_tf_volume_threshold
+        # LONG conditions
+        cond1_long = volume > volume_prev
+        cond2_long = higher_tf_volume > higher_tf_volume_prev
         cond3_long = close > close_prev
 
-        # SHORT
-        cond1_short = volume_increase < -volume_threshold
-        cond2_short = higher_tf_volume_increase < -higher_tf_volume_threshold
+        # SHORT conditions
+        cond1_short = volume > volume_prev
+        cond2_short = higher_tf_volume > higher_tf_volume_prev
         cond3_short = close < close_prev
 
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
         if long_met >= 2:
-            if mode == "diagnostic":
-                return {
-                    "signal": "LONG",
-                    "strength": long_met,
-                    "volume_increase": volume_increase,
-                    "higher_tf_volume_increase": higher_tf_volume_increase
-                }
-            else:
-                return "LONG"
+            return "LONG"
         elif short_met >= 2:
-            if mode == "diagnostic":
-                return {
-                    "signal": "SHORT",
-                    "strength": short_met,
-                    "volume_increase": volume_increase,
-                    "higher_tf_volume_increase": higher_tf_volume_increase
-                }
-            else:
-                return "SHORT"
+            return "SHORT"
         else:
             return None
+        
             
     def _check_hh_ll(self):
         high = self.df['high'].iat[-1]
