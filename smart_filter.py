@@ -957,63 +957,37 @@ class SmartFilter:
         else:
             return None
             
-    # CHANGES >> Previous: without min threshold & higher TF volume
-    def _check_mtf_volume_agreement(self, volume_threshold=0.05, higher_tf_volume_threshold=0.02, mode="diagnostic"):
-        """
-        Multi-timeframe volume agreement filter.
-        Returns dict with diagnostics (signal, strength, volume_increase, higher_tf_volume_increase)
-        or just 'LONG'/'SHORT' if mode='simple'.
-        """
-        if len(self.df) < 2:
-            return None
-
+    def _check_mtf_volume_agreement(self):
+        # Current timeframe
         volume = self.df['volume'].iat[-1]
         volume_prev = self.df['volume'].iat[-2]
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
 
+        # Higher timeframe (e.g., hourly or daily)
         higher_tf_volume = self.df['higher_tf_volume'].iat[-1]
         higher_tf_volume_prev = self.df['higher_tf_volume'].iat[-2]
 
-        volume_increase = (volume - volume_prev) / volume_prev if volume_prev != 0 else 0
-        higher_tf_volume_increase = (higher_tf_volume - higher_tf_volume_prev) / higher_tf_volume_prev if higher_tf_volume_prev != 0 else 0
-
-        # LONG
-        cond1_long = volume_increase > volume_threshold
-        cond2_long = higher_tf_volume_increase > higher_tf_volume_threshold
+        # LONG conditions
+        cond1_long = volume > volume_prev
+        cond2_long = higher_tf_volume > higher_tf_volume_prev
         cond3_long = close > close_prev
 
-        # SHORT
-        cond1_short = volume_increase < -volume_threshold
-        cond2_short = higher_tf_volume_increase < -higher_tf_volume_threshold
+        # SHORT conditions
+        cond1_short = volume > volume_prev
+        cond2_short = higher_tf_volume > higher_tf_volume_prev
         cond3_short = close < close_prev
 
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
         if long_met >= 2:
-            if mode == "diagnostic":
-                return {
-                    "signal": "LONG",
-                    "strength": long_met,
-                    "volume_increase": volume_increase,
-                    "higher_tf_volume_increase": higher_tf_volume_increase
-                }
-            else:
-                return "LONG"
+            return "LONG"
         elif short_met >= 2:
-            if mode == "diagnostic":
-                return {
-                    "signal": "SHORT",
-                    "strength": short_met,
-                    "volume_increase": volume_increase,
-                    "higher_tf_volume_increase": higher_tf_volume_increase
-                }
-            else:
-                return "SHORT"
+            return "SHORT"
         else:
             return None
-        
+            
     def _check_hh_ll(self):
         high = self.df['high'].iat[-1]
         high_prev = self.df['high'].iat[-2]
