@@ -915,45 +915,29 @@ class SmartFilter:
         else:
             return None
 
-    # CHANGES >> Previous: without min threshold 
-    def _check_vwap_divergence(self, vwap_div_threshold=0.005, mode="diagnostic"):
-        """
-        VWAP divergence filter.
-        Returns dict with diagnostics (signal, strength, divergence) or just 'LONG'/'SHORT' if mode='simple'.
-        """
-        if len(self.df) < 2:
-            return None
-
+    def _check_vwap_divergence(self):
         vwap = self.df['vwap'].iat[-1]
         vwap_prev = self.df['vwap'].iat[-2]
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
 
-        threshold = vwap_div_threshold * vwap
-
         # LONG conditions
         cond1_long = close < vwap
         cond2_long = close > close_prev
-        cond3_long = ((vwap - close) > (vwap_prev - close_prev)) and ((vwap - close) > threshold)
+        cond3_long = (vwap - close) > (vwap_prev - close_prev)
 
         # SHORT conditions
         cond1_short = close > vwap
         cond2_short = close < close_prev
-        cond3_short = ((close - vwap) > (close_prev - vwap_prev)) and ((close - vwap) > threshold)
+        cond3_short = (close - vwap) > (close_prev - vwap_prev)
 
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
         if long_met >= 2:
-            if mode == "diagnostic":
-                return {"signal": "LONG", "strength": long_met, "divergence": vwap - close}
-            else:
-                return "LONG"
+            return "LONG"
         elif short_met >= 2:
-            if mode == "diagnostic":
-                return {"signal": "SHORT", "strength": short_met, "divergence": close - vwap}
-            else:
-                return "SHORT"
+            return "SHORT"
         else:
             return None
             
