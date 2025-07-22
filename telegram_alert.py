@@ -3,7 +3,7 @@ import requests
 from tg_config import BOT_TOKEN, CHAT_ID
 
 # ——— CONFIG ——————————————————————————
-SEND_URL  = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+SEND_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 SEND_FILE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendDocument"
 
 def send_telegram_alert(
@@ -23,6 +23,7 @@ def send_telegram_alert(
     """
     Sends a formatted Telegram message to your channel/group.
     Format varies by timeframe (3min includes "[Confirmed]").
+    'signal_type' should be 'REVERSAL' or 'CONTINUATION'.
     """
     confirmed_tag = " [Confirmed]" if tf == "3min" else ""
 
@@ -45,16 +46,27 @@ def send_telegram_alert(
 
     # --- Confidence icon ---
     confidence_icon = (
-        "🟢" if confidence >= 76 else
-        "🟡" if confidence >= 66 else
+        "🟢" if confidence >= 80 else
+        "🟡" if confidence >= 70 else
         "🔴"
     )
+
+    # --- Signal type icon ---
+    if str(signal_type).upper() == "REVERSAL":
+        signal_type_icon = "🔄"
+        signal_type_str = "REVERSAL"
+    elif str(signal_type).upper() == "CONTINUATION":
+        signal_type_icon = "➡️"
+        signal_type_str = "CONTINUATION"
+    else:
+        signal_type_icon = "❓"
+        signal_type_str = str(signal_type).upper()
 
     # --- Final message format (ALWAYS English, clear X/Y only) ---
     message = (
         f"{numbered_signal}. {symbol} ({tf}){confirmed_tag}\n"
-        f"📈 {signal_type} Signal\n"
-        f"💰 {price:.6f}\n"
+        f"{signal_type_icon} <b>{signal_type_str} Signal</b>\n"
+        f"💰 <b>{price:.6f}</b>\n"
         f"📊 Score: {score}/{score_max}\n"
         f"🎯 Passed: {passed}/{gatekeepers_total}\n"
         f"{confidence_icon} Confidence: {confidence:.1f}%\n"
@@ -70,7 +82,7 @@ def send_telegram_alert(
     try:
         resp = requests.post(SEND_URL, json=payload, timeout=10)
         resp.raise_for_status()
-        print(f"📨 Telegram alert sent: {symbol} {signal_type} @ {price}")
+        print(f"📨 Telegram alert sent: {symbol} {signal_type_str} @ {price}")
     except requests.RequestException as e:
         print(f"❗ Telegram send error: {e} — response: {getattr(resp, 'text', '')}")
 
@@ -81,14 +93,15 @@ def send_telegram_file(filepath, caption=None):
     if not os.path.exists(filepath):
         print(f"[ERROR] File not found: {filepath}")
         return
-    files = {'document': open(filepath, 'rb')}
-    data = {
-        'chat_id': CHAT_ID,
-        'caption': caption or "Signal debug log"
-    }
-    try:
-        resp = requests.post(SEND_FILE_URL, data=data, files=files, timeout=20)
-        resp.raise_for_status()
-        print(f"📄 File sent to Telegram: {filepath}")
-    except requests.RequestException as e:
-        print(f"❗ Telegram file send error: {e} — response: {getattr(resp, 'text', '')}")
+    with open(filepath, 'rb') as f:
+        files = {'document': f}
+        data = {
+            'chat_id': CHAT_ID,
+            'caption': caption or "Signal debug log"
+        }
+        try:
+            resp = requests.post(SEND_FILE_URL, data=data, files=files, timeout=20)
+            resp.raise_for_status()
+            print(f"📄 File sent to Telegram: {filepath}")
+        except requests.RequestException as e:
+            print(f"❗ Telegram file send error: {e} — response: {getattr(resp, 'text', '')}")
