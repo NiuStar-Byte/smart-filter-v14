@@ -9,7 +9,8 @@ SEND_FILE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendDocument"
 def send_telegram_alert(
     numbered_signal: str,
     symbol: str,
-    signal_type: str,
+    signal_type: str,      # 'REVERSAL' or 'CONTINUATION'
+    direction: str,        # 'LONG' or 'SHORT'
     price: float,
     tf: str,
     score: int,
@@ -27,6 +28,12 @@ def send_telegram_alert(
     'signal_type' should be 'REVERSAL' or 'CONTINUATION'.
     """
     confirmed_tag = " [Confirmed]" if tf == "3min" else ""
+
+    # Fix values if accidentally tuple/list
+    for vname in ['score', 'passed', 'score_max', 'gatekeepers_total', 'weighted', 'total_weight']:
+        v = locals()[vname]
+        if isinstance(v, (tuple, list)):
+            locals()[vname] = v[0]
 
     # --- Fix values if accidentally tuple/str ---
     if isinstance(score, (tuple, list)): score = score[0]
@@ -60,7 +67,7 @@ def send_telegram_alert(
         trend_type = "TREND CONTINUATION"
         trend_icon = "➡️"
     else:
-        trend_type = "UNKNOWN"
+        trend_type = str(signal_type).upper() if signal_type else "UNKNOWN"
         trend_icon = "❓"
 
     # --- Direction icon and string logic (existing block for LONG/SHORT) ---
@@ -72,7 +79,7 @@ def send_telegram_alert(
         direction_str = "SHORT"
     else:
         direction_icon = "❓"
-        direction_str = str(direction).upper()
+        direction_str = str(direction).upper() if direction else "UNKNOWN"
 
     # Place this line here
     signal_type_str = signal_type_str if signal_type_str else "UNKNOWN"
