@@ -701,15 +701,15 @@ class SmartFilter:
         price = self.df['close'].iat[-1] if valid_signal else None
         price_str = f"{price:.6f}" if price is not None else "N/A"
 
-        # --- Mark signal as REVERSAL or CONTINUATION ---
+        # --- Mark signal as REVERSAL or TREND CONTINUATION ---
         if valid_signal:
             if reversal_detected and direction == reversal:
-                signal_type = "REVERSAL"
+                route = "REVERSAL"
             else:
-                signal_type = "CONTINUATION"
+                route = "TREND CONTINUATION"
         else:
-            signal_type = None
-        
+            route = None        
+            
         message = (
             f"{direction or 'NO-SIGNAL'} on {self.symbol} @ {price_str} "
             f"| Score: {score}/23 | Passed: {passes}/{len(self.gatekeepers)} "
@@ -768,6 +768,7 @@ class SmartFilter:
             "price": price,
             "valid_signal": valid_signal,
             "signal_type": signal_type,
+            "Route": route,
             "message": message,
             "debug_sums": getattr(self, '_debug_sums', {}),
             "results_long": results_long,
