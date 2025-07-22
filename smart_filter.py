@@ -211,7 +211,75 @@ class SmartFilter:
             return self.filter_weights_short
         else:
             return {}
+    
+    def detect_ema_reversal(self, fast_period=9, slow_period=21):
+        ema_fast = self.df[f"ema{fast_period}"]
+        ema_slow = self.df[f"ema{slow_period}"]
+        crossed_up = ema_fast.iat[-2] < ema_slow.iat[-2] and ema_fast.iat[-1] > ema_slow.iat[-1]
+        crossed_down = ema_fast.iat[-2] > ema_slow.iat[-2] and ema_fast.iat[-1] < ema_slow.iat[-1]
+        if crossed_up:
+            return "BULLISH_REVERSAL"
+        elif crossed_down:
+            return "BEARISH_REVERSAL"
+        else:
+            return "NO_REVERSAL"
 
+    def detect_rsi_reversal(self, threshold_overbought=70, threshold_oversold=30):
+        rsi = self.df['RSI']
+        bullish = rsi.iat[-2] < threshold_oversold and rsi.iat[-1] > threshold_oversold
+        bearish = rsi.iat[-2] > threshold_overbought and rsi.iat[-1] < threshold_overbought
+        if bullish:
+            return "BULLISH_REVERSAL"
+        elif bearish:
+            return "BEARISH_REVERSAL"
+        else:
+            return "NO_REVERSAL"
+
+    def detect_engulfing_reversal(self):
+        open_ = self.df['open'].iat[-1]
+        close = self.df['close'].iat[-1]
+        open_prev = self.df['open'].iat[-2]
+        close_prev = self.df['close'].iat[-2]
+        bullish = close > open_ and open_ < close_prev and close > open_prev
+        bearish = close < open_ and open_ > close_prev and close < open_prev
+        if bullish:
+            return "BULLISH_REVERSAL"
+        elif bearish:
+            return "BEARISH_REVERSAL"
+        else:
+            return "NO_REVERSAL"
+
+    def detect_adx_reversal(self, adx_drop_thresh=5):
+        if 'adx' not in self.df.columns:
+            return "NO_REVERSAL"
+        adx_series = self.df['adx']
+        adx_dropping = adx_series.iat[-2] > 25 and adx_series.iat[-1] < adx_series.iat[-2] - adx_drop_thresh
+        price_up = self.df['close'].iat[-1] > self.df['close'].iat[-2]
+        price_down = self.df['close'].iat[-1] < self.df['close'].iat[-2]
+        if adx_dropping and price_up:
+            return "BULLISH_REVERSAL"
+        elif adx_dropping and price_down:
+            return "BEARISH_REVERSAL"
+        else:
+            return "NO_REVERSAL"
+
+    def explicit_reversal_gate(self):
+        signals = [
+            self.detect_ema_reversal(),
+            self.detect_rsi_reversal(),
+            self.detect_engulfing_reversal(),
+            self.detect_adx_reversal()
+        ]
+        bullish = signals.count("BULLISH_REVERSAL")
+        bearish = signals.count("BEARISH_REVERSAL")
+        if bullish >= 2:
+            return "LONG"
+        elif bearish >= 2:
+            return "SHORT"
+        else:
+            return "NEUTRAL"
+            
+    
 #    def _calculate_all_filters_sum(self, results, direction):
 #        """
 #        Calculate the sum of weights for all passed filters for the given direction.
@@ -474,6 +542,11 @@ class SmartFilter:
             print(f"[{self.symbol}] Error: DataFrame empty.")
             return None
 
+        # --- Detect reversal but do not block the signal ---
+        reversal = self.explicit_reversal_gate()
+        reversal_detected = reversal in ["LONG", "SHORT"]
+
+        
         # List all filter names
         filter_names = [
             "Fractal Zone", "EMA Cloud", "MACD", "Momentum", "HATS", "Volume Spike",
@@ -627,12 +700,23 @@ class SmartFilter:
 
         price = self.df['close'].iat[-1] if valid_signal else None
         price_str = f"{price:.6f}" if price is not None else "N/A"
+
+        # --- Mark signal as REVERSAL or CONTINUATION ---
+        if valid_signal:
+            if reversal_detected and direction == reversal:
+                signal_type = "REVERSAL"
+            else:
+                signal_type = "CONTINUATION"
+        else:
+            signal_type = None
+        
         message = (
             f"{direction or 'NO-SIGNAL'} on {self.symbol} @ {price_str} "
             f"| Score: {score}/23 | Passed: {passes}/{len(self.gatekeepers)} "
             f"| Confidence: {confidence}% (Weighted: {passed_weight:.1f}/{total_gk_weight:.1f})"
+            f" | Type: {signal_type if valid_signal else 'N/A'}"
         )
-
+        
         if valid_signal:
             print(f"[{self.symbol}] ✅ FINAL SIGNAL: {message}")
         else:
@@ -653,7 +737,6 @@ class SmartFilter:
             "final": valid_signal
         }
 
-
         export_signal_debug_txt(
             symbol=self.symbol,
             tf=self.tf,
@@ -670,6 +753,7 @@ class SmartFilter:
         )
         
         # Return only the summary object for main.py
+        # --- Return with signal_type info ---
         return {
             "symbol": self.symbol,
             "tf": self.tf,
@@ -683,8 +767,8 @@ class SmartFilter:
             "bias": direction,
             "price": price,
             "valid_signal": valid_signal,
+            "signal_type": signal_type,
             "message": message,
-            # For debugging:
             "debug_sums": getattr(self, '_debug_sums', {}),
             "results_long": results_long,
             "results_short": results_short,
