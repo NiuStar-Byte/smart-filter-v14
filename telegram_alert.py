@@ -62,32 +62,32 @@ def send_telegram_alert(
 
     # Signal type icon and string logic (LONG/SHORT)
     if str(signal_type).upper() == "LONG":
-        direction_icon = "🟩"
-        direction_str = "LONG"
+        signal_icon = "✈️"
+        signal_str = "LONG"
     elif str(signal_type).upper() == "SHORT":
-        direction_icon = "🟥"
-        direction_str = "SHORT"
+        signal_icon = "🛩️"
+        signal_str = "SHORT"
     else:
-        direction_icon = "❓"
-        direction_str = str(signal_type).upper()
+        signal_icon = "❓"
+        signal_str = str(signal_type).upper()
 
     # Trend type icon and string logic (REVERSAL/TREND CONTINUATION)
-    if str(direction).upper() == "REVERSAL":
+    if str(trend_type).upper() == "REVERSAL":
         trend_icon = "🔄"
         trend_str = "REVERSAL"
-    elif str(direction).upper() == "TREND CONTINUATION":
+    elif str(trend_type).upper() in ["TREND CONTINUATION", "CONTINUATION"]:
         trend_icon = "➡️"
         trend_str = "TREND CONTINUATION"
     else:
         trend_icon = "❓"
-        trend_str = str(direction).upper()
+        trend_str = str(trend_type).upper()
    
 
     # --- Final message format ---
     message = (
         f"{numbered_signal}. {symbol} ({tf}){confirmed_tag}\n"
-        f"{direction_icon} {direction_str} Signal\n"
-        f"{trend_icon} <b>{trend_type}</b>\n"  # <<-- New line for REVERSAL or TREND CONTINUATION
+        f"{signal_icon} {signal_str} Signal\n"
+        f"{trend_icon} <b>{trend_str}</b>\n"
         f"💰 <b>{price:.6f}</b>\n"
         f"📊 Score: {score}/{score_max}\n"
         f"🎯 Passed: {passed}/{gatekeepers_total}\n"
