@@ -21,6 +21,7 @@ def send_telegram_alert(
     gatekeepers_total: int,
     total_weight: float,
 ) -> None:
+    print(f"📨 Telegram alert sent: {symbol} {signal_type} {direction} @ {price}")
     print(f"[DEBUG] signal_type received in send_telegram_alert: '{signal_type}'")
     """
     Sends a formatted Telegram message to your channel/group.
@@ -81,8 +82,6 @@ def send_telegram_alert(
         trend_icon = "❓"
         trend_str = str(direction).upper()
    
-    # Place this line here
-    signal_type_str = signal_type_str if signal_type_str else "UNKNOWN"
 
     # --- Final message format ---
     message = (
