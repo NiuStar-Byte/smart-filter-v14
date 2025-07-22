@@ -109,7 +109,7 @@ def send_telegram_alert(
     try:
         resp = requests.post(SEND_URL, json=payload, timeout=10)
         resp.raise_for_status()
-        print(f"📨 Telegram alert sent: {symbol} {signal_str} @ {price}")
+        # print(f"📨 Telegram alert sent: {symbol} {signal_str} @ {price}")
     except requests.RequestException as e:
         print(f"❗ Telegram send error: {e} — response: {getattr(resp, 'text', '')}")
 
