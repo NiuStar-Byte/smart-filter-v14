@@ -707,9 +707,11 @@ class SmartFilter:
                 route = "REVERSAL"
             else:
                 route = "TREND CONTINUATION"
+            signal_type = route  # or set another logic if you need
         else:
-            route = None        
-            
+            route = None
+            signal_type = None
+    
         message = (
             f"{direction or 'NO-SIGNAL'} on {self.symbol} @ {price_str} "
             f"| Score: {score}/23 | Passed: {passes}/{len(self.gatekeepers)} "
