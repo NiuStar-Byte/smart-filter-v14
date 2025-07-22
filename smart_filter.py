@@ -263,12 +263,43 @@ class SmartFilter:
         else:
             return "NO_REVERSAL"
 
+    def detect_stochrsi_reversal(self, k_period=14, d_period=3, overbought=0.8, oversold=0.2):
+        if 'stochrsi_k' not in self.df.columns or 'stochrsi_d' not in self.df.columns:
+            return "NO_REVERSAL"
+        k = self.df['stochrsi_k']
+        d = self.df['stochrsi_d']
+        # Bullish: K crosses above D from oversold
+        bullish = k.iat[-2] < d.iat[-2] and k.iat[-1] > d.iat[-1] and k.iat[-1] < oversold
+        # Bearish: K crosses below D from overbought
+        bearish = k.iat[-2] > d.iat[-2] and k.iat[-1] < d.iat[-1] and k.iat[-1] > overbought
+        if bullish:
+            return "BULLISH_REVERSAL"
+        elif bearish:
+            return "BEARISH_REVERSAL"
+        else:
+            return "NO_REVERSAL"
+
+    def detect_cci_reversal(self, overbought=100, oversold=-100):
+        if 'cci' not in self.df.columns:
+            return "NO_REVERSAL"
+        cci = self.df['cci']
+        bullish = cci.iat[-2] < oversold and cci.iat[-1] > oversold
+        bearish = cci.iat[-2] > overbought and cci.iat[-1] < overbought
+        if bullish:
+            return "BULLISH_REVERSAL"
+        elif bearish:
+            return "BEARISH_REVERSAL"
+        else:
+            return "NO_REVERSAL"
+        
     def explicit_reversal_gate(self):
         signals = [
             self.detect_ema_reversal(),
             self.detect_rsi_reversal(),
             self.detect_engulfing_reversal(),
-            self.detect_adx_reversal()
+            self.detect_adx_reversal(),
+            self.detect_stochrsi_reversal(),  # NEW
+            self.detect_cci_reversal(),       # NEW
         ]
         bullish = signals.count("BULLISH_REVERSAL")
         bearish = signals.count("BEARISH_REVERSAL")
