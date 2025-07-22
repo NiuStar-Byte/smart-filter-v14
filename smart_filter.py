@@ -273,11 +273,11 @@ class SmartFilter:
         bullish = signals.count("BULLISH_REVERSAL")
         bearish = signals.count("BEARISH_REVERSAL")
         if bullish >= 2:
-            return "LONG"
+            return ("REVERSAL", "BULLISH")
         elif bearish >= 2:
-            return "SHORT"
+            return ("REVERSAL", "BEARISH")
         else:
-            return "NEUTRAL"
+            return ("NONE", None)
             
     
 #    def _calculate_all_filters_sum(self, results, direction):
@@ -543,8 +543,10 @@ class SmartFilter:
             return None
 
         # --- Detect reversal but do not block the signal ---
-        reversal = self.explicit_reversal_gate()
-        reversal_detected = reversal in ["LONG", "SHORT"]
+        # reversal = self.explicit_reversal_gate()
+        # reversal_detected = reversal in ["LONG", "SHORT"]
+        reversal_route, reversal_side = self.explicit_reversal_gate()
+        route = "REVERSAL" if reversal_route == "REVERSAL" else "TREND CONTINUATION"
 
         
         # List all filter names
