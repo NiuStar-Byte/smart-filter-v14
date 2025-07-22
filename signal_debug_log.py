@@ -202,7 +202,7 @@ def log_fired_signal(
         max_weights: Maximum possible weights (optional)
         confidence_rate: Confidence rate as a percentage (optional)
     """
-    print(f"[DEBUG] log_fired_signal called: {symbol}, {tf}, {signal_type}, entry_idx={entry_idx}, fired_time={fired_time}")
+    # print(f"[DEBUG] log_fired_signal called: {symbol}, {tf}, {signal_type}, entry_idx={entry_idx}, fired_time={fired_time}")
 
     fired_uuid = str(uuid.uuid4())
     fired_time_str = (
