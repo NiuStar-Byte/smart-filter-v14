@@ -701,24 +701,22 @@ class SmartFilter:
         price = self.df['close'].iat[-1] if valid_signal else None
         price_str = f"{price:.6f}" if price is not None else "N/A"
 
-        # --- Mark signal as REVERSAL or TREND CONTINUATION ---
+        # --- Mark Route (REVERSAL or TREND CONTINUATION) independently of direction ---
         if valid_signal:
-            if reversal_detected and direction == reversal:
-                route = "REVERSAL"
-            else:
-                route = "TREND CONTINUATION"
-            signal_type = route  # or set another logic if you need
+            route = "REVERSAL" if reversal_detected else "TREND CONTINUATION"
         else:
             route = None
-            signal_type = None
-    
+
+        # Always define signal_type as direction (LONG/SHORT), for clarity
+        signal_type = direction if valid_signal else None
+
         message = (
             f"{direction or 'NO-SIGNAL'} on {self.symbol} @ {price_str} "
             f"| Score: {score}/23 | Passed: {passes}/{len(self.gatekeepers)} "
             f"| Confidence: {confidence}% (Weighted: {passed_weight:.1f}/{total_gk_weight:.1f})"
-            f" | Type: {signal_type if valid_signal else 'N/A'}"
+            f" | Route: {route if valid_signal else 'N/A'}"
         )
-        
+
         if valid_signal:
             print(f"[{self.symbol}] ✅ FINAL SIGNAL: {message}")
         else:
@@ -726,7 +724,7 @@ class SmartFilter:
 
         print("DEBUG SUMS:", getattr(self, '_debug_sums', {}))
 
-        # --- Verdict for debug file ---
+        # --- Verdict for debug file (unchanged) ---
         verdict = {
             "orderbook": (
                 direction == "SHORT" and orderbook_result["sell_wall"] > orderbook_result["buy_wall"] or
@@ -755,7 +753,7 @@ class SmartFilter:
         )
         
         # Return only the summary object for main.py
-        # --- Return with signal_type info ---
+        # --- Return both independently ---
         return {
             "symbol": self.symbol,
             "tf": self.tf,
@@ -769,8 +767,8 @@ class SmartFilter:
             "bias": direction,
             "price": price,
             "valid_signal": valid_signal,
-            "signal_type": signal_type,
-            "Route": route,
+            "signal_type": signal_type,   # Always LONG/SHORT or None
+            "Route": route,               # Always REVERSAL or TREND CONTINUATION or None
             "message": message,
             "debug_sums": getattr(self, '_debug_sums', {}),
             "results_long": results_long,
