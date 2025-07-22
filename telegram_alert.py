@@ -72,15 +72,15 @@ def send_telegram_alert(
         signal_str = str(signal_type).upper()
 
     # Trend type icon and string logic (REVERSAL/TREND CONTINUATION)
-    if str(trend_type).upper() == "REVERSAL":
+    if str(direction).upper() == "REVERSAL":
         trend_icon = "🔄"
         trend_str = "REVERSAL"
-    elif str(trend_type).upper() in ["TREND CONTINUATION", "CONTINUATION"]:
+    elif str(direction).upper() in ["TREND CONTINUATION", "CONTINUATION"]:
         trend_icon = "➡️"
         trend_str = "TREND CONTINUATION"
     else:
         trend_icon = "❓"
-        trend_str = str(trend_type).upper()
+        trend_str = str(direction).upper()
    
 
     # --- Final message format ---
