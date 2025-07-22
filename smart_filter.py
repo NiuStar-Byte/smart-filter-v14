@@ -701,6 +701,8 @@ class SmartFilter:
         price = self.df['close'].iat[-1] if valid_signal else None
         price_str = f"{price:.6f}" if price is not None else "N/A"
 
+        # After all relevant calculations:
+        print(f"[DEBUG] reversal: {reversal}, reversal_detected: {reversal_detected}, direction: {direction}, valid_signal: {valid_signal}")
         # --- Mark Route (REVERSAL or TREND CONTINUATION) independently of direction ---
         if valid_signal:
             route = "REVERSAL" if reversal_detected else "TREND CONTINUATION"
