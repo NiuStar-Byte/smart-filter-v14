@@ -20,6 +20,7 @@ def send_telegram_alert(
     gatekeepers_total: int,
     total_weight: float,
 ) -> None:
+    print(f"[DEBUG] signal_type received in send_telegram_alert: '{signal_type}'")
     """
     Sends a formatted Telegram message to your channel/group.
     Format varies by timeframe (3min includes "[Confirmed]").
@@ -51,16 +52,24 @@ def send_telegram_alert(
         "🔴"
     )
 
-    # --- Signal type icon ---
     if str(signal_type).upper() == "REVERSAL":
         signal_type_icon = "🔄"
         signal_type_str = "REVERSAL"
     elif str(signal_type).upper() == "CONTINUATION":
         signal_type_icon = "➡️"
         signal_type_str = "CONTINUATION"
+    elif str(signal_type).upper() == "LONG":
+        signal_type_icon = "🟩"
+        signal_type_str = "LONG"
+    elif str(signal_type).upper() == "SHORT":
+        signal_type_icon = "🟥"
+        signal_type_str = "SHORT"
     else:
         signal_type_icon = "❓"
         signal_type_str = str(signal_type).upper()
+
+    # Place this line here
+    signal_type_str = signal_type_str if signal_type_str else "UNKNOWN"
 
     # --- Final message format (ALWAYS English, clear X/Y only) ---
     message = (
