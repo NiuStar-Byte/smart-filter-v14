@@ -9,8 +9,8 @@ SEND_FILE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendDocument"
 def send_telegram_alert(
     numbered_signal: str,
     symbol: str,
-    signal_type: str,      # 'REVERSAL' or 'CONTINUATION'
-    direction: str,        # 'LONG' or 'SHORT'
+    signal_type: str,      # 'LONG' or 'SHORT'
+    direction: str,        # 'REVERSAL' or 'CONTINUATION'
     price: float,
     tf: str,
     score: int,
@@ -59,28 +59,28 @@ def send_telegram_alert(
         "🔴"
     )
 
-    # --- Signal type icon and string logic (already present) ---
-    if str(signal_type).upper() == "REVERSAL":
-        trend_type = "REVERSAL"
-        trend_icon = "🔄"
-    elif str(signal_type).upper() == "CONTINUATION":
-        trend_type = "TREND CONTINUATION"
-        trend_icon = "➡️"
-    else:
-        trend_type = str(signal_type).upper() if signal_type else "UNKNOWN"
-        trend_icon = "❓"
-
-    # --- Direction icon and string logic (existing block for LONG/SHORT) ---
-    if str(direction).upper() == "LONG":
-        direction_icon = "📈"
+    # Signal type icon and string logic (LONG/SHORT)
+    if str(signal_type).upper() == "LONG":
+        direction_icon = "🟩"
         direction_str = "LONG"
-    elif str(direction).upper() == "SHORT":
-        direction_icon = "📉"
+    elif str(signal_type).upper() == "SHORT":
+        direction_icon = "🟥"
         direction_str = "SHORT"
     else:
         direction_icon = "❓"
-        direction_str = str(direction).upper() if direction else "UNKNOWN"
+        direction_str = str(signal_type).upper()
 
+    # Trend type icon and string logic (REVERSAL/TREND CONTINUATION)
+    if str(direction).upper() == "REVERSAL":
+        trend_icon = "🔄"
+        trend_str = "REVERSAL"
+    elif str(direction).upper() == "TREND CONTINUATION":
+        trend_icon = "➡️"
+        trend_str = "TREND CONTINUATION"
+    else:
+        trend_icon = "❓"
+        trend_str = str(direction).upper()
+   
     # Place this line here
     signal_type_str = signal_type_str if signal_type_str else "UNKNOWN"
 
