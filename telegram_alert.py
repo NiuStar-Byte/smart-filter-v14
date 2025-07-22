@@ -1,3 +1,5 @@
+# telegram_alert.py
+
 import os
 import requests
 from tg_config import BOT_TOKEN, CHAT_ID
@@ -74,10 +76,10 @@ def send_telegram_alert(
     # Route icon and string (for REVERSAL/TREND CONTINUATION)
     if str(Route).upper() == "REVERSAL":
         route_icon = "🔄"
-        route_str = "REVERSAL"
+        route_str = "Reversal Trend"
     elif str(Route).upper() in ["TREND CONTINUATION", "CONTINUATION"]:
         route_icon = "➡️"
-        route_str = "TREND CONTINUATION"
+        route_str = "Continuation Trend"
     else:
         route_icon = "❓"
         route_str = str(Route)
