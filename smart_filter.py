@@ -538,6 +538,8 @@ class SmartFilter:
  #           return False
 
     def analyze(self):
+        reversal_detected = False  # <-- Add this here, at the very start of the function
+        
         if self.df.empty:
             print(f"[{self.symbol}] Error: DataFrame empty.")
             return None
