@@ -10,7 +10,7 @@ def send_telegram_alert(
     numbered_signal: str,
     symbol: str,
     signal_type: str,      # 'LONG' or 'SHORT'
-    direction: str,        # 'REVERSAL' or 'CONTINUATION'
+    Route: str,        # 'REVERSAL' or 'CONTINUATION'
     price: float,
     tf: str,
     score: int,
@@ -21,8 +21,8 @@ def send_telegram_alert(
     gatekeepers_total: int,
     total_weight: float,
 ) -> None:
-    print(f"📨 Telegram alert sent: {symbol} {signal_type} {direction} @ {price}")
-    print(f"[DEBUG] signal_type received in send_telegram_alert: '{signal_type}'")
+    print(f"📨 Telegram alert sent: {symbol} {signal_type} {Route} @ {price}")
+    # print(f"[DEBUG] signal_type received in send_telegram_alert: '{signal_type}'")
     """
     Sends a formatted Telegram message to your channel/group.
     Format varies by timeframe (3min includes "[Confirmed]").
@@ -31,10 +31,10 @@ def send_telegram_alert(
     confirmed_tag = " [Confirmed]" if tf == "3min" else ""
 
     # Fix values if accidentally tuple/list
-    for vname in ['score', 'passed', 'score_max', 'gatekeepers_total', 'weighted', 'total_weight']:
-        v = locals()[vname]
-        if isinstance(v, (tuple, list)):
-            locals()[vname] = v[0]
+    # for vname in ['score', 'passed', 'score_max', 'gatekeepers_total', 'weighted', 'total_weight']:
+    #    v = locals()[vname]
+    #    if isinstance(v, (tuple, list)):
+    #        locals()[vname] = v[0]
 
     # --- Fix values if accidentally tuple/str ---
     if isinstance(score, (tuple, list)): score = score[0]
@@ -71,23 +71,28 @@ def send_telegram_alert(
         signal_icon = "❓"
         signal_str = str(signal_type).upper()
 
-    # Trend type icon and string logic (REVERSAL/TREND CONTINUATION)
-    if str(direction).upper() == "REVERSAL":
-        trend_icon = "🔄"
-        trend_str = "REVERSAL"
-    elif str(direction).upper() in ["TREND CONTINUATION", "CONTINUATION"]:
-        trend_icon = "➡️"
-        trend_str = "TREND CONTINUATION"
+    # Route icon and string (for REVERSAL/TREND CONTINUATION)
+    if str(Route).upper() == "REVERSAL":
+        route_icon = "🔄"
+        route_str = "REVERSAL"
+    elif str(Route).upper() in ["TREND CONTINUATION", "CONTINUATION"]:
+        route_icon = "➡️"
+        route_str = "TREND CONTINUATION"
     else:
-        trend_icon = "❓"
-        trend_str = str(direction).upper()
-   
+        route_icon = "❓"
+        route_str = str(Route)
+
+    # Format price for display
+    try:
+        price_str = f"{float(price):.6f}"
+    except Exception:
+        price_str = str(price)
 
     # --- Final message format ---
     message = (
         f"{numbered_signal}. {symbol} ({tf}){confirmed_tag}\n"
         f"{signal_icon} {signal_str} Signal\n"
-        f"{trend_icon} <b>{trend_str}</b>\n"
+        f"{route_icon} <b>{route_str}</b>\n"
         f"💰 <b>{price:.6f}</b>\n"
         f"📊 Score: {score}/{score_max}\n"
         f"🎯 Passed: {passed}/{gatekeepers_total}\n"
@@ -104,7 +109,7 @@ def send_telegram_alert(
     try:
         resp = requests.post(SEND_URL, json=payload, timeout=10)
         resp.raise_for_status()
-        print(f"📨 Telegram alert sent: {symbol} {signal_type_str} @ {price}")
+        print(f"📨 Telegram alert sent: {symbol} {signal_str} @ {price}")
     except requests.RequestException as e:
         print(f"❗ Telegram send error: {e} — response: {getattr(resp, 'text', '')}")
 
