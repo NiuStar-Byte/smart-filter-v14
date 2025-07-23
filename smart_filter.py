@@ -841,7 +841,6 @@ class SmartFilter:
             return result
         return None
 
-    # Thighten >> Previous zscore_threshold=1.5
     def _check_volume_spike(self, zscore_threshold=1.5):
         # Calculate z-score of current volume vs recent (rolling 10)
         avg = self.df['volume'].rolling(10).mean().iat[-1]
@@ -876,8 +875,7 @@ class SmartFilter:
             return False
         return self.df5m['volume'].iat[-1] > self.df5m['volume'].iat[-2]
 
-    # Thighten >> Previous: buffer_pct=0.005, window=20
-    def _check_fractal_zone(self, buffer_pct=0.02, window=20):
+    def _check_fractal_zone(self, buffer_pct=0.005, window=20):
         fractal_low = self.df['low'].rolling(window).min().iat[-1]
         fractal_low_prev = self.df['low'].rolling(window).min().iat[-2]
         fractal_high = self.df['high'].rolling(window).max().iat[-1]
@@ -906,37 +904,19 @@ class SmartFilter:
         else:
             return None
     
-    # Thighten >> Previous: without Volatility factor 
     def _check_ema_cloud(self):
-        if len(self.df) < 2:
-            return None
-
         ema20 = self.df['ema20'].iat[-1]
         ema50 = self.df['ema50'].iat[-1]
         ema20_prev = self.df['ema20'].iat[-2]
         close = self.df['close'].iat[-1]
 
-        # Calculate ATR to adjust volatility
-        atr_value = compute_atr(self.df)  # or self.compute_atr(self.df) if inside class
-
-        # Prevent division by zero
-        if close == 0:
-            return None
-
-        volatility_factor = atr_value / close
-
-        if volatility_factor < 0.02:
-            adjusted_ema50 = ema50 * (1 - volatility_factor)
-            adjusted_ema20 = ema20 * (1 + volatility_factor)
-        else:
-            adjusted_ema50 = ema50 * (1 + volatility_factor)
-            adjusted_ema20 = ema20 * (1 - volatility_factor)
-
-        cond1_long = ema20 > adjusted_ema50
+        # LONG conditions
+        cond1_long = ema20 > ema50
         cond2_long = ema20 > ema20_prev
         cond3_long = close > ema20
 
-        cond1_short = ema20 < adjusted_ema50
+        # SHORT conditions
+        cond1_short = ema20 < ema50
         cond2_short = ema20 < ema20_prev
         cond3_short = close < ema20
 
@@ -950,7 +930,6 @@ class SmartFilter:
         else:
             return None
 
-    # Loosen >> Previous: all 4 conditions must met
     def _check_macd(self):
         e12 = self.df['close'].ewm(span=12).mean()
         e26 = self.df['close'].ewm(span=26).mean()
@@ -958,16 +937,16 @@ class SmartFilter:
         signal = macd.ewm(span=9).mean()
 
         # LONG conditions
-        condition_1_long = macd.iat[-1] > signal.iat[-1]    # MACD above Signal Line
-        condition_2_long = macd.iat[-1] > macd.iat[-2]    # MACD is rising
-        condition_3_long = self.df['close'].iat[-1] > self.df['close'].iat[-2]    # Price action rising
-        condition_4_long = macd.iat[-1] > signal.iat[-1] and macd.iat[-1] > macd.iat[-2]    # MACD Divergence
+        condition_1_long = macd.iat[-1] > signal.iat[-1]                # MACD above Signal Line
+        condition_2_long = macd.iat[-1] > macd.iat[-2]                  # MACD is rising
+        condition_3_long = self.df['close'].iat[-1] > self.df['close'].iat[-2]  # Price action rising
+        condition_4_long = macd.iat[-1] > signal.iat[-1] and macd.iat[-1] > macd.iat[-2]  # MACD Divergence
 
         # SHORT conditions
-        condition_1_short = macd.iat[-1] < signal.iat[-1]    # MACD below Signal Line
-        condition_2_short = macd.iat[-1] < macd.iat[-2]    # MACD is falling
-        condition_3_short = self.df['close'].iat[-1] < self.df['close'].iat[-2]    # Price action falling
-        condition_4_short = macd.iat[-1] < signal.iat[-1] and macd.iat[-1] < macd.iat[-2]    # MACD Divergence
+        condition_1_short = macd.iat[-1] < signal.iat[-1]                # MACD below Signal Line
+        condition_2_short = macd.iat[-1] < macd.iat[-2]                  # MACD is falling
+        condition_3_short = self.df['close'].iat[-1] < self.df['close'].iat[-2]  # Price action falling
+        condition_4_short = macd.iat[-1] < signal.iat[-1] and macd.iat[-1] < macd.iat[-2]  # MACD Divergence
 
         long_conditions_met = sum([condition_1_long, condition_2_long, condition_3_long, condition_4_long])
         short_conditions_met = sum([condition_1_short, condition_2_short, condition_3_short, condition_4_short])
@@ -980,7 +959,6 @@ class SmartFilter:
         else:
             return None
 
-    # Thighten >> Previous: LONG momentum > 0; SHORT nomentum < 0
     def _check_momentum(self, window=10):
         # Calculate Rate of Change (ROC)
         roc = self.df['close'].pct_change(periods=window)
@@ -990,12 +968,12 @@ class SmartFilter:
         close_prev = self.df['close'].iat[-2]
 
         # LONG conditions
-        cond1_long = momentum > 0.01
+        cond1_long = momentum > 0
         cond2_long = momentum > momentum_prev
         cond3_long = close > close_prev
 
         # SHORT conditions
-        cond1_short = momentum < -0.01
+        cond1_short = momentum < 0
         cond2_short = momentum < momentum_prev
         cond3_short = close < close_prev
 
@@ -1009,7 +987,6 @@ class SmartFilter:
         else:
             return None
 
-    # Thighten >> Previous: long_met >= 2 & short_met >= 2
     def _check_hats(self):
         # Define your moving averages
         fast = self.df['ema10'].iat[-1]
