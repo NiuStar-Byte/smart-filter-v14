@@ -97,9 +97,9 @@ class SmartFilter:
         df5m: pd.DataFrame = None,
         tf: str = None,
         min_score: int = 16,
-        required_passed: int = 13,      # NEW: now 11 (for 17 gatekeepers)
+        required_passed: int = 14,      # NEW: now 11 (for 17 gatekeepers)
         volume_multiplier: float = 2.0,
-        liquidity_threshold: float = 0.5,   # <-- Set a default value
+        liquidity_threshold: float = 0.6,   # <-- Set a default value
         kwargs = None
     ):
         if kwargs is None:
@@ -307,9 +307,9 @@ class SmartFilter:
         ]
         bullish = signals.count("BULLISH_REVERSAL")
         bearish = signals.count("BEARISH_REVERSAL")
-        if bullish >= 2:
+        if bullish >= 1:
             return ("REVERSAL", "BULLISH")
-        elif bearish >= 2:
+        elif bearish >= 1:
             return ("REVERSAL", "BEARISH")
         else:
             return ("NONE", None)
