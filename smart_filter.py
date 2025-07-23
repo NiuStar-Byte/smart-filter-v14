@@ -299,26 +299,43 @@ class SmartFilter:
             return "BEARISH_REVERSAL"
         else:
             return "NO_REVERSAL"
-        
-    def explicit_reversal_gate(self):
-        signals = [
-            self.detect_ema_reversal(),
-            self.detect_rsi_reversal(),
-            self.detect_engulfing_reversal(),
-            self.detect_adx_reversal(),
-            self.detect_stochrsi_reversal(),  # NEW
-            self.detect_cci_reversal(),       # NEW
-        ]
-        print("Reversal detector results:", signals)  # <-- Place here
-        bullish = signals.count("BULLISH_REVERSAL")
-        bearish = signals.count("BEARISH_REVERSAL")
-        if bullish >= 1:
-            return ("REVERSAL", "BULLISH")
-        elif bearish >= 1:
-            return ("REVERSAL", "BEARISH")
+
+        def detect_trend_continuation(self):
+        # Example criteria for bullish continuation
+        ema_fast = self.df['ema6'].iat[-1]
+        ema_slow = self.df['ema13'].iat[-1]
+        macd = self.df['macd'].iat[-1]
+        rsi = self.df['RSI'].iat[-1]
+        adx = self.df['adx'].iat[-1] if 'adx' in self.df.columns else None
+
+        bullish = (
+            ema_fast > ema_slow and
+            macd > 0 and
+            rsi > 50 and
+            (adx is None or adx > 20)
+        )
+        bearish = (
+            ema_fast < ema_slow and
+            macd < 0 and
+            rsi < 50 and
+            (adx is None or adx > 20)
+        )
+        if bullish:
+            return "BULLISH_CONTINUATION"
+        elif bearish:
+            return "BEARISH_CONTINUATION"
+        else:
+            return "NO_CONTINUATION"
+            
+    def explicit_route_gate(self):
+        reversal = self.explicit_reversal_gate()
+        continuation = self.detect_trend_continuation()
+        if reversal[0] == "REVERSAL":
+            return ("REVERSAL", reversal[1])
+        elif continuation in ["BULLISH_CONTINUATION", "BEARISH_CONTINUATION"]:
+            return ("TREND CONTINUATION", continuation)
         else:
             return ("NONE", None)
-            
     
 #    def _calculate_all_filters_sum(self, results, direction):
 #        """
