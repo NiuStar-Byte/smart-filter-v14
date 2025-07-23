@@ -102,6 +102,8 @@ def send_telegram_alert(
         f"🏋️‍♀️ Weighted: {weighted_str}"
     )
 
+    print("Signal type:", signal_type, "Route:", Route)  # <-- Place here
+
     payload = {
         "chat_id": CHAT_ID,
         "text": message,
