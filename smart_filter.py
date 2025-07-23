@@ -110,6 +110,8 @@ class SmartFilter:
         self.df3m = df3m.copy() if df3m is not None else None
         self.df5m = df5m.copy() if df5m is not None else None
         # Essential EMAs
+        self.df["ema6"] = self.df["close"].ewm(span=6).mean()
+        self.df["ema9"] = self.df["close"].ewm(span=9).mean()
         self.df["ema9"] = self.df["close"].ewm(span=9).mean()
         self.df["ema10"] = self.df["close"].ewm(span=10).mean()
         self.df["ema21"] = self.df["close"].ewm(span=21).mean()
@@ -185,6 +187,8 @@ class SmartFilter:
 #            "VWAP Divergence", "Support/Resistance", "Smart Money Bias", "Absorption"
 #        ]
 
+        self.df["ema6"] = self.df["close"].ewm(span=6, adjust=False).mean()
+        self.df["ema13"] = self.df["close"].ewm(span=13, adjust=False).mean()
         self.df["ema20"] = self.df["close"].ewm(span=20).mean()
         self.df["ema50"] = self.df["close"].ewm(span=50).mean()
         self.df["ema200"] = self.df["close"].ewm(span=200).mean()
