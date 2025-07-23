@@ -112,8 +112,8 @@ class SmartFilter:
         # Essential EMAs
         self.df["ema6"] = self.df["close"].ewm(span=6).mean()
         self.df["ema9"] = self.df["close"].ewm(span=9).mean()
-        self.df["ema9"] = self.df["close"].ewm(span=9).mean()
         self.df["ema10"] = self.df["close"].ewm(span=10).mean()
+        self.df["ema13"] = self.df["close"].ewm(span=13).mean()
         self.df["ema21"] = self.df["close"].ewm(span=21).mean()
         self.df["ema50"] = self.df["close"].ewm(span=50).mean()
         self.df["ema200"] = self.df["close"].ewm(span=200).mean()
@@ -188,6 +188,8 @@ class SmartFilter:
 #        ]
 
         self.df["ema6"] = self.df["close"].ewm(span=6, adjust=False).mean()
+        self.df["ema9"] = self.df["close"].ewm(span=9, adjust=False).mean()
+        self.df["ema10"] = self.df["close"].ewm(span=10, adjust=False).mean()
         self.df["ema13"] = self.df["close"].ewm(span=13, adjust=False).mean()
         self.df["ema20"] = self.df["close"].ewm(span=20).mean()
         self.df["ema50"] = self.df["close"].ewm(span=50).mean()
