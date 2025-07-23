@@ -212,7 +212,7 @@ class SmartFilter:
         else:
             return {}
     
-    def detect_ema_reversal(self, fast_period=9, slow_period=21):
+    def detect_ema_reversal(self, fast_period=6, slow_period=13):
         ema_fast = self.df[f"ema{fast_period}"]
         ema_slow = self.df[f"ema{slow_period}"]
         crossed_up = ema_fast.iat[-2] < ema_slow.iat[-2] and ema_fast.iat[-1] > ema_slow.iat[-1]
@@ -224,7 +224,7 @@ class SmartFilter:
         else:
             return "NO_REVERSAL"
 
-    def detect_rsi_reversal(self, threshold_overbought=70, threshold_oversold=30):
+    def detect_rsi_reversal(self, threshold_overbought=65, threshold_oversold=35):
         rsi = self.df['RSI']
         bullish = rsi.iat[-2] < threshold_oversold and rsi.iat[-1] > threshold_oversold
         bearish = rsi.iat[-2] > threshold_overbought and rsi.iat[-1] < threshold_overbought
@@ -249,11 +249,11 @@ class SmartFilter:
         else:
             return "NO_REVERSAL"
 
-    def detect_adx_reversal(self, adx_drop_thresh=5):
+    def detect_adx_reversal(self, adx_drop_thresh=3):
         if 'adx' not in self.df.columns:
             return "NO_REVERSAL"
         adx_series = self.df['adx']
-        adx_dropping = adx_series.iat[-2] > 25 and adx_series.iat[-1] < adx_series.iat[-2] - adx_drop_thresh
+        adx_dropping = adx_series.iat[-2] > 20 and adx_series.iat[-1] < adx_series.iat[-2] - adx_drop_thresh
         price_up = self.df['close'].iat[-1] > self.df['close'].iat[-2]
         price_down = self.df['close'].iat[-1] < self.df['close'].iat[-2]
         if adx_dropping and price_up:
@@ -263,7 +263,7 @@ class SmartFilter:
         else:
             return "NO_REVERSAL"
 
-    def detect_stochrsi_reversal(self, k_period=14, d_period=3, overbought=0.8, oversold=0.2):
+    def detect_stochrsi_reversal(self, k_period=14, d_period=3, overbought=0.7, oversold=0.3):
         if 'stochrsi_k' not in self.df.columns or 'stochrsi_d' not in self.df.columns:
             return "NO_REVERSAL"
         k = self.df['stochrsi_k']
@@ -279,7 +279,7 @@ class SmartFilter:
         else:
             return "NO_REVERSAL"
 
-    def detect_cci_reversal(self, overbought=100, oversold=-100):
+    def detect_cci_reversal(self, overbought=75, oversold=-75):
         if 'cci' not in self.df.columns:
             return "NO_REVERSAL"
         cci = self.df['cci']
