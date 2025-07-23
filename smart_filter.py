@@ -300,6 +300,25 @@ class SmartFilter:
         else:
             return "NO_REVERSAL"
 
+    def explicit_reversal_gate(self):
+        signals = [
+            self.detect_ema_reversal(),
+            self.detect_rsi_reversal(),
+            self.detect_engulfing_reversal(),
+            self.detect_adx_reversal(),
+            self.detect_stochrsi_reversal(),
+            self.detect_cci_reversal(),
+        ]
+        print("Reversal detector results:", signals)
+        bullish = signals.count("BULLISH_REVERSAL")
+        bearish = signals.count("BEARISH_REVERSAL")
+        if bullish >= 1:
+            return ("REVERSAL", "BULLISH")
+        elif bearish >= 1:
+            return ("REVERSAL", "BEARISH")
+        else:
+            return ("NONE", None)
+            
     def detect_trend_continuation(self):
         # Example criteria for bullish continuation
         ema_fast = self.df['ema6'].iat[-1]
