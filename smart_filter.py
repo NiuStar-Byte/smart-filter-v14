@@ -219,8 +219,11 @@ class SmartFilter:
     def detect_ema_reversal(self, fast_period=6, slow_period=13):
         ema_fast = self.df[f"ema{fast_period}"]
         ema_slow = self.df[f"ema{slow_period}"]
-        crossed_up = ema_fast.iat[-2] < ema_slow.iat[-2] and ema_fast.iat[-1] > ema_slow.iat[-1]
-        crossed_down = ema_fast.iat[-2] > ema_slow.iat[-2] and ema_fast.iat[-1] < ema_slow.iat[-1]
+        threshold = 0.001 * ema_slow.iat[-1]  # e.g. 0.1% of slow EMA
+        crossed_up = (ema_fast.iat[-2] < ema_slow.iat[-2] and ema_fast.iat[-1] > ema_slow.iat[-1]) or \
+                    abs(ema_fast.iat[-1] - ema_slow.iat[-1]) < threshold
+        crossed_down = (ema_fast.iat[-2] > ema_slow.iat[-2] and ema_fast.iat[-1] < ema_slow.iat[-1]) or \
+                    abs(ema_fast.iat[-1] - ema_slow.iat[-1]) < threshold
         if crossed_up:
             return "BULLISH_REVERSAL"
         elif crossed_down:
@@ -230,8 +233,8 @@ class SmartFilter:
 
     def detect_rsi_reversal(self, threshold_overbought=65, threshold_oversold=35):
         rsi = self.df['RSI']
-        bullish = rsi.iat[-2] < threshold_oversold and rsi.iat[-1] > threshold_oversold
-        bearish = rsi.iat[-2] > threshold_overbought and rsi.iat[-1] < threshold_overbought
+        bullish = rsi.iat[-2] < (threshold_oversold + 5) and rsi.iat[-1] > (threshold_oversold - 5)
+        bearish = rsi.iat[-2] > (threshold_overbought - 5) and rsi.iat[-1] < (threshold_overbought + 5)
         if bullish:
             return "BULLISH_REVERSAL"
         elif bearish:
@@ -244,8 +247,9 @@ class SmartFilter:
         close = self.df['close'].iat[-1]
         open_prev = self.df['open'].iat[-2]
         close_prev = self.df['close'].iat[-2]
-        bullish = close > open_ and open_ < close_prev and close > open_prev
-        bearish = close < open_ and open_ > close_prev and close < open_prev
+        engulf_threshold = 0.001 * open_prev
+        bullish = close > open_ and open_ < close_prev and (close > open_prev or abs(close - open_prev) < engulf_threshold)
+        bearish = close < open_ and open_ > close_prev and (close < open_prev or abs(close - open_prev) < engulf_threshold)
         if bullish:
             return "BULLISH_REVERSAL"
         elif bearish:
@@ -257,7 +261,7 @@ class SmartFilter:
         if 'adx' not in self.df.columns:
             return "NO_REVERSAL"
         adx_series = self.df['adx']
-        adx_dropping = adx_series.iat[-2] > 20 and adx_series.iat[-1] < adx_series.iat[-2] - adx_drop_thresh
+        adx_dropping = adx_series.iat[-1] < adx_series.iat[-2] - 2
         price_up = self.df['close'].iat[-1] > self.df['close'].iat[-2]
         price_down = self.df['close'].iat[-1] < self.df['close'].iat[-2]
         if adx_dropping and price_up:
@@ -273,9 +277,9 @@ class SmartFilter:
         k = self.df['stochrsi_k']
         d = self.df['stochrsi_d']
         # Bullish: K crosses above D from oversold
-        bullish = k.iat[-2] < d.iat[-2] and k.iat[-1] > d.iat[-1] and k.iat[-1] < oversold
+        bullish = k.iat[-2] < d.iat[-2] and k.iat[-1] > d.iat[-1] and k.iat[-1] < 0.4
         # Bearish: K crosses below D from overbought
-        bearish = k.iat[-2] > d.iat[-2] and k.iat[-1] < d.iat[-1] and k.iat[-1] > overbought
+        bearish = k.iat[-2] > d.iat[-2] and k.iat[-1] < d.iat[-1] and k.iat[-1] > 0.6
         if bullish:
             return "BULLISH_REVERSAL"
         elif bearish:
@@ -287,8 +291,8 @@ class SmartFilter:
         if 'cci' not in self.df.columns:
             return "NO_REVERSAL"
         cci = self.df['cci']
-        bullish = cci.iat[-2] < oversold and cci.iat[-1] > oversold
-        bearish = cci.iat[-2] > overbought and cci.iat[-1] < overbought
+        bullish = cci.iat[-2] < -100 and cci.iat[-1] > -100
+        bearish = cci.iat[-2] > 100 and cci.iat[-1] < 100
         if bullish:
             return "BULLISH_REVERSAL"
         elif bearish:
@@ -305,6 +309,7 @@ class SmartFilter:
             self.detect_stochrsi_reversal(),  # NEW
             self.detect_cci_reversal(),       # NEW
         ]
+        print("Reversal detector results:", signals)  # <-- Place here
         bullish = signals.count("BULLISH_REVERSAL")
         bearish = signals.count("BEARISH_REVERSAL")
         if bullish >= 1:
