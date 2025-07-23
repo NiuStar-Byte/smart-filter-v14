@@ -300,7 +300,7 @@ class SmartFilter:
         else:
             return "NO_REVERSAL"
 
-        def detect_trend_continuation(self):
+    def detect_trend_continuation(self):
         # Example criteria for bullish continuation
         ema_fast = self.df['ema6'].iat[-1]
         ema_slow = self.df['ema13'].iat[-1]
