@@ -139,3 +139,43 @@ def fetch_trade_ticks(symbol: str, limit: int = 1000) -> pd.DataFrame:
         except Exception:
             continue
     return pd.DataFrame()
+
+# =========================
+# ENHANCEMENT: Entry Price
+# =========================
+
+def get_live_entry_price(symbol: str, signal_type: str, tf: str = "5min", slippage: float = 0.0) -> float | None:
+    """
+    Fetch the best bid/ask price from KuCoin's orderbook for the symbol.
+    Use as entry price for market orders. Fallback to OHLCV close price if unavailable.
+    :param symbol: Trading symbol.
+    :param signal_type: "LONG" or "SHORT".
+    :param tf: Timeframe (used for OHLCV fallback).
+    :param slippage: Fractional slippage (e.g., 0.001 for 0.1%).
+    :return: Entry price (float) or None.
+    """
+    bids, asks = fetch_orderbook_l2(symbol, depth=20)
+    try:
+        if signal_type.upper() == "LONG" and asks is not None and len(asks) > 0:
+            entry_price = asks['price'].iloc[0] * (1 + slippage)
+            return float(entry_price)
+        elif signal_type.upper() == "SHORT" and bids is not None and len(bids) > 0:
+            entry_price = bids['price'].iloc[0] * (1 - slippage)
+            return float(entry_price)
+        else:
+            # Fallback to midprice
+            if bids is not None and len(bids) > 0 and asks is not None and len(asks) > 0:
+                entry_price = (bids['price'].iloc[0] + asks['price'].iloc[0]) / 2
+                return float(entry_price)
+    except Exception:
+        pass
+
+    # Final fallback: use OHLCV close price
+    df = fetch_ohlcv(symbol, tf)
+    if df is not None and not df.empty:
+        return float(df["close"].iloc[-1])
+    return None
+
+# Example usage:
+# entry_price = get_live_entry_price("BTC-USDT", "LONG", tf="5min", slippage=0.001)
+
