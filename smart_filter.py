@@ -225,21 +225,33 @@ class SmartFilter:
         ema_fast = self.df[f"ema{fast_period}"]
         ema_slow = self.df[f"ema{slow_period}"]
         threshold = 0.001 * ema_slow.iat[-1]  # e.g. 0.1% of slow EMA
-        crossed_up = (ema_fast.iat[-2] < ema_slow.iat[-2] and ema_fast.iat[-1] > ema_slow.iat[-1]) or \
-                    abs(ema_fast.iat[-1] - ema_slow.iat[-1]) < threshold
-        crossed_down = (ema_fast.iat[-2] > ema_slow.iat[-2] and ema_fast.iat[-1] < ema_slow.iat[-1]) or \
-                    abs(ema_fast.iat[-1] - ema_slow.iat[-1]) < threshold
-        if crossed_up:
+
+        # Detect true cross up and cross down
+        crossed_up = (ema_fast.iat[-2] < ema_slow.iat[-2] and ema_fast.iat[-1] > ema_slow.iat[-1])
+        crossed_down = (ema_fast.iat[-2] > ema_slow.iat[-2] and ema_fast.iat[-1] < ema_slow.iat[-1])
+
+        # Detect "almost equal", ONLY if the cross just happened (to avoid overlap)
+        nearly_equal = abs(ema_fast.iat[-1] - ema_slow.iat[-1]) < threshold and abs(ema_fast.iat[-2] - ema_slow.iat[-2]) >= threshold
+
+        bullish = crossed_up or (nearly_equal and ema_fast.iat[-1] > ema_slow.iat[-1])
+        bearish = crossed_down or (nearly_equal and ema_fast.iat[-1] < ema_slow.iat[-1])
+
+        # Mutual exclusivity: cannot be both bullish and bearish
+        if bullish and not bearish:
             return "BULLISH_REVERSAL"
-        elif crossed_down:
+        elif bearish and not bullish:
             return "BEARISH_REVERSAL"
         else:
             return "NO_REVERSAL"
 
     def detect_rsi_reversal(self, threshold_overbought=65, threshold_oversold=35):
         rsi = self.df['RSI']
-        bullish = rsi.iat[-2] < (threshold_oversold + 5) and rsi.iat[-1] > (threshold_oversold - 5)
-        bearish = rsi.iat[-2] > (threshold_overbought - 5) and rsi.iat[-1] < (threshold_overbought + 5)
+
+        # Sharpened: Only allow reversal if we move from below oversold to above oversold, or from above overbought to below overbought
+        bullish = rsi.iat[-2] <= threshold_oversold and rsi.iat[-1] > threshold_oversold
+        bearish = rsi.iat[-2] >= threshold_overbought and rsi.iat[-1] < threshold_overbought
+
+        # These conditions are now strictly non-overlapping for any candle
         if bullish:
             return "BULLISH_REVERSAL"
         elif bearish:
@@ -253,8 +265,21 @@ class SmartFilter:
         open_prev = self.df['open'].iat[-2]
         close_prev = self.df['close'].iat[-2]
         engulf_threshold = 0.001 * open_prev
-        bullish = close > open_ and open_ < close_prev and (close > open_prev or abs(close - open_prev) < engulf_threshold)
-        bearish = close < open_ and open_ > close_prev and (close < open_prev or abs(close - open_prev) < engulf_threshold)
+
+        # Sharpened: Bullish and bearish cannot happen at once
+        bullish = (
+            close > open_ and
+            open_ < close_prev and
+            (close > open_prev or abs(close - open_prev) < engulf_threshold) and
+            not (close < open_ and open_ > close_prev and (close < open_prev or abs(close - open_prev) < engulf_threshold))
+        )
+        bearish = (
+            close < open_ and
+            open_ > close_prev and
+            (close < open_prev or abs(close - open_prev) < engulf_threshold) and
+            not (close > open_ and open_ < close_prev and (close > open_prev or abs(close - open_prev) < engulf_threshold))
+        )
+
         if bullish:
             return "BULLISH_REVERSAL"
         elif bearish:
@@ -266,12 +291,20 @@ class SmartFilter:
         if 'adx' not in self.df.columns:
             return "NO_REVERSAL"
         adx_series = self.df['adx']
-        adx_dropping = adx_series.iat[-1] < adx_series.iat[-2] - 2
-        price_up = self.df['close'].iat[-1] > self.df['close'].iat[-2]
-        price_down = self.df['close'].iat[-1] < self.df['close'].iat[-2]
-        if adx_dropping and price_up:
+        close = self.df['close']
+
+        # Sharpened: Check ADX dropping and clear up/down move
+        adx_dropping = adx_series.iat[-1] < adx_series.iat[-2] - adx_drop_thresh
+        price_up = close.iat[-1] > close.iat[-2]
+        price_down = close.iat[-1] < close.iat[-2]
+
+        # Only one can be true per candle
+        bullish = adx_dropping and price_up and not price_down
+        bearish = adx_dropping and price_down and not price_up
+
+        if bullish:
             return "BULLISH_REVERSAL"
-        elif adx_dropping and price_down:
+        elif bearish:
             return "BEARISH_REVERSAL"
         else:
             return "NO_REVERSAL"
@@ -281,10 +314,23 @@ class SmartFilter:
             return "NO_REVERSAL"
         k = self.df['stochrsi_k']
         d = self.df['stochrsi_d']
-        # Bullish: K crosses above D from oversold
-        bullish = k.iat[-2] < d.iat[-2] and k.iat[-1] > d.iat[-1] and k.iat[-1] < 0.4
-        # Bearish: K crosses below D from overbought
-        bearish = k.iat[-2] > d.iat[-2] and k.iat[-1] < d.iat[-1] and k.iat[-1] > 0.6
+
+        # Sharpen: Bullish reversal is K crossing above D from oversold area
+        bullish = (
+            k.iat[-2] < d.iat[-2] and
+            k.iat[-1] > d.iat[-1] and
+            k.iat[-1] < 0.5 and
+            k.iat[-2] <= oversold
+        )
+
+        # Sharpen: Bearish reversal is K crossing below D from overbought area
+        bearish = (
+            k.iat[-2] > d.iat[-2] and
+            k.iat[-1] < d.iat[-1] and
+            k.iat[-1] > 0.5 and
+            k.iat[-2] >= overbought
+        )
+
         if bullish:
             return "BULLISH_REVERSAL"
         elif bearish:
@@ -292,12 +338,18 @@ class SmartFilter:
         else:
             return "NO_REVERSAL"
 
-    def detect_cci_reversal(self, overbought=75, oversold=-75):
+    def detect_cci_reversal(self, overbought=100, oversold=-100):
         if 'cci' not in self.df.columns:
             return "NO_REVERSAL"
         cci = self.df['cci']
-        bullish = cci.iat[-2] < -100 and cci.iat[-1] > -100
-        bearish = cci.iat[-2] > 100 and cci.iat[-1] < 100
+
+        # Bullish: CCI crosses up from below oversold threshold
+        bullish = cci.iat[-2] <= oversold and cci.iat[-1] > oversold
+
+        # Bearish: CCI crosses down from above overbought threshold
+        bearish = cci.iat[-2] >= overbought and cci.iat[-1] < overbought
+
+        # These are mutually exclusive for any bar
         if bullish:
             return "BULLISH_REVERSAL"
         elif bearish:
