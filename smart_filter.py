@@ -224,22 +224,19 @@ class SmartFilter:
     def detect_ema_reversal(self, fast_period=6, slow_period=13):
         ema_fast = self.df[f"ema{fast_period}"]
         ema_slow = self.df[f"ema{slow_period}"]
-        threshold = 0.001 * ema_slow.iat[-1]  # e.g. 0.1% of slow EMA
+        threshold = 0.001 * ema_slow.iat[-1]
 
-        # Detect true cross up and cross down
-        crossed_up = (ema_fast.iat[-2] < ema_slow.iat[-2] and ema_fast.iat[-1] > ema_slow.iat[-1])
-        crossed_down = (ema_fast.iat[-2] > ema_slow.iat[-2] and ema_fast.iat[-1] < ema_slow.iat[-1])
-
-        # Detect "almost equal", ONLY if the cross just happened (to avoid overlap)
+        # Cross up: fast EMA moves from below slow EMA to above
+        crossed_up = ema_fast.iat[-2] < ema_slow.iat[-2] and ema_fast.iat[-1] > ema_slow.iat[-1]
+        # Cross down: fast EMA moves from above slow EMA to below
+        crossed_down = ema_fast.iat[-2] > ema_slow.iat[-2] and ema_fast.iat[-1] < ema_slow.iat[-1]
+        # Nearly equal ONLY if change just happened
         nearly_equal = abs(ema_fast.iat[-1] - ema_slow.iat[-1]) < threshold and abs(ema_fast.iat[-2] - ema_slow.iat[-2]) >= threshold
 
-        bullish = crossed_up or (nearly_equal and ema_fast.iat[-1] > ema_slow.iat[-1])
-        bearish = crossed_down or (nearly_equal and ema_fast.iat[-1] < ema_slow.iat[-1])
-
-        # Mutual exclusivity: cannot be both bullish and bearish
-        if bullish and not bearish:
+        # Only one can fire at a time
+        if crossed_up or (nearly_equal and ema_fast.iat[-1] > ema_slow.iat[-1] and not crossed_down):
             return "BULLISH_REVERSAL"
-        elif bearish and not bullish:
+        elif crossed_down or (nearly_equal and ema_fast.iat[-1] < ema_slow.iat[-1] and not crossed_up):
             return "BEARISH_REVERSAL"
         else:
             return "NO_REVERSAL"
@@ -265,72 +262,73 @@ class SmartFilter:
         open_prev = self.df['open'].iat[-2]
         close_prev = self.df['close'].iat[-2]
         engulf_threshold = 0.001 * open_prev
-
-        # Sharpened: Bullish and bearish cannot happen at once
+    
+        # Bullish engulfing: previous candle bearish, current bullish and engulfs
         bullish = (
+            close_prev < open_prev and  # prev bearish
+            close > open_ and           # current bullish
+            open_ < close_prev and      # current open below prev close
+            close > open_prev           # current close above prev open
+        ) or (
+            close_prev < open_prev and
             close > open_ and
             open_ < close_prev and
-            (close > open_prev or abs(close - open_prev) < engulf_threshold) and
-            not (close < open_ and open_ > close_prev and (close < open_prev or abs(close - open_prev) < engulf_threshold))
+            abs(close - open_prev) < engulf_threshold
         )
+    
+        # Bearish engulfing: previous candle bullish, current bearish and engulfs
         bearish = (
+            close_prev > open_prev and  # prev bullish
+            close < open_ and           # current bearish
+            open_ > close_prev and      # current open above prev close
+            close < open_prev           # current close below prev open
+        ) or (
+            close_prev > open_prev and
             close < open_ and
             open_ > close_prev and
-            (close < open_prev or abs(close - open_prev) < engulf_threshold) and
-            not (close > open_ and open_ < close_prev and (close > open_prev or abs(close - open_prev) < engulf_threshold))
+            abs(close - open_prev) < engulf_threshold
         )
-
-        if bullish:
+    
+        # Mutual exclusivity
+        if bullish and not bearish:
             return "BULLISH_REVERSAL"
-        elif bearish:
+        elif bearish and not bullish:
             return "BEARISH_REVERSAL"
         else:
             return "NO_REVERSAL"
 
-    def detect_adx_reversal(self, adx_drop_thresh=3):
-        if 'adx' not in self.df.columns:
+    def detect_adx_reversal(self, adx_threshold=25):
+        if 'adx' not in self.df.columns or 'plus_di' not in self.df.columns or 'minus_di' not in self.df.columns:
             return "NO_REVERSAL"
-        adx_series = self.df['adx']
-        close = self.df['close']
-
-        # Sharpened: Check ADX dropping and clear up/down move
-        adx_dropping = adx_series.iat[-1] < adx_series.iat[-2] - adx_drop_thresh
-        price_up = close.iat[-1] > close.iat[-2]
-        price_down = close.iat[-1] < close.iat[-2]
-
-        # Only one can be true per candle
-        bullish = adx_dropping and price_up and not price_down
-        bearish = adx_dropping and price_down and not price_up
-
-        if bullish:
+        adx = self.df['adx']
+        plus_di = self.df['plus_di']
+        minus_di = self.df['minus_di']
+        
+        # Proper print statements for debugging
+        print("ADX last values:", adx.tail())
+        print("plus_di last values:", plus_di.tail())
+        print("minus_di last values:", minus_di.tail())
+    
+        bullish = adx.iat[-1] > adx_threshold and plus_di.iat[-2] < minus_di.iat[-2] and plus_di.iat[-1] > minus_di.iat[-1]
+        bearish = adx.iat[-1] > adx_threshold and plus_di.iat[-2] > minus_di.iat[-2] and plus_di.iat[-1] < minus_di.iat[-1]
+        if bullish and not bearish:
             return "BULLISH_REVERSAL"
-        elif bearish:
+        elif bearish and not bullish:
             return "BEARISH_REVERSAL"
         else:
             return "NO_REVERSAL"
 
-    def detect_stochrsi_reversal(self, k_period=14, d_period=3, overbought=0.7, oversold=0.3):
+    def detect_stochrsi_reversal(self, overbought=0.8, oversold=0.2):
         if 'stochrsi_k' not in self.df.columns or 'stochrsi_d' not in self.df.columns:
             return "NO_REVERSAL"
         k = self.df['stochrsi_k']
         d = self.df['stochrsi_d']
-
-        # Sharpen: Bullish reversal is K crossing above D from oversold area
-        bullish = (
-            k.iat[-2] < d.iat[-2] and
-            k.iat[-1] > d.iat[-1] and
-            k.iat[-1] < 0.5 and
-            k.iat[-2] <= oversold
-        )
-
-        # Sharpen: Bearish reversal is K crossing below D from overbought area
-        bearish = (
-            k.iat[-2] > d.iat[-2] and
-            k.iat[-1] < d.iat[-1] and
-            k.iat[-1] > 0.5 and
-            k.iat[-2] >= overbought
-        )
-
+    
+        # Bullish: K crosses above D from oversold area
+        bullish = k.iat[-2] <= oversold and k.iat[-1] > oversold and k.iat[-1] > d.iat[-1]
+        # Bearish: K crosses below D from overbought area
+        bearish = k.iat[-2] >= overbought and k.iat[-1] < overbought and k.iat[-1] < d.iat[-1]
+    
         if bullish:
             return "BULLISH_REVERSAL"
         elif bearish:
@@ -342,7 +340,9 @@ class SmartFilter:
         if 'cci' not in self.df.columns:
             return "NO_REVERSAL"
         cci = self.df['cci']
-
+    
+        print(self.df['cci'].tail())
+        
         # Bullish: CCI crosses up from below oversold threshold
         bullish = cci.iat[-2] <= oversold and cci.iat[-1] > oversold
 
