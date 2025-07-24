@@ -9,7 +9,6 @@ import random
 import pytz
 from datetime import datetime
 from kucoin_data import get_live_entry_price
-
 from kucoin_data import get_ohlcv
 from smart_filter import SmartFilter
 from telegram_alert import send_telegram_alert, send_telegram_file
@@ -61,10 +60,10 @@ def log_orderbook_and_density(symbol):
         result = get_order_wall_delta(symbol)
         print(
             f"[OrderBookDeltaLog] {symbol} | "
-            f"buy_wall={result['buy_wall']} | "
-            f"sell_wall={result['sell_wall']} | "
-            f"wall_delta={result['wall_delta']} | "
-            f"midprice={result['midprice']}",
+            f"buy_wall={result.get('buy_wall',0)} | "
+            f"sell_wall={result.get('sell_wall',0)} | "
+            f"wall_delta={result.get('wall_delta',0)} | "
+            f"midprice={result.get('midprice','N/A')}",
             flush=True
         )
     except Exception as e:
@@ -73,8 +72,8 @@ def log_orderbook_and_density(symbol):
         dens = get_resting_order_density(symbol)
         print(
             f"[RestingOrderDensityLog] {symbol} | "
-            f"bid_density={dens['bid_density']:.2f} | ask_density={dens['ask_density']:.2f} | "
-            f"bid_levels={dens['bid_levels']} | ask_levels={dens['ask_levels']} | midprice={dens['midprice']}",
+            f"bid_density={dens.get('bid_density',0):.2f} | ask_density={dens.get('ask_density',0):.2f} | "
+            f"bid_levels={dens.get('bid_levels',0)} | ask_levels={dens.get('ask_levels',0)} | midprice={dens.get('midprice','N/A')}",
             flush=True
         )
     except Exception as e:
@@ -119,85 +118,83 @@ def run():
                             orderbook_result = get_order_wall_delta(symbol)
                             density_result = get_resting_order_density(symbol)
                             bias = res3.get("bias", "NEUTRAL")
-                            sf3.bias = bias  # Set bias for property
+                            sf3.bias = bias
                             if not super_gk_aligned(bias, orderbook_result, density_result):
                                 print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
                                 continue
-                            print(f"[LOG] Sending 3min alert for {res3['symbol']}", flush=True)
+                            print(f"[LOG] Sending 3min alert for {res3.get('symbol')}", flush=True)
 
-                            # Get the current UTC time as the fired time
                             fired_time_utc = datetime.utcnow()
-                            
-                            # new entry price 3minTF
+                            entry_price = get_live_entry_price(
+                                res3.get("symbol"),
+                                bias,
+                                tf=res3.get("tf"),
+                                slippage=0.001
+                            ) or res3.get("price", 0.0)
+
+                            score = res3.get("score", 0)
+                            score_max = res3.get("score_max", 0)
+                            passes = res3.get("passes", 0)
+                            gatekeepers_total = res3.get("gatekeepers_total", 0)
+                            passed_weight = res3.get("passed_weight", 0.0)
+                            total_weight = res3.get("total_weight", 0.0)
+                            Route = res3.get("Route", None)
+                            signal_type = bias
+                            tf_val = res3.get("tf", "3min")
+                            symbol_val = res3.get("symbol", symbol)
+                            try:
+                                confidence = round((passed_weight / total_weight) * 100, 1) if total_weight else 0.0
+                            except Exception:
+                                confidence = 0.0
+                            entry_idx = df3.index.get_loc(df3.index[-1])
+
                             valid_debugs.append({
-                                "symbol": res3["symbol"],
-                                "tf": res3["tf"],
-                                "bias": res3["bias"],
-                                "filter_weights_long": sf3.filter_weights_long,
-                                "filter_weights_short": sf3.filter_weights_short,
-                                "gatekeepers": sf3.gatekeepers,
-                                "results_long": res3.get("filter_results_long", {}),
-                                "results_short": res3.get("filter_results_short", {}),
-                                "caption": f"Signal debug log for {res3.get('symbol')} {res3.get('tf')}",
+                                "symbol": symbol_val,
+                                "tf": tf_val,
+                                "bias": bias,
+                                "filter_weights_long": getattr(sf3, 'filter_weights_long', []),
+                                "filter_weights_short": getattr(sf3, 'filter_weights_short', []),
+                                "gatekeepers": getattr(sf3, 'gatekeepers', []),
+                                "results_long": res3.get("results_long", {}),
+                                "results_short": res3.get("results_short", {}),
+                                "caption": f"Signal debug log for {symbol_val} {tf_val}",
                                 "orderbook_result": orderbook_result,
                                 "density_result": density_result,
-                                "entry_price": get_live_entry_price(
-                                    res3.get("symbol"),
-                                    res3.get("bias"),
-                                    tf=res3.get("tf"),
-                                    slippage=0.001
-                                ) or res3.get("price"),
+                                "entry_price": entry_price,
                                 "fired_time_utc": fired_time_utc
                             })
-                            
-                            # DEPRECATED: Still calculate entry_idx for backward compatibility
-                            entry_idx = df3.index.get_loc(df3.index[-1])
-                            
-                            pec_candidates.append(
-                                ("3min", symbol, res3.get("price"), bias, df3, fired_time_utc)  # Use fired_time instead of entry_idx
-                            )
-                            
-                            # Log with both fired_time (primary) and entry_idx (deprecated compatibility)
+
                             log_fired_signal(
-                                symbol=symbol,
-                                tf="3min",
-                                signal_type=res3.get("bias"),
+                                symbol=symbol_val,
+                                tf=tf_val,
+                                signal_type=signal_type,
                                 entry_idx=entry_idx,
                                 fired_time=fired_time_utc,
-                                score=res3.get("score"),
-                                max_score=res3.get("score_max"),
-                                passed=res3.get("passes"),
-                                max_passed=res3.get("gatekeepers_total"),
-                                weights=res3.get("passed_weight"),
-                                max_weights=res3.get("total_weight"),
-                                confidence_rate=res3.get("confidence"),
-                                entry_price = get_live_entry_price(
-                                    res3.get("symbol"),
-                                    res3.get("bias"),
-                                    tf=res3.get("tf"),
-                                    slippage=0.001
-                                ) or res3.get("price")
+                                score=score,
+                                max_score=score_max,
+                                passed=passes,
+                                max_passed=gatekeepers_total,
+                                weights=passed_weight,
+                                max_weights=total_weight,
+                                confidence_rate=confidence,
+                                entry_price=entry_price
                             )
+
                             if os.getenv("DRY_RUN", "false").lower() != "true":
                                 send_telegram_alert(
                                     numbered_signal=numbered_signal,
-                                    symbol=res3.get("symbol"),
-                                    signal_type=res3.get("bias"),
-                                    Route=res3.get("Route"),
-                                    price=get_live_entry_price(
-                                        res3.get("symbol"),
-                                        res3.get("bias"),
-                                        tf=res3.get("tf"),
-                                        slippage=0.001
-                                    ) or res3.get("price"),
-                                    tf=res3.get("tf"),
-                                    score=res3.get("score"),
-                                    score_max=res3.get("score_max"),
-                                    passed=res3.get("passes"),
-                                    gatekeepers_total=res3.get("gatekeepers_total"),
-                                    confidence=res3.get("confidence"),
-                                    weighted=res3.get("passed_weight"),
-                                    total_weight=res3.get("total_weight")
+                                    symbol=symbol_val,
+                                    signal_type=signal_type,
+                                    Route=Route,
+                                    price=entry_price,
+                                    tf=tf_val,
+                                    score=score,
+                                    score_max=score_max,
+                                    passed=passes,
+                                    gatekeepers_total=gatekeepers_total,
+                                    confidence=confidence,
+                                    weighted=passed_weight,
+                                    total_weight=total_weight
                                 )
                             last_sent[key3] = now
                     else:
@@ -218,86 +215,84 @@ def run():
                             orderbook_result = get_order_wall_delta(symbol)
                             density_result = get_resting_order_density(symbol)
                             bias = res5.get("bias", "NEUTRAL")
-                            sf5.bias = bias  # Set bias for property
+                            sf5.bias = bias
                             if not super_gk_aligned(bias, orderbook_result, density_result):
                                 print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
                                 continue
-                            print(f"[LOG] Sending 5min alert for {res5['symbol']}", flush=True)
+                            print(f"[LOG] Sending 5min alert for {res5.get('symbol')}", flush=True)
 
-                            # Get the current UTC time as the fired time
                             fired_time_utc = datetime.utcnow()
+                            entry_price = get_live_entry_price(
+                                res5.get("symbol"),
+                                bias,
+                                tf=res5.get("tf"),
+                                slippage=0.001
+                            ) or res5.get("price", 0.0)
 
-                            # new entry price 5minTF
+                            score = res5.get("score", 0)
+                            score_max = res5.get("score_max", 0)
+                            passes = res5.get("passes", 0)
+                            gatekeepers_total = res5.get("gatekeepers_total", 0)
+                            passed_weight = res5.get("passed_weight", 0.0)
+                            total_weight = res5.get("total_weight", 0.0)
+                            Route = res5.get("Route", None)
+                            signal_type = bias
+                            tf_val = res5.get("tf", "5min")
+                            symbol_val = res5.get("symbol", symbol)
+                            try:
+                                confidence = round((passed_weight / total_weight) * 100, 1) if total_weight else 0.0
+                            except Exception:
+                                confidence = 0.0
+                            entry_idx = df5.index.get_loc(df5.index[-1])
+
                             valid_debugs.append({
-                                "symbol": res5["symbol"],
-                                "tf": res5["tf"],
-                                "bias": res5["bias"],
-                                "filter_weights_long": sf5.filter_weights_long,
-                                "filter_weights_short": sf5.filter_weights_short,
-                                "gatekeepers": sf5.gatekeepers,
-                                "results_long": res5.get("filter_results_long", {}),
-                                "results_short": res5.get("filter_results_short", {}),
-                                "caption": f"Signal debug log for {res5.get('symbol')} {res5.get('tf')}",
+                                "symbol": symbol_val,
+                                "tf": tf_val,
+                                "bias": bias,
+                                "filter_weights_long": getattr(sf5, 'filter_weights_long', []),
+                                "filter_weights_short": getattr(sf5, 'filter_weights_short', []),
+                                "gatekeepers": getattr(sf5, 'gatekeepers', []),
+                                "results_long": res5.get("results_long", {}),
+                                "results_short": res5.get("results_short", {}),
+                                "caption": f"Signal debug log for {symbol_val} {tf_val}",
                                 "orderbook_result": orderbook_result,
                                 "density_result": density_result,
-                                "entry_price": get_live_entry_price(
-                                    res5.get("symbol"),
-                                    res5.get("bias"),
-                                    tf=res5.get("tf"),
-                                    slippage=0.001
-                                ) or res5.get("price"),
+                                "entry_price": entry_price,
                                 "fired_time_utc": fired_time_utc
                             })
-                            
-                            # DEPRECATED: Still calculate entry_idx for backward compatibility
-                            entry_idx = df5.index.get_loc(df5.index[-1])
-                            
-                            pec_candidates.append(
-                                ("5min", symbol, res5.get("price"), bias, df5, fired_time_utc)  # Use fired_time instead of entry_idx
-                            )
-                            
-                            # Log with both fired_time (primary) and entry_idx (deprecated compatibility)
+
                             log_fired_signal(
-                                symbol=symbol,
-                                tf="5min",
-                                signal_type=res5.get("bias"),
-                                entry_idx=entry_idx,  # Kept for backward compatibility
-                                fired_time=fired_time_utc,  # Primary timestamp-based approach
-                                score=res5.get("score"),
-                                max_score=res5.get("score_max"),
-                                passed=res5.get("passes"),
-                                max_passed=res5.get("gatekeepers_total"),
-                                weights=res5.get("passed_weight"),
-                                max_weights=res5.get("total_weight"),
-                                confidence_rate=res5.get("confidence"),
-                                entry_price = get_live_entry_price(
-                                    res5.get("symbol"),
-                                    res5.get("bias"),
-                                    tf=res5.get("tf"),
-                                    slippage=0.001
-                                ) or res5.get("price")
+                                symbol=symbol_val,
+                                tf=tf_val,
+                                signal_type=signal_type,
+                                entry_idx=entry_idx,
+                                fired_time=fired_time_utc,
+                                score=score,
+                                max_score=score_max,
+                                passed=passes,
+                                max_passed=gatekeepers_total,
+                                weights=passed_weight,
+                                max_weights=total_weight,
+                                confidence_rate=confidence,
+                                entry_price=entry_price
                             )
+
                             if os.getenv("DRY_RUN", "false").lower() != "true":
                                 send_telegram_alert(
                                     numbered_signal=numbered_signal,
-                                    symbol=res5.get("symbol"),
-                                    signal_type=res5.get("bias"),
-                                    Route=res5.get("Route"),
-                                    price=get_live_entry_price(
-                                        res5.get("symbol"),
-                                        res5.get("bias"),
-                                        tf=res5.get("tf"),
-                                        slippage=0.001
-                                    ) or res5.get("price"),
-                                    tf=res5.get("tf"),
-                                    score=res5.get("score"),
-                                    score_max=res5.get("score_max"),
-                                    passed=res5.get("passes"),
-                                    gatekeepers_total=res5.get("gatekeepers_total"),
-                                    confidence=res5.get("confidence"),
-                                    weighted=res5.get("passed_weight"),
-                                    total_weight=res5.get("total_weight")
-                            )
+                                    symbol=symbol_val,
+                                    signal_type=signal_type,
+                                    Route=Route,
+                                    price=entry_price,
+                                    tf=tf_val,
+                                    score=score,
+                                    score_max=score_max,
+                                    passed=passes,
+                                    gatekeepers_total=gatekeepers_total,
+                                    confidence=confidence,
+                                    weighted=passed_weight,
+                                    total_weight=total_weight
+                                )
                             last_sent[key5] = now
                     else:
                         print(f"[INFO] No valid 5min signal for {symbol}.", flush=True)
@@ -311,11 +306,8 @@ def run():
                     num = min(len(valid_debugs), 2)
                     for debug_info in random.sample(valid_debugs, num):
                         try:
-                            # Print filter weights for transparency
                             print("[FIRED] LONG filter weights:", debug_info["filter_weights_long"], flush=True)
                             print("[FIRED] SHORT filter weights:", debug_info["filter_weights_short"], flush=True)
-
-                            # Use only the new debug txt export function
                             export_signal_debug_txt(
                                 symbol=debug_info["symbol"],
                                 tf=debug_info["tf"],
@@ -327,7 +319,6 @@ def run():
                                 results_short=debug_info.get("results_short", {}),
                                 orderbook_result=debug_info.get("orderbook_result"),
                                 density_result=debug_info.get("density_result")
-                                # filename="signal_debug_temp.txt"
                             )
                             send_telegram_file(
                                 "signal_debug_temp.txt",
@@ -340,7 +331,6 @@ def run():
             except Exception as e:
                 print(f"[FATAL] Exception in debug sending block: {e}", flush=True)
 
-            # Print summary of fired signals (log-based, no CSV dependency)
             if valid_debugs:
                 print(f"[FIRED] Processed {len(valid_debugs)} valid signals this cycle", flush=True)
             else:
@@ -349,7 +339,6 @@ def run():
             print("[INFO] ✅ Cycle complete. Sleeping 60 seconds...\n", flush=True)
             time.sleep(60)
 
-        
         except Exception as e:
             print(f"[FATAL] Exception in main loop: {e}", flush=True)
             import traceback
@@ -357,10 +346,8 @@ def run():
             print("[INFO] Sleeping 10 seconds before retrying main loop...\n", flush=True)
             time.sleep(10)
 
-
-print(">>> ENTERED main.py", flush=True)
 if __name__ == "__main__":
-    print(">>> __main__ block executing", flush=True)
+    print(">>> ENTERED main.py", flush=True)
     if os.getenv("PEC_BACKTEST_ONLY", "false").lower() == "true":
         print(">>> Entering PEC_BACKTEST_ONLY branch", flush=True)
         from pec_backtest import run_pec_backtest
@@ -373,4 +360,3 @@ if __name__ == "__main__":
     else:
         print(">>> Entering normal run() branch", flush=True)
         run()
-
