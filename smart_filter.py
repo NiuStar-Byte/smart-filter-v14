@@ -298,63 +298,78 @@ class SmartFilter:
             return "NO_REVERSAL"
 
     def detect_adx_reversal(self, adx_threshold=25):
+        print("[DEBUG] detect_adx_reversal called")
         if 'adx' not in self.df.columns or 'plus_di' not in self.df.columns or 'minus_di' not in self.df.columns:
+            print("[DEBUG] ADX columns missing:", self.df.columns)
             return "NO_REVERSAL"
         adx = self.df['adx']
         plus_di = self.df['plus_di']
         minus_di = self.df['minus_di']
-        
-        # Proper print statements for debugging
-        print("ADX last values:", adx.tail())
-        print("plus_di last values:", plus_di.tail())
-        print("minus_di last values:", minus_di.tail())
+    
+        print("[DEBUG] ADX last values:", adx.tail())
+        print("[DEBUG] plus_di last values:", plus_di.tail())
+        print("[DEBUG] minus_di last values:", minus_di.tail())
     
         bullish = adx.iat[-1] > adx_threshold and plus_di.iat[-2] < minus_di.iat[-2] and plus_di.iat[-1] > minus_di.iat[-1]
         bearish = adx.iat[-1] > adx_threshold and plus_di.iat[-2] > minus_di.iat[-2] and plus_di.iat[-1] < minus_di.iat[-1]
+        print(f"[DEBUG] ADX bullish? {bullish}, bearish? {bearish}")
+    
         if bullish and not bearish:
+            print("[DEBUG] ADX detected BULLISH_REVERSAL")
             return "BULLISH_REVERSAL"
         elif bearish and not bullish:
+            print("[DEBUG] ADX detected BEARISH_REVERSAL")
             return "BEARISH_REVERSAL"
         else:
+            print("[DEBUG] ADX detected NO_REVERSAL")
             return "NO_REVERSAL"
 
     def detect_stochrsi_reversal(self, overbought=0.8, oversold=0.2):
+        print("[DEBUG] detect_stochrsi_reversal called")
         if 'stochrsi_k' not in self.df.columns or 'stochrsi_d' not in self.df.columns:
+            print("[DEBUG] StochRSI columns missing:", self.df.columns)
             return "NO_REVERSAL"
         k = self.df['stochrsi_k']
         d = self.df['stochrsi_d']
     
-        # Bullish: K crosses above D from oversold area
+        print("[DEBUG] StochRSI k last values:", k.tail())
+        print("[DEBUG] StochRSI d last values:", d.tail())
+    
         bullish = k.iat[-2] <= oversold and k.iat[-1] > oversold and k.iat[-1] > d.iat[-1]
-        # Bearish: K crosses below D from overbought area
         bearish = k.iat[-2] >= overbought and k.iat[-1] < overbought and k.iat[-1] < d.iat[-1]
+        print(f"[DEBUG] StochRSI bullish? {bullish}, bearish? {bearish}")
     
         if bullish:
+            print("[DEBUG] StochRSI detected BULLISH_REVERSAL")
             return "BULLISH_REVERSAL"
         elif bearish:
+            print("[DEBUG] StochRSI detected BEARISH_REVERSAL")
             return "BEARISH_REVERSAL"
         else:
+            print("[DEBUG] StochRSI detected NO_REVERSAL")
             return "NO_REVERSAL"
 
     def detect_cci_reversal(self, overbought=100, oversold=-100):
+        print("[DEBUG] detect_cci_reversal called")
         if 'cci' not in self.df.columns:
+            print("[DEBUG] CCI column missing:", self.df.columns)
             return "NO_REVERSAL"
         cci = self.df['cci']
     
-        print(self.df['cci'].tail())
-        
-        # Bullish: CCI crosses up from below oversold threshold
+        print("[DEBUG] CCI last values:", cci.tail())
+    
         bullish = cci.iat[-2] <= oversold and cci.iat[-1] > oversold
-
-        # Bearish: CCI crosses down from above overbought threshold
         bearish = cci.iat[-2] >= overbought and cci.iat[-1] < overbought
-
-        # These are mutually exclusive for any bar
+        print(f"[DEBUG] CCI bullish? {bullish}, bearish? {bearish}")
+    
         if bullish:
+            print("[DEBUG] CCI detected BULLISH_REVERSAL")
             return "BULLISH_REVERSAL"
         elif bearish:
+            print("[DEBUG] CCI detected BEARISH_REVERSAL")
             return "BEARISH_REVERSAL"
         else:
+            print("[DEBUG] CCI detected NO_REVERSAL")
             return "NO_REVERSAL"
 
     def explicit_reversal_gate(self):
