@@ -182,7 +182,8 @@ def log_fired_signal(
     max_passed=None,
     weights=None,
     max_weights=None,
-    confidence_rate=None
+    confidence_rate=None,
+    entry_price=None  # <-- Add this line
 ):
     """
     Log fired signal information to console for log-based parsing,
