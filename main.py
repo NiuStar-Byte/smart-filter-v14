@@ -171,7 +171,12 @@ def run():
                                 weights=res3.get("passed_weight"),
                                 max_weights=res3.get("total_weight"),
                                 confidence_rate=res3.get("confidence"),
-                                entry_price=entry_price
+                                entry_price = get_live_entry_price(
+                                    res3.get("symbol"),
+                                    res3.get("bias"),
+                                    tf=res3.get("tf"),
+                                    slippage=0.001
+                                ) or res3.get("price")
                             )
                             if os.getenv("DRY_RUN", "false").lower() != "true":
                                 send_telegram_alert(
@@ -265,7 +270,12 @@ def run():
                                 weights=res5.get("passed_weight"),
                                 max_weights=res5.get("total_weight"),
                                 confidence_rate=res5.get("confidence"),
-                                entry_price=entry_price
+                                entry_price = get_live_entry_price(
+                                    res5.get("symbol"),
+                                    res5.get("bias"),
+                                    tf=res5.get("tf"),
+                                    slippage=0.001
+                                ) or res5.get("price")
                             )
                             if os.getenv("DRY_RUN", "false").lower() != "true":
                                 send_telegram_alert(
