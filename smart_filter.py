@@ -764,6 +764,11 @@ class SmartFilter:
         passed_weight_long = sum(self.filter_weights_long.get(f, 0) for f in passed_gk_long)
         passed_weight_short = sum(self.filter_weights_short.get(f, 0) for f in passed_gk_short)
 
+        # Add failed GK calculations
+        failed_gk_long = [f for f in self.gatekeepers if f not in passed_gk_long]
+        failed_gk_short = [f for f in self.gatekeepers if f not in passed_gk_short]
+
+        # Print logic
         print(f"[{self.symbol}] Passed GK LONG: {passed_gk_long}")
         print(f"[{self.symbol}] Failed GK LONG: {failed_gk_long}")
         print(f"[{self.symbol}] Passed GK SHORT: {passed_gk_short}")
