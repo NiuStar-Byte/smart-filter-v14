@@ -8,7 +8,7 @@ import pandas as pd
 import random
 import pytz
 from datetime import datetime
-from fetch_ohlcv import get_live_entry_price
+from kucoin_data import get_live_entry_price
 
 from kucoin_data import get_ohlcv
 from smart_filter import SmartFilter
