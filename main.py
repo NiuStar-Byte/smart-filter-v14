@@ -16,13 +16,18 @@ from kucoin_orderbook import get_order_wall_delta
 from pec_engine import run_pec_check, export_pec_log
 
 TOKENS = [
+    “BTC-USDT”, “ETH-USDT”, “SOL-USDT”, “XRP-USDT”, “ADA-USDT”,
+    “AVA-USDT”, “XLM-USDT”, “LINK-USDT”, “POL-USDT”, “BNB-USDT”,
     "SKATE-USDT", "LA-USDT", "SPK-USDT", "ZKJ-USDT", "IP-USDT",
     "AERO-USDT", "BMT-USDT", "LQTY-USDT", "X-USDT", "RAY-USDT",
     "EPT-USDT", "ELDE-USDT", "MAGIC-USDT", "ACTSOL-USDT", "FUN-USDT",
     "CROSS-USDT", "KNC-USDT", "AIN-USDT", "ARK-USDT", "PORTAL-USDT",
-    "BANANAS31-USDT", "ICNT-USDT", "OMNI-USDT", "PARTI-USDT", "VINE-USDT",
+    "ICNT-USDT", "OMNI-USDT", "PARTI-USDT", "VINE-USDT", “ZORA-USDT”,
     "DUCK-USDT", "AUCTION-USDT", "ROAM-USDT", "FUEL-USDT", "TUT-USDT",
-    "VOXEL-USDT", "ALU-USDT", "TURBO-USDT", "PROMPT-USDT", "HIPPO-USDT"
+    "VOXEL-USDT", "ALU-USDT", "TURBO-USDT", "PROMPT-USDT", "HIPPO-USDT", 
+    “DOGE-USDT”, “ALGO-USDT”, “DOT-USDT”, “NEWT-USDT”, “SAHARA-USDT”,
+    “PEPE-USDT”, “ERA-USDT”, “PENGU-USDT”, “CFX-USDT”,“ENA-USDT”,
+    “SUI-USDT”, “EIGEN-USDT”, “UNI-USDT”, “HYPE-USDT” 
 ]
 COOLDOWN = {"3min": 540, "5min": 900}
 last_sent = {}
