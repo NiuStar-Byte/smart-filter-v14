@@ -172,6 +172,8 @@ class SmartFilter:
             "Smart Money Bias": 2.7, "Absorption": 2.6, "Wick Dominance": 2.5
         }
 
+        self.filter_names = list(set(self.filter_weights_long.keys()) | set(self.filter_weights_short.keys()))
+        
         self.gatekeepers = [
             "MACD",
             "Volume Spike",
@@ -394,7 +396,7 @@ class SmartFilter:
         short_gk_passed = all(results_short.get(gk, False) for gk in self.gatekeepers)
 
         # --- Weighted Sum for Non-GK Filters ---
-        scoring_filters = [f for f in self.filter_weights_long if f not in self.gatekeepers]
+        scoring_filters = [f for f in self.filter_names if f not in self.gatekeepers]
 
         long_score = sum(
             self.filter_weights_long.get(name, 0)
@@ -730,9 +732,12 @@ class SmartFilter:
                 results_short[name] = False
                 results_status[name] = "ERROR"
 
+        # --- Non-GK filter list ---
+        non_gk_filters = [f for f in filter_names if f not in self.gatekeepers]
+        
         # --- Calculate score: count of passed NON-GK filters ---
         long_score = sum(1 for f in non_gk_filters if results_long.get(f, False))
-        short_score = sum(1 for f in non_gk_filters if results_short.get(f, False))
+        short_score = sum(1 for f in non_gk_filters if results_short.get(f, False))    
 
         # --- Get signal direction ---
         direction = self.get_signal_direction(results_long, results_short)
@@ -757,9 +762,6 @@ class SmartFilter:
         passed_gk_short = [f for f in self.gatekeepers if results_short.get(f, False)]
         passes_long = len(passed_gk_long)
         passes_short = len(passed_gk_short)
-
-        # --- Non-GK filter list ---
-        non_gk_filters = [f for f in filter_names if f not in self.gatekeepers]
 
         # --- Calculate WEIGHTED and CONFIDENCE using only non-GK filters ---
         passed_non_gk_long = [f for f in non_gk_filters if results_long.get(f, False)]
