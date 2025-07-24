@@ -821,7 +821,7 @@ class SmartFilter:
         message = (
             f"{direction or 'NO-SIGNAL'} on {self.symbol} @ {price_str} "
             f"| Score: {score}/23 | Passed: {passes}/{len(self.gatekeepers)} "
-            f"| Confidence: {confidence}% (Weighted: {passed_weight:.1f}/{total_gk_weight:.1f})"
+            f"| Confidence: {confidence}% (Weighted: {passed_weight:.1f}/{total_weight:.1f})"
             f" | Route: {route if valid_signal else 'N/A'}"
         )
 
