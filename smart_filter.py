@@ -764,6 +764,11 @@ class SmartFilter:
         passed_weight_long = sum(self.filter_weights_long.get(f, 0) for f in passed_gk_long)
         passed_weight_short = sum(self.filter_weights_short.get(f, 0) for f in passed_gk_short)
 
+        print(f"[{self.symbol}] Passed GK LONG: {passed_gk_long}")
+        print(f"[{self.symbol}] Failed GK LONG: {failed_gk_long}")
+        print(f"[{self.symbol}] Passed GK SHORT: {passed_gk_short}")
+        print(f"[{self.symbol}] Failed GK SHORT: {failed_gk_short}")
+
         confidence_long = round(100 * passed_weight_long / total_gk_weight_long, 1) if total_gk_weight_long else 0.0
         confidence_short = round(100 * passed_weight_short / total_gk_weight_short, 1) if total_gk_weight_short else 0.0
 
@@ -794,6 +799,11 @@ class SmartFilter:
         orderbook_result = get_order_wall_delta(self.symbol)
         density_result = get_resting_density(self.symbol)
         super_gk_ok = self.superGK_check(direction, orderbook_result, density_result)
+
+        print("[DEBUG] direction:", direction)
+        print("[DEBUG] score:", score, "min_score:", self.min_score)
+        print("[DEBUG] passes:", passes, "required_passed:", self.required_passed)
+        print("[DEBUG] super_gk_ok:", super_gk_ok)
 
         valid_signal = (
             direction in ["LONG", "SHORT"]
