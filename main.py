@@ -8,6 +8,7 @@ import pandas as pd
 import random
 import pytz
 from datetime import datetime
+from fetch_ohlcv import get_live_entry_price
 
 from kucoin_data import get_ohlcv
 from smart_filter import SmartFilter
@@ -127,6 +128,7 @@ def run():
                             # Get the current UTC time as the fired time
                             fired_time_utc = datetime.utcnow()
                             
+                            # new entry price 3minTF
                             valid_debugs.append({
                                 "symbol": res3["symbol"],
                                 "tf": res3["tf"],
@@ -139,7 +141,12 @@ def run():
                                 "caption": f"Signal debug log for {res3.get('symbol')} {res3.get('tf')}",
                                 "orderbook_result": orderbook_result,
                                 "density_result": density_result,
-                                "entry_price": res3.get("price"),
+                                "entry_price": get_live_entry_price(
+                                    res3.get("symbol"),
+                                    res3.get("bias"),
+                                    tf=res3.get("tf"),
+                                    slippage=0.001
+                                ) or res3.get("price"),
                                 "fired_time_utc": fired_time_utc
                             })
                             
@@ -163,7 +170,8 @@ def run():
                                 max_passed=res3.get("gatekeepers_total"),
                                 weights=res3.get("passed_weight"),
                                 max_weights=res3.get("total_weight"),
-                                confidence_rate=res3.get("confidence")
+                                confidence_rate=res3.get("confidence"),
+                                entry_price=entry_price
                             )
                             if os.getenv("DRY_RUN", "false").lower() != "true":
                                 send_telegram_alert(
@@ -171,7 +179,12 @@ def run():
                                     symbol=res3.get("symbol"),
                                     signal_type=res3.get("bias"),
                                     Route=res3.get("Route"),
-                                    price=res3.get("price"),
+                                    price=get_live_entry_price(
+                                        res3.get("symbol"),
+                                        res3.get("bias"),
+                                        tf=res3.get("tf"),
+                                        slippage=0.001
+                                    ) or res3.get("price"),
                                     tf=res3.get("tf"),
                                     score=res3.get("score"),
                                     score_max=res3.get("score_max"),
@@ -208,7 +221,8 @@ def run():
 
                             # Get the current UTC time as the fired time
                             fired_time_utc = datetime.utcnow()
-                            
+
+                            # new entry price 5minTF
                             valid_debugs.append({
                                 "symbol": res5["symbol"],
                                 "tf": res5["tf"],
@@ -221,7 +235,12 @@ def run():
                                 "caption": f"Signal debug log for {res5.get('symbol')} {res5.get('tf')}",
                                 "orderbook_result": orderbook_result,
                                 "density_result": density_result,
-                                "entry_price": res5.get("price"),
+                                "entry_price": get_live_entry_price(
+                                    res5.get("symbol"),
+                                    res5.get("bias"),
+                                    tf=res5.get("tf"),
+                                    slippage=0.001
+                                ) or res5.get("price"),
                                 "fired_time_utc": fired_time_utc
                             })
                             
@@ -245,7 +264,8 @@ def run():
                                 max_passed=res5.get("gatekeepers_total"),
                                 weights=res5.get("passed_weight"),
                                 max_weights=res5.get("total_weight"),
-                                confidence_rate=res5.get("confidence")
+                                confidence_rate=res5.get("confidence"),
+                                entry_price=entry_price
                             )
                             if os.getenv("DRY_RUN", "false").lower() != "true":
                                 send_telegram_alert(
@@ -253,7 +273,12 @@ def run():
                                     symbol=res5.get("symbol"),
                                     signal_type=res5.get("bias"),
                                     Route=res5.get("Route"),
-                                    price=res5.get("price"),
+                                    price=get_live_entry_price(
+                                        res5.get("symbol"),
+                                        res5.get("bias"),
+                                        tf=res5.get("tf"),
+                                        slippage=0.001
+                                    ) or res5.get("price"),
                                     tf=res5.get("tf"),
                                     score=res5.get("score"),
                                     score_max=res5.get("score_max"),
@@ -262,7 +287,7 @@ def run():
                                     confidence=res5.get("confidence"),
                                     weighted=res5.get("passed_weight"),
                                     total_weight=res5.get("total_weight")
-                                )
+                            )
                             last_sent[key5] = now
                     else:
                         print(f"[INFO] No valid 5min signal for {symbol}.", flush=True)
