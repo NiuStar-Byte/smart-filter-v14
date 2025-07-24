@@ -730,10 +730,10 @@ class SmartFilter:
                 results_short[name] = False
                 results_status[name] = "ERROR"
 
-        # --- Calculate score: count of passed filters (same as before) ---
-        long_score = sum(1 for passed in results_long.values() if passed)
-        short_score = sum(1 for passed in results_short.values() if passed)
-        
+        # --- Calculate score: count of passed NON-GK filters ---
+        long_score = sum(1 for f in non_gk_filters if results_long.get(f, False))
+        short_score = sum(1 for f in non_gk_filters if results_short.get(f, False))
+
         # --- Get signal direction ---
         direction = self.get_signal_direction(results_long, results_short)
         self.bias = direction
@@ -760,7 +760,7 @@ class SmartFilter:
 
         # --- Non-GK filter list ---
         non_gk_filters = [f for f in filter_names if f not in self.gatekeepers]
-        
+
         # --- Calculate WEIGHTED and CONFIDENCE using only non-GK filters ---
         passed_non_gk_long = [f for f in non_gk_filters if results_long.get(f, False)]
         passed_non_gk_short = [f for f in non_gk_filters if results_short.get(f, False)]
@@ -826,6 +826,10 @@ class SmartFilter:
         price = self.df['close'].iat[-1] if valid_signal else None
         price_str = f"{price:.6f}" if price is not None else "N/A"
 
+
+        price = self.df['close'].iat[-1] if valid_signal else None
+        price_str = f"{price:.6f}" if price is not None else "N/A"
+
         print(f"[DEBUG] reversal_route: {reversal_route}, reversal_side: {reversal_side}, route: {route}, direction: {direction}, valid_signal: {valid_signal}")
         if valid_signal:
             route = "REVERSAL" if reversal_detected else "TREND CONTINUATION"
@@ -834,7 +838,7 @@ class SmartFilter:
 
         signal_type = direction if valid_signal else None
 
-        score_max = len([f for f in filter_names if f not in self.gatekeepers])
+        score_max = len(non_gk_filters)
 
         message = (
             f"{direction or 'NO-SIGNAL'} on {self.symbol} @ {price_str} "
@@ -875,8 +879,6 @@ class SmartFilter:
             orderbook_result=orderbook_result,
             density_result=density_result
         )
-        
-        score_max = len([f for f in filter_names if f not in self.gatekeepers])
 
         # Return summary object for main.py
         return {
