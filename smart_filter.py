@@ -730,9 +730,17 @@ class SmartFilter:
                 results_short[name] = False
                 results_status[name] = "ERROR"
 
+        # --- Calculate score: count of passed filters (same as before) ---
+        long_score = sum(1 for passed in results_long.values() if passed)
+        short_score = sum(1 for passed in results_short.values() if passed)
+        
+        # --- Get signal direction ---
+        direction = self.get_signal_direction(results_long, results_short)
+        self.bias = direction
+        
         # --- Calculate weighted sums using the correct dicts ---
-        long_weight_sum = sum(self.filter_weights_long.get(name, 0) for name, passed in results_long.items() if passed)
-        short_weight_sum = sum(self.filter_weights_short.get(name, 0) for name, passed in results_short.items() if passed)
+        # long_weight_sum = sum(self.filter_weights_long.get(name, 0) for name, passed in results_long.items() if passed)
+        # short_weight_sum = sum(self.filter_weights_short.get(name, 0) for name, passed in results_short.items() if passed)
 
         print(f"[{self.symbol}] Total LONG weight: {long_weight_sum}")
         print(f"[{self.symbol}] Total SHORT weight: {short_weight_sum}")
@@ -741,32 +749,31 @@ class SmartFilter:
         # long_weight_sum = sum(self.filter_weights_long.get(name, 0) for name, passed in results_long.items() if passed)
         # short_weight_sum = sum(self.filter_weights_short.get(name, 0) for name, passed in results_short.items() if passed)
 
-        # Correct: Score is count of passed filters
-        long_score = sum(1 for passed in results_long.values() if passed)
-        short_score = sum(1 for passed in results_short.values() if passed)
-
         # print(f"[{self.symbol}] Total LONG weight: {long_weight_sum}")
         # print(f"[{self.symbol}] Total SHORT weight: {short_weight_sum}")
-        
-        # --- Get signal direction ---
-        direction = self.get_signal_direction(results_long, results_short)
-        self.bias = direction
       
-        # Calculate gatekeeper passes for each direction
+        # --- Gatekeeper pass/fail and count ---
         passed_gk_long = [f for f in self.gatekeepers if results_long.get(f, False)]
         passed_gk_short = [f for f in self.gatekeepers if results_short.get(f, False)]
         passes_long = len(passed_gk_long)
         passes_short = len(passed_gk_short)
 
+        # --- Non-GK filter list ---
+        non_gk_filters = [f for f in filter_names if f not in self.gatekeepers]
+        
+        # --- Calculate WEIGHTED and CONFIDENCE using only non-GK filters ---
+        passed_non_gk_long = [f for f in non_gk_filters if results_long.get(f, False)]
+        passed_non_gk_short = [f for f in non_gk_filters if results_short.get(f, False)]
+
         # Calculate total weights for gatekeepers
-        total_gk_weight_long = sum(self.filter_weights_long.get(f, 0) for f in self.gatekeepers)
-        total_gk_weight_short = sum(self.filter_weights_short.get(f, 0) for f in self.gatekeepers)
-        passed_weight_long = sum(self.filter_weights_long.get(f, 0) for f in passed_gk_long)
-        passed_weight_short = sum(self.filter_weights_short.get(f, 0) for f in passed_gk_short)
+        total_non_gk_weight_long = sum(self.filter_weights_long.get(f, 0) for f in non_gk_filters)
+        total_non_gk_weight_short = sum(self.filter_weights_short.get(f, 0) for f in non_gk_filters)
+        passed_non_gk_weight_long = sum(self.filter_weights_long.get(f, 0) for f in passed_non_gk_long)
+        passed_non_gk_weight_short = sum(self.filter_weights_short.get(f, 0) for f in passed_non_gk_short)
 
         # Add failed GK calculations
-        failed_gk_long = [f for f in self.gatekeepers if f not in passed_gk_long]
-        failed_gk_short = [f for f in self.gatekeepers if f not in passed_gk_short]
+        # failed_gk_long = [f for f in self.gatekeepers if f not in passed_gk_long]
+        # failed_gk_short = [f for f in self.gatekeepers if f not in passed_gk_short]
 
         # Print logic
         print(f"[{self.symbol}] Passed GK LONG: {passed_gk_long}")
@@ -774,33 +781,32 @@ class SmartFilter:
         print(f"[{self.symbol}] Passed GK SHORT: {passed_gk_short}")
         print(f"[{self.symbol}] Failed GK SHORT: {failed_gk_short}")
 
-        confidence_long = round(100 * passed_weight_long / total_gk_weight_long, 1) if total_gk_weight_long else 0.0
-        confidence_short = round(100 * passed_weight_short / total_gk_weight_short, 1) if total_gk_weight_short else 0.0
+        confidence_long = round(100 * passed_non_gk_weight_long / total_non_gk_weight_long, 1) if total_non_gk_weight_long else 0.0
+        confidence_short = round(100 * passed_non_gk_weight_short / total_non_gk_weight_short, 1) if total_non_gk_weight_short else 0.0
 
         # --- Use selected direction's stats ---
         if direction == "LONG":
             score = long_score
             passes = passes_long
             confidence = confidence_long
-            passed_weight = passed_weight_long
-            total_weight = total_gk_weight_long
+            passed_weight = passed_non_gk_weight_long
+            total_weight = total_non_gk_weight_long
         elif direction == "SHORT":
             score = short_score
             passes = passes_short
             confidence = confidence_short
-            passed_weight = passed_weight_short
-            total_weight = total_gk_weight_short
+            passed_weight = passed_non_gk_weight_short
+            total_weight = total_non_gk_weight_short
         else:
             score = max(long_score, short_score)
             passes = max(passes_long, passes_short)
             confidence = max(confidence_long, confidence_short)
-            passed_weight = max(passed_weight_long, passed_weight_short)
-            total_weight = max(total_gk_weight_long, total_gk_weight_short)
+            passed_weight = max(passed_non_gk_weight_long, passed_non_gk_weight_short)
+            total_weight = max(total_non_gk_weight_long, total_non_gk_weight_short)
 
-        # Defensive assignment: always set total_weight before confidence calculation
         confidence = round(100 * passed_weight / total_weight, 1) if total_weight else 0.0
 
-        # --- SuperGK check ---
+        # --- SuperGK check (unchanged) ---
         orderbook_result = get_order_wall_delta(self.symbol)
         density_result = get_resting_density(self.symbol)
         super_gk_ok = self.superGK_check(direction, orderbook_result, density_result)
@@ -820,22 +826,19 @@ class SmartFilter:
         price = self.df['close'].iat[-1] if valid_signal else None
         price_str = f"{price:.6f}" if price is not None else "N/A"
 
-
-        # After all relevant calculations:
-        # print(f"[DEBUG] reversal: {reversal}, reversal_detected: {reversal_detected}, direction: {direction}, valid_signal: {valid_signal}")
         print(f"[DEBUG] reversal_route: {reversal_route}, reversal_side: {reversal_side}, route: {route}, direction: {direction}, valid_signal: {valid_signal}")
-        # --- Mark Route (REVERSAL or TREND CONTINUATION) independently of direction ---
         if valid_signal:
             route = "REVERSAL" if reversal_detected else "TREND CONTINUATION"
         else:
             route = None
 
-        # Always define signal_type as direction (LONG/SHORT), for clarity
         signal_type = direction if valid_signal else None
+
+        score_max = len([f for f in filter_names if f not in self.gatekeepers])
 
         message = (
             f"{direction or 'NO-SIGNAL'} on {self.symbol} @ {price_str} "
-            f"| Score: {score}/23 | Passed: {passes}/{len(self.gatekeepers)} "
+            f"| Score: {score}/{score_max} | Passed GK: {passes}/{len(self.gatekeepers)} "
             f"| Confidence: {confidence}% (Weighted: {passed_weight:.1f}/{total_weight:.1f})"
             f" | Route: {route if valid_signal else 'N/A'}"
         )
@@ -871,16 +874,16 @@ class SmartFilter:
             results_short=results_short,
             orderbook_result=orderbook_result,
             density_result=density_result
-            # results=results_status,  # only if you want legacy compatibility
-            # filename="signal_debug_temp.txt"
         )
         
+        score_max = len([f for f in filter_names if f not in self.gatekeepers])
+
         # Return summary object for main.py
         return {
             "symbol": self.symbol,
             "tf": self.tf,
             "score": score,
-            "score_max": 23,
+            "score_max": score_max,
             "passes": passes,
             "gatekeepers_total": len(self.gatekeepers),
             "passed_weight": round(passed_weight, 1),
@@ -889,8 +892,8 @@ class SmartFilter:
             "bias": direction,
             "price": price,
             "valid_signal": valid_signal,
-            "signal_type": signal_type,   # Always LONG/SHORT or None
-            "Route": route,               # Always REVERSAL or TREND CONTINUATION or None
+            "signal_type": signal_type,
+            "Route": route,
             "message": message,
             "debug_sums": getattr(self, '_debug_sums', {}),
             "results_long": results_long,
