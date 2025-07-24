@@ -96,8 +96,8 @@ class SmartFilter:
         df3m: pd.DataFrame = None,
         df5m: pd.DataFrame = None,
         tf: str = None,
-        min_score: int = 17,
-        required_passed: int = 14,      # NEW: now 11 (for 17 gatekeepers)
+        min_score: int = 12,
+        required_passed: int = 7,      # NEW logic 100% : now 7 (for 7 gatekeepers)
         volume_multiplier: float = 2.0,
         liquidity_threshold: float = 0.85,   # <-- Set a default value
         kwargs = None
@@ -173,13 +173,14 @@ class SmartFilter:
         }
 
         self.gatekeepers = [
-            "Fractal Zone", "EMA Cloud", "MACD", "Momentum", "HATS",
-            "Volume Spike", "VWAP Divergence", "MTF Volume Agreement",
-            "HH/LL Trend", "EMA Structure", "Chop Zone",
-            "Candle Confirmation", "Trend Continuation",
-            "Volatility Model", "Liquidity Awareness",
-            "ATR Momentum Burst", "Volatility Squeeze"
-        ]
+            "MACD",
+            "Volume Spike",
+            "MTF Volume Agreement",
+            "Liquidity Awareness",
+            "Candle Confirmation",
+            "Spread Filter",
+            "Support/Resistance"
+            ]
 
         # Directional-aware filters are those with different weights between LONG and SHORT
 #        self.directional_aware_filters = [
@@ -381,44 +382,50 @@ class SmartFilter:
 
     def get_signal_direction(self, results_long, results_short):
         """
-        Calculate two sums for both LONG and SHORT directions and return the direction
-        only if BOTH sums are greater for that direction. Otherwise return "NEUTRAL".
-        """
-        long_all_filters = sum(
-            self.filter_weights_long.get(name, 0)
-            for name, passed in results_long.items()
-            if passed
-        )
-        long_gatekeepers = sum(
-            self.filter_weights_long.get(name, 0)
-            for name, passed in results_long.items()
-            if passed and name in self.gatekeepers
-        )
+        Returns direction "LONG", "SHORT", or "NEUTRAL" based on gatekeeper and scoring filter results.
 
-        short_all_filters = sum(
-            self.filter_weights_short.get(name, 0)
-            for name, passed in results_short.items()
-            if passed
+        1. Checks if all gatekeepers are passed for each direction.
+        2. Calculates weighted sum of non-gatekeeper filters for each direction.
+        3. Returns direction ONLY if gatekeeper rule and scoring filter are both stronger for one side.
+        """
+
+        # --- Gatekeeper Pass Check ---
+        long_gk_passed = all(results_long.get(gk, False) for gk in self.gatekeepers)
+        short_gk_passed = all(results_short.get(gk, False) for gk in self.gatekeepers)
+
+        # --- Weighted Sum for Non-GK Filters ---
+        scoring_filters = [f for f in self.filter_weights_long if f not in self.gatekeepers]
+
+        long_score = sum(
+            self.filter_weights_long.get(name, 0)
+            for name in scoring_filters
+            if results_long.get(name, False)
         )
-        short_gatekeepers = sum(
+        short_score = sum(
             self.filter_weights_short.get(name, 0)
-            for name, passed in results_short.items()
-            if passed and name in self.gatekeepers
+            for name in scoring_filters
+            if results_short.get(name, False)
         )
 
         self._debug_sums = {
-            "long_all_filters": long_all_filters,
-            "long_gatekeepers": long_gatekeepers,
-            "short_all_filters": short_all_filters,
-            "short_gatekeepers": short_gatekeepers
+            "long_gk_passed": long_gk_passed,
+            "short_gk_passed": short_gk_passed,
+            "long_score": long_score,
+            "short_score": short_score
         }
 
-        if (long_all_filters > short_all_filters and 
-            long_gatekeepers > short_gatekeepers):
+        # --- Direction Decision ---
+        if long_gk_passed and not short_gk_passed:
             return "LONG"
-        elif (short_all_filters > long_all_filters and 
-              short_gatekeepers > long_gatekeepers):
+        elif short_gk_passed and not long_gk_passed:
             return "SHORT"
+        elif long_gk_passed and short_gk_passed:
+            if long_score > short_score:
+                return "LONG"
+            elif short_score > long_score:
+                return "SHORT"
+            else:
+                return "NEUTRAL"
         else:
             return "NEUTRAL"
 
@@ -508,6 +515,11 @@ class SmartFilter:
 
     # PARTIAL New Super-GK ONLY Liquidity (Density) & OrderBookWall
     def superGK_check(self, signal_direction, orderbook_result, density_result):
+        """
+        Super Gatekeeper check using order book walls and resting liquidity density.
+        Only Liquidity (Density) & OrderBookWall are considered for blocking/passing signals.
+        """
+
         if orderbook_result is None or density_result is None:
             print(f"Signal blocked due to missing order book or density for {self.symbol}")
             return False
@@ -517,22 +529,31 @@ class SmartFilter:
 
         bid_density = density_result.get('bid_density', 0)
         ask_density = density_result.get('ask_density', 0)
-        
-        # Liquidity check
+
+        # Liquidity threshold check
         if bid_density < self.liquidity_threshold or ask_density < self.liquidity_threshold:
             print(f"Signal blocked due to low liquidity for {self.symbol}")
             return False
-        
-        # LONG: bid_wall > ask_wall AND bid_density > ask_density
-        if signal_direction == "LONG" and bid_wall > ask_wall and bid_density > ask_density:
-            print(f"Signal passed for LONG: bid_wall & bid_density stronger.")
-            return True
-        # SHORT: ask_wall > bid_wall AND ask_density > bid_density
-        elif signal_direction == "SHORT" and ask_wall > bid_wall and ask_density > bid_density:
-            print(f"Signal passed for SHORT: ask_wall & ask_density stronger.")
-            return True
+
+        # Directional checks
+        if signal_direction == "LONG":
+            if bid_wall > ask_wall and bid_density > ask_density:
+                print(f"Signal passed for LONG: bid_wall & bid_density stronger.")
+                return True
+            else:
+                print(f"Signal blocked for LONG: SuperGK criteria not met for {self.symbol}")
+                return False
+
+        elif signal_direction == "SHORT":
+            if ask_wall > bid_wall and ask_density > bid_density:
+                print(f"Signal passed for SHORT: ask_wall & ask_density stronger.")
+                return True
+            else:
+                print(f"Signal blocked for SHORT: SuperGK criteria not met for {self.symbol}")
+                return False
+
         else:
-            print(f"Signal blocked: SuperGK not aligned for {self.symbol}")
+            print(f"Signal blocked: SuperGK not aligned for {self.symbol} (direction NEUTRAL or undefined)")
             return False
             
 # COMPLETE New Super-GK ADX, ATR, RSI, Liquidity (Density) & OrderBookWall  
@@ -766,8 +787,8 @@ class SmartFilter:
             passed_weight = max(passed_weight_long, passed_weight_short)
             total_gk_weight = max(total_gk_weight_long, total_gk_weight_short)
 
-        confidence = round(self._safe_divide(100 * passed_weight, total_gk_weight), 1) if total_gk_weight else 0.0
-
+        confidence = round(100 * passed_weight / total_weight, 1) if total_weight else 0.0
+        
         # --- SuperGK check ---
         orderbook_result = get_order_wall_delta(self.symbol)
         density_result = get_resting_density(self.symbol)
