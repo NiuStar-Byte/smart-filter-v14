@@ -742,8 +742,8 @@ class SmartFilter:
         # long_weight_sum = sum(self.filter_weights_long.get(name, 0) for name, passed in results_long.items() if passed)
         # short_weight_sum = sum(self.filter_weights_short.get(name, 0) for name, passed in results_short.items() if passed)
 
-        print(f"[{self.symbol}] Total LONG weight: {long_weight_sum}")
-        print(f"[{self.symbol}] Total SHORT weight: {short_weight_sum}")
+        # print(f"[{self.symbol}] Total LONG weight: {long_weight_sum}")
+        # print(f"[{self.symbol}] Total SHORT weight: {short_weight_sum}")
       
         # Weighted sums for info only
         # long_weight_sum = sum(self.filter_weights_long.get(name, 0) for name, passed in results_long.items() if passed)
