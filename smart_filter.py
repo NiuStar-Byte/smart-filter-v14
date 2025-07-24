@@ -649,8 +649,8 @@ class SmartFilter:
         # reversal = self.explicit_reversal_gate()
         # reversal_detected = reversal in ["LONG", "SHORT"]
         reversal_route, reversal_side = self.explicit_reversal_gate()
-        route = "REVERSAL" if reversal_route == "REVERSAL" else "TREND CONTINUATION"
-
+        reversal_detected = reversal_route == "REVERSAL"    # <-- PLACE THIS HERE
+        route = "REVERSAL" if reversal_detected else "TREND CONTINUATION"
         
         # List all filter names
         filter_names = [
