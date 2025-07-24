@@ -767,28 +767,29 @@ class SmartFilter:
         confidence_long = round(100 * passed_weight_long / total_gk_weight_long, 1) if total_gk_weight_long else 0.0
         confidence_short = round(100 * passed_weight_short / total_gk_weight_short, 1) if total_gk_weight_short else 0.0
 
-        # Use selected direction's stats
+        # --- Use selected direction's stats ---
         if direction == "LONG":
             score = long_score
             passes = passes_long
             confidence = confidence_long
             passed_weight = passed_weight_long
-            total_gk_weight = total_gk_weight_long
+            total_weight = total_gk_weight_long
         elif direction == "SHORT":
             score = short_score
             passes = passes_short
             confidence = confidence_short
             passed_weight = passed_weight_short
-            total_gk_weight = total_gk_weight_short
+            total_weight = total_gk_weight_short
         else:
             score = max(long_score, short_score)
             passes = max(passes_long, passes_short)
             confidence = max(confidence_long, confidence_short)
             passed_weight = max(passed_weight_long, passed_weight_short)
-            total_gk_weight = max(total_gk_weight_long, total_gk_weight_short)
+            total_weight = max(total_gk_weight_long, total_gk_weight_short)
 
+        # Defensive assignment: always set total_weight before confidence calculation
         confidence = round(100 * passed_weight / total_weight, 1) if total_weight else 0.0
-        
+
         # --- SuperGK check ---
         orderbook_result = get_order_wall_delta(self.symbol)
         density_result = get_resting_density(self.symbol)
@@ -803,6 +804,7 @@ class SmartFilter:
 
         price = self.df['close'].iat[-1] if valid_signal else None
         price_str = f"{price:.6f}" if price is not None else "N/A"
+
 
         # After all relevant calculations:
         # print(f"[DEBUG] reversal: {reversal}, reversal_detected: {reversal_detected}, direction: {direction}, valid_signal: {valid_signal}")
@@ -858,8 +860,7 @@ class SmartFilter:
             # filename="signal_debug_temp.txt"
         )
         
-        # Return only the summary object for main.py
-        # --- Return both independently ---
+        # Return summary object for main.py
         return {
             "symbol": self.symbol,
             "tf": self.tf,
@@ -868,7 +869,7 @@ class SmartFilter:
             "passes": passes,
             "gatekeepers_total": len(self.gatekeepers),
             "passed_weight": round(passed_weight, 1),
-            "total_weight": round(total_gk_weight, 1),
+            "total_weight": round(total_weight, 1),
             "confidence": confidence,
             "bias": direction,
             "price": price,
