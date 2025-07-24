@@ -880,7 +880,9 @@ class SmartFilter:
 
     def volume_surge_confirmed(self):
         result = self._check_volume_spike()
-        if result in ["LONG", "SHORT"] and self._check_5m_volume_trend():
+        avg_5m = self.df5m['volume'].rolling(10).mean().iat[-1] if self.df5m is not None else 0
+        volume_5m_spike = self.df5m['volume'].iat[-1] > avg_5m * self.volume_multiplier if self.df5m is not None else False
+        if result in ["LONG", "SHORT"] and self._check_5m_volume_trend() and volume_5m_spike:
             return result
         return None
 
@@ -896,13 +898,16 @@ class SmartFilter:
     
         # Volume trend
         vol_up = self.df['volume'].iat[-1] > self.df['volume'].iat[-2]
-    
+
+        # use volume multiplier
+        volume_spike = self.df['volume'].iat[-1] > avg * self.volume_multiplier
+        
         # LONG signal: volume spike + price rising + volume rising
-        long_conditions = [zscore > zscore_threshold, price_up, vol_up]
+        long_conditions = [zscore > zscore_threshold, price_up, vol_up, volume_spike]
         long_met = sum(long_conditions)
     
         # SHORT signal: volume spike + price falling + volume rising
-        short_conditions = [zscore > zscore_threshold, price_down, vol_up]
+        short_conditions = [zscore > zscore_threshold, price_down, vol_up, volume_spike]
         short_met = sum(short_conditions)
 
         # Require at least 2/3 for a signal
@@ -1119,7 +1124,6 @@ class SmartFilter:
         else:
             return None
         
-            
     def _check_hh_ll(self):
         high = self.df['high'].iat[-1]
         high_prev = self.df['high'].iat[-2]
