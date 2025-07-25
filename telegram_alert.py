@@ -22,6 +22,7 @@ def send_telegram_alert(
     score_max: int,
     gatekeepers_total: int,
     total_weight: float,
+    reversal_side=None,
 ) -> None:
     print(f"📨 Telegram alert sent: {symbol} {signal_type} {Route} @ {price}")
     # print(f"[DEBUG] signal_type received in send_telegram_alert: '{signal_type}'")
@@ -73,10 +74,21 @@ def send_telegram_alert(
         signal_icon = "❓"
         signal_str = str(signal_type).upper()
 
-    # Route icon and string (for REVERSAL/TREND CONTINUATION)
+    # Route icon and string (for REVERSAL/TREND CONTINUATION/AMBIGUOUS)
+    route_icon = "❓"
     if str(Route).upper() == "REVERSAL":
+        if reversal_side == "BULLISH":
+            route_icon = "🔄"
+            route_str = "Bullish Reversal Trend"
+        elif reversal_side == "BEARISH":
+            route_icon = "🔄"
+            route_str = "Bearish Reversal Trend"
+        else:
+            route_icon = "🔄"
+            route_str = "Reversal Trend"
+    elif str(Route).upper() == "AMBIGUOUS":
         route_icon = "🔄"
-        route_str = "Reversal Trend"
+        route_str = "Ambiguos Reversal Trend"
     elif str(Route).upper() in ["TREND CONTINUATION", "CONTINUATION"]:
         route_icon = "➡️"
         route_str = "Continuation Trend"
