@@ -225,30 +225,44 @@ class SmartFilter:
         ema_fast = self.df[f"ema{fast_period}"]
         ema_slow = self.df[f"ema{slow_period}"]
         threshold = 0.001 * ema_slow.iat[-1]
-
+    
         # Cross up: fast EMA moves from below slow EMA to above
         crossed_up = ema_fast.iat[-2] < ema_slow.iat[-2] and ema_fast.iat[-1] > ema_slow.iat[-1]
         # Cross down: fast EMA moves from above slow EMA to below
         crossed_down = ema_fast.iat[-2] > ema_slow.iat[-2] and ema_fast.iat[-1] < ema_slow.iat[-1]
-        # Nearly equal ONLY if change just happened
-        nearly_equal = abs(ema_fast.iat[-1] - ema_slow.iat[-1]) < threshold and abs(ema_fast.iat[-2] - ema_slow.iat[-2]) >= threshold
-
-        # Only one can fire at a time
-        if crossed_up or (nearly_equal and ema_fast.iat[-1] > ema_slow.iat[-1] and not crossed_down):
+    
+        # Ensure nearly_equal only triggers when there is no cross (avoid overlap)
+        nearly_equal_up = (
+            abs(ema_fast.iat[-1] - ema_slow.iat[-1]) < threshold and
+            abs(ema_fast.iat[-2] - ema_slow.iat[-2]) >= threshold and
+            ema_fast.iat[-1] > ema_slow.iat[-1] and
+            not crossed_down and
+            not crossed_up
+        )
+        nearly_equal_down = (
+            abs(ema_fast.iat[-1] - ema_slow.iat[-1]) < threshold and
+            abs(ema_fast.iat[-2] - ema_slow.iat[-2]) >= threshold and
+            ema_fast.iat[-1] < ema_slow.iat[-1] and
+            not crossed_up and
+            not crossed_down
+        )
+    
+        # Final, mutually exclusive output
+        if crossed_up or nearly_equal_up:
             return "BULLISH_REVERSAL"
-        elif crossed_down or (nearly_equal and ema_fast.iat[-1] < ema_slow.iat[-1] and not crossed_up):
+        elif crossed_down or nearly_equal_down:
             return "BEARISH_REVERSAL"
         else:
             return "NO_REVERSAL"
 
     def detect_rsi_reversal(self, threshold_overbought=65, threshold_oversold=35):
         rsi = self.df['RSI']
-
-        # Sharpened: Only allow reversal if we move from below oversold to above oversold, or from above overbought to below overbought
+    
+        # Only allow reversal if we move out of oversold or overbought zones (transition event)
         bullish = rsi.iat[-2] <= threshold_oversold and rsi.iat[-1] > threshold_oversold
         bearish = rsi.iat[-2] >= threshold_overbought and rsi.iat[-1] < threshold_overbought
-
-        # These conditions are now strictly non-overlapping for any candle
+    
+        # These conditions cannot both be true for the same bar
         if bullish:
             return "BULLISH_REVERSAL"
         elif bearish:
@@ -265,31 +279,55 @@ class SmartFilter:
     
         # Bullish engulfing: previous candle bearish, current bullish and engulfs
         bullish = (
-            close_prev < open_prev and  # prev bearish
-            close > open_ and           # current bullish
-            open_ < close_prev and      # current open below prev close
-            close > open_prev           # current close above prev open
+            close_prev < open_prev and      # prev bearish
+            close > open_ and               # current bullish
+            open_ < close_prev and          # current open below prev close
+            close > open_prev and           # current close above prev open
+            not (
+                close_prev > open_prev and
+                close < open_ and
+                open_ > close_prev and
+                close < open_prev
+            )                              # explicitly exclude bearish overlap
         ) or (
             close_prev < open_prev and
             close > open_ and
             open_ < close_prev and
-            abs(close - open_prev) < engulf_threshold
+            abs(close - open_prev) < engulf_threshold and
+            not (
+                close_prev > open_prev and
+                close < open_ and
+                open_ > close_prev and
+                abs(close - open_prev) < engulf_threshold
+            )
         )
     
         # Bearish engulfing: previous candle bullish, current bearish and engulfs
         bearish = (
-            close_prev > open_prev and  # prev bullish
-            close < open_ and           # current bearish
-            open_ > close_prev and      # current open above prev close
-            close < open_prev           # current close below prev open
+            close_prev > open_prev and      # prev bullish
+            close < open_ and               # current bearish
+            open_ > close_prev and          # current open above prev close
+            close < open_prev and           # current close below prev open
+            not (
+                close_prev < open_prev and
+                close > open_ and
+                open_ < close_prev and
+                close > open_prev
+            )
         ) or (
             close_prev > open_prev and
             close < open_ and
             open_ > close_prev and
-            abs(close - open_prev) < engulf_threshold
+            abs(close - open_prev) < engulf_threshold and
+            not (
+                close_prev < open_prev and
+                close > open_ and
+                open_ < close_prev and
+                abs(close - open_prev) < engulf_threshold
+            )
         )
     
-        # Mutual exclusivity
+        # Final, mutually exclusive output
         if bullish and not bearish:
             return "BULLISH_REVERSAL"
         elif bearish and not bullish:
