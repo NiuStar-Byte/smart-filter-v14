@@ -207,61 +207,6 @@ class SmartFilter:
         rsi = 100 - (100 / (1 + rs))
         return rsi
     
-    def calculate_adx(df, n=14):
-        # Calculate differences
-        df['up_move'] = df['high'].diff()
-        df['down_move'] = df['low'].diff().abs()
-        df['plus_dm'] = np.where((df['up_move'] > df['down_move']) & (df['up_move'] > 0), df['up_move'], 0)
-        df['minus_dm'] = np.where((df['down_move'] > df['up_move']) & (df['down_move'] > 0), df['down_move'], 0)
-    
-        # ATR calculation (if not present)
-        if 'atr' not in df.columns:
-            df['tr'] = np.maximum(df['high'] - df['low'], 
-                                  np.maximum(abs(df['high'] - df['close'].shift()), abs(df['low'] - df['close'].shift())))
-            df['atr'] = df['tr'].rolling(n).mean()
-    
-        # DI calculations
-        df['plus_di'] = 100 * (df['plus_dm'].rolling(n).sum() / df['atr'])
-        df['minus_di'] = 100 * (df['minus_dm'].rolling(n).sum() / df['atr'])
-    
-        # DX and ADX calculations
-        df['dx'] = (abs(df['plus_di'] - df['minus_di']) / (df['plus_di'] + df['minus_di'])) * 100
-        df['adx'] = df['dx'].rolling(n).mean()
-        return df
-    
-    def calculate_stochrsi(df, rsi_period=14, stoch_period=14, smooth_k=3, smooth_d=3):
-        # Calculate RSI if not present
-        if 'RSI' not in df.columns:
-            delta = df['close'].diff()
-            gain = (delta.where(delta > 0, 0)).rolling(rsi_period).mean()
-            loss = (-delta.where(delta < 0, 0)).rolling(rsi_period).mean()
-            rs = gain / loss
-            df['RSI'] = 100 - (100 / (1 + rs))
-        rsi = df['RSI']
-    
-        # Calculate StochRSI raw value
-        min_rsi = rsi.rolling(stoch_period).min()
-        max_rsi = rsi.rolling(stoch_period).max()
-        stochrsi = (rsi - min_rsi) / (max_rsi - min_rsi)
-    
-        # Smooth K and D
-        k = stochrsi.rolling(smooth_k).mean()
-        d = k.rolling(smooth_d).mean()
-    
-        df['stochrsi_k'] = k
-        df['stochrsi_d'] = d
-        return df
-    
-    def calculate_cci(df, n=20):
-        # Typical price
-        tp = (df['high'] + df['low'] + df['close']) / 3
-        # Rolling mean and mean deviation
-        ma = tp.rolling(n).mean()
-        md = tp.rolling(n).apply(lambda x: (abs(x - x.mean())).mean())
-        # CCI formula
-        df['cci'] = (tp - ma) / (0.015 * md)
-        return df
-    
     @property
     def filter_weights(self):
         """
@@ -352,6 +297,28 @@ class SmartFilter:
         else:
             return "NO_REVERSAL"
 
+    def calculate_adx(df, n=14):
+        # Calculate differences
+        df['up_move'] = df['high'].diff()
+        df['down_move'] = df['low'].diff().abs()
+        df['plus_dm'] = np.where((df['up_move'] > df['down_move']) & (df['up_move'] > 0), df['up_move'], 0)
+        df['minus_dm'] = np.where((df['down_move'] > df['up_move']) & (df['down_move'] > 0), df['down_move'], 0)
+    
+        # ATR calculation (if not present)
+        if 'atr' not in df.columns:
+            df['tr'] = np.maximum(df['high'] - df['low'], 
+                                  np.maximum(abs(df['high'] - df['close'].shift()), abs(df['low'] - df['close'].shift())))
+            df['atr'] = df['tr'].rolling(n).mean()
+    
+        # DI calculations
+        df['plus_di'] = 100 * (df['plus_dm'].rolling(n).sum() / df['atr'])
+        df['minus_di'] = 100 * (df['minus_dm'].rolling(n).sum() / df['atr'])
+    
+        # DX and ADX calculations
+        df['dx'] = (abs(df['plus_di'] - df['minus_di']) / (df['plus_di'] + df['minus_di'])) * 100
+        df['adx'] = df['dx'].rolling(n).mean()
+        return df
+        
     def detect_adx_reversal(self, adx_threshold=25):
         print("[DEBUG] detect_adx_reversal called")
     
@@ -395,6 +362,29 @@ class SmartFilter:
             print("[DEBUG] ADX detected NO_REVERSAL")
             return "NO_REVERSAL"
 
+    def calculate_stochrsi(df, rsi_period=14, stoch_period=14, smooth_k=3, smooth_d=3):
+        # Calculate RSI if not present
+        if 'RSI' not in df.columns:
+            delta = df['close'].diff()
+            gain = (delta.where(delta > 0, 0)).rolling(rsi_period).mean()
+            loss = (-delta.where(delta < 0, 0)).rolling(rsi_period).mean()
+            rs = gain / loss
+            df['RSI'] = 100 - (100 / (1 + rs))
+        rsi = df['RSI']
+    
+        # Calculate StochRSI raw value
+        min_rsi = rsi.rolling(stoch_period).min()
+        max_rsi = rsi.rolling(stoch_period).max()
+        stochrsi = (rsi - min_rsi) / (max_rsi - min_rsi)
+    
+        # Smooth K and D
+        k = stochrsi.rolling(smooth_k).mean()
+        d = k.rolling(smooth_d).mean()
+    
+        df['stochrsi_k'] = k
+        df['stochrsi_d'] = d
+        return df
+        
     def detect_stochrsi_reversal(self, overbought=0.8, oversold=0.2):
         print("[DEBUG] detect_stochrsi_reversal called")
     
@@ -428,6 +418,16 @@ class SmartFilter:
             print("[DEBUG] StochRSI detected NO_REVERSAL")
             return "NO_REVERSAL"
 
+    def calculate_cci(df, n=20):
+        # Typical price
+        tp = (df['high'] + df['low'] + df['close']) / 3
+        # Rolling mean and mean deviation
+        ma = tp.rolling(n).mean()
+        md = tp.rolling(n).apply(lambda x: (abs(x - x.mean())).mean())
+        # CCI formula
+        df['cci'] = (tp - ma) / (0.015 * md)
+        return df
+        
     def detect_cci_reversal(self, overbought=100, oversold=-100):
         print("[DEBUG] detect_cci_reversal called")
     
