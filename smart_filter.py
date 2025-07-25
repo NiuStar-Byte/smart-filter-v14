@@ -507,13 +507,17 @@ class SmartFilter:
         print("Reversal detector results:", signals)
         bullish = signals.count("BULLISH_REVERSAL")
         bearish = signals.count("BEARISH_REVERSAL")
-        if bullish >= 1:
+    
+        if bullish > 0 and bearish == 0:
             return ("REVERSAL", "BULLISH")
-        elif bearish >= 1:
+        elif bearish > 0 and bullish == 0:
             return ("REVERSAL", "BEARISH")
+        elif bullish > 0 and bearish > 0:
+            # Both signals detected: ambiguous, so return NONE
+            return ("NONE", None)
         else:
             return ("NONE", None)
-            
+                
     def detect_trend_continuation(self):
         # Example criteria for bullish continuation
         ema_fast = self.df['ema6'].iat[-1]
