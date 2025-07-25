@@ -1092,6 +1092,7 @@ class SmartFilter:
             "valid_signal": valid_signal,
             "signal_type": signal_type,
             "Route": route,
+            "reversal_side": reversal_side,
             "message": message,
             "debug_sums": getattr(self, '_debug_sums', {}),
             "results_long": results_long,
