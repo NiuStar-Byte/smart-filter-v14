@@ -76,8 +76,13 @@ def send_telegram_alert(
 
     # Route icon and string (for REVERSAL/TREND CONTINUATION/AMBIGUOUS)
     route_icon = "❓"
+    route_str = str(Route)  # default fallback
+    
     if str(Route).upper() == "REVERSAL":
-        if reversal_side == "BULLISH":
+        if isinstance(reversal_side, (list, set)) and "BULLISH" in reversal_side and "BEARISH" in reversal_side:
+            route_icon = "🔄"
+            route_str = "Ambiguous Reversal Trend"
+        elif reversal_side == "BULLISH":
             route_icon = "🔄"
             route_str = "Bullish Reversal Trend"
         elif reversal_side == "BEARISH":
@@ -88,20 +93,17 @@ def send_telegram_alert(
             route_str = "Reversal Trend"
     elif str(Route).upper() == "AMBIGUOUS":
         route_icon = "🔄"
-        route_str = "Ambiguos Reversal Trend"
+        route_str = "Ambiguous Reversal Trend"
     elif str(Route).upper() in ["TREND CONTINUATION", "CONTINUATION"]:
         route_icon = "➡️"
         route_str = "Continuation Trend"
-    else:
-        route_icon = "❓"
-        route_str = str(Route)
-
+    
     # Format price for display
     try:
         price_str = f"{float(price):.6f}"
     except Exception:
         price_str = str(price)
-
+    
     # --- Final message format ---
     message = (
         f"{numbered_signal}. {symbol} ({tf}){confirmed_tag}\n"
@@ -113,9 +115,9 @@ def send_telegram_alert(
         f"{confidence_icon} Confidence: {confidence:.1f}%\n"
         f"🏋️‍♀️ Weighted: {weighted_str}"
     )
-
-    print("Signal type:", signal_type, "Route:", Route)  # <-- Place here
-
+    
+    print("Signal type:", signal_type, "Route:", Route, "reversal_side:", reversal_side)
+    
     payload = {
         "chat_id": CHAT_ID,
         "text": message,
