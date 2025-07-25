@@ -513,11 +513,11 @@ class SmartFilter:
         elif bearish > 0 and bullish == 0:
             return ("REVERSAL", "BEARISH")
         elif bullish > 0 and bearish > 0:
-            # Both signals detected: ambiguous, so return AMBIGUOUS with both
+            # Ambiguous signal: both bullish and bearish detected
             return ("AMBIGUOUS", ["BULLISH", "BEARISH"])
         else:
             return ("NONE", None)
-                
+                    
     def detect_trend_continuation(self):
         # Example criteria for bullish continuation
         ema_fast = self.df['ema6'].iat[-1]
@@ -839,12 +839,12 @@ class SmartFilter:
             print(f"[{self.symbol}] Error: DataFrame empty.")
             return None
 
-        # --- Detect reversal but do not block the signal ---
+        # --- Detect reversal and set route correctly (AMBIGUOUS included) ---
         # reversal = self.explicit_reversal_gate()
         # reversal_detected = reversal in ["LONG", "SHORT"]
         reversal_route, reversal_side = self.explicit_reversal_gate()
-        reversal_detected = reversal_route == "REVERSAL"    # <-- PLACE THIS HERE
-        route = "REVERSAL" if reversal_detected else "TREND CONTINUATION"
+        reversal_detected = reversal_route in ["REVERSAL", "AMBIGUOUS"]
+        route = reversal_route if reversal_detected else "TREND CONTINUATION"
         
         # List all filter names
         filter_names = [
