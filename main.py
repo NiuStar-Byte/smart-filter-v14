@@ -199,7 +199,8 @@ def run():
                                     gatekeepers_total=gatekeepers_total,
                                     confidence=confidence,
                                     weighted=passed_weight,
-                                    total_weight=total_weight
+                                    total_weight=total_weight,
+                                    reversal_side=res3.get("reversal_side")
                                 )
                             last_sent[key3] = now
                     else:
@@ -296,7 +297,8 @@ def run():
                                     gatekeepers_total=gatekeepers_total,
                                     confidence=confidence,
                                     weighted=passed_weight,
-                                    total_weight=total_weight
+                                    total_weight=total_weight,
+                                    reversal_side=res5.get("reversal_side")
                                 )
                             last_sent[key5] = now
                     else:
