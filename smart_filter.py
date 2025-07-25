@@ -548,13 +548,13 @@ class SmartFilter:
     def explicit_route_gate(self):
         reversal = self.explicit_reversal_gate()
         continuation = self.detect_trend_continuation()
-        if reversal[0] == "REVERSAL":
-            return ("REVERSAL", reversal[1])
+        if reversal[0] in ["REVERSAL", "AMBIGUOUS"]:
+            return (reversal[0], reversal[1])
         elif continuation in ["BULLISH_CONTINUATION", "BEARISH_CONTINUATION"]:
             return ("TREND CONTINUATION", continuation)
         else:
             return ("NONE", None)
-    
+        
 #    def _calculate_all_filters_sum(self, results, direction):
 #        """
 #        Calculate the sum of weights for all passed filters for the given direction.
