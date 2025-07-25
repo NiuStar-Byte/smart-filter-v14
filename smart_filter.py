@@ -513,8 +513,8 @@ class SmartFilter:
         elif bearish > 0 and bullish == 0:
             return ("REVERSAL", "BEARISH")
         elif bullish > 0 and bearish > 0:
-            # Both signals detected: ambiguous, so return NONE
-            return ("NONE", None)
+            # Both signals detected: ambiguous, so return AMBIGUOUS with both
+            return ("AMBIGUOUS", ["BULLISH", "BEARISH"])
         else:
             return ("NONE", None)
                 
