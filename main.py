@@ -185,6 +185,9 @@ def run():
                                 entry_price=entry_price
                             )
 
+                            # --- Regime is defined here using sf3 ---
+                            regime = sf3._market_regime() if hasattr(sf3, "_market_regime") else None
+        
                             if os.getenv("DRY_RUN", "false").lower() != "true":
                                 send_telegram_alert(
                                     numbered_signal=numbered_signal,
@@ -283,6 +286,9 @@ def run():
                                 confidence_rate=confidence,
                                 entry_price=entry_price
                             )
+
+                            # --- Regime is defined here using sf5 ---
+                            regime = sf5._market_regime() if hasattr(sf5, "_market_regime") else None
 
                             if os.getenv("DRY_RUN", "false").lower() != "true":
                                 send_telegram_alert(
