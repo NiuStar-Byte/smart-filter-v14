@@ -179,10 +179,9 @@ class SmartFilter:
             "Volume Spike",
             "MTF Volume Agreement",
             "Liquidity Awareness",
-            "Candle Confirmation",
             "Spread Filter",
             "Support/Resistance"
-            ]
+        ]
 
         # Directional-aware filters are those with different weights between LONG and SHORT
 #        self.directional_aware_filters = [
