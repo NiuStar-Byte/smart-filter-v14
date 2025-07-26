@@ -200,7 +200,8 @@ def run():
                                     confidence=confidence,
                                     weighted=passed_weight,
                                     total_weight=total_weight,
-                                    reversal_side=res3.get("reversal_side")
+                                    reversal_side=res3.get("reversal_side"),
+                                    regime=regime
                                 )
                             last_sent[key3] = now
                     else:
@@ -298,7 +299,8 @@ def run():
                                     confidence=confidence,
                                     weighted=passed_weight,
                                     total_weight=total_weight,
-                                    reversal_side=res5.get("reversal_side")
+                                    reversal_side=res5.get("reversal_side"),
+                                    regime=regime
                                 )
                             last_sent[key5] = now
                     else:
