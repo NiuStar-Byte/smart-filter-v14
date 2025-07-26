@@ -178,9 +178,9 @@ def get_live_entry_price(symbol: str, signal_type: str, tf: str = "5min", slippa
 
     # Adjustment: 5% less for LONG, 5% more for SHORT
     if signal_type.upper() == "LONG":
-        entry_price *= 0.975
+        entry_price *= 0.9975
     elif signal_type.upper() == "SHORT":
-        entry_price *= 1.025
+        entry_price *= 1.0025
 
     return float(entry_price)
 
