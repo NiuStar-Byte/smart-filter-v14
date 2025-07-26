@@ -1829,7 +1829,26 @@ class SmartFilter:
             return "SHORT"
         else:
             return None
-        
+
+    def _market_regime(self, ma_col='ema200', adx_col='adx', adx_threshold=20):
+        """
+        Returns 'BULL' if market is in uptrend, 'BEAR' if downtrend, None if ranging.
+        """
+        close = self.df['close'].iat[-1]
+        ma = self.df[ma_col].iat[-1]
+        ma_prev = self.df[ma_col].iat[-2]
+        adx = self.df[adx_col].iat[-1] if adx_col in self.df.columns else None
+
+        # Optional: require ADX above threshold to confirm trend
+        trending = adx is None or adx > adx_threshold
+
+        if close > ma and ma > ma_prev and trending:
+            return "BULL"
+        elif close < ma and ma < ma_prev and trending:
+            return "BEAR"
+        else:
+            return None
+    
     def _fetch_order_book(self, depth=100):
         for sym in (self.symbol, self.symbol.replace('-', '/')):
             url = f"https://api.kucoin.com/api/v1/market/orderbook/level2_{depth}?symbol={sym}"
