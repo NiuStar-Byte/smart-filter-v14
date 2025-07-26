@@ -23,6 +23,7 @@ def send_telegram_alert(
     gatekeepers_total: int,
     total_weight: float,
     reversal_side=None,
+    regime=None,
 ) -> None:
     print(f"📨 Telegram alert sent: {symbol} {signal_type} {Route} @ {price}")
     # print(f"[DEBUG] signal_type received in send_telegram_alert: '{signal_type}'")
@@ -97,6 +98,16 @@ def send_telegram_alert(
     elif str(Route).upper() in ["TREND CONTINUATION", "CONTINUATION"]:
         route_icon = "➡️"
         route_str = "Continuation Trend"
+
+    # -- Regime icon logic --
+    if regime == "BULL":
+        regime_str = "📈 Regime: <b>BULL</b>\n"
+    elif regime == "BEAR":
+        regime_str = "📉 Regime: <b>BEAR</b>\n"
+    elif regime is not None:
+        regime_str = f"Regime: <b>{regime}</b>\n"
+    else:
+        regime_str = ""
     
     # Format price for display
     try:
@@ -107,6 +118,7 @@ def send_telegram_alert(
     # --- Final message format ---
     message = (
         f"{numbered_signal}. {symbol} ({tf}){confirmed_tag}\n"
+        f"{regime_str}"
         f"{signal_icon} {signal_str} Signal\n"
         f"{route_icon} <b>{route_str}</b>\n"
         f"💰 <b>{price:.6f}</b>\n"
