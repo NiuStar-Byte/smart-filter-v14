@@ -96,8 +96,8 @@ class SmartFilter:
         df3m: pd.DataFrame = None,
         df5m: pd.DataFrame = None,
         tf: str = None,
-        min_score: int = 8,
-        required_passed: int = 7,      # NEW logic 100% : now 7 (for 7 gatekeepers)
+        min_score: int = 9,
+        required_passed: int = 6,      # NEW logic 100% : now 7 (for 7 gatekeepers)
         volume_multiplier: float = 2.0,
         liquidity_threshold: float = 0.85,   # <-- Set a default value
         kwargs = None
