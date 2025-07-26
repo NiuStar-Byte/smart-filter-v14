@@ -152,29 +152,37 @@ def get_live_entry_price(symbol: str, signal_type: str, tf: str = "5min", slippa
     :param signal_type: "LONG" or "SHORT".
     :param tf: Timeframe (used for OHLCV fallback).
     :param slippage: Fractional slippage (e.g., 0.001 for 0.1%).
-    :return: Entry price (float) or None.
+    :return: Adjusted entry price (float) or None.
     """
     bids, asks = fetch_orderbook_l2(symbol, depth=20)
     try:
         if signal_type.upper() == "LONG" and asks is not None and len(asks) > 0:
             entry_price = asks['price'].iloc[0] * (1 + slippage)
-            return float(entry_price)
         elif signal_type.upper() == "SHORT" and bids is not None and len(bids) > 0:
             entry_price = bids['price'].iloc[0] * (1 - slippage)
-            return float(entry_price)
-        else:
+        elif bids is not None and len(bids) > 0 and asks is not None and len(asks) > 0:
             # Fallback to midprice
-            if bids is not None and len(bids) > 0 and asks is not None and len(asks) > 0:
-                entry_price = (bids['price'].iloc[0] + asks['price'].iloc[0]) / 2
-                return float(entry_price)
+            entry_price = (bids['price'].iloc[0] + asks['price'].iloc[0]) / 2
+        else:
+            entry_price = None
     except Exception:
-        pass
+        entry_price = None
 
     # Final fallback: use OHLCV close price
-    df = fetch_ohlcv(symbol, tf)
-    if df is not None and not df.empty:
-        return float(df["close"].iloc[-1])
-    return None
+    if entry_price is None:
+        df = fetch_ohlcv(symbol, tf)
+        if df is not None and not df.empty:
+            entry_price = float(df["close"].iloc[-1])
+        else:
+            return None
+
+    # Adjustment: 5% less for LONG, 5% more for SHORT
+    if signal_type.upper() == "LONG":
+        entry_price *= 0.975
+    elif signal_type.upper() == "SHORT":
+        entry_price *= 1.025
+
+    return float(entry_price)
 
 # Example usage:
 # entry_price = get_live_entry_price("BTC-USDT", "LONG", tf="5min", slippage=0.001)
