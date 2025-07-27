@@ -132,7 +132,7 @@ def get_resting_order_density(
 # --- Force print for ALL 15 tokens on EVERY import/run ---
 TOKENS = [
     "BTC-USDT", "ETH-USDT", "SOL-USDT", "XRP-USDT", "ADA-USDT",
-    "AVA-USDT", "XLM-USDT", "LINK-USDT", "POL-USDT", "BNB-USDT",
+    "AVAX-USDT", "XLM-USDT", "LINK-USDT", "POL-USDT", "BNB-USDT",
     "SKATE-USDT", "LA-USDT", "SPK-USDT", "ZKJ-USDT", "IP-USDT",
     "AERO-USDT", "BMT-USDT", "LQTY-USDT", "X-USDT", "RAY-USDT",
     "EPT-USDT", "ELDE-USDT", "MAGIC-USDT", "ACTSOL-USDT", "FUN-USDT",
