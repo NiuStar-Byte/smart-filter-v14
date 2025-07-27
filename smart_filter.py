@@ -1252,23 +1252,21 @@ class SmartFilter:
         momentum_prev = roc.iat[-2]
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
-
-        # LONG conditions
+    
+        # Bullish conditions
         cond1_long = momentum > 0
         cond2_long = momentum > momentum_prev
         cond3_long = close > close_prev
-
-        # SHORT conditions
+    
+        # Bearish conditions
         cond1_short = momentum < 0
         cond2_short = momentum < momentum_prev
         cond3_short = close < close_prev
-
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
-
-        if long_met >= 2:
+    
+        # More responsive: fire on any single condition
+        if cond1_long or cond2_long or cond3_long:
             return "LONG"
-        elif short_met >= 2:
+        elif cond1_short or cond2_short or cond3_short:
             return "SHORT"
         else:
             return None
@@ -1768,33 +1766,56 @@ class SmartFilter:
         else:
             return None
 
-    def _check_atr_momentum_burst(self, atr_period=14, burst_mult=1.5):
-        # ATR must be calculated and present in self.df['atr']
-        atr = self.df['atr'].iat[-1]
-        atr_prev = self.df['atr'].iat[-2]
+    def _check_atr_momentum_burst(self, threshold_pct=0.5, volume_mult=2):
+        """
+        Fires 'LONG' if the latest bar is a strong up-move with volume surge,
+        or 'SHORT' for a strong down-move with volume surge.
+    
+        threshold_pct: Minimum percent move from open to close to qualify as burst (e.g., 0.5%)
+        volume_mult:   Volume must be at least this multiple of the recent average
+        """
         close = self.df['close'].iat[-1]
-        close_prev = self.df['close'].iat[-2]
-        price_change = close - close_prev
-
-        # LONG conditions
-        cond1_long = close > close_prev
-        cond2_long = price_change > burst_mult * atr
-        cond3_long = atr > atr_prev
-
-        # SHORT conditions
-        cond1_short = close < close_prev
-        cond2_short = price_change < -burst_mult * atr
-        cond3_short = atr > atr_prev
-
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
-
-        if long_met >= 2:
+        open_ = self.df['open'].iat[-1]
+        volume = self.df['volume'].iat[-1]
+        avg_vol = self.df['volume'].rolling(10).mean().iat[-1]
+        pct_move = (close - open_) / open_ * 100
+    
+        # LONG: large up bar and volume surge
+        if pct_move > threshold_pct and volume > avg_vol * volume_mult:
             return "LONG"
-        elif short_met >= 2:
+        # SHORT: large down bar and volume surge
+        elif pct_move < -threshold_pct and volume > avg_vol * volume_mult:
             return "SHORT"
         else:
             return None
+            
+    # def _check_atr_momentum_burst(self, atr_period=14, burst_mult=1.5):
+        # ATR must be calculated and present in self.df['atr']
+        # atr = self.df['atr'].iat[-1]
+        # atr_prev = self.df['atr'].iat[-2]
+        # close = self.df['close'].iat[-1]
+        # close_prev = self.df['close'].iat[-2]
+        # price_change = close - close_prev
+
+        # LONG conditions
+        # cond1_long = close > close_prev
+        # cond2_long = price_change > burst_mult * atr
+        # cond3_long = atr > atr_prev
+
+        # SHORT conditions
+        # cond1_short = close < close_prev
+        # cond2_short = price_change < -burst_mult * atr
+        # cond3_short = atr > atr_prev
+
+        # long_met = sum([cond1_long, cond2_long, cond3_long])
+        # short_met = sum([cond1_short, cond2_short, cond3_short])
+
+        # if long_met >= 2:
+        #    return "LONG"
+        # elif short_met >= 2:
+        #    return "SHORT"
+        # else:
+        #    return None
 
     def _check_volatility_squeeze(self):
         bb_width = self.df['bb_upper'].iat[-1] - self.df['bb_lower'].iat[-1]
