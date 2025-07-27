@@ -362,7 +362,7 @@ class SmartFilter:
         required = ['adx', 'plus_di', 'minus_di']
         missing = [col for col in required if col not in self.df.columns]
         if missing:
-            print(f"[DEBUG] ADX columns missing: {missing} | Available columns: {list(self.df.columns)}")
+            # print(f"[DEBUG] ADX columns missing: {missing} | Available columns: {list(self.df.columns)}")
             return "NO_REVERSAL"
     
         adx = self.df['adx']
@@ -428,7 +428,7 @@ class SmartFilter:
         required = ['stochrsi_k', 'stochrsi_d']
         missing = [col for col in required if col not in self.df.columns]
         if missing:
-            print(f"[DEBUG] StochRSI columns missing: {missing} | Available columns: {list(self.df.columns)}")
+            # print(f"[DEBUG] StochRSI columns missing: {missing} | Available columns: {list(self.df.columns)}")
             return "NO_REVERSAL"
     
         k = self.df['stochrsi_k']
@@ -469,7 +469,7 @@ class SmartFilter:
         print("[DEBUG] detect_cci_reversal called")
     
         if 'cci' not in self.df.columns:
-            print("[DEBUG] CCI column missing. Available columns:", list(self.df.columns))
+            # print("[DEBUG] CCI column missing. Available columns:", list(self.df.columns))
             return "NO_REVERSAL"
     
         cci = self.df['cci']
