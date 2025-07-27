@@ -96,7 +96,7 @@ class SmartFilter:
         df3m: pd.DataFrame = None,
         df5m: pd.DataFrame = None,
         tf: str = None,
-        min_score: int = 10,
+        min_score: int = 11,
         required_passed: int = 6,      # NEW logic 100% : now 7 (for 7 gatekeepers)
         volume_multiplier: float = 2.0,
         liquidity_threshold: float = 0.5,   # <-- Set a default value
@@ -1124,37 +1124,54 @@ class SmartFilter:
             return result
         return None
 
-    def _check_volume_spike(self, zscore_threshold=1.5):
-        # Calculate z-score of current volume vs recent (rolling 10)
+    def _check_volume_spike(self, zscore_threshold=1.0):
         avg = self.df['volume'].rolling(10).mean().iat[-1]
         std = self.df['volume'].rolling(10).std().iat[-1]
         zscore = self._safe_divide(self.df['volume'].iat[-1] - avg, std)
     
-        # Price direction
         price_up = self.df['close'].iat[-1] > self.df['close'].iat[-2]
         price_down = self.df['close'].iat[-1] < self.df['close'].iat[-2]
-    
-        # Volume trend
         vol_up = self.df['volume'].iat[-1] > self.df['volume'].iat[-2]
-
-        # use volume multiplier
         volume_spike = self.df['volume'].iat[-1] > avg * self.volume_multiplier
-        
-        # LONG signal: volume spike + price rising + volume rising
-        long_conditions = [zscore > zscore_threshold, price_up, vol_up, volume_spike]
-        long_met = sum(long_conditions)
     
-        # SHORT signal: volume spike + price falling + volume rising
-        short_conditions = [zscore > zscore_threshold, price_down, vol_up, volume_spike]
-        short_met = sum(short_conditions)
-
-        # Require at least 2/3 for a signal
-        if long_met >= 2:
+        if zscore > zscore_threshold or (price_up and vol_up and volume_spike):
             return "LONG"
-        elif short_met >= 2:
+        elif zscore > zscore_threshold or (price_down and vol_up and volume_spike):
             return "SHORT"
         else:
             return None
+        
+    # def _check_volume_spike(self, zscore_threshold=1.5):
+        # Calculate z-score of current volume vs recent (rolling 10)
+    #    avg = self.df['volume'].rolling(10).mean().iat[-1]
+    #    std = self.df['volume'].rolling(10).std().iat[-1]
+    #    zscore = self._safe_divide(self.df['volume'].iat[-1] - avg, std)
+    
+        # Price direction
+    #    price_up = self.df['close'].iat[-1] > self.df['close'].iat[-2]
+    #    price_down = self.df['close'].iat[-1] < self.df['close'].iat[-2]
+    
+        # Volume trend
+    #    vol_up = self.df['volume'].iat[-1] > self.df['volume'].iat[-2]
+
+        # use volume multiplier
+    #    volume_spike = self.df['volume'].iat[-1] > avg * self.volume_multiplier
+        
+        # LONG signal: volume spike + price rising + volume rising
+    #    long_conditions = [zscore > zscore_threshold, price_up, vol_up, volume_spike]
+    #    long_met = sum(long_conditions)
+    
+        # SHORT signal: volume spike + price falling + volume rising
+    #    short_conditions = [zscore > zscore_threshold, price_down, vol_up, volume_spike]
+    #    short_met = sum(short_conditions)
+
+        # Require at least 2/3 for a signal
+    #    if long_met >= 2:
+    #        return "LONG"
+    #    elif short_met >= 2:
+    #        return "SHORT"
+    #    else:
+    #        return None
 
     def _check_5m_volume_trend(self):
         if self.df5m is None or len(self.df5m) < 2:
@@ -1183,9 +1200,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 2:
+        if long_met >= 1:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 1:
             return "SHORT"
         else:
             return None
@@ -1209,9 +1226,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 2:
+        if long_met >= 1:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 1:
             return "SHORT"
         else:
             return None
@@ -1238,9 +1255,9 @@ class SmartFilter:
         short_conditions_met = sum([condition_1_short, condition_2_short, condition_3_short, condition_4_short])
 
         # If 3 out of 4 conditions are met, we pass the filter
-        if long_conditions_met >= 3:
+        if long_conditions_met >= 1:
             return "LONG"
-        elif short_conditions_met >= 3:
+        elif short_conditions_met >= 1:
             return "SHORT"
         else:
             return None
@@ -1296,9 +1313,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 2:
+        if long_met >= 1:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 1:
             return "SHORT"
         else:
             return None
@@ -1381,9 +1398,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 2:
+        if long_met >= 1:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 1:
             return "SHORT"
         else:
             return None
@@ -1412,9 +1429,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 2:
+        if long_met >= 1:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 1:
             return "SHORT"
         else:
             return None
@@ -1484,9 +1501,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 2:
+        if long_met >= 1:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 1:
             return "SHORT"
         else:
             return None
@@ -1515,9 +1532,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 2:
+        if long_met >= 1:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 1:
             return "SHORT"
         else:
             return None
@@ -1766,28 +1783,18 @@ class SmartFilter:
         else:
             return None
 
-    def _check_atr_momentum_burst(self, threshold_pct=0.5, volume_mult=2):
-        """
-        Fires 'LONG' if the latest bar is a strong up-move with volume surge,
-        or 'SHORT' for a strong down-move with volume surge.
-    
-        threshold_pct: Minimum percent move from open to close to qualify as burst (e.g., 0.5%)
-        volume_mult:   Volume must be at least this multiple of the recent average
-        """
-        close = self.df['close'].iat[-1]
-        open_ = self.df['open'].iat[-1]
-        volume = self.df['volume'].iat[-1]
-        avg_vol = self.df['volume'].rolling(10).mean().iat[-1]
-        pct_move = (close - open_) / open_ * 100
-    
-        # LONG: large up bar and volume surge
-        if pct_move > threshold_pct and volume > avg_vol * volume_mult:
-            return "LONG"
-        # SHORT: large down bar and volume surge
-        elif pct_move < -threshold_pct and volume > avg_vol * volume_mult:
-            return "SHORT"
-        else:
-            return None
+    def _check_atr_momentum_burst(self, threshold_pct=0.15, volume_mult=1.2):
+        for i in [-1, -2]:
+            close = self.df['close'].iat[i]
+            open_ = self.df['open'].iat[i]
+            volume = self.df['volume'].iat[i]
+            avg_vol = self.df['volume'].rolling(10).mean().iat[i]
+            pct_move = (close - open_) / open_ * 100
+            if pct_move > threshold_pct and volume > avg_vol * volume_mult:
+                return "LONG"
+            elif pct_move < -threshold_pct and volume > avg_vol * volume_mult:
+                return "SHORT"
+        return None
             
     # def _check_atr_momentum_burst(self, atr_period=14, burst_mult=1.5):
         # ATR must be calculated and present in self.df['atr']
