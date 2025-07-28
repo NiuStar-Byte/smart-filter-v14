@@ -1071,6 +1071,9 @@ class SmartFilter:
             ),
             "final": valid_signal
         }
+        
+        # Add here:
+        regime = self._market_regime()
 
         export_signal_debug_txt(
             symbol=self.symbol,
@@ -1101,6 +1104,7 @@ class SmartFilter:
             "valid_signal": valid_signal,
             "signal_type": signal_type,
             "Route": route,
+            "regime": regime,  # <-- Add this line
             "reversal_side": reversal_side,
             "message": message,
             "debug_sums": getattr(self, '_debug_sums', {}),
