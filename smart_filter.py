@@ -117,6 +117,10 @@ class SmartFilter:
         self.df["ema21"] = self.df["close"].ewm(span=21).mean()
         self.df["ema50"] = self.df["close"].ewm(span=50).mean()
         self.df["ema200"] = self.df["close"].ewm(span=200).mean()
+        self.df['ema12'] = self.df['close'].ewm(span=12).mean()
+        self.df['ema26'] = self.df['close'].ewm(span=26).mean()
+        self.df['macd'] = self.df['ema12'] - self.df['ema26']
+        self.df['macd_signal'] = self.df['macd'].ewm(span=9).mean()
         
         # Compute RSI as part of initialization or analysis
         self.df['RSI'] = self.compute_rsi(self.df)
