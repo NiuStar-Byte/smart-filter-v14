@@ -112,11 +112,9 @@ def send_telegram_alert(
         regime_str = "📈 Regime: <b>BULL</b>\n"
     elif regime == "BEAR":
         regime_str = "📉 Regime: <b>BEAR</b>\n"
-    elif regime is not None:
-        regime_str = f"Regime: <b>{regime}</b>\n"
     else:
-        regime_str = ""
-    
+        regime_str = "⚠️ Regime: <b>NO REGIME</b>\n"  # <-- This ensures it's always shown
+        
     # Format price for display
     try:
         price_str = f"{float(price):.6f}"
