@@ -7,6 +7,7 @@ from kucoin_orderbook import get_order_wall_delta
 from kucoin_density import get_resting_density
 import datetime
 from signal_debug_log import export_signal_debug_txt
+from calculations import add_indicators
 
 def compute_atr(df, period=14):
     tr = pd.concat([
@@ -107,9 +108,10 @@ class SmartFilter:
             kwargs = {}
 
         self.symbol = symbol
-        self.df = df.copy()
-        self.df3m = df3m.copy() if df3m is not None else None
-        self.df5m = df5m.copy() if df5m is not None else None
+        self.df = add_indicators(df)
+        self.df3m = add_indicators(df3m) if df3m is not None else None
+        self.df5m = add_indicators(df5m) if df5m is not None else None
+        
         # Essential EMAs
         # Place this in your __init__ or indicator preparation method
         self.df["ema6"]   = self.df["close"].ewm(span=6, adjust=False).mean()
