@@ -75,11 +75,12 @@ def send_telegram_alert(
         signal_icon = "❓"
         signal_str = str(signal_type).upper()
 
-    # Route icon and string (for REVERSAL/TREND CONTINUATION/AMBIGUOUS)
+    # --- Route icon and string (for REVERSAL/TREND CONTINUATION/AMBIGUOUS/NO ROUTE) ---
+    route_upper = str(Route).upper() if Route is not None else "NO ROUTE"
     route_icon = "❓"
-    route_str = str(Route)  # default fallback
+    route_str = "NO ROUTE"
     
-    if str(Route).upper() == "REVERSAL":
+    if route_upper == "REVERSAL":
         if isinstance(reversal_side, (list, set)) and "BULLISH" in reversal_side and "BEARISH" in reversal_side:
             route_icon = "🔄"
             route_str = "Ambiguous Reversal Trend"
@@ -92,12 +93,19 @@ def send_telegram_alert(
         else:
             route_icon = "🔄"
             route_str = "Reversal Trend"
-    elif str(Route).upper() == "AMBIGUOUS":
+    elif route_upper == "AMBIGUOUS":
         route_icon = "🔄"
         route_str = "Ambiguous Reversal Trend"
-    elif str(Route).upper() in ["TREND CONTINUATION", "CONTINUATION"]:
+    elif route_upper in ["TREND CONTINUATION", "CONTINUATION"]:
         route_icon = "➡️"
         route_str = "Continuation Trend"
+    elif route_upper in ["NONE", "NO ROUTE", "?", "", None]:
+        route_icon = "🚫"
+        route_str = "NO ROUTE"
+    else:
+        # fallback for any truly unexpected value
+        route_icon = "❓"
+        route_str = f"{Route if Route else 'NO ROUTE'}"
 
     # -- Regime icon logic --
     if regime == "BULL":
