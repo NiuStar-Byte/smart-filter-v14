@@ -59,7 +59,8 @@ def compute_adx(df, period=14):
     minus_di = 100 * (minus_dm.rolling(period).mean() / atr)
     dx = (abs(plus_di - minus_di) / (plus_di + minus_di)) * 100
     adx = dx.rolling(period).mean()
-    return adx.iat[-1]
+    
+    return adx, plus_di, minus_di
 
 def add_bollinger_bands(df, price_col='close', window=20, num_std=2):
     df['bb_middle'] = df[price_col].rolling(window).mean()
@@ -110,18 +111,22 @@ class SmartFilter:
         self.df3m = df3m.copy() if df3m is not None else None
         self.df5m = df5m.copy() if df5m is not None else None
         # Essential EMAs
-        self.df["ema6"] = self.df["close"].ewm(span=6).mean()
-        self.df["ema9"] = self.df["close"].ewm(span=9).mean()
-        self.df["ema10"] = self.df["close"].ewm(span=10).mean()
-        self.df["ema13"] = self.df["close"].ewm(span=13).mean()
-        self.df["ema21"] = self.df["close"].ewm(span=21).mean()
-        self.df["ema50"] = self.df["close"].ewm(span=50).mean()
-        self.df["ema200"] = self.df["close"].ewm(span=200).mean()
-        self.df['ema12'] = self.df['close'].ewm(span=12).mean()
-        self.df['ema26'] = self.df['close'].ewm(span=26).mean()
-        self.df['macd'] = self.df['ema12'] - self.df['ema26']
-        self.df['macd_signal'] = self.df['macd'].ewm(span=9).mean()
-        
+        # Place this in your __init__ or indicator preparation method
+        self.df["ema6"]   = self.df["close"].ewm(span=6, adjust=False).mean()
+        self.df["ema9"]   = self.df["close"].ewm(span=9, adjust=False).mean()
+        self.df["ema10"]  = self.df["close"].ewm(span=10, adjust=False).mean()
+        self.df["ema13"]  = self.df["close"].ewm(span=13, adjust=False).mean()
+        self.df["ema20"]  = self.df["close"].ewm(span=20, adjust=False).mean()
+        self.df["ema21"]  = self.df["close"].ewm(span=21, adjust=False).mean()
+        self.df["ema50"]  = self.df["close"].ewm(span=50, adjust=False).mean()
+        self.df["ema200"] = self.df["close"].ewm(span=200, adjust=False).mean()
+        self.df["ema12"]  = self.df["close"].ewm(span=12, adjust=False).mean()
+        self.df["ema26"]  = self.df["close"].ewm(span=26, adjust=False).mean()
+        self.df["macd"]   = self.df["ema12"] - self.df["ema26"]
+        self.df["macd_signal"] = self.df["macd"].ewm(span=9, adjust=False).mean()
+        self.df["vwap"] = (self.df["close"] * self.df["volume"]).cumsum() / self.df["volume"].cumsum()
+        self.df['adx'], self.df['plus_di'], self.df['minus_di'] = compute_adx(self.df)
+
         # Compute RSI as part of initialization or analysis
         self.df['RSI'] = self.compute_rsi(self.df)
 
@@ -192,15 +197,6 @@ class SmartFilter:
 #            "MACD", "ATR Momentum Burst", "HATS", "Liquidity Awareness",
 #            "VWAP Divergence", "Support/Resistance", "Smart Money Bias", "Absorption"
 #        ]
-
-        self.df["ema6"] = self.df["close"].ewm(span=6, adjust=False).mean()
-        self.df["ema9"] = self.df["close"].ewm(span=9, adjust=False).mean()
-        self.df["ema10"] = self.df["close"].ewm(span=10, adjust=False).mean()
-        self.df["ema13"] = self.df["close"].ewm(span=13, adjust=False).mean()
-        self.df["ema20"] = self.df["close"].ewm(span=20).mean()
-        self.df["ema50"] = self.df["close"].ewm(span=50).mean()
-        self.df["ema200"] = self.df["close"].ewm(span=200).mean()
-        self.df["vwap"] = (self.df["close"] * self.df["volume"]).cumsum() / self.df["volume"].cumsum()
 
     def compute_rsi(self, df, period=14):
         delta = df['close'].diff()
