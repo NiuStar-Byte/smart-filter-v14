@@ -1021,25 +1021,24 @@ class SmartFilter:
         price = self.df['close'].iat[-1] if valid_signal else None
         price_str = f"{price:.6f}" if price is not None else "N/A"
 
+        # Always determine the route, regardless of signal validity
+        route, reversal_side = self.explicit_route_gate()  # Ensure this function returns "REVERSAL", "TREND CONTINUATION", "NONE", or "?"
 
-        price = self.df['close'].iat[-1] if valid_signal else None
-        price_str = f"{price:.6f}" if price is not None else "N/A"
-
+        # For display purposes, remap ambiguous or empty routes
+        display_route = route
+        if route in ["?", "NONE", None]:
+            display_route = "NO ROUTE"
+    
         print(f"[DEBUG] reversal_route: {reversal_route}, reversal_side: {reversal_side}, route: {route}, direction: {direction}, valid_signal: {valid_signal}")
-        if valid_signal:
-            route = "REVERSAL" if reversal_detected else "TREND CONTINUATION"
-        else:
-            route = None
 
         signal_type = direction if valid_signal else None
-
         score_max = len(non_gk_filters)
 
         message = (
             f"{direction or 'NO-SIGNAL'} on {self.symbol} @ {price_str} "
             f"| Score: {score}/{score_max} | Passed GK: {passes}/{len(self.gatekeepers)} "
             f"| Confidence: {confidence}% (Weighted: {passed_weight:.1f}/{total_weight:.1f})"
-            f" | Route: {route if valid_signal else 'N/A'}"
+            f" | Route: {display_route if valid_signal else 'N/A'}"
         )
 
         if valid_signal:
