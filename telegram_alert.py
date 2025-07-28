@@ -113,7 +113,7 @@ def send_telegram_alert(
     elif regime == "BEAR":
         regime_str = "📉 Regime: <b>BEAR</b>\n"
     else:
-        regime_str = "⚠️ Regime: <b>NO REGIME</b>\n"  # <-- This ensures it's always shown
+        regime_str = "💢 Regime: <b>NO REGIME</b>\n"  # <-- This ensures it's always shown
         
     # Format price for display
     try:
