@@ -75,29 +75,44 @@ def send_telegram_alert(
         signal_icon = "❓"
         signal_str = str(signal_type).upper()
 
-    # --- Route icon and string (for REVERSAL/TREND CONTINUATION/AMBIGUOUS/NO ROUTE) ---
+    # --- Route icon and string (for REVERSAL/BULLISH CONTINUATION/BEARISH CONTINUATION/AMBIGUOUS/NO ROUTE) ---
     route_upper = str(Route).upper() if Route is not None else "NO ROUTE"
     route_icon = "❓"
     route_str = "NO ROUTE"
     
     if route_upper == "REVERSAL":
         if isinstance(reversal_side, (list, set)) and "BULLISH" in reversal_side and "BEARISH" in reversal_side:
-            route_icon = "🔄"
+            route_icon = "🔃🔄"
             route_str = "Ambiguous Reversal Trend"
         elif reversal_side == "BULLISH":
-            route_icon = "🔄"
+            route_icon = "↗️🔄"
             route_str = "Bullish Reversal Trend"
         elif reversal_side == "BEARISH":
-            route_icon = "🔄"
+            route_icon = "↘️🔄"
             route_str = "Bearish Reversal Trend"
         else:
-            route_icon = "🔄"
+            route_icon = "🔄🔄"
             route_str = "Reversal Trend"
     elif route_upper == "AMBIGUOUS":
-        route_icon = "🔄"
+        route_icon = "🔃🔄"
         route_str = "Ambiguous Reversal Trend"
-    elif route_upper in ["TREND CONTINUATION", "CONTINUATION"]:
-        route_icon = "➡️"
+    elif route_upper == "TREND CONTINUATION":
+        # Check for explicit bullish or bearish continuation
+        if isinstance(reversal_side, str):
+            if "BULLISH" in reversal_side:
+                route_icon = "↗️➡️"
+                route_str = "Bullish Continuation"
+            elif "BEARISH" in reversal_side:
+                route_icon = "↘️➡️"
+                route_str = "Bearish Continuation"
+            else:
+                route_icon = "➡️➡️"
+                route_str = "Continuation Trend"
+        else:
+            route_icon = "➡️➡️"
+            route_str = "Continuation Trend"
+    elif route_upper in ["CONTINUATION"]:
+        route_icon = "➡️➡️"
         route_str = "Continuation Trend"
     elif route_upper in ["NONE", "NO ROUTE", "?", "", None]:
         route_icon = "🚫"
