@@ -4,6 +4,7 @@ import datetime
 import requests
 import pandas as pd
 import numpy as np
+import logging
 from kucoin_orderbook import get_order_wall_delta
 from kucoin_density import get_resting_density
 from signal_debug_log import export_signal_debug_txt
@@ -300,16 +301,13 @@ class SmartFilter:
         df['dx'] = (abs(df['plus_di'] - df['minus_di']) / (df['plus_di'] + df['minus_di'])) * 100
         df['adx'] = df['dx'].rolling(n).mean()
         return df
-        
-    def detect_adx_reversal(self, adx_threshold=25):
-        print("[DEBUG] detect_adx_reversal called")
-        print("[DEBUG] All available columns:", list(self.df.columns))
 
-    
+    def detect_adx_reversal(self, adx_threshold=25):
+        logger = logging.getLogger(__name__)
         required = ['adx', 'plus_di', 'minus_di']
         missing = [col for col in required if col not in self.df.columns]
         if missing:
-            print(f"[DEBUG] ADX columns missing: {missing} | Available columns: {list(self.df.columns)}")
+            logger.debug(f"ADX columns missing: {missing} | Available columns: {list(self.df.columns)}")
             return "NO_REVERSAL"
     
         adx = self.df['adx']
@@ -317,12 +315,8 @@ class SmartFilter:
         minus_di = self.df['minus_di']
     
         if len(adx) < 2 or len(plus_di) < 2 or len(minus_di) < 2:
-            print("[DEBUG] Not enough data to detect ADX reversal (need at least 2 rows).")
+            logger.debug("Not enough data to detect ADX reversal (need at least 2 rows).")
             return "NO_REVERSAL"
-    
-        print("[DEBUG] ADX last 5 values:", adx.tail().to_list())
-        print("[DEBUG] plus_di last 5 values:", plus_di.tail().to_list())
-        print("[DEBUG] minus_di last 5 values:", minus_di.tail().to_list())
     
         bullish = (
             adx.iat[-1] > adx_threshold and
@@ -334,16 +328,14 @@ class SmartFilter:
             plus_di.iat[-2] > minus_di.iat[-2] and
             plus_di.iat[-1] < minus_di.iat[-1]
         )
-        print(f"[DEBUG] ADX bullish? {bullish} | bearish? {bearish}")
+    
+        logger.debug(f"ADX bullish? {bullish} | bearish? {bearish}")
     
         if bullish and not bearish:
-            print("[DEBUG] ADX detected BULLISH_REVERSAL")
             return "BULLISH_REVERSAL"
         elif bearish and not bullish:
-            print("[DEBUG] ADX detected BEARISH_REVERSAL")
             return "BEARISH_REVERSAL"
         else:
-            print("[DEBUG] ADX detected NO_REVERSAL")
             return "NO_REVERSAL"
 
     def calculate_stochrsi(df, rsi_period=14, stoch_period=14, smooth_k=3, smooth_d=3):
@@ -370,38 +362,25 @@ class SmartFilter:
         return df
         
     def detect_stochrsi_reversal(self, overbought=0.8, oversold=0.2):
-        print("[DEBUG] detect_stochrsi_reversal called")
-        print("[DEBUG] All available columns:", list(self.df.columns))
-
-    
         required = ['stochrsi_k', 'stochrsi_d']
         missing = [col for col in required if col not in self.df.columns]
         if missing:
-            print(f"[DEBUG] StochRSI columns missing: {missing} | Available columns: {list(self.df.columns)}")
             return "NO_REVERSAL"
     
         k = self.df['stochrsi_k']
         d = self.df['stochrsi_d']
     
         if len(k) < 2 or len(d) < 2:
-            print(f"[DEBUG] Not enough data for StochRSI (need at least 2 rows; k={len(k)}, d={len(d)})")
             return "NO_REVERSAL"
-    
-        print("[DEBUG] StochRSI k last 5 values:", k.tail().to_list())
-        print("[DEBUG] StochRSI d last 5 values:", d.tail().to_list())
     
         bullish = k.iat[-2] <= oversold and k.iat[-1] > oversold and k.iat[-1] > d.iat[-1]
         bearish = k.iat[-2] >= overbought and k.iat[-1] < overbought and k.iat[-1] < d.iat[-1]
-        print(f"[DEBUG] StochRSI bullish? {bullish} | bearish? {bearish}")
     
         if bullish:
-            print("[DEBUG] StochRSI detected BULLISH_REVERSAL")
             return "BULLISH_REVERSAL"
         elif bearish:
-            print("[DEBUG] StochRSI detected BEARISH_REVERSAL")
             return "BEARISH_REVERSAL"
         else:
-            print("[DEBUG] StochRSI detected NO_REVERSAL")
             return "NO_REVERSAL"
 
     def calculate_cci(df, n=20):
@@ -415,34 +394,22 @@ class SmartFilter:
         return df
         
     def detect_cci_reversal(self, overbought=100, oversold=-100):
-        print("[DEBUG] detect_cci_reversal called")
-        print("[DEBUG] All available columns:", list(self.df.columns))
-
-    
         if 'cci' not in self.df.columns:
-            print("[DEBUG] CCI column missing. Available columns:", list(self.df.columns))
             return "NO_REVERSAL"
     
         cci = self.df['cci']
     
         if len(cci) < 2:
-            print("[DEBUG] Not enough data in CCI column (need at least 2 rows). Length:", len(cci))
             return "NO_REVERSAL"
-    
-        print("[DEBUG] CCI last 5 values:", cci.tail().to_list())
     
         bullish = cci.iat[-2] <= oversold and cci.iat[-1] > oversold
         bearish = cci.iat[-2] >= overbought and cci.iat[-1] < overbought
-        print(f"[DEBUG] CCI bullish? {bullish} | bearish? {bearish}")
     
         if bullish:
-            print("[DEBUG] CCI detected BULLISH_REVERSAL")
             return "BULLISH_REVERSAL"
         elif bearish:
-            print("[DEBUG] CCI detected BEARISH_REVERSAL")
             return "BEARISH_REVERSAL"
         else:
-            print("[DEBUG] CCI detected NO_REVERSAL")
             return "NO_REVERSAL"
 
     def explicit_reversal_gate(self):
