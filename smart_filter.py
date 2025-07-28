@@ -93,12 +93,6 @@ class SmartFilter:
         # Chop Zone (simple proxy: rolling std of close, or use your formula)
         self.df["chop_zone"] = self.df["close"].rolling(14).std()
 
-        # Optional: ADX (if required in checks)
-        try:
-            self.df["adx"] = self.df.apply(lambda row: compute_adx(self.df), axis=1)
-        except Exception:
-            pass
-
         # Bid/Ask Columns (if not present, fill with NaN or zeros)
         if "bid" not in self.df.columns:
             self.df["bid"] = np.nan
