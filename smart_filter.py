@@ -518,13 +518,20 @@ class SmartFilter:
             return ("NONE", None)
                     
     def detect_trend_continuation(self):
-        # Example criteria for bullish continuation
+        # Check required columns
+        required_cols = ['ema6', 'ema13', 'macd', 'RSI']
+        for col in required_cols:
+            if col not in self.df.columns:
+                print(f"[ERROR] '{col}' column missing in DataFrame!")
+                return "NO_CONTINUATION"  # Or handle as needed
+    
+        # Safe to extract values now
         ema_fast = self.df['ema6'].iat[-1]
         ema_slow = self.df['ema13'].iat[-1]
         macd = self.df['macd'].iat[-1]
         rsi = self.df['RSI'].iat[-1]
         adx = self.df['adx'].iat[-1] if 'adx' in self.df.columns else None
-
+    
         bullish = (
             ema_fast > ema_slow and
             macd > 0 and
