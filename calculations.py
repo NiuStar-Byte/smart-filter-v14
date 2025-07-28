@@ -1,5 +1,7 @@
 # ema_calculations.py
 
+import pandas as pd
+
 def add_indicators(df):
     df = df.copy()
     df["ema6"]   = df["close"].ewm(span=6, adjust=False).mean()
