@@ -29,7 +29,7 @@ TOKENS = [
     "PEPE-USDT", "ERA-USDT", "PENGU-USDT", "CFX-USDT", "ENA-USDT",
     "SUI-USDT", "EIGEN-USDT", "UNI-USDT", "HYPE-USDT" 
 ]
-COOLDOWN = {"3min": 0, "5min": 0}
+COOLDOWN = {"3min": 60, "5min": 60}
 last_sent = {}
 
 PEC_BARS = 5
