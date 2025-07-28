@@ -7,7 +7,7 @@ import numpy as np
 from kucoin_orderbook import get_order_wall_delta
 from kucoin_density import get_resting_density
 from signal_debug_log import export_signal_debug_txt
-from calculations import compute_atr, compute_adx, add_bollinger_bands, add_keltner_channels
+from calculations import compute_atr, compute_adx, add_bollinger_bands, add_keltner_channels, add_indicators
 
 # PREVIOUS COMPUTE RSI for New SuperGK ONLY RSI Density & OrderBookWall
 # def compute_rsi(df, period=14):
