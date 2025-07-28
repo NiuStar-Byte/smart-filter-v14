@@ -1254,10 +1254,10 @@ class SmartFilter:
         long_conditions_met = sum([condition_1_long, condition_2_long, condition_3_long, condition_4_long])
         short_conditions_met = sum([condition_1_short, condition_2_short, condition_3_short, condition_4_short])
 
-        # If 3 out of 4 conditions are met, we pass the filter
-        if long_conditions_met >= 1:
+        # If 2 out of 4 conditions are met, we pass the filter
+        if long_conditions_met >= 2:
             return "LONG"
-        elif short_conditions_met >= 1:
+        elif short_conditions_met >= 2:
             return "SHORT"
         else:
             return None
@@ -1562,9 +1562,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 2:
+        if long_met >= 1:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 1:
             return "SHORT"
         else:
             return None
@@ -1851,9 +1851,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 2:
+        if long_met >= 1:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 1:
             return "SHORT"
         else:
             return None
