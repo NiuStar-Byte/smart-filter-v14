@@ -362,11 +362,13 @@ class SmartFilter:
         
     def detect_adx_reversal(self, adx_threshold=25):
         print("[DEBUG] detect_adx_reversal called")
+        print("[DEBUG] All available columns:", list(self.df.columns))
+
     
         required = ['adx', 'plus_di', 'minus_di']
         missing = [col for col in required if col not in self.df.columns]
         if missing:
-            # print(f"[DEBUG] ADX columns missing: {missing} | Available columns: {list(self.df.columns)}")
+            print(f"[DEBUG] ADX columns missing: {missing} | Available columns: {list(self.df.columns)}")
             return "NO_REVERSAL"
     
         adx = self.df['adx']
@@ -428,11 +430,13 @@ class SmartFilter:
         
     def detect_stochrsi_reversal(self, overbought=0.8, oversold=0.2):
         print("[DEBUG] detect_stochrsi_reversal called")
+        print("[DEBUG] All available columns:", list(self.df.columns))
+
     
         required = ['stochrsi_k', 'stochrsi_d']
         missing = [col for col in required if col not in self.df.columns]
         if missing:
-            # print(f"[DEBUG] StochRSI columns missing: {missing} | Available columns: {list(self.df.columns)}")
+            print(f"[DEBUG] StochRSI columns missing: {missing} | Available columns: {list(self.df.columns)}")
             return "NO_REVERSAL"
     
         k = self.df['stochrsi_k']
@@ -471,9 +475,11 @@ class SmartFilter:
         
     def detect_cci_reversal(self, overbought=100, oversold=-100):
         print("[DEBUG] detect_cci_reversal called")
+        print("[DEBUG] All available columns:", list(self.df.columns))
+
     
         if 'cci' not in self.df.columns:
-            # print("[DEBUG] CCI column missing. Available columns:", list(self.df.columns))
+            print("[DEBUG] CCI column missing. Available columns:", list(self.df.columns))
             return "NO_REVERSAL"
     
         cci = self.df['cci']
