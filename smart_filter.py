@@ -139,6 +139,8 @@ class SmartFilter:
             "Support/Resistance"
         ]
 
+        self.soft_gatekeepers = ["Volume Spike"]
+        
         # Directional-aware filters are those with different weights between LONG and SHORT
 #        self.directional_aware_filters = [
 #            "MACD", "ATR Momentum Burst", "HATS", "Liquidity Awareness",
@@ -511,8 +513,16 @@ class SmartFilter:
         """
 
         # --- Gatekeeper Pass Check ---
-        long_gk_passed = all(results_long.get(gk, False) for gk in self.gatekeepers)
-        short_gk_passed = all(results_short.get(gk, False) for gk in self.gatekeepers)
+
+        # --- Gatekeeper Pass Check with soft GK support ---
+        soft_gatekeepers = getattr(self, "soft_gatekeepers", ["Volume Spike"])
+        hard_gatekeepers = [gk for gk in self.gatekeepers if gk not in soft_gatekeepers]        
+        long_gk_passed = all(results_long.get(gk, False) for gk in hard_gatekeepers)
+        short_gk_passed = all(results_short.get(gk, False) for gk in hard_gatekeepers)
+
+        # --- previous = all hard GK ---
+        # long_gk_passed = all(results_long.get(gk, False) for gk in self.gatekeepers)
+        # short_gk_passed = all(results_short.get(gk, False) for gk in self.gatekeepers)
 
         # --- Weighted Sum for Non-GK Filters ---
         scoring_filters = [f for f in self.filter_names if f not in self.gatekeepers]
@@ -891,10 +901,19 @@ class SmartFilter:
         passed_non_gk_weight_long = sum(self.filter_weights_long.get(f, 0) for f in passed_non_gk_long)
         passed_non_gk_weight_short = sum(self.filter_weights_short.get(f, 0) for f in passed_non_gk_short)
 
+        # --- previous = all hard GK ---
         # Add failed GK calculations
-        failed_gk_long = [f for f in self.gatekeepers if f not in passed_gk_long]
-        failed_gk_short = [f for f in self.gatekeepers if f not in passed_gk_short]
+        # failed_gk_long = [f for f in self.gatekeepers if f not in passed_gk_long]
+        # failed_gk_short = [f for f in self.gatekeepers if f not in passed_gk_short]
 
+        # --- try = all hard GK, soft GK "Volume Spike" ---
+        failed_gk_long = [f for f in self.gatekeepers if f not in passed_gk_long]
+        soft_failed_gk_long = [f for f in failed_gk_long if f in self.soft_gatekeepers]
+        hard_failed_gk_long = [f for f in failed_gk_long if f not in self.soft_gatekeepers]
+        failed_gk_short = [f for f in self.gatekeepers if f not in passed_gk_short]
+        soft_failed_gk_short = [f for f in failed_gk_short if f in self.soft_gatekeepers]
+        hard_failed_gk_short = [f for f in failed_gk_short if f not in self.soft_gatekeepers]
+        
         # Print logic
         print(f"[{self.symbol}] Passed GK LONG: {passed_gk_long}")
         print(f"[{self.symbol}] Failed GK LONG: {failed_gk_long}")
