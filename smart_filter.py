@@ -921,9 +921,9 @@ class SmartFilter:
         failed_soft_gk_short = [gk for gk in soft_gatekeepers if not results_short.get(gk, False)]
 
         # --- Hard GK pass count (ONLY use for signal logic!) ---
-        passes_long = len(passed_hard_gk_long)
-        passes_short = len(passed_hard_gk_short)
-        
+        passes_long = len(passed_hard_gk_long) if passed_hard_gk_long is not None else 0
+        passes_short = len(passed_hard_gk_short) if passed_hard_gk_short is not None else 0
+                
         # --- Passed/failed Non-GK filters and their weights ---
         passed_non_gk_long = [f for f in non_gk_filters if results_long.get(f, False)]
         passed_non_gk_short = [f for f in non_gk_filters if results_short.get(f, False)]
@@ -1013,10 +1013,22 @@ class SmartFilter:
         print("[DEBUG] passes:", passes, "required_passed:", self.required_passed)
         print("[DEBUG] super_gk_ok:", super_gk_ok)
 
+        # Always use the correctly-calculated required_passed for the current direction
+        if direction == "LONG":
+            required_for_signal = required_passed_long
+        elif direction == "SHORT":
+            required_for_signal = required_passed_short
+        else:
+            required_for_signal = max(required_passed_long, required_passed_short)
+        
+        if required_for_signal is None:
+            print(f"[{self.symbol}] [ERROR] required_for_signal is None in final signal logic!")
+            required_for_signal = 0  # or raise an error
+        
         valid_signal = (
             direction in ["LONG", "SHORT"]
             and score >= self.min_score
-            and passes >= self.required_passed
+            and passes >= required_for_signal
             and super_gk_ok
         )
 
