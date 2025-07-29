@@ -1173,31 +1173,58 @@ class SmartFilter:
             return False
         return df5m['volume'].iat[-1] > df5m['volume'].iat[-2]
         
-    def _check_volume_spike(self, zscore_threshold=1.25, min_price_move=0.00025):
+    def _check_volume_spike(
+        self,
+        zscore_threshold=1.2,
+        min_price_move=0.0002,
+        rolling_window=15,
+        require_all=False,
+        return_directionless=False
+    ):
         """
-        Checks for a volume spike using Z-score and a minimum price move.
-        Returns 'LONG', 'SHORT', 'SPIKE' (directionless), or None.
+        Flexible volume spike detection.
+        - zscore_threshold: float, threshold for z-score anomaly.
+        - min_price_move: float, minimum proportional price move.
+        - rolling_window: int, how many periods to look back.
+        - require_all: if True, require all 3 conditions for signal. If False, require 2/3.
+        - return_directionless: if True, return 'SPIKE' if only volume is present.
         """
-        rolling_window = 20
+    
         if len(self.df) < rolling_window + 2:
             return None  # Not enough data
     
+        # Z-score calculation
         avg = self.df['volume'].rolling(rolling_window).mean().iat[-2]
         std = self.df['volume'].rolling(rolling_window).std().iat[-2]
         curr_vol = self.df['volume'].iat[-1]
         zscore = (curr_vol - avg) / (std if std != 0 else 1)
     
-        if zscore > zscore_threshold:
-            close = self.df['close'].iat[-1]
-            close_prev = self.df['close'].iat[-2]
-            price_move = (close - close_prev) / close_prev if close_prev != 0 else 0
+        # Price move calculation
+        close = self.df['close'].iat[-1]
+        close_prev = self.df['close'].iat[-2]
+        price_move = (close - close_prev) / close_prev if close_prev != 0 else 0
     
-            if price_move > min_price_move:
-                return 'LONG'
-            elif price_move < -min_price_move:
-                return 'SHORT'
-            else:
-                return 'SPIKE'
+        price_up = price_move > min_price_move
+        price_down = price_move < -min_price_move
+        vol_up = curr_vol > self.df['volume'].iat[-2]
+        spike = zscore > zscore_threshold
+    
+        long_conditions = [spike, price_up, vol_up]
+        short_conditions = [spike, price_down, vol_up]
+    
+        if require_all:
+            if all(long_conditions):
+                return "LONG"
+            if all(short_conditions):
+                return "SHORT"
+        else:
+            if sum(long_conditions) >= 2:
+                return "LONG"
+            if sum(short_conditions) >= 2:
+                return "SHORT"
+    
+        if return_directionless and spike:
+            return "SPIKE"
         return None
         
     # def _check_volume_spike(self, zscore_threshold=1.5):
