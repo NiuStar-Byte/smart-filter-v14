@@ -888,7 +888,9 @@ class SmartFilter:
         # --- try = all hard GK, soft GK "Volume Spike" ---
         # --- Gatekeeper pass/fail and count ---
         hard_gatekeepers = [gk for gk in self.gatekeepers if gk not in self.soft_gatekeepers]
-        passed_hard_gk_long = [f for f in hard_gatekeepers if results_long.get(f, False)]
+        passed_gk_long = [f for f in self.gatekeepers if results_long.get(f, False)]  # for reporting
+        passed_gk_short = [f for f in self.gatekeepers if results_short.get(f, False)]
+        passed_hard_gk_long = [f for f in hard_gatekeepers if results_long.get(f, False)]  # for logic
         passed_hard_gk_short = [f for f in hard_gatekeepers if results_short.get(f, False)]
         passes_long = len(passed_hard_gk_long)
         passes_short = len(passed_hard_gk_short)
