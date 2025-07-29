@@ -1266,9 +1266,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 2:
+        if long_met >= 1:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 1:
             return "SHORT"
         else:
             return None
@@ -1297,9 +1297,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 2:
+        if long_met >= 1:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 1:
             return "SHORT"
         else:
             return None
@@ -1387,9 +1387,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 2:
+        if long_met >= 1:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 1:
             return "SHORT"
         else:
             return None
@@ -1466,7 +1466,7 @@ class SmartFilter:
         else:
             return None
 
-    def _check_absorption(self, window=20, buffer_pct=0.005):
+    def _check_absorption(self, window=10, buffer_pct=0.005):
         # Calculate recent low/high for proximity
         low = self.df['low'].rolling(window).min().iat[-1]
         high = self.df['high'].rolling(window).max().iat[-1]
@@ -1518,9 +1518,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 2:
+        if long_met >= 1:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 1:
             return "SHORT"
         else:
             return None
@@ -1549,9 +1549,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 2:
+        if long_met >= 1:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 1:
             return "SHORT"
         else:
             return None
@@ -1588,14 +1588,14 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 2:
+        if long_met >= 1:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 1:
             return "SHORT"
         else:
             return None
 
-    def _check_liquidity_pool(self, lookback=20):
+    def _check_liquidity_pool(self, lookback=10):
         close = self.df['close'].iat[-1]
         high = self.df['high'].iat[-1]
         low = self.df['low'].iat[-1]
@@ -1617,9 +1617,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 2:
+        if long_met >= 1:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 1:
             return "SHORT"
         else:
             return None
@@ -1650,9 +1650,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 2:
+        if long_met >= 1:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 1:
             return "SHORT"
         else:
             return None
@@ -1676,9 +1676,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 2:
+        if long_met >= 1:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 1:
             return "SHORT"
         else:
             return None
@@ -1703,14 +1703,14 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 2:
+        if long_met >= 1:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 1:
             return "SHORT"
         else:
             return None
 
-    def _check_atr_momentum_burst(self, threshold_pct=0.15, volume_mult=1.2):
+    def _check_atr_momentum_burst(self, threshold_pct=0.10, volume_mult=1.1):
         for i in [-1, -2]:
             close = self.df['close'].iat[i]
             open_ = self.df['open'].iat[i]
