@@ -1111,31 +1111,33 @@ class SmartFilter:
             return False
         return self.df5m['volume'].iat[-1] > self.df5m['volume'].iat[-2]
 
-    def _check_fractal_zone(self, buffer_pct=0.005, window=20):
+    def _check_fractal_zone(self, buffer_pct=0.005, window=20, min_conditions=2):
+        # Calculate fractal highs/lows
         fractal_low = self.df['low'].rolling(window).min().iat[-1]
         fractal_low_prev = self.df['low'].rolling(window).min().iat[-2]
         fractal_high = self.df['high'].rolling(window).max().iat[-1]
         fractal_high_prev = self.df['high'].rolling(window).max().iat[-2]
-
+    
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
-
-        # LONG conditions
+    
+        # LONG: Strong break above recent range with confirmation
         cond1_long = close > fractal_low * (1 + buffer_pct)
         cond2_long = close > close_prev
         cond3_long = fractal_low > fractal_low_prev
-
-        # SHORT conditions
+    
+        # SHORT: Strong break below recent range with confirmation
         cond1_short = close < fractal_high * (1 - buffer_pct)
         cond2_short = close < close_prev
         cond3_short = fractal_high < fractal_high_prev
-
+    
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-
-        if long_met >= 1:
+    
+        # Require at least 2 out of 3 for signal (reduce noise)
+        if long_met >= min_conditions:
             return "LONG"
-        elif short_met >= 1:
+        elif short_met >= min_conditions:
             return "SHORT"
         else:
             return None
