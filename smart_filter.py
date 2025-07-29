@@ -905,6 +905,9 @@ class SmartFilter:
         passed_soft_gk_short = [f for f in soft_gatekeepers if results_short.get(f, False)]
         failed_soft_gk_short = [f for f in soft_gatekeepers if not results_short.get(f, False)]
 
+        passes_long = len(passed_hard_gk_long)
+        passes_short = len(passed_hard_gk_short)
+        
         # --- previous = all hard GK ---
         # --- Gatekeeper pass/fail and count ---
         # passed_gk_long = [f for f in self.gatekeepers if results_long.get(f, False)]
