@@ -1142,32 +1142,48 @@ class SmartFilter:
         else:
             return None
     
-    def _check_ema_cloud(self):
+    def _check_ema_cloud(self, min_conditions=2):
         ema20 = self.df['ema20'].iat[-1]
         ema50 = self.df['ema50'].iat[-1]
         ema20_prev = self.df['ema20'].iat[-2]
         close = self.df['close'].iat[-1]
-
+    
         # LONG conditions
         cond1_long = ema20 > ema50
         cond2_long = ema20 > ema20_prev
         cond3_long = close > ema20
-
+    
         # SHORT conditions
         cond1_short = ema20 < ema50
         cond2_short = ema20 < ema20_prev
         cond3_short = close < ema20
-
+    
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-
-        if long_met >= 1:
+    
+        if long_met >= min_conditions:
             return "LONG"
-        elif short_met >= 1:
+        elif short_met >= min_conditions:
             return "SHORT"
         else:
             return None
 
+    # alternative of check_ema_cloud
+    # def _check_ema_cloud(self):
+    #    ema20 = self.df['ema20'].iat[-1]
+    #    ema50 = self.df['ema50'].iat[-1]
+    #    ema20_prev = self.df['ema20'].iat[-2]
+    #    close = self.df['close'].iat[-1]
+    
+        # LONG: Trend up + (EMA rising or price above EMA)
+    #    if ema20 > ema50 and (ema20 > ema20_prev or close > ema20):
+    #        return "LONG"
+        # SHORT: Trend down + (EMA falling or price below EMA)
+    #    elif ema20 < ema50 and (ema20 < ema20_prev or close < ema20):
+    #        return "SHORT"
+    #    else:
+            return None
+    
     def _check_macd(self):
         e12 = self.df['close'].ewm(span=12).mean()
         e26 = self.df['close'].ewm(span=26).mean()
