@@ -874,30 +874,36 @@ class SmartFilter:
         # --- Calculate weighted sums using the correct dicts ---
         # long_weight_sum = sum(self.filter_weights_long.get(name, 0) for name, passed in results_long.items() if passed)
         # short_weight_sum = sum(self.filter_weights_short.get(name, 0) for name, passed in results_short.items() if passed)
-
         # print(f"[{self.symbol}] Total LONG weight: {long_weight_sum}")
         # print(f"[{self.symbol}] Total SHORT weight: {short_weight_sum}")
-      
+        
         # Weighted sums for info only
         # long_weight_sum = sum(self.filter_weights_long.get(name, 0) for name, passed in results_long.items() if passed)
         # short_weight_sum = sum(self.filter_weights_short.get(name, 0) for name, passed in results_short.items() if passed)
-
         # print(f"[{self.symbol}] Total LONG weight: {long_weight_sum}")
         # print(f"[{self.symbol}] Total SHORT weight: {short_weight_sum}")
 
-        # --- try = all hard GK, soft GK "Volume Spike" ---
-        # --- Hard and soft gatekeeper separation ---
+        # --- Separate Hard and Soft Gatekeepers ---
         hard_gatekeepers = [gk for gk in self.gatekeepers if gk not in self.soft_gatekeepers]
-        
+        soft_gatekeepers = [gk for gk in self.gatekeepers if gk in self.soft_gatekeepers]
+                
         # --- Passed/Failed lists for reporting ---
         passed_gk_long = [f for f in self.gatekeepers if results_long.get(f, False)]
+        failed_gk_long = [f for f in self.gatekeepers if not results_long.get(f, False)]
         passed_gk_short = [f for f in self.gatekeepers if results_short.get(f, False)]
+        failed_gk_short = [f for f in self.gatekeepers if not results_short.get(f, False)]
 
-        # --- Passed hard GKs for logic ---
+        # --- Passed Hard/Soft GKs for LOGIC ---
         passed_hard_gk_long = [f for f in hard_gatekeepers if results_long.get(f, False)]
+        failed_hard_gk_long = [f for f in hard_gatekeepers if not results_long.get(f, False)]
         passed_hard_gk_short = [f for f in hard_gatekeepers if results_short.get(f, False)]
-        passes_long = len(passed_hard_gk_long)
-        passes_short = len(passed_hard_gk_short)
+        failed_hard_gk_short = [f for f in hard_gatekeepers if not results_short.get(f, False)]
+
+        # --- Passed Soft GKs (for reporting only, not logic) ---
+        passed_soft_gk_long = [f for f in soft_gatekeepers if results_long.get(f, False)]
+        failed_soft_gk_long = [f for f in soft_gatekeepers if not results_long.get(f, False)]
+        passed_soft_gk_short = [f for f in soft_gatekeepers if results_short.get(f, False)]
+        failed_soft_gk_short = [f for f in soft_gatekeepers if not results_short.get(f, False)]
 
         # --- previous = all hard GK ---
         # --- Gatekeeper pass/fail and count ---
@@ -916,21 +922,11 @@ class SmartFilter:
         passed_non_gk_weight_long = sum(self.filter_weights_long.get(f, 0) for f in passed_non_gk_long)
         passed_non_gk_weight_short = sum(self.filter_weights_short.get(f, 0) for f in passed_non_gk_short)
 
-
         # --- previous = all hard GK ---
         # Add failed GK calculations
         # failed_gk_long = [f for f in self.gatekeepers if f not in passed_gk_long]
         # failed_gk_short = [f for f in self.gatekeepers if f not in passed_gk_short]
-
-        # --- try = all hard GK, soft GK "Volume Spike" ---
-        # --- Failed Gatekeeper breakdown for reporting ---
-        failed_gk_long = [f for f in self.gatekeepers if f not in passed_gk_long]
-        soft_failed_gk_long = [f for f in failed_gk_long if f in self.soft_gatekeepers]
-        hard_failed_gk_long = [f for f in failed_gk_long if f not in self.soft_gatekeepers]
-        failed_gk_short = [f for f in self.gatekeepers if f not in passed_gk_short]
-        soft_failed_gk_short = [f for f in failed_gk_short if f in self.soft_gatekeepers]
-        hard_failed_gk_short = [f for f in failed_gk_short if f not in self.soft_gatekeepers]
-             
+          
         # --- Print/logging ---
         print(f"[{self.symbol}] Passed GK LONG: {passed_gk_long}")
         print(f"[{self.symbol}] Failed GK LONG: {failed_gk_long}")
@@ -938,10 +934,26 @@ class SmartFilter:
         print(f"[{self.symbol}] Failed GK SHORT: {failed_gk_short}")
 
         # --- Extra debug: Only soft GKs failed, all hard GKs passed ---
-        if len(hard_failed_gk_long) == 0 and soft_failed_gk_long:
-            print(f"[{self.symbol}] All hard GKs PASSED for LONG, but SOFT GKs FAILED: {soft_failed_gk_long}")
-        if len(hard_failed_gk_short) == 0 and soft_failed_gk_short:
-            print(f"[{self.symbol}] All hard GKs PASSED for SHORT, but SOFT GKs FAILED: {soft_failed_gk_short}")
+        if not failed_hard_gk_long and failed_soft_gk_long:
+            print(f"[{self.symbol}] All hard GKs PASSED for LONG, but SOFT GKs FAILED: {failed_soft_gk_long}")
+        if not failed_hard_gk_short and failed_soft_gk_short:
+            print(f"[{self.symbol}] All hard GKs PASSED for SHORT, but SOFT GKs FAILED: {failed_soft_gk_short}")
+        
+        # --- Signal logic: Only hard GKs required to pass ---
+        required_passed_long = len(hard_gatekeepers)
+        required_passed_short = len(hard_gatekeepers)
+        
+        # Determine if signal is allowed (only hard GKs count!)
+        signal_long_ok = len(passed_hard_gk_long) >= required_passed_long
+        signal_short_ok = len(passed_hard_gk_short) >= required_passed_short
+        
+        print(f"[DEBUG] passes_long: {len(passed_hard_gk_long)} required_passed_long: {required_passed_long}")
+        print(f"[DEBUG] passes_short: {len(passed_hard_gk_short)} required_passed_short: {required_passed_short}")
+        
+        if not signal_long_ok:
+            print(f"[{self.symbol}] Signal BLOCKED for LONG: Failed hard GKs: {failed_hard_gk_long}")
+        if not signal_short_ok:
+            print(f"[{self.symbol}] Signal BLOCKED for SHORT: Failed hard GKs: {failed_hard_gk_short}")
 
         confidence_long = round(100 * passed_non_gk_weight_long / total_non_gk_weight_long, 1) if total_non_gk_weight_long else 0.0
         confidence_short = round(100 * passed_non_gk_weight_short / total_non_gk_weight_short, 1) if total_non_gk_weight_short else 0.0
