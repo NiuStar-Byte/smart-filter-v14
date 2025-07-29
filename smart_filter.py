@@ -1049,32 +1049,28 @@ class SmartFilter:
             return result
         return None
 
-    def _check_volume_spike(self, zscore_threshold=1.5):
-        # Calculate z-score of current volume vs recent (rolling 10)
-        avg = self.df['volume'].rolling(10).mean().iat[-1]
-        std = self.df['volume'].rolling(10).std().iat[-1]
-        zscore = self._safe_divide(self.df['volume'].iat[-1] - avg, std)
+    def _check_volume_spike(self, zscore_threshold=2.0):
+        # Calculate rolling mean and std for volume
+        rolling_window = 20  # You may adjust this window
+        if len(self.df) < rolling_window + 1:
+            return None  # not enough data
     
-        # Price direction
-        price_up = self.df['close'].iat[-1] > self.df['close'].iat[-2]
-        price_down = self.df['close'].iat[-1] < self.df['close'].iat[-2]
+        avg = self.df['volume'].rolling(rolling_window).mean().iat[-2]
+        std = self.df['volume'].rolling(rolling_window).std().iat[-2]
+        curr_vol = self.df['volume'].iat[-1]
+        zscore = (curr_vol - avg) / (std if std != 0 else 1)
     
-        # Volume trend
-        vol_up = self.df['volume'].iat[-1] > self.df['volume'].iat[-2]
-    
-        # LONG signal: volume spike + price rising + volume rising
-        long_conditions = [zscore > zscore_threshold, price_up, vol_up]
-        long_met = sum(long_conditions)
-    
-        # SHORT signal: volume spike + price falling + volume rising
-        short_conditions = [zscore > zscore_threshold, price_down, vol_up]
-        short_met = sum(short_conditions)
-
-        # Require at least 2/3 for a signal
-        if long_met >= 1:
-            return "LONG"
-        elif short_met >= 1:
-            return "SHORT"
+        # Basic check: Is the current volume a spike?
+        if zscore > zscore_threshold:
+            # Optionally add price logic for LONG/SHORT
+            price_up = self.df['close'].iat[-1] > self.df['close'].iat[-2]
+            price_down = self.df['close'].iat[-1] < self.df['close'].iat[-2]
+            if price_up:
+                return 'LONG'
+            elif price_down:
+                return 'SHORT'
+            else:
+                return 'SPIKE'
         else:
             return None
         
