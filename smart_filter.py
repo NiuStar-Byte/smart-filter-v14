@@ -54,7 +54,7 @@ class SmartFilter:
         min_score: int = 12,
         required_passed: Optional[int] = None,  # int or None allowed
         volume_multiplier: float = 2.0,
-        liquidity_threshold: float = 0.25,
+        liquidity_threshold: float = 0.50,
         kwargs: Optional[dict] = None
     ):
         if kwargs is None:
