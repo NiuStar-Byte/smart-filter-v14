@@ -49,7 +49,7 @@ class SmartFilter:
         df5m: pd.DataFrame = None,
         tf: str = None,
         min_score: int = 12,
-        required_passed: int = 7,      # NEW logic 100% : now 7 (for 7 gatekeepers)
+        required_passed: int = None,    # Default is None
         volume_multiplier: float = 2.0,
         liquidity_threshold: float = 0.25,   # <-- Set a default value
         kwargs = None
@@ -895,7 +895,6 @@ class SmartFilter:
         # failed_gk_long = [f for f in self.gatekeepers if f not in passed_gk_long]
         # failed_gk_short = [f for f in self.gatekeepers if f not in passed_gk_short]
 
-
         # --- Separate Hard and Soft Gatekeepers ---
         hard_gatekeepers = [gk for gk in self.gatekeepers if gk not in self.soft_gatekeepers]
         soft_gatekeepers = [gk for gk in self.gatekeepers if gk in self.soft_gatekeepers]
@@ -917,7 +916,7 @@ class SmartFilter:
         failed_soft_gk_long = [gk for gk in soft_gatekeepers if not results_long.get(gk, False)]
         passed_soft_gk_short = [gk for gk in soft_gatekeepers if results_short.get(gk, False)]
         failed_soft_gk_short = [gk for gk in soft_gatekeepers if not results_short.get(gk, False)]
-        
+
         # --- Hard GK pass count (ONLY use for signal logic!) ---
         passes_long = len(passed_hard_gk_long)
         passes_short = len(passed_hard_gk_short)
@@ -945,8 +944,14 @@ class SmartFilter:
             print(f"[{self.symbol}] All hard GKs PASSED for SHORT, but SOFT GKs FAILED: {failed_soft_gk_short}")
         
         # --- Signal logic: Only hard GKs required to pass ---
-        required_passed_long = len(hard_gatekeepers)
-        required_passed_short = len(hard_gatekeepers)
+        if self.required_passed is not None:
+            required_passed_long = self.required_passed
+            required_passed_short = self.required_passed
+        else:
+            required_passed_long = len(hard_gatekeepers)
+            required_passed_short = len(hard_gatekeepers)
+        print(f"[DEBUG] required_passed_long: {required_passed_long}, passes_long: {passes_long}")
+        print(f"[DEBUG] required_passed_short: {required_passed_short}, passes_short: {passes_short}")
         
         signal_long_ok = passes_long >= required_passed_long
         signal_short_ok = passes_short >= required_passed_short
