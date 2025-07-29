@@ -1049,28 +1049,28 @@ class SmartFilter:
             return result
         return None
 
-    def _check_volume_spike(self, zscore_threshold=2.0):
-        # Calculate rolling mean and std for volume
-        rolling_window = 20  # You may adjust this window
-        if len(self.df) < rolling_window + 1:
+    def _check_volume_spike(self, zscore_threshold=1.5, min_price_move=0.0005):
+        rolling_window = 20
+        if len(self.df) < rolling_window + 2:
             return None  # not enough data
     
         avg = self.df['volume'].rolling(rolling_window).mean().iat[-2]
         std = self.df['volume'].rolling(rolling_window).std().iat[-2]
         curr_vol = self.df['volume'].iat[-1]
         zscore = (curr_vol - avg) / (std if std != 0 else 1)
-    
-        # Basic check: Is the current volume a spike?
+        
+        # Volume spike check
         if zscore > zscore_threshold:
-            # Optionally add price logic for LONG/SHORT
-            price_up = self.df['close'].iat[-1] > self.df['close'].iat[-2]
-            price_down = self.df['close'].iat[-1] < self.df['close'].iat[-2]
-            if price_up:
+            close = self.df['close'].iat[-1]
+            close_prev = self.df['close'].iat[-2]
+            price_move = (close - close_prev) / close_prev if close_prev != 0 else 0
+            
+            if price_move > min_price_move:
                 return 'LONG'
-            elif price_down:
+            elif price_move < -min_price_move:
                 return 'SHORT'
             else:
-                return 'SPIKE'
+                return 'SPIKE'  # spike, but no clear direction
         else:
             return None
         
