@@ -44,21 +44,21 @@ class SmartFilter:
 
     from typing import Optional
 
-def __init__(
-    self,
-    symbol: str,
-    df: pd.DataFrame,
-    df3m: Optional[pd.DataFrame] = None,
-    df5m: Optional[pd.DataFrame] = None,
-    tf: Optional[str] = None,
-    min_score: int = 12,
-    required_passed: Optional[int] = None,  # int or None allowed
-    volume_multiplier: float = 2.0,
-    liquidity_threshold: float = 0.25,
-    kwargs: Optional[dict] = None
-):
-    if kwargs is None:
-        kwargs = {}
+    def __init__(
+        self,
+        symbol: str,
+        df: pd.DataFrame,
+        df3m: Optional[pd.DataFrame] = None,
+        df5m: Optional[pd.DataFrame] = None,
+        tf: Optional[str] = None,
+        min_score: int = 12,
+        required_passed: Optional[int] = None,  # int or None allowed
+        volume_multiplier: float = 2.0,
+        liquidity_threshold: float = 0.25,
+        kwargs: Optional[dict] = None
+    ):
+        if kwargs is None:
+            kwargs = {}
 
         self.symbol = symbol
         self.df = add_indicators(df)
