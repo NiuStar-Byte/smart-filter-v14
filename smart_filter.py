@@ -1153,35 +1153,52 @@ class SmartFilter:
             return 0.0
 
     def volume_surge_confirmed(self):
+        """
+        Returns 'LONG' or 'SHORT' if a volume spike with price move is confirmed,
+        and the 5m volume is trending up. Returns None otherwise.
+        """
         result = self._check_volume_spike()
-        if result in ["LONG", "SHORT"] and self._check_5m_volume_trend():
-            return result
+        if result in ["LONG", "SHORT"]:
+            if self._check_5m_volume_trend():
+                return result
         return None
 
-    def _check_volume_spike(self, zscore_threshold=1.5, min_price_move=0.0005):
+    def _check_5m_volume_trend(self):
+        """
+        Confirms if the latest 5m volume is greater than the previous 5m bar.
+        Returns True/False.
+        """
+        df5m = getattr(self, 'df5m', None)
+        if df5m is None or len(df5m) < 2:
+            return False
+        return df5m['volume'].iat[-1] > df5m['volume'].iat[-2]
+        
+    def _check_volume_spike(self, zscore_threshold=1.25, min_price_move=0.00025):
+        """
+        Checks for a volume spike using Z-score and a minimum price move.
+        Returns 'LONG', 'SHORT', 'SPIKE' (directionless), or None.
+        """
         rolling_window = 20
         if len(self.df) < rolling_window + 2:
-            return None  # not enough data
+            return None  # Not enough data
     
         avg = self.df['volume'].rolling(rolling_window).mean().iat[-2]
         std = self.df['volume'].rolling(rolling_window).std().iat[-2]
         curr_vol = self.df['volume'].iat[-1]
         zscore = (curr_vol - avg) / (std if std != 0 else 1)
-        
-        # Volume spike check
+    
         if zscore > zscore_threshold:
             close = self.df['close'].iat[-1]
             close_prev = self.df['close'].iat[-2]
             price_move = (close - close_prev) / close_prev if close_prev != 0 else 0
-            
+    
             if price_move > min_price_move:
                 return 'LONG'
             elif price_move < -min_price_move:
                 return 'SHORT'
             else:
-                return 'SPIKE'  # spike, but no clear direction
-        else:
-            return None
+                return 'SPIKE'
+        return None
         
     # def _check_volume_spike(self, zscore_threshold=1.5):
         # Calculate z-score of current volume vs recent (rolling 10)
@@ -1215,10 +1232,7 @@ class SmartFilter:
     #    else:
     #        return None
 
-    def _check_5m_volume_trend(self):
-        if self.df5m is None or len(self.df5m) < 2:
-            return False
-        return self.df5m['volume'].iat[-1] > self.df5m['volume'].iat[-2]
+
 
     def _check_fractal_zone(self, buffer_pct=0.005, window=20, min_conditions=2):
         # Calculate fractal highs/lows
