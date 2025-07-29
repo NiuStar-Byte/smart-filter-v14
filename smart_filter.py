@@ -988,34 +988,37 @@ class SmartFilter:
             confidence = confidence_long
             passed_weight = passed_non_gk_weight_long
             total_weight = total_non_gk_weight_long
+            results = results_long    # <--- ADD THIS LINE
         elif direction == "SHORT":
             score = short_score
             passes = passes_short
             confidence = confidence_short
             passed_weight = passed_non_gk_weight_short
             total_weight = total_non_gk_weight_short
+            results = results_short   # <--- ADD THIS LINE
         else:
             score = max(long_score, short_score)
             passes = max(passes_long, passes_short)
             confidence = max(confidence_long, confidence_short)
             passed_weight = max(passed_non_gk_weight_long, passed_non_gk_weight_short)
             total_weight = max(total_non_gk_weight_long, total_non_gk_weight_short)
+            results = results_long  # or results_short; but results_long is fine as fallback
 
-        # --- GK pass reporting logic for Telegram ---
+        # Now, safely use `results` below!
         all_gks = self.gatekeepers
         hard_gks = [gk for gk in all_gks if gk not in self.soft_gatekeepers]
         soft_gks = [gk for gk in all_gks if gk in self.soft_gatekeepers]
         all_passed = all(results.get(gk, False) for gk in all_gks)
         hard_passed = all(results.get(gk, False) for gk in hard_gks)
         soft_passed = all(results.get(gk, False) for gk in soft_gks) if soft_gks else True
-
+        
         if all_passed:
             passes = len(all_gks)
         elif hard_passed:
             passes = len(hard_gks)
         else:
             passes = sum(1 for gk in all_gks if results.get(gk, False))
-
+        
         gatekeepers_total = len(all_gks)
         
         confidence = round(100 * passed_weight / total_weight, 1) if total_weight else 0.0
