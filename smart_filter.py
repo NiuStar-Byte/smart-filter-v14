@@ -9,6 +9,7 @@ from kucoin_orderbook import get_order_wall_delta
 from kucoin_density import get_resting_density
 from signal_debug_log import export_signal_debug_txt
 from calculations import compute_atr, compute_adx, add_bollinger_bands, add_keltner_channels, add_indicators
+from typing import Optional
 
 # PREVIOUS COMPUTE RSI for New SuperGK ONLY RSI Density & OrderBookWall
 # def compute_rsi(df, period=14):
@@ -41,21 +42,23 @@ class SmartFilter:
     use order book & resting density as SuperGK (blocking/passing) signals fired to Telegram,
     """
 
-    def __init__(
-        self,
-        symbol: str,
-        df: pd.DataFrame,
-        df3m: pd.DataFrame = None,
-        df5m: pd.DataFrame = None,
-        tf: str = None,
-        min_score: int = 12,
-        required_passed: int = None,    # Default is None
-        volume_multiplier: float = 2.0,
-        liquidity_threshold: float = 0.25,   # <-- Set a default value
-        kwargs = None
-    ):
-        if kwargs is None:
-            kwargs = {}
+    from typing import Optional
+
+def __init__(
+    self,
+    symbol: str,
+    df: pd.DataFrame,
+    df3m: Optional[pd.DataFrame] = None,
+    df5m: Optional[pd.DataFrame] = None,
+    tf: Optional[str] = None,
+    min_score: int = 12,
+    required_passed: Optional[int] = None,  # int or None allowed
+    volume_multiplier: float = 2.0,
+    liquidity_threshold: float = 0.25,
+    kwargs: Optional[dict] = None
+):
+    if kwargs is None:
+        kwargs = {}
 
         self.symbol = symbol
         self.df = add_indicators(df)
