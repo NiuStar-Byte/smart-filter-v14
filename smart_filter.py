@@ -942,7 +942,7 @@ class SmartFilter:
             print(f"[{self.symbol}] All hard GKs PASSED for LONG, but SOFT GKs FAILED: {failed_soft_gk_long}")
         if not failed_hard_gk_short and failed_soft_gk_short:
             print(f"[{self.symbol}] All hard GKs PASSED for SHORT, but SOFT GKs FAILED: {failed_soft_gk_short}")
-        
+                
         # --- Signal logic: Only hard GKs required to pass ---
         if self.required_passed is not None:
             required_passed_long = self.required_passed
@@ -952,6 +952,17 @@ class SmartFilter:
             required_passed_short = len(hard_gatekeepers)
         print(f"[DEBUG] required_passed_long: {required_passed_long}, passes_long: {passes_long}")
         print(f"[DEBUG] required_passed_short: {required_passed_short}, passes_short: {passes_short}")
+        
+        if required_passed_long is None or passes_long is None:
+            print("[ERROR] required_passed_long or passes_long is None!")
+            print(f"required_passed_long: {required_passed_long}, passes_long: {passes_long}")
+            # recommended: raise or return here!
+            raise ValueError("required_passed_long or passes_long is None!")
+        if required_passed_short is None or passes_short is None:
+            print("[ERROR] required_passed_short or passes_short is None!")
+            print(f"required_passed_short: {required_passed_short}, passes_short: {passes_short}")
+            # recommended: raise or return here!
+            raise ValueError("required_passed_short or passes_short is None!")
         
         signal_long_ok = passes_long >= required_passed_long
         signal_short_ok = passes_short >= required_passed_short
