@@ -1213,30 +1213,30 @@ class SmartFilter:
         else:
             return None
 
-    def _check_momentum(self, window=10):
+    def _check_momentum(self, window=10, min_conditions=2):
         # Calculate Rate of Change (ROC)
         roc = self.df['close'].pct_change(periods=window)
         momentum = roc.iat[-1]
         momentum_prev = roc.iat[-2]
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
-
+    
         # LONG conditions
         cond1_long = momentum > 0
         cond2_long = momentum > momentum_prev
         cond3_long = close > close_prev
-
+    
         # SHORT conditions
         cond1_short = momentum < 0
         cond2_short = momentum < momentum_prev
         cond3_short = close < close_prev
-
+    
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-
-        if long_met >= 1:
+    
+        if long_met >= min_conditions:
             return "LONG"
-        elif short_met >= 1:
+        elif short_met >= min_conditions:
             return "SHORT"
         else:
             return None
