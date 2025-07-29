@@ -884,12 +884,21 @@ class SmartFilter:
 
         # print(f"[{self.symbol}] Total LONG weight: {long_weight_sum}")
         # print(f"[{self.symbol}] Total SHORT weight: {short_weight_sum}")
-      
+
+        # --- try = all hard GK, soft GK "Volume Spike" ---
         # --- Gatekeeper pass/fail and count ---
-        passed_gk_long = [f for f in self.gatekeepers if results_long.get(f, False)]
-        passed_gk_short = [f for f in self.gatekeepers if results_short.get(f, False)]
-        passes_long = len(passed_gk_long)
-        passes_short = len(passed_gk_short)
+        hard_gatekeepers = [gk for gk in self.gatekeepers if gk not in self.soft_gatekeepers]
+        passed_hard_gk_long = [f for f in hard_gatekeepers if results_long.get(f, False)]
+        passed_hard_gk_short = [f for f in hard_gatekeepers if results_short.get(f, False)]
+        passes_long = len(passed_hard_gk_long)
+        passes_short = len(passed_hard_gk_short)
+        
+        # --- previous = all hard GK ---
+        # --- Gatekeeper pass/fail and count ---
+        # passed_gk_long = [f for f in self.gatekeepers if results_long.get(f, False)]
+        # passed_gk_short = [f for f in self.gatekeepers if results_short.get(f, False)]
+        # passes_long = len(passed_gk_long)
+        # passes_short = len(passed_gk_short)
 
         # --- Calculate WEIGHTED and CONFIDENCE using only non-GK filters ---
         passed_non_gk_long = [f for f in non_gk_filters if results_long.get(f, False)]
