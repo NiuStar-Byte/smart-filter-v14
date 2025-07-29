@@ -1001,6 +1001,23 @@ class SmartFilter:
             passed_weight = max(passed_non_gk_weight_long, passed_non_gk_weight_short)
             total_weight = max(total_non_gk_weight_long, total_non_gk_weight_short)
 
+        # --- GK pass reporting logic for Telegram ---
+        all_gks = self.gatekeepers
+        hard_gks = [gk for gk in all_gks if gk not in self.soft_gatekeepers]
+        soft_gks = [gk for gk in all_gks if gk in self.soft_gatekeepers]
+        all_passed = all(results.get(gk, False) for gk in all_gks)
+        hard_passed = all(results.get(gk, False) for gk in hard_gks)
+        soft_passed = all(results.get(gk, False) for gk in soft_gks) if soft_gks else True
+
+        if all_passed:
+            passes = len(all_gks)
+        elif hard_passed:
+            passes = len(hard_gks)
+        else:
+            passes = sum(1 for gk in all_gks if results.get(gk, False))
+
+        gatekeepers_total = len(all_gks)
+        
         confidence = round(100 * passed_weight / total_weight, 1) if total_weight else 0.0
 
         # --- SuperGK check (unchanged) ---
@@ -1097,7 +1114,7 @@ class SmartFilter:
             "score": score,
             "score_max": score_max,
             "passes": passes,
-            "gatekeepers_total": len(self.gatekeepers),
+            "gatekeepers_total": gatekeepers_total,
             "passed_weight": round(passed_weight, 1),
             "total_weight": round(total_weight, 1),
             "confidence": confidence,
