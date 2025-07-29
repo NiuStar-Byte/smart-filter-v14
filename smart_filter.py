@@ -1045,25 +1045,35 @@ class SmartFilter:
 
     def volume_surge_confirmed(self):
         result = self._check_volume_spike()
-        avg_5m = self.df5m['volume'].rolling(10).mean().iat[-1] if self.df5m is not None else 0
-        volume_5m_spike = self.df5m['volume'].iat[-1] > avg_5m * self.volume_multiplier if self.df5m is not None else False
-        if result in ["LONG", "SHORT"] and self._check_5m_volume_trend() and volume_5m_spike:
+        if result in ["LONG", "SHORT"] and self._check_5m_volume_trend():
             return result
         return None
 
-    def _check_volume_spike(self, zscore_threshold=1.0):
+    def _check_volume_spike(self, zscore_threshold=1.5):
+        # Calculate z-score of current volume vs recent (rolling 10)
         avg = self.df['volume'].rolling(10).mean().iat[-1]
         std = self.df['volume'].rolling(10).std().iat[-1]
         zscore = self._safe_divide(self.df['volume'].iat[-1] - avg, std)
     
+        # Price direction
         price_up = self.df['close'].iat[-1] > self.df['close'].iat[-2]
         price_down = self.df['close'].iat[-1] < self.df['close'].iat[-2]
-        vol_up = self.df['volume'].iat[-1] > self.df['volume'].iat[-2]
-        volume_spike = self.df['volume'].iat[-1] > avg * self.volume_multiplier
     
-        if zscore > zscore_threshold or (price_up and vol_up and volume_spike):
+        # Volume trend
+        vol_up = self.df['volume'].iat[-1] > self.df['volume'].iat[-2]
+    
+        # LONG signal: volume spike + price rising + volume rising
+        long_conditions = [zscore > zscore_threshold, price_up, vol_up]
+        long_met = sum(long_conditions)
+    
+        # SHORT signal: volume spike + price falling + volume rising
+        short_conditions = [zscore > zscore_threshold, price_down, vol_up]
+        short_met = sum(short_conditions)
+
+        # Require at least 2/3 for a signal
+        if long_met >= 1:
             return "LONG"
-        elif zscore > zscore_threshold or (price_down and vol_up and volume_spike):
+        elif short_met >= 1:
             return "SHORT"
         else:
             return None
@@ -1196,21 +1206,23 @@ class SmartFilter:
         momentum_prev = roc.iat[-2]
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
-    
-        # Bullish conditions
+
+        # LONG conditions
         cond1_long = momentum > 0
         cond2_long = momentum > momentum_prev
         cond3_long = close > close_prev
-    
-        # Bearish conditions
+
+        # SHORT conditions
         cond1_short = momentum < 0
         cond2_short = momentum < momentum_prev
         cond3_short = close < close_prev
-    
-        # More responsive: fire on any single condition
-        if cond1_long or cond2_long or cond3_long:
+
+        long_met = sum([cond1_long, cond2_long, cond3_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short])
+
+        if long_met >= 1:
             return "LONG"
-        elif cond1_short or cond2_short or cond3_short:
+        elif short_met >= 1:
             return "SHORT"
         else:
             return None
@@ -1466,7 +1478,7 @@ class SmartFilter:
         else:
             return None
 
-    def _check_absorption(self, window=10, buffer_pct=0.005):
+    def _check_absorption(self, window=20, buffer_pct=0.005):
         # Calculate recent low/high for proximity
         low = self.df['low'].rolling(window).min().iat[-1]
         high = self.df['high'].rolling(window).max().iat[-1]
@@ -1595,7 +1607,7 @@ class SmartFilter:
         else:
             return None
 
-    def _check_liquidity_pool(self, lookback=10):
+    def _check_liquidity_pool(self, lookback=20):
         close = self.df['close'].iat[-1]
         high = self.df['high'].iat[-1]
         low = self.df['low'].iat[-1]
