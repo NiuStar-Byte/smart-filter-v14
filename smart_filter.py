@@ -138,7 +138,6 @@ class SmartFilter:
         self.gatekeepers = [
             "Momentum Cluster",
             "Volume Spike",
-            "MTF Volume Agreement",
             "Liquidity Awareness",
             "Spread Filter",
             "Candle Confirmation",
