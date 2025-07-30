@@ -1265,39 +1265,6 @@ class SmartFilter:
     #        return "SHORT"
     #    else:
     #        return None
-
-
-
-    def _check_fractal_zone(self, buffer_pct=0.005, window=20, min_conditions=2):
-        # Calculate fractal highs/lows
-        fractal_low = self.df['low'].rolling(window).min().iat[-1]
-        fractal_low_prev = self.df['low'].rolling(window).min().iat[-2]
-        fractal_high = self.df['high'].rolling(window).max().iat[-1]
-        fractal_high_prev = self.df['high'].rolling(window).max().iat[-2]
-    
-        close = self.df['close'].iat[-1]
-        close_prev = self.df['close'].iat[-2]
-    
-        # LONG: Strong break above recent range with confirmation
-        cond1_long = close > fractal_low * (1 + buffer_pct)
-        cond2_long = close > close_prev
-        cond3_long = fractal_low > fractal_low_prev
-    
-        # SHORT: Strong break below recent range with confirmation
-        cond1_short = close < fractal_high * (1 - buffer_pct)
-        cond2_short = close < close_prev
-        cond3_short = fractal_high < fractal_high_prev
-    
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
-    
-        # Require at least 2 out of 3 for signal (reduce noise)
-        if long_met >= min_conditions:
-            return "LONG"
-        elif short_met >= min_conditions:
-            return "SHORT"
-        else:
-            return None
     
    # def _check_ema_cloud(self, min_conditions=2):
    #     ema20 = self.df['ema20'].iat[-1]
@@ -1449,9 +1416,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 1:
+        if long_met >= 2:
             return "LONG"
-        elif short_met >= 1:
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
@@ -1480,13 +1447,44 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 1:
+        if long_met >= 2:
             return "LONG"
-        elif short_met >= 1:
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
-        
+
+    def _check_fractal_zone(self, buffer_pct=0.005, window=20, min_conditions=2):
+        # Calculate fractal highs/lows
+        fractal_low = self.df['low'].rolling(window).min().iat[-1]
+        fractal_low_prev = self.df['low'].rolling(window).min().iat[-2]
+        fractal_high = self.df['high'].rolling(window).max().iat[-1]
+        fractal_high_prev = self.df['high'].rolling(window).max().iat[-2]
+    
+        close = self.df['close'].iat[-1]
+        close_prev = self.df['close'].iat[-2]
+    
+        # LONG: Strong break above recent range with confirmation
+        cond1_long = close > fractal_low * (1 + buffer_pct)
+        cond2_long = close > close_prev
+        cond3_long = fractal_low > fractal_low_prev
+    
+        # SHORT: Strong break below recent range with confirmation
+        cond1_short = close < fractal_high * (1 - buffer_pct)
+        cond2_short = close < close_prev
+        cond3_short = fractal_high < fractal_high_prev
+    
+        long_met = sum([cond1_long, cond2_long, cond3_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short])
+    
+        # Require at least 2 out of 3 for signal (reduce noise)
+        if long_met >= min_conditions:
+            return "LONG"
+        elif short_met >= min_conditions:
+            return "SHORT"
+        else:
+            return None
+    
     def _check_hh_ll(self):
         high = self.df['high'].iat[-1]
         high_prev = self.df['high'].iat[-2]
@@ -1508,9 +1506,67 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 1:
+        if long_met >= 2:
             return "LONG"
-        elif short_met >= 1:
+        elif short_met >= 2:
+            return "SHORT"
+        else:
+            return None
+
+    def _check_support_resistance(self, window=20, buffer_pct=0.005):
+        # Calculate recent support (local min) and resistance (local max)
+        support = self.df['low'].rolling(window).min().iat[-1]
+        resistance = self.df['high'].rolling(window).max().iat[-1]
+        close = self.df['close'].iat[-1]
+        close_prev = self.df['close'].iat[-2]
+        volume = self.df['volume'].iat[-1]
+        volume_prev = self.df['volume'].iat[-2]
+
+        # LONG conditions
+        cond1_long = close <= support * (1 + buffer_pct)
+        cond2_long = close > close_prev
+        cond3_long = volume > volume_prev
+
+        # SHORT conditions
+        cond1_short = close >= resistance * (1 - buffer_pct)
+        cond2_short = close < close_prev
+        cond3_short = volume > volume_prev
+
+        long_met = sum([cond1_long, cond2_long, cond3_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short])
+
+        if long_met >= 2:
+            return "LONG"
+        elif short_met >= 2:
+            return "SHORT"
+        else:
+            return None
+
+    def _check_liquidity_pool(self, lookback=20):
+        close = self.df['close'].iat[-1]
+        high = self.df['high'].iat[-1]
+        low = self.df['low'].iat[-1]
+    
+        # Identify recent liquidity pools
+        recent_high = self.df['high'].rolling(lookback).max().iat[-2]
+        recent_low = self.df['low'].rolling(lookback).min().iat[-2]
+    
+        # LONG: break or sweep above recent high
+        cond1_long = close > recent_high
+        cond2_long = low < recent_low and close > recent_low  # sweep and reversal
+        cond3_long = close > recent_high
+
+        # SHORT: break or sweep below recent low
+        cond1_short = close < recent_low
+        cond2_short = high > recent_high and close < recent_high  # sweep and reversal
+        cond3_short = close < recent_low
+
+        long_met = sum([cond1_long, cond2_long, cond3_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short])
+
+        if long_met >= 2:
+            return "LONG"
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
@@ -1570,9 +1626,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 1:
+        if long_met >= 2:
             return "LONG"
-        elif short_met >= 1:
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
@@ -1611,9 +1667,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 1:
+        if long_met >= 2:
             return "LONG"
-        elif short_met >= 1:
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
@@ -1642,9 +1698,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 1:
+        if long_met >= 2:
             return "LONG"
-        elif short_met >= 1:
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
@@ -1672,38 +1728,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 1:
+        if long_met >= 2:
             return "LONG"
-        elif short_met >= 1:
-            return "SHORT"
-        else:
-            return None
-
-    def _check_support_resistance(self, window=20, buffer_pct=0.005):
-        # Calculate recent support (local min) and resistance (local max)
-        support = self.df['low'].rolling(window).min().iat[-1]
-        resistance = self.df['high'].rolling(window).max().iat[-1]
-        close = self.df['close'].iat[-1]
-        close_prev = self.df['close'].iat[-2]
-        volume = self.df['volume'].iat[-1]
-        volume_prev = self.df['volume'].iat[-2]
-
-        # LONG conditions
-        cond1_long = close <= support * (1 + buffer_pct)
-        cond2_long = close > close_prev
-        cond3_long = volume > volume_prev
-
-        # SHORT conditions
-        cond1_short = close >= resistance * (1 - buffer_pct)
-        cond2_short = close < close_prev
-        cond3_short = volume > volume_prev
-
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
-
-        if long_met >= 1:
-            return "LONG"
-        elif short_met >= 1:
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
@@ -1732,9 +1759,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 1:
+        if long_met >= 2:
             return "LONG"
-        elif short_met >= 1:
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
@@ -1771,38 +1798,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 1:
+        if long_met >= 2:
             return "LONG"
-        elif short_met >= 1:
-            return "SHORT"
-        else:
-            return None
-
-    def _check_liquidity_pool(self, lookback=20):
-        close = self.df['close'].iat[-1]
-        high = self.df['high'].iat[-1]
-        low = self.df['low'].iat[-1]
-    
-        # Identify recent liquidity pools
-        recent_high = self.df['high'].rolling(lookback).max().iat[-2]
-        recent_low = self.df['low'].rolling(lookback).min().iat[-2]
-    
-        # LONG: break or sweep above recent high
-        cond1_long = close > recent_high
-        cond2_long = low < recent_low and close > recent_low  # sweep and reversal
-        cond3_long = close > recent_high
-
-        # SHORT: break or sweep below recent low
-        cond1_short = close < recent_low
-        cond2_short = high > recent_high and close < recent_high  # sweep and reversal
-        cond3_short = close < recent_low
-
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
-
-        if long_met >= 1:
-            return "LONG"
-        elif short_met >= 1:
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
@@ -1833,9 +1831,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 1:
+        if long_met >= 2:
             return "LONG"
-        elif short_met >= 1:
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
@@ -1886,9 +1884,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 1:
+        if long_met >= 2:
             return "LONG"
-        elif short_met >= 1:
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
@@ -1961,9 +1959,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 1:
+        if long_met >= 2:
             return "LONG"
-        elif short_met >= 1:
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
@@ -2104,7 +2102,7 @@ class SmartFilter:
             if verbose: print("Close falling: +1 SHORT")
     
         # Set your own threshold; e.g., require 5 for strong trend
-        threshold = 3
+        threshold = 4
     
         if trend_score_long >= threshold and trend_score_long > trend_score_short:
             return "LONG", trend_score_long, trend_score_short
