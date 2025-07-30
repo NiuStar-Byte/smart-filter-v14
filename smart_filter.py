@@ -11,6 +11,9 @@ from signal_debug_log import export_signal_debug_txt
 from calculations import compute_atr, compute_adx, add_bollinger_bands, add_keltner_channels, add_indicators
 from typing import Optional
 
+# Add at the top of your file (if not already present):
+logging.basicConfig(level=logging.INFO)  # Or DEBUG for more detail
+
 # PREVIOUS COMPUTE RSI for New SuperGK ONLY RSI Density & OrderBookWall
 # def compute_rsi(df, period=14):
 #    delta = df['close'].diff()
@@ -51,7 +54,7 @@ class SmartFilter:
         df3m: Optional[pd.DataFrame] = None,
         df5m: Optional[pd.DataFrame] = None,
         tf: Optional[str] = None,
-        min_score: int = 7,
+        min_score: int = 6,
         required_passed: Optional[int] = None,  # int or None allowed
         volume_multiplier: float = 2.0,
         liquidity_threshold: float = 0.50,
@@ -115,25 +118,25 @@ class SmartFilter:
 
         # Weights for filters
         self.filter_weights_long = {
-            "MACD": 4.9, "Volume Spike": 4.8, "Fractal Zone": 4.7, "Momentum": 4.5, "ATR Momentum Burst": 4.4,
+            "Momentum Cluster": 6.1, "Volume Spike": 4.8, "Fractal Zone": 4.7,
             "MTF Volume Agreement": 4.3, "HH/LL Trend": 3.9, "Volatility Model": 3.8,
             "Liquidity Awareness": 3.6, "Volatility Squeeze": 3.5, "Candle Confirmation": 3.4,
             "VWAP Divergence": 3.3, "Spread Filter": 3.2, "Chop Zone": 3.1, "Liquidity Pool": 2.9, "Support/Resistance": 2.8,
-            "Smart Money Bias": 2.7, "Absorption": 2.6, "Wick Dominance": 2.5, "unified_trend_regime": 5.1
+            "Smart Money Bias": 2.7, "Absorption": 2.6, "Wick Dominance": 2.5, "Unified Trend Regime": 5.1
         }
 
         self.filter_weights_short = {
-            "MACD": 4.9, "Volume Spike": 4.8, "Fractal Zone": 4.7, "Momentum": 4.5, "ATR Momentum Burst": 4.4,
+            "Momentum Cluster": 6.1, "Volume Spike": 4.8, "Fractal Zone": 4.7,
             "MTF Volume Agreement": 4.3, "HH/LL Trend": 3.9, "Volatility Model": 3.8,
             "Liquidity Awareness": 3.6, "Volatility Squeeze": 3.5, "Candle Confirmation": 3.4,
             "VWAP Divergence": 3.3, "Spread Filter": 3.2, "Chop Zone": 3.1, "Liquidity Pool": 2.9, "Support/Resistance": 2.8,
-            "Smart Money Bias": 2.7, "Absorption": 2.6, "Wick Dominance": 2.5, "unified_trend_regime": 5.1
+            "Smart Money Bias": 2.7, "Absorption": 2.6, "Wick Dominance": 2.5, "Unified Trend Regime": 5.1
         }
 
         self.filter_names = list(set(self.filter_weights_long.keys()) | set(self.filter_weights_short.keys()))
         
         self.gatekeepers = [
-            "MACD",
+            "Momentum Cluster",
             "Volume Spike",
             "MTF Volume Agreement",
             "Liquidity Awareness",
@@ -788,21 +791,22 @@ class SmartFilter:
         
         # List all filter names
         filter_names = [
-            "Fractal Zone", "MACD", "Momentum", "Volume Spike",
+            "Fractal Zone", "Momentum Cluster", "Volume Spike",
             "VWAP Divergence", "MTF Volume Agreement", "HH/LL Trend",
             "Chop Zone", "Candle Confirmation", "Wick Dominance", "Absorption",
             "Support/Resistance", "Smart Money Bias", "Liquidity Pool", "Spread Filter",
             "Liquidity Awareness", "Volatility Model",
-            "ATR Momentum Burst", "Volatility Squeeze", "unified_trend_regime"
+            "Volatility Squeeze", "Unified Trend Regime"
         ]
 
         # Map filter names to functions, handling timeframes if needed
         filter_function_map = {
             "Fractal Zone": getattr(self, "_check_fractal_zone", None),
-            "unified_trend_regime": self.unified_trend_regime,
+            "Unified Trend Regime": self.unified_trend_regime,
+            "Momentum Cluster": self._check_momentum_cluster,
            # "EMA Cloud": getattr(self, "_check_ema_cloud", None),
-            "MACD": getattr(self, "_check_macd", None),
-            "Momentum": getattr(self, "_check_momentum", None),
+           # "MACD": getattr(self, "_check_macd", None),
+           # "Momentum": getattr(self, "_check_momentum", None),
            # "HATS": getattr(self, "_check_hats", None),
             "Volume Spike": self.volume_surge_confirmed if self.tf == "3min" else getattr(self, "_check_volume_spike", None),
             "VWAP Divergence": getattr(self, "_check_vwap_divergence", None),
@@ -820,7 +824,7 @@ class SmartFilter:
             "Liquidity Awareness": getattr(self, "_check_liquidity_awareness", None),
            # "Trend Continuation": getattr(self, "_check_trend_continuation", None),
             "Volatility Model": getattr(self, "_check_volatility_model", None),
-            "ATR Momentum Burst": getattr(self, "_check_atr_momentum_burst", None),
+           # "ATR Momentum Burst": getattr(self, "_check_atr_momentum_burst", None),
             "Volatility Squeeze": getattr(self, "_check_volatility_squeeze", None)
         }
 
@@ -2109,3 +2113,25 @@ class SmartFilter:
             return "SHORT", trend_score_long, trend_score_short
         else:
             return None, trend_score_long, trend_score_short
+
+
+    def _check_momentum_cluster(self):
+        votes = [
+            self._check_macd(),
+            self._check_momentum(),
+            self._check_atr_momentum_burst()
+        ]
+        long_votes = votes.count("LONG")
+        short_votes = votes.count("SHORT")
+        
+        logging.info(f"[Momentum Cluster] MACD: {votes[0]}, Momentum: {votes[1]}, ATR Burst: {votes[2]} | LONGs: {long_votes}, SHORTs: {short_votes}")
+        
+        if long_votes >= 2:
+            logging.info("[Momentum Cluster] PASS: LONG")
+            return "LONG"
+        elif short_votes >= 2:
+            logging.info("[Momentum Cluster] PASS: SHORT")
+            return "SHORT"
+        else:
+            logging.info("[Momentum Cluster] FAIL")
+            return None
