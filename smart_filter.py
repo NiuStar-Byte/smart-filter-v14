@@ -115,19 +115,19 @@ class SmartFilter:
 
         # Weights for filters
         self.filter_weights_long = {
-            "MACD": 4.9, "Volume Spike": 4.8, "Fractal Zone": 4.7, "EMA Cloud": 4.6, "Momentum": 4.5, "ATR Momentum Burst": 4.4,
-            "MTF Volume Agreement": 4.3, "Trend Continuation": 4.2, "HATS": 4.1, "HH/LL Trend": 3.9, "Volatility Model": 3.8,
-            "EMA Structure": 3.7, "Liquidity Awareness": 3.6, "Volatility Squeeze": 3.5, "Candle Confirmation": 3.4,
+            "MACD": 4.9, "Volume Spike": 4.8, "Fractal Zone": 4.7, "Momentum": 4.5, "ATR Momentum Burst": 4.4,
+            "MTF Volume Agreement": 4.3, "HH/LL Trend": 3.9, "Volatility Model": 3.8,
+            "Liquidity Awareness": 3.6, "Volatility Squeeze": 3.5, "Candle Confirmation": 3.4,
             "VWAP Divergence": 3.3, "Spread Filter": 3.2, "Chop Zone": 3.1, "Liquidity Pool": 2.9, "Support/Resistance": 2.8,
-            "Smart Money Bias": 2.7, "Absorption": 2.6, "Wick Dominance": 2.5
+            "Smart Money Bias": 2.7, "Absorption": 2.6, "Wick Dominance": 2.5, "unified_trend_regime": 5.1
         }
 
         self.filter_weights_short = {
-            "MACD": 4.9, "Volume Spike": 4.8, "Fractal Zone": 4.7, "EMA Cloud": 4.6, "Momentum": 4.5, "ATR Momentum Burst": 4.4,
-            "MTF Volume Agreement": 4.3, "Trend Continuation": 4.2, "HATS": 4.1, "HH/LL Trend": 3.9, "Volatility Model": 3.8,
-            "EMA Structure": 3.7, "Liquidity Awareness": 3.6, "Volatility Squeeze": 3.5, "Candle Confirmation": 3.4,
+            "MACD": 4.9, "Volume Spike": 4.8, "Fractal Zone": 4.7, "Momentum": 4.5, "ATR Momentum Burst": 4.4,
+            "MTF Volume Agreement": 4.3, "HH/LL Trend": 3.9, "Volatility Model": 3.8,
+            "Liquidity Awareness": 3.6, "Volatility Squeeze": 3.5, "Candle Confirmation": 3.4,
             "VWAP Divergence": 3.3, "Spread Filter": 3.2, "Chop Zone": 3.1, "Liquidity Pool": 2.9, "Support/Resistance": 2.8,
-            "Smart Money Bias": 2.7, "Absorption": 2.6, "Wick Dominance": 2.5
+            "Smart Money Bias": 2.7, "Absorption": 2.6, "Wick Dominance": 2.5, "unified_trend_regime": 5.1
         }
 
         self.filter_names = list(set(self.filter_weights_long.keys()) | set(self.filter_weights_short.keys()))
@@ -776,6 +776,9 @@ class SmartFilter:
             print(f"[{self.symbol}] Error: DataFrame empty.")
             return None
 
+        trend_signal, trend_score_long, trend_score_short = self.unified_trend_regime()
+        print(f"[DEBUG] Unified Trend Regime: {trend_signal}, Long Score: {trend_score_long}, Short Score: {trend_score_short}")
+        
         # --- Detect reversal and set route correctly (AMBIGUOUS included) ---
         # reversal = self.explicit_reversal_gate()
         # reversal_detected = reversal in ["LONG", "SHORT"]
@@ -785,26 +788,27 @@ class SmartFilter:
         
         # List all filter names
         filter_names = [
-            "Fractal Zone", "EMA Cloud", "MACD", "Momentum", "HATS", "Volume Spike",
-            "VWAP Divergence", "MTF Volume Agreement", "HH/LL Trend", "EMA Structure",
+            "Fractal Zone", "MACD", "Momentum", "Volume Spike",
+            "VWAP Divergence", "MTF Volume Agreement", "HH/LL Trend",
             "Chop Zone", "Candle Confirmation", "Wick Dominance", "Absorption",
             "Support/Resistance", "Smart Money Bias", "Liquidity Pool", "Spread Filter",
-            "Liquidity Awareness", "Trend Continuation", "Volatility Model",
-            "ATR Momentum Burst", "Volatility Squeeze"
+            "Liquidity Awareness", "Volatility Model",
+            "ATR Momentum Burst", "Volatility Squeeze", "unified_trend_regime"
         ]
 
         # Map filter names to functions, handling timeframes if needed
         filter_function_map = {
             "Fractal Zone": getattr(self, "_check_fractal_zone", None),
-            "EMA Cloud": getattr(self, "_check_ema_cloud", None),
+            "unified_trend_regime": self.unified_trend_regime,
+           # "EMA Cloud": getattr(self, "_check_ema_cloud", None),
             "MACD": getattr(self, "_check_macd", None),
             "Momentum": getattr(self, "_check_momentum", None),
-            "HATS": getattr(self, "_check_hats", None),
+           # "HATS": getattr(self, "_check_hats", None),
             "Volume Spike": self.volume_surge_confirmed if self.tf == "3min" else getattr(self, "_check_volume_spike", None),
             "VWAP Divergence": getattr(self, "_check_vwap_divergence", None),
             "MTF Volume Agreement": getattr(self, "_check_mtf_volume_agreement", None),
             "HH/LL Trend": getattr(self, "_check_hh_ll", None),
-            "EMA Structure": getattr(self, "_check_ema_structure", None),
+           # "EMA Structure": getattr(self, "_check_ema_structure", None),
             "Chop Zone": getattr(self, "_check_chop_zone", None),
             "Candle Confirmation": getattr(self, "_check_candle_close", None),
             "Wick Dominance": getattr(self, "_check_wick_dominance", None),
@@ -814,7 +818,7 @@ class SmartFilter:
             "Liquidity Pool": getattr(self, "_check_liquidity_pool", None),
             "Spread Filter": getattr(self, "_check_spread_filter", None),
             "Liquidity Awareness": getattr(self, "_check_liquidity_awareness", None),
-            "Trend Continuation": getattr(self, "_check_trend_continuation", None),
+           # "Trend Continuation": getattr(self, "_check_trend_continuation", None),
             "Volatility Model": getattr(self, "_check_volatility_model", None),
             "ATR Momentum Burst": getattr(self, "_check_atr_momentum_burst", None),
             "Volatility Squeeze": getattr(self, "_check_volatility_squeeze", None)
@@ -1292,31 +1296,31 @@ class SmartFilter:
         else:
             return None
     
-    def _check_ema_cloud(self, min_conditions=2):
-        ema20 = self.df['ema20'].iat[-1]
-        ema50 = self.df['ema50'].iat[-1]
-        ema20_prev = self.df['ema20'].iat[-2]
-        close = self.df['close'].iat[-1]
+   # def _check_ema_cloud(self, min_conditions=2):
+   #     ema20 = self.df['ema20'].iat[-1]
+   #     ema50 = self.df['ema50'].iat[-1]
+   #     ema20_prev = self.df['ema20'].iat[-2]
+   #     close = self.df['close'].iat[-1]
     
         # LONG conditions
-        cond1_long = ema20 > ema50
-        cond2_long = ema20 > ema20_prev
-        cond3_long = close > ema20
+   #     cond1_long = ema20 > ema50
+   #     cond2_long = ema20 > ema20_prev
+   #     cond3_long = close > ema20
     
         # SHORT conditions
-        cond1_short = ema20 < ema50
-        cond2_short = ema20 < ema20_prev
-        cond3_short = close < ema20
+   #     cond1_short = ema20 < ema50
+   #     cond2_short = ema20 < ema20_prev
+   #     cond3_short = close < ema20
     
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
+   #     long_met = sum([cond1_long, cond2_long, cond3_long])
+   #     short_met = sum([cond1_short, cond2_short, cond3_short])
     
-        if long_met >= min_conditions:
-            return "LONG"
-        elif short_met >= min_conditions:
-            return "SHORT"
-        else:
-            return None
+   #     if long_met >= min_conditions:
+   #         return "LONG"
+   #     elif short_met >= min_conditions:
+   #         return "SHORT"
+   #     else:
+   #         return None
 
     # alternative of check_ema_cloud
     # def _check_ema_cloud(self):
@@ -1391,37 +1395,37 @@ class SmartFilter:
         else:
             return None
 
-    def _check_hats(self):
+    # def _check_hats(self):
         # Define your moving averages
-        fast = self.df['ema10'].iat[-1]
-        mid = self.df['ema21'].iat[-1]
-        slow = self.df['ema50'].iat[-1]
+    #    fast = self.df['ema10'].iat[-1]
+    #    mid = self.df['ema21'].iat[-1]
+    #    slow = self.df['ema50'].iat[-1]
 
-        fast_prev = self.df['ema10'].iat[-2]
-        mid_prev = self.df['ema21'].iat[-2]
-        slow_prev = self.df['ema50'].iat[-2]
+    #    fast_prev = self.df['ema10'].iat[-2]
+    #    mid_prev = self.df['ema21'].iat[-2]
+    #    slow_prev = self.df['ema50'].iat[-2]
 
-        close = self.df['close'].iat[-1]
+    #    close = self.df['close'].iat[-1]
 
         # LONG conditions
-        cond1_long = fast > mid and mid > slow
-        cond2_long = fast > fast_prev and mid > mid_prev and slow > slow_prev
-        cond3_long = close > fast
+    #    cond1_long = fast > mid and mid > slow
+    #    cond2_long = fast > fast_prev and mid > mid_prev and slow > slow_prev
+    #    cond3_long = close > fast
 
         # SHORT conditions
-        cond1_short = fast < mid and mid < slow
-        cond2_short = fast < fast_prev and mid < mid_prev and slow < slow_prev
-        cond3_short = close < fast
+    #    cond1_short = fast < mid and mid < slow
+    #    cond2_short = fast < fast_prev and mid < mid_prev and slow < slow_prev
+    #    cond3_short = close < fast
 
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
+    #    long_met = sum([cond1_long, cond2_long, cond3_long])
+    #    short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 1:
-            return "LONG"
-        elif short_met >= 1:
-            return "SHORT"
-        else:
-            return None
+    #    if long_met >= 1:
+    #        return "LONG"
+    #    elif short_met >= 1:
+    #        return "SHORT"
+    #    else:
+    #        return None
 
     def _check_vwap_divergence(self):
         vwap = self.df['vwap'].iat[-1]
@@ -1508,36 +1512,36 @@ class SmartFilter:
         else:
             return None
 
-    def _check_ema_structure(self):
+    # def _check_ema_structure(self):
         # Current values
-        close = self.df['close'].iat[-1]
-        ema9 = self.df['ema9'].iat[-1]
-        ema21 = self.df['ema21'].iat[-1]
-        ema50 = self.df['ema50'].iat[-1]
+    #    close = self.df['close'].iat[-1]
+    #    ema9 = self.df['ema9'].iat[-1]
+    #    ema21 = self.df['ema21'].iat[-1]
+    #    ema50 = self.df['ema50'].iat[-1]
         # Previous values
-        ema9_prev = self.df['ema9'].iat[-2]
-        ema21_prev = self.df['ema21'].iat[-2]
-        ema50_prev = self.df['ema50'].iat[-2]
+    #    ema9_prev = self.df['ema9'].iat[-2]
+    #    ema21_prev = self.df['ema21'].iat[-2]
+    #    ema50_prev = self.df['ema50'].iat[-2]
 
         # LONG conditions
-        cond1_long = ema9 > ema21 and ema21 > ema50
-        cond2_long = close > ema9 and close > ema21 and close > ema50
-        cond3_long = ema9 > ema9_prev and ema21 > ema21_prev and ema50 > ema50_prev
+    #    cond1_long = ema9 > ema21 and ema21 > ema50
+    #    cond2_long = close > ema9 and close > ema21 and close > ema50
+    #    cond3_long = ema9 > ema9_prev and ema21 > ema21_prev and ema50 > ema50_prev
 
         # SHORT conditions
-        cond1_short = ema9 < ema21 and ema21 < ema50
-        cond2_short = close < ema9 and close < ema21 and close < ema50
-        cond3_short = ema9 < ema9_prev and ema21 < ema21_prev and ema50 < ema50_prev
+     #   cond1_short = ema9 < ema21 and ema21 < ema50
+     #   cond2_short = close < ema9 and close < ema21 and close < ema50
+     #   cond3_short = ema9 < ema9_prev and ema21 < ema21_prev and ema50 < ema50_prev
 
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
+     #   long_met = sum([cond1_long, cond2_long, cond3_long])
+     #   short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 1:
-            return "LONG"
-        elif short_met >= 1:
-            return "SHORT"
-        else:
-            return None
+     #   if long_met >= 1:
+     #       return "LONG"
+     #   elif short_met >= 1:
+     #       return "SHORT"
+     #   else:
+     #       return None
 
     def _check_chop_zone(self, chop_threshold=40):
         chop = self.df['chop_zone'].iat[-1]
@@ -1833,31 +1837,31 @@ class SmartFilter:
         else:
             return None
 
-    def _check_trend_continuation(self, ma_col='ema21'):
-        close = self.df['close'].iat[-1]
-        close_prev = self.df['close'].iat[-2]
-        ma = self.df[ma_col].iat[-1]
-        ma_prev = self.df[ma_col].iat[-2]
+   # def _check_trend_continuation(self, ma_col='ema21'):
+   #     close = self.df['close'].iat[-1]
+   #     close_prev = self.df['close'].iat[-2]
+   #     ma = self.df[ma_col].iat[-1]
+   #     ma_prev = self.df[ma_col].iat[-2]
 
         # LONG conditions
-        cond1_long = close > ma
-        cond2_long = ma > ma_prev
-        cond3_long = close > close_prev
+   #     cond1_long = close > ma
+   #     cond2_long = ma > ma_prev
+   #     cond3_long = close > close_prev
 
         # SHORT conditions
-        cond1_short = close < ma
-        cond2_short = ma < ma_prev
-        cond3_short = close < close_prev
+   #     cond1_short = close < ma
+   #     cond2_short = ma < ma_prev
+   #     cond3_short = close < close_prev
 
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
+   #     long_met = sum([cond1_long, cond2_long, cond3_long])
+   #     short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 1:
-            return "LONG"
-        elif short_met >= 1:
-            return "SHORT"
-        else:
-            return None
+   #     if long_met >= 1:
+   #         return "LONG"
+   #     elif short_met >= 1:
+   #         return "SHORT"
+   #     else:
+   #         return None
 
     def _check_volatility_model(self, atr_col='atr', atr_ma_col='atr_ma'):
         atr = self.df[atr_col].iat[-1]
@@ -1994,42 +1998,114 @@ class SmartFilter:
                 continue
         return None, None
 
-# def superGK_check(self, symbol, signal_direction):
-#    # Fetch order book data (Bid/Ask details)
-#    bids, asks = self._fetch_order_book(symbol)
-
-#    # Check if order book data is available
-#    if bids is None or asks is None:
-#        print(f"Signal blocked due to missing order book data for {symbol}")
-#        return False  # Block the signal if no order book data is available
-
-#    # Calculate bid and ask wall sizes (order wall delta)
-#    bid_wall = self.get_order_wall_delta(symbol, side='bid')
-#    ask_wall = self.get_order_wall_delta(symbol, side='ask')
-
-#    # Check market liquidity (Resting Density)
-#    resting_density = self.get_resting_density(symbol)
-#    bid_density = resting_density['bid_density']
-#    ask_density = resting_density['ask_density']
-
-#    # Market strength check based on liquidity (if density is too low, block)
-#    if bid_density < self.liquidity_threshold or ask_density < self.liquidity_threshold:
-#        print(f"Signal blocked due to low liquidity for {symbol}")
-#        return False  # Block signal due to insufficient liquidity
-
-#    # Further check based on bid/ask wall delta
-#    if bid_wall < ask_wall:
-#        print(f"Signal blocked due to weak buy-side support for {symbol}")
-#        return False  # Block signal if ask wall is stronger
-
-#    # Determine signal based on liquidity and market depth
-#    if bid_density > ask_density:
-#        print(f"Signal passed for LONG: Strong bid-side liquidity for {symbol}")
-#        return True  # Allow LONG signal if bid-side liquidity is stronger
-#    elif ask_density > bid_density:
-#        print(f"Signal passed for SHORT: Strong ask-side liquidity for {symbol}")
-#        return True  # Allow SHORT signal if ask-side liquidity is stronger
-#    else:
-#        print(f"Signal blocked due to neutral market conditions for {symbol}")
-#        return False  # Block signal if market liquidity is balanced
-
+    def unified_trend_regime(self, verbose=False):
+        """
+        Returns 'LONG', 'SHORT', or None, along with trend_score.
+        Combines EMA cloud, EMA structure, HATS, and trend continuation logic.
+        """
+        # Fetch current and previous values for all relevant EMAs and price
+        close = self.df['close'].iat[-1]
+        close_prev = self.df['close'].iat[-2]
+        ema9 = self.df.get('ema9', self.df['close']).iat[-1]
+        ema9_prev = self.df.get('ema9', self.df['close']).iat[-2]
+        ema10 = self.df.get('ema10', self.df['close']).iat[-1]
+        ema10_prev = self.df.get('ema10', self.df['close']).iat[-2]
+        ema20 = self.df.get('ema20', self.df['close']).iat[-1]
+        ema20_prev = self.df.get('ema20', self.df['close']).iat[-2]
+        ema21 = self.df.get('ema21', self.df['close']).iat[-1]
+        ema21_prev = self.df.get('ema21', self.df['close']).iat[-2]
+        ema50 = self.df.get('ema50', self.df['close']).iat[-1]
+        ema50_prev = self.df.get('ema50', self.df['close']).iat[-2]
+    
+        trend_score_long = 0
+        trend_score_short = 0
+    
+        # EMA Cloud logic (20/50)
+        if ema20 > ema50:
+            trend_score_long += 1
+            if verbose: print("EMA20 > EMA50 (cloud): +1 LONG")
+        if ema20 < ema50:
+            trend_score_short += 1
+            if verbose: print("EMA20 < EMA50 (cloud): +1 SHORT")
+        if ema20 > ema20_prev:
+            trend_score_long += 1
+            if verbose: print("EMA20 rising: +1 LONG")
+        if ema20 < ema20_prev:
+            trend_score_short += 1
+            if verbose: print("EMA20 falling: +1 SHORT")
+        if close > ema20:
+            trend_score_long += 1
+            if verbose: print("Close > EMA20: +1 LONG")
+        if close < ema20:
+            trend_score_short += 1
+            if verbose: print("Close < EMA20: +1 SHORT")
+    
+        # EMA Structure (9/21/50 stacking)
+        if ema9 > ema21 and ema21 > ema50:
+            trend_score_long += 1
+            if verbose: print("EMA9 > EMA21 > EMA50: +1 LONG")
+        if ema9 < ema21 and ema21 < ema50:
+            trend_score_short += 1
+            if verbose: print("EMA9 < EMA21 < EMA50: +1 SHORT")
+        if close > ema9 and close > ema21 and close > ema50:
+            trend_score_long += 1
+            if verbose: print("Close > all EMAs: +1 LONG")
+        if close < ema9 and close < ema21 and close < ema50:
+            trend_score_short += 1
+            if verbose: print("Close < all EMAs: +1 SHORT")
+        if ema9 > ema9_prev and ema21 > ema21_prev and ema50 > ema50_prev:
+            trend_score_long += 1
+            if verbose: print("All EMAs rising: +1 LONG")
+        if ema9 < ema9_prev and ema21 < ema21_prev and ema50 < ema50_prev:
+            trend_score_short += 1
+            if verbose: print("All EMAs falling: +1 SHORT")
+    
+        # HATS logic (10/21/50 stacking and slopes)
+        if ema10 > ema21 and ema21 > ema50:
+            trend_score_long += 1
+            if verbose: print("EMA10 > EMA21 > EMA50: +1 LONG")
+        if ema10 < ema21 and ema21 < ema50:
+            trend_score_short += 1
+            if verbose: print("EMA10 < EMA21 < EMA50: +1 SHORT")
+        if ema10 > ema10_prev and ema21 > ema21_prev and ema50 > ema50_prev:
+            trend_score_long += 1
+            if verbose: print("All HATS EMAs rising: +1 LONG")
+        if ema10 < ema10_prev and ema21 < ema21_prev and ema50 < ema50_prev:
+            trend_score_short += 1
+            if verbose: print("All HATS EMAs falling: +1 SHORT")
+        if close > ema10:
+            trend_score_long += 1
+            if verbose: print("Close > EMA10: +1 LONG")
+        if close < ema10:
+            trend_score_short += 1
+            if verbose: print("Close < EMA10: +1 SHORT")
+    
+        # Trend Continuation (21 EMA)
+        if close > ema21:
+            trend_score_long += 1
+            if verbose: print("Close > EMA21: +1 LONG")
+        if close < ema21:
+            trend_score_short += 1
+            if verbose: print("Close < EMA21: +1 SHORT")
+        if ema21 > ema21_prev:
+            trend_score_long += 1
+            if verbose: print("EMA21 rising: +1 LONG")
+        if ema21 < ema21_prev:
+            trend_score_short += 1
+            if verbose: print("EMA21 falling: +1 SHORT")
+        if close > close_prev:
+            trend_score_long += 1
+            if verbose: print("Close rising: +1 LONG")
+        if close < close_prev:
+            trend_score_short += 1
+            if verbose: print("Close falling: +1 SHORT")
+    
+        # Set your own threshold; e.g., require 5 for strong trend
+        threshold = 5
+    
+        if trend_score_long >= threshold and trend_score_long > trend_score_short:
+            return "LONG", trend_score_long, trend_score_short
+        elif trend_score_short >= threshold and trend_score_short > trend_score_long:
+            return "SHORT", trend_score_long, trend_score_short
+        else:
+            return None, trend_score_long, trend_score_short
