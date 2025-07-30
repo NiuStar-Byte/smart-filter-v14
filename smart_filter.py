@@ -1233,7 +1233,38 @@ class SmartFilter:
         if return_directionless and spike:
             return "SPIKE"
         return None
-        
+
+    def _check_mtf_volume_agreement(self):
+        # Current timeframe
+        volume = self.df['volume'].iat[-1]
+        volume_prev = self.df['volume'].iat[-2]
+        close = self.df['close'].iat[-1]
+        close_prev = self.df['close'].iat[-2]
+
+        # Higher timeframe (e.g., hourly or daily)
+        higher_tf_volume = self.df['higher_tf_volume'].iat[-1]
+        higher_tf_volume_prev = self.df['higher_tf_volume'].iat[-2]
+
+        # LONG conditions
+        cond1_long = volume > volume_prev
+        cond2_long = higher_tf_volume > higher_tf_volume_prev
+        cond3_long = close > close_prev
+
+        # SHORT conditions
+        cond1_short = volume > volume_prev
+        cond2_short = higher_tf_volume > higher_tf_volume_prev
+        cond3_short = close < close_prev
+
+        long_met = sum([cond1_long, cond2_long, cond3_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short])
+
+        if long_met >= 2:
+            return "LONG"
+        elif short_met >= 2:
+            return "SHORT"
+        else:
+            return None
+            
     # def _check_volume_spike(self, zscore_threshold=1.5):
         # Calculate z-score of current volume vs recent (rolling 10)
     #    avg = self.df['volume'].rolling(10).mean().iat[-1]
@@ -1266,31 +1297,31 @@ class SmartFilter:
     #    else:
     #        return None
     
-   # def _check_ema_cloud(self, min_conditions=2):
-   #     ema20 = self.df['ema20'].iat[-1]
-   #     ema50 = self.df['ema50'].iat[-1]
-   #     ema20_prev = self.df['ema20'].iat[-2]
-   #     close = self.df['close'].iat[-1]
+    # def _check_ema_cloud(self, min_conditions=2):
+    #     ema20 = self.df['ema20'].iat[-1]
+    #     ema50 = self.df['ema50'].iat[-1]
+    #     ema20_prev = self.df['ema20'].iat[-2]
+    #     close = self.df['close'].iat[-1]
     
         # LONG conditions
-   #     cond1_long = ema20 > ema50
-   #     cond2_long = ema20 > ema20_prev
-   #     cond3_long = close > ema20
+    #     cond1_long = ema20 > ema50
+    #     cond2_long = ema20 > ema20_prev
+    #     cond3_long = close > ema20
     
         # SHORT conditions
-   #     cond1_short = ema20 < ema50
-   #     cond2_short = ema20 < ema20_prev
-   #     cond3_short = close < ema20
+    #     cond1_short = ema20 < ema50
+    #     cond2_short = ema20 < ema20_prev
+    #     cond3_short = close < ema20
     
-   #     long_met = sum([cond1_long, cond2_long, cond3_long])
-   #     short_met = sum([cond1_short, cond2_short, cond3_short])
+    #     long_met = sum([cond1_long, cond2_long, cond3_long])
+    #     short_met = sum([cond1_short, cond2_short, cond3_short])
     
-   #     if long_met >= min_conditions:
-   #         return "LONG"
-   #     elif short_met >= min_conditions:
-   #         return "SHORT"
-   #     else:
-   #         return None
+    #     if long_met >= min_conditions:
+    #         return "LONG"
+    #     elif short_met >= min_conditions:
+    #         return "SHORT"
+    #     else:
+    #         return None
 
     # alternative of check_ema_cloud
     # def _check_ema_cloud(self):
@@ -1306,7 +1337,7 @@ class SmartFilter:
     #    elif ema20 < ema50 and (ema20 < ema20_prev or close < ema20):
     #        return "SHORT"
     #    else:
-            return None
+    #        return None
     
     def _check_macd(self):
         e12 = self.df['close'].ewm(span=12).mean()
@@ -1365,6 +1396,19 @@ class SmartFilter:
         else:
             return None
 
+    def _check_atr_momentum_burst(self, threshold_pct=0.10, volume_mult=1.1):
+        for i in [-1, -2]:
+            close = self.df['close'].iat[i]
+            open_ = self.df['open'].iat[i]
+            volume = self.df['volume'].iat[i]
+            avg_vol = self.df['volume'].rolling(10).mean().iat[i]
+            pct_move = (close - open_) / open_ * 100
+            if pct_move > threshold_pct and volume > avg_vol * volume_mult:
+                return "LONG"
+            elif pct_move < -threshold_pct and volume > avg_vol * volume_mult:
+                return "SHORT"
+        return None
+        
     # def _check_hats(self):
         # Define your moving averages
     #    fast = self.df['ema10'].iat[-1]
@@ -1412,37 +1456,6 @@ class SmartFilter:
         cond1_short = close > vwap
         cond2_short = close < close_prev
         cond3_short = (close - vwap) > (close_prev - vwap_prev)
-
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
-
-        if long_met >= 2:
-            return "LONG"
-        elif short_met >= 2:
-            return "SHORT"
-        else:
-            return None
-            
-    def _check_mtf_volume_agreement(self):
-        # Current timeframe
-        volume = self.df['volume'].iat[-1]
-        volume_prev = self.df['volume'].iat[-2]
-        close = self.df['close'].iat[-1]
-        close_prev = self.df['close'].iat[-2]
-
-        # Higher timeframe (e.g., hourly or daily)
-        higher_tf_volume = self.df['higher_tf_volume'].iat[-1]
-        higher_tf_volume_prev = self.df['higher_tf_volume'].iat[-2]
-
-        # LONG conditions
-        cond1_long = volume > volume_prev
-        cond2_long = higher_tf_volume > higher_tf_volume_prev
-        cond3_long = close > close_prev
-
-        # SHORT conditions
-        cond1_short = volume > volume_prev
-        cond2_short = higher_tf_volume > higher_tf_volume_prev
-        cond3_short = close < close_prev
 
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
@@ -1891,18 +1904,6 @@ class SmartFilter:
         else:
             return None
 
-    def _check_atr_momentum_burst(self, threshold_pct=0.10, volume_mult=1.1):
-        for i in [-1, -2]:
-            close = self.df['close'].iat[i]
-            open_ = self.df['open'].iat[i]
-            volume = self.df['volume'].iat[i]
-            avg_vol = self.df['volume'].rolling(10).mean().iat[i]
-            pct_move = (close - open_) / open_ * 100
-            if pct_move > threshold_pct and volume > avg_vol * volume_mult:
-                return "LONG"
-            elif pct_move < -threshold_pct and volume > avg_vol * volume_mult:
-                return "SHORT"
-        return None
             
     # def _check_atr_momentum_burst(self, atr_period=14, burst_mult=1.5):
         # ATR must be calculated and present in self.df['atr']
