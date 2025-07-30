@@ -2101,7 +2101,7 @@ class SmartFilter:
             if verbose: print("Close falling: +1 SHORT")
     
         # Set your own threshold; e.g., require 5 for strong trend
-        threshold = 5
+        threshold = 3
     
         if trend_score_long >= threshold and trend_score_long > trend_score_short:
             return "LONG", trend_score_long, trend_score_short
