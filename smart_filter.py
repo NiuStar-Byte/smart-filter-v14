@@ -118,19 +118,19 @@ class SmartFilter:
 
         # Weights for filters
         self.filter_weights_long = {
-            "Momentum Cluster": 6.1, "Volume Spike": 4.8, "Fractal Zone": 4.7,
-            "MTF Volume Agreement": 4.3, "HH/LL Trend": 3.9, "Volatility Model": 3.8,
-            "Liquidity Awareness": 3.6, "Volatility Squeeze": 3.5, "Candle Confirmation": 3.4,
-            "VWAP Divergence": 3.3, "Spread Filter": 3.2, "Chop Zone": 3.1, "Liquidity Pool": 2.9, "Support/Resistance": 2.8,
-            "Smart Money Bias": 2.7, "Absorption": 2.6, "Wick Dominance": 2.5, "Unified Trend Regime": 5.1
+            "Momentum Cluster": 5.3, "Unified Trend Regime": 5.2, "Volume Spike": 5.1, "Fractal Zone": 4.9,
+            "MTF Volume Agreement": 4.8, "HH/LL Trend": 4.7, "Volatility Model": 4.6, "Liquidity Awareness": 4.5, 
+            "Volatility Squeeze": 4.4, "Candle Confirmation": 4.3, "VWAP Divergence": 4.2, "Spread Filter": 4.1, 
+            "Chop Zone": 3.9, "Liquidity Pool": 3.8, "Support/Resistance": 3.7, "Smart Money Bias": 3.6, 
+            "Absorption": 3.5, "Wick Dominance": 3.4
         }
 
         self.filter_weights_short = {
-            "Momentum Cluster": 6.1, "Volume Spike": 4.8, "Fractal Zone": 4.7,
-            "MTF Volume Agreement": 4.3, "HH/LL Trend": 3.9, "Volatility Model": 3.8,
-            "Liquidity Awareness": 3.6, "Volatility Squeeze": 3.5, "Candle Confirmation": 3.4,
-            "VWAP Divergence": 3.3, "Spread Filter": 3.2, "Chop Zone": 3.1, "Liquidity Pool": 2.9, "Support/Resistance": 2.8,
-            "Smart Money Bias": 2.7, "Absorption": 2.6, "Wick Dominance": 2.5, "Unified Trend Regime": 5.1
+            "Momentum Cluster": 5.3, "Unified Trend Regime": 5.2, "Volume Spike": 5.1, "Fractal Zone": 4.9,
+            "MTF Volume Agreement": 4.8, "HH/LL Trend": 4.7, "Volatility Model": 4.6, "Liquidity Awareness": 4.5, 
+            "Volatility Squeeze": 4.4, "Candle Confirmation": 4.3, "VWAP Divergence": 4.2, "Spread Filter": 4.1, 
+            "Chop Zone": 3.9, "Liquidity Pool": 3.8, "Support/Resistance": 3.7, "Smart Money Bias": 3.6, 
+            "Absorption": 3.5, "Wick Dominance": 3.4
         }
 
         self.filter_names = list(set(self.filter_weights_long.keys()) | set(self.filter_weights_short.keys()))
