@@ -54,7 +54,7 @@ class SmartFilter:
         df3m: Optional[pd.DataFrame] = None,
         df5m: Optional[pd.DataFrame] = None,
         tf: Optional[str] = None,
-        min_score: int = 6,
+        min_score: int = 7,
         required_passed: Optional[int] = None,  # int or None allowed
         volume_multiplier: float = 2.0,
         liquidity_threshold: float = 0.50,
@@ -118,19 +118,19 @@ class SmartFilter:
 
         # Weights for filters
         self.filter_weights_long = {
-            "Momentum Cluster": 5.3, "Unified Trend Regime": 5.2, "Volume Spike": 5.1, "Fractal Zone": 4.9,
-            "MTF Volume Agreement": 4.8, "HH/LL Trend": 4.7, "Volatility Model": 4.6, "Liquidity Awareness": 4.5, 
-            "Volatility Squeeze": 4.4, "Candle Confirmation": 4.3, "VWAP Divergence": 4.2, "Spread Filter": 4.1, 
-            "Chop Zone": 3.9, "Liquidity Pool": 3.8, "Support/Resistance": 3.7, "Smart Money Bias": 3.6, 
-            "Absorption": 3.5, "Wick Dominance": 3.4
+            "Momentum Cluster": 6.4, "Unified Trend Regime": 6.2, "Volume Spike": 6.1, "Fractal Zone": 5.8,
+            "MTF Volume Agreement": 5.7, "HH/LL Trend": 5.4, "Volatility Model": 5.3, "Liquidity Awareness": 5.1, 
+            "Volatility Squeeze": 4.9, "Candle Confirmation": 4.7, "VWAP Divergence": 4.5, "Spread Filter": 4.3, 
+            "Chop Zone": 4.1, "Liquidity Pool": 3.9, "Support/Resistance": 3.7, "Smart Money Bias": 3.5, 
+            "Absorption": 3.3, "Wick Dominance": 3.1
         }
 
         self.filter_weights_short = {
-            "Momentum Cluster": 5.3, "Unified Trend Regime": 5.2, "Volume Spike": 5.1, "Fractal Zone": 4.9,
-            "MTF Volume Agreement": 4.8, "HH/LL Trend": 4.7, "Volatility Model": 4.6, "Liquidity Awareness": 4.5, 
-            "Volatility Squeeze": 4.4, "Candle Confirmation": 4.3, "VWAP Divergence": 4.2, "Spread Filter": 4.1, 
-            "Chop Zone": 3.9, "Liquidity Pool": 3.8, "Support/Resistance": 3.7, "Smart Money Bias": 3.6, 
-            "Absorption": 3.5, "Wick Dominance": 3.4
+            "Momentum Cluster": 6.4, "Unified Trend Regime": 6.2, "Volume Spike": 6.1, "Fractal Zone": 5.8,
+            "MTF Volume Agreement": 5.7, "HH/LL Trend": 5.4, "Volatility Model": 5.3, "Liquidity Awareness": 5.1, 
+            "Volatility Squeeze": 4.9, "Candle Confirmation": 4.7, "VWAP Divergence": 4.5, "Spread Filter": 4.3, 
+            "Chop Zone": 4.1, "Liquidity Pool": 3.9, "Support/Resistance": 3.7, "Smart Money Bias": 3.5, 
+            "Absorption": 3.3, "Wick Dominance": 3.1
         }
 
         self.filter_names = list(set(self.filter_weights_long.keys()) | set(self.filter_weights_short.keys()))
