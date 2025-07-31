@@ -59,8 +59,8 @@ def send_telegram_alert(
 
     # --- Confidence icon ---
     confidence_icon = (
-        "🟢" if confidence >= 80 else
-        "🟡" if confidence >= 70 else
+        "🟢" if confidence >= 75 else
+        "🟡" if confidence >= 65 else
         "🔴"
     )
 
