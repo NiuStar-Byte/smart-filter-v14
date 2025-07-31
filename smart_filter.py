@@ -1225,9 +1225,9 @@ class SmartFilter:
             if all(short_conditions):
                 return "SHORT"
         else:
-            if sum(long_conditions) >= 2:
+            if sum(long_conditions) >= 1:
                 return "LONG"
-            if sum(short_conditions) >= 2:
+            if sum(short_conditions) >= 1:
                 return "SHORT"
     
         if return_directionless and spike:
