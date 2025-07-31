@@ -144,7 +144,7 @@ class SmartFilter:
             "Support/Resistance"
         ]
 
-        self.soft_gatekeepers = []
+        self.soft_gatekeepers = ["Volume Spike"]
         
         # Directional-aware filters are those with different weights between LONG and SHORT
 #        self.directional_aware_filters = [
