@@ -24,6 +24,8 @@ def send_telegram_alert(
     total_weight: float,
     reversal_side=None,
     regime=None,
+    early_breakout_3m=None,   # <-- NEW PARAM
+    early_breakout_5m=None    # <-- NEW PARAM
 ) -> None:
     print(f"📨 Telegram alert sent: {symbol} {signal_type} {Route} @ {price}")
     # print(f"[DEBUG] signal_type received in send_telegram_alert: '{signal_type}'")
@@ -135,6 +137,17 @@ def send_telegram_alert(
         price_str = f"{float(price):.6f}"
     except Exception:
         price_str = str(price)
+
+    # --- Early Breakout Section ---
+    early_breakout_msg = ""
+    if early_breakout_3m and isinstance(early_breakout_3m, dict) and early_breakout_3m.get("valid_signal"):
+        eb_bias = early_breakout_3m.get("bias", "N/A")
+        eb_price = early_breakout_3m.get("price", "N/A")
+        early_breakout_msg += f"\n⚡ <b>3min Early Breakout</b>: {eb_bias} @ {eb_price}"
+    if early_breakout_5m and isinstance(early_breakout_5m, dict) and early_breakout_5m.get("valid_signal"):
+        eb_bias = early_breakout_5m.get("bias", "N/A")
+        eb_price = early_breakout_5m.get("price", "N/A")
+        early_breakout_msg += f"\n⚡ <b>5min Early Breakout</b>: {eb_bias} @ {eb_price}"
     
     # --- Final message format ---
     message = (
@@ -147,6 +160,7 @@ def send_telegram_alert(
         f"🎯 Passed: {passed}/{gatekeepers_total}\n"
         f"{confidence_icon} Confidence: {confidence:.1f}%\n"
         f"🏋️‍♀️ Weighted: {weighted_str}"
+        f"{early_breakout_msg}"  # <-- Early Breakout section
     )
     
     print("Signal type:", signal_type, "Route:", Route, "reversal_side:", reversal_side)
