@@ -71,6 +71,16 @@ def get_resting_order_density(symbol, depth=100, band_pct=0.005):
     except Exception:
         return {'bid_density': 0.0, 'ask_density': 0.0, 'bid_levels': 0, 'ask_levels': 0, 'midprice': None}
 
+def early_breakout(df, lookback=3):
+    prev_high = df['high'].iloc[-lookback]
+    prev_low = df['low'].iloc[-lookback]
+    close = df['close'].iloc[-1]
+    if close > prev_high:
+        return {'valid_signal': True, 'bias': 'LONG', 'price': close}
+    elif close < prev_low:
+        return {'valid_signal': True, 'bias': 'SHORT', 'price': close}
+    return {'valid_signal': False}
+
 def log_orderbook_and_density(symbol):
     try:
         result = get_order_wall_delta(symbol)
@@ -120,6 +130,10 @@ def run():
                 df5 = get_ohlcv(symbol, interval="5min", limit=OHLCV_LIMIT)
                 if df3 is None or df3.empty or df5 is None or df5.empty:
                     continue
+
+                # --- Early Breakout Checks ---
+                early_breakout_3m = early_breakout(df3, lookback=3)
+                early_breakout_5m = early_breakout(df5, lookback=3)
 
                 # --- 3min TF ---
                 try:
@@ -177,7 +191,9 @@ def run():
                                 "orderbook_result": orderbook_result,
                                 "density_result": density_result,
                                 "entry_price": entry_price,
-                                "fired_time_utc": fired_time_utc
+                                "fired_time_utc": fired_time_utc,
+                                "early_breakout_3m": early_breakout_3m  # <-- Add this line
+
                             })
 
                             log_fired_signal(
@@ -215,7 +231,8 @@ def run():
                                     weighted=passed_weight,
                                     total_weight=total_weight,
                                     reversal_side=res3.get("reversal_side"),
-                                    regime=regime
+                                    regime=regime,
+                                    early_breakout_3m=early_breakout_3m  # <-- Pass to alert (if supported)
                                 )
                             last_sent[key3] = now
                     else:
@@ -279,7 +296,8 @@ def run():
                                 "orderbook_result": orderbook_result,
                                 "density_result": density_result,
                                 "entry_price": entry_price,
-                                "fired_time_utc": fired_time_utc
+                                "fired_time_utc": fired_time_utc,
+                                "early_breakout_5m": early_breakout_5m  # <-- Add this line
                             })
 
                             log_fired_signal(
@@ -317,7 +335,8 @@ def run():
                                     weighted=passed_weight,
                                     total_weight=total_weight,
                                     reversal_side=res5.get("reversal_side"),
-                                    regime=regime
+                                    regime=regime,
+                                    early_breakout_5m=early_breakout_5m  # <-- Pass to alert (if supported)
                                 )
                             last_sent[key5] = now
                     else:
