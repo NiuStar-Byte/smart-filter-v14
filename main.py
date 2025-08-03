@@ -71,15 +71,33 @@ def get_resting_order_density(symbol, depth=100, band_pct=0.005):
     except Exception:
         return {'bid_density': 0.0, 'ask_density': 0.0, 'bid_levels': 0, 'ask_levels': 0, 'midprice': None}
 
+def candle_color(open, close):
+    return 'green' if close > open else 'red'
+
 def early_breakout(df, lookback=3):
-    prev_high = df['high'].iloc[-lookback]
-    prev_low = df['low'].iloc[-lookback]
-    close = df['close'].iloc[-1]
-    if close > prev_high:
+    if len(df) < lookback:
+        return {'valid_signal': False, 'bias': None, 'price': None}
+    
+    # Check if last 'lookback' candles are all the same color
+    candles = df.iloc[-lookback:]
+    colors = [candle_color(row['open'], row['close']) for _, row in candles.iterrows()]
+    if all(c == 'green' for c in colors):
+        direction = 'green'
+    elif all(c == 'red' for c in colors):
+        direction = 'red'
+    else:
+        return {'valid_signal': False, 'bias': None, 'price': None}
+
+    prev_high = candles['high'].iloc[0]
+    prev_low = candles['low'].iloc[0]
+    close = candles['close'].iloc[-1]
+
+    if close > prev_high and direction == 'green':
         return {'valid_signal': True, 'bias': 'LONG', 'price': close}
-    elif close < prev_low:
+    elif close < prev_low and direction == 'red':
         return {'valid_signal': True, 'bias': 'SHORT', 'price': close}
-    return {'valid_signal': False}
+
+    return {'valid_signal': False, 'bias': None, 'price': close}
 
 def log_orderbook_and_density(symbol):
     try:
