@@ -34,7 +34,7 @@ TOKENS = [
 #    "FUN-USDT", "VOXEL-USDT", "ALU-USDT", "TURBO-USDT", "PROMPT-USDT" 
 # ]
 
-COOLDOWN = {"3min": 60, "5min": 60}
+COOLDOWN = {"3min": 30, "5min": 30}
 last_sent = {}
 
 PEC_BARS = 5
