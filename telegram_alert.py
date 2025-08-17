@@ -3,6 +3,7 @@
 import os
 import requests
 from tg_config import BOT_TOKEN, CHAT_ID
+from check_symbols import get_token_blockchain_info
 
 # ——— CONFIG ——————————————————————————
 SEND_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
@@ -162,6 +163,15 @@ def send_telegram_alert(
         f"🏋️‍♀️ Weighted: {weighted_str}"
         f"{early_breakout_msg}"  # <-- Early Breakout section
     )
+
+    # --- Add consensus info ---
+    token_info = get_token_blockchain_info(symbol)
+    if token_info:
+        consensus_str = f"\n🔗 Consensus: <b>{token_info['consensus']}</b> ({token_info['blockchain']})"
+    else:
+        consensus_str = "\n🔗 Consensus: <b>Unknown</b>"
+
+    message += consensus_str
     
     print("Signal type:", signal_type, "Route:", Route, "reversal_side:", reversal_side)
     
