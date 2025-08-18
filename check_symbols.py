@@ -41,7 +41,7 @@ TOKEN_BLOCKCHAIN_INFO = {
     "BTC-USDT":   {"base": "BTC", "blockchain": "Bitcoin",      "consensus": "PoW"},
     "ETH-USDT":   {"base": "ETH", "blockchain": "Ethereum",     "consensus": "PoS"},
     "SOL-USDT":   {"base": "SOL", "blockchain": "Solana",       "consensus": "PoH+PoS"},
-    "XRP-USDT":   {"base": "XRP", "blockchain": "XRPLedger",    "consensus": "Ripple Consensus"},
+    "XRP-USDT":   {"base": "XRP", "blockchain": "XRPLedger",    "consensus": "Ripple"},
     "ADA-USDT":   {"base": "ADA", "blockchain": "Cardano",      "consensus": "Ouroboros PoS"},
     "AVAX-USDT":  {"base": "AVAX","blockchain": "Avalanche",    "consensus": "Avalanche"},
     "XLM-USDT":   {"base": "XLM", "blockchain": "Stellar",      "consensus": "SCP/FBA"},
