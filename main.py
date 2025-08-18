@@ -14,6 +14,7 @@ from smart_filter import SmartFilter
 from telegram_alert import send_telegram_alert, send_telegram_file
 from kucoin_orderbook import get_order_wall_delta
 from pec_engine import run_pec_check, export_pec_log
+from tp_sl_retracement import calculate_tp_sl
 
 TOKENS = [
     "BTC-USDT", "ETH-USDT",
@@ -189,6 +190,12 @@ def run():
                                 confidence = 0.0
                             entry_idx = df3.index.get_loc(df3.index[-1])
 
+                            # --- NEW: Calculate TP/SL ---
+                            tp_sl = calculate_tp_sl(df3, entry_price, signal_type)
+                            tp = tp_sl.get('tp')
+                            sl = tp_sl.get('sl')
+                            fib_levels = tp_sl.get('fib_levels')  # optional, for debug/log
+                            
                             valid_debugs.append({
                                 "symbol": symbol_val,
                                 "tf": tf_val,
@@ -203,8 +210,10 @@ def run():
                                 "density_result": density_result,
                                 "entry_price": entry_price,
                                 "fired_time_utc": fired_time_utc,
-                                "early_breakout_3m": early_breakout_3m  # <-- Add this line
-
+                                "early_breakout_3m": early_breakout_3m,  # <-- Add this line
+                                "tp": tp,
+                                "sl": sl,
+                                "fib_levels": fib_levels
                             })
 
                             log_fired_signal(
@@ -243,7 +252,9 @@ def run():
                                     total_weight=total_weight,
                                     reversal_side=res3.get("reversal_side"),
                                     regime=regime,
-                                    early_breakout_3m=early_breakout_3m  # <-- Pass to alert (if supported)
+                                    early_breakout_3m=early_breakout_3m,  # <-- Pass to alert (if supported)
+                                    tp=tp,       # NEW ARGUMENT
+                                    sl=sl        # NEW ARGUMENT
                                 )
                             last_sent[key3] = now
                     else:
@@ -294,6 +305,12 @@ def run():
                                 confidence = 0.0
                             entry_idx = df5.index.get_loc(df5.index[-1])
 
+                            # --- NEW: Calculate TP/SL ---
+                            tp_sl = calculate_tp_sl(df5, entry_price, signal_type)
+                            tp = tp_sl.get('tp')
+                            sl = tp_sl.get('sl')
+                            fib_levels = tp_sl.get('fib_levels')
+                            
                             valid_debugs.append({
                                 "symbol": symbol_val,
                                 "tf": tf_val,
@@ -308,7 +325,10 @@ def run():
                                 "density_result": density_result,
                                 "entry_price": entry_price,
                                 "fired_time_utc": fired_time_utc,
-                                "early_breakout_5m": early_breakout_5m  # <-- Add this line
+                                "early_breakout_5m": early_breakout_5m,  # <-- Add this line
+                                "tp": tp,
+                                "sl": sl,
+                                "fib_levels": fib_levels
                             })
 
                             log_fired_signal(
@@ -347,7 +367,9 @@ def run():
                                     total_weight=total_weight,
                                     reversal_side=res5.get("reversal_side"),
                                     regime=regime,
-                                    early_breakout_5m=early_breakout_5m  # <-- Pass to alert (if supported)
+                                    early_breakout_5m=early_breakout_5m,  # <-- Pass to alert (if supported)
+                                    tp=tp,       # NEW ARGUMENT
+                                    sl=sl        # NEW ARGUMENT
                                 )
                             last_sent[key5] = now
                     else:
