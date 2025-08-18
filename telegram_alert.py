@@ -27,6 +27,8 @@ def send_telegram_alert(
     regime=None,
     early_breakout_3m=None,   # <-- NEW PARAM
     early_breakout_5m=None    # <-- NEW PARAM
+    tp=None,               # <-- NEW ARG
+    sl=None                # <-- NEW ARG
 ) -> None:
     print(f"📨 Telegram alert sent: {symbol} {signal_type} {Route} @ {price}")
     # print(f"[DEBUG] signal_type received in send_telegram_alert: '{signal_type}'")
@@ -149,20 +151,11 @@ def send_telegram_alert(
         eb_bias = early_breakout_5m.get("bias", "N/A")
         eb_price = early_breakout_5m.get("price", "N/A")
         early_breakout_msg += f"\n⚡ <b>5min Early Breakout</b>: {eb_bias} @ {eb_price}"
-    
-    # --- Final message format ---
-    message = (
-        f"{numbered_signal}. {symbol} ({tf}){confirmed_tag}\n"
-        f"{regime_str}"
-        f"{signal_icon} {signal_str} Signal\n"
-        f"{route_icon} <b>{route_str}</b>\n"
-        f"💰 <b>{price:.6f}</b>\n"
-        f"📊 Score: {score}/{score_max}\n"
-        f"🎯 Passed: {passed}/{gatekeepers_total}\n"
-        f"{confidence_icon} Confidence: {confidence:.1f}%\n"
-        f"🏋️‍♀️ Weighted: {weighted_str}"
-        f"{early_breakout_msg}"  # <-- Early Breakout section
-    )
+
+    # --- TP/SL section ---
+    tp_sl_msg = ""
+    if tp is not None and sl is not None:
+        tp_sl_msg = f"\n🏁 <b>Take Profit (TP):</b> <code>{tp}</code>\n⛔ <b>Stop Loss (SL):</b> <code>{sl}</code>"
 
     # --- Add consensus info ---
     token_info = get_token_blockchain_info(symbol)
@@ -170,8 +163,22 @@ def send_telegram_alert(
         consensus_str = f"\n🔗 Consensus: <b>{token_info['consensus']}</b> ({token_info['blockchain']})"
     else:
         consensus_str = "\n🔗 Consensus: <b>Unknown</b>"
-
-    message += consensus_str
+        
+    # --- Final message format ---
+    message = (
+        f"{numbered_signal}. {symbol} ({tf}){confirmed_tag}\n"
+        f"{regime_str}"
+        f"{signal_icon} {signal_str} Signal\n"
+        f"{route_icon} <b>{route_str}</b>\n"
+        f"💰 <b>{price:.6f}</b>\n"
+        f"{tp_sl_msg}"            # <-- TP/SL section
+        f"📊 Score: {score}/{score_max}\n"
+        f"🎯 Passed: {passed}/{gatekeepers_total}\n"
+        f"{confidence_icon} Confidence: {confidence:.1f}%\n"
+        f"🏋️‍♀️ Weighted: {weighted_str}"
+        f"{early_breakout_msg}"  # <-- Early Breakout section
+        f"{consensus_str}"        # <-- Consensus info
+    )
     
     print("Signal type:", signal_type, "Route:", Route, "reversal_side:", reversal_side)
     
