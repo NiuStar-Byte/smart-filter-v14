@@ -26,7 +26,7 @@ def send_telegram_alert(
     reversal_side=None,
     regime=None,
     early_breakout_3m=None,   # <-- NEW PARAM
-    early_breakout_5m=None    # <-- NEW PARAM
+    early_breakout_5m=None,    # <-- NEW PARAM
     tp=None,               # <-- NEW ARG
     sl=None                # <-- NEW ARG
 ) -> None:
