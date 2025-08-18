@@ -163,7 +163,10 @@ def send_telegram_alert(
             sl_str = f"{float(sl):.6f}"
         except Exception:
             sl_str = str(sl)
-        tp_sl_msg = f"🏁 <b>Take Profit (TP):</b> <code>{tp_str}</code>\n⛔ <b>Stop Loss (SL):</b> <code>{sl_str}</code>"
+        tp_sl_msg = (
+            f"🏁 <b>Take Profit (TP):</b> <code>{tp_str}</code>\n"
+            f"⛔ <b>Stop Loss (SL):</b> <code>{sl_str}</code>\n"
+        )
 
     # --- Add consensus info ---
     token_info = get_token_blockchain_info(symbol)
@@ -179,13 +182,13 @@ def send_telegram_alert(
         f"{signal_icon} {signal_str} Signal\n"
         f"{route_icon} <b>{route_str}</b>\n"
         f"💰 <b>{price_str}</b>\n"
-        f"{tp_sl_msg}"            # <-- TP/SL section, no leading/trailing blank lines
+        f"{tp_sl_msg}"
         f"📊 Score: {score}/{score_max}\n"
         f"🎯 Passed: {passed}/{gatekeepers_total}\n"
         f"{confidence_icon} Confidence: {confidence:.1f}%\n"
         f"🏋️‍♀️ Weighted: {weighted_str}"
-        f"{early_breakout_msg}"  # <-- Early Breakout section
-        f"{consensus_str}"        # <-- Consensus info
+        f"{early_breakout_msg}"
+        f"{consensus_str}"
     )
     
     print("Signal type:", signal_type, "Route:", Route, "reversal_side:", reversal_side)
