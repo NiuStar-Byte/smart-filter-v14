@@ -164,8 +164,8 @@ def send_telegram_alert(
         except Exception:
             sl_str = str(sl)
         tp_sl_msg = (
-            f"🏁 <b>Take Profit (TP):</b> <code>{tp_str}</code>\n"
-            f"⛔ <b>Stop Loss (SL):</b> <code>{sl_str}</code>\n"
+            f"🏁 <b>TP:</b> <code>{tp_str}</code>\n"
+            f"⛔ <b>SL:</b> <code>{sl_str}</code>\n"
         )
 
     # --- Add consensus info ---
