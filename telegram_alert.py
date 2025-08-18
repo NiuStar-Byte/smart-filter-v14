@@ -155,7 +155,15 @@ def send_telegram_alert(
     # --- TP/SL section ---
     tp_sl_msg = ""
     if tp is not None and sl is not None:
-        tp_sl_msg = f"\n🏁 <b>Take Profit (TP):</b> <code>{tp}</code>\n⛔ <b>Stop Loss (SL):</b> <code>{sl}</code>"
+        try:
+            tp_str = f"{float(tp):.6f}"
+        except Exception:
+            tp_str = str(tp)
+        try:
+            sl_str = f"{float(sl):.6f}"
+        except Exception:
+            sl_str = str(sl)
+        tp_sl_msg = f"🏁 <b>Take Profit (TP):</b> <code>{tp_str}</code>\n⛔ <b>Stop Loss (SL):</b> <code>{sl_str}</code>"
 
     # --- Add consensus info ---
     token_info = get_token_blockchain_info(symbol)
@@ -170,8 +178,8 @@ def send_telegram_alert(
         f"{regime_str}"
         f"{signal_icon} {signal_str} Signal\n"
         f"{route_icon} <b>{route_str}</b>\n"
-        f"💰 <b>{price:.6f}</b>\n"
-        f"{tp_sl_msg}"            # <-- TP/SL section
+        f"💰 <b>{price_str}</b>\n"
+        f"{tp_sl_msg}"            # <-- TP/SL section, no leading/trailing blank lines
         f"📊 Score: {score}/{score_max}\n"
         f"🎯 Passed: {passed}/{gatekeepers_total}\n"
         f"{confidence_icon} Confidence: {confidence:.1f}%\n"
