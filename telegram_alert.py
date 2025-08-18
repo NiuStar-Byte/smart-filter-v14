@@ -154,18 +154,36 @@ def send_telegram_alert(
 
     # --- TP/SL section ---
     tp_sl_msg = ""
-    if tp is not None and sl is not None:
+    if tp is not None and sl is not None and price_float is not None:
         try:
-            tp_str = f"{float(tp):.6f}"
+            tp_float = float(tp)
+            sl_float = float(sl)
+            tp_str = f"{tp_float:.6f}"
+            sl_str = f"{sl_float:.6f}"
+
+            # Percent logic for LONG/SHORT
+            if signal_type_upper == "LONG":
+                tp_pct = ((tp_float - price_float) / price_float) * 100
+                sl_pct = ((sl_float - price_float) / price_float) * 100
+            elif signal_type_upper == "SHORT":
+                tp_pct = ((price_float - tp_float) / price_float) * 100
+                sl_pct = ((price_float - sl_float) / price_float) * 100
+            else:
+                tp_pct = 0
+                sl_pct = 0
+
+            # Format with sign and two decimals
+            tp_pct_str = f"({tp_pct:+.2f}%)"
+            sl_pct_str = f"({sl_pct:+.2f}%)"
+
         except Exception:
             tp_str = str(tp)
-        try:
-            sl_str = f"{float(sl):.6f}"
-        except Exception:
             sl_str = str(sl)
+            tp_pct_str = ""
+            sl_pct_str = ""
         tp_sl_msg = (
-            f"🏁 <b>TP:</b> <code>{tp_str}</code>\n"
-            f"⛔ <b>SL:</b> <code>{sl_str}</code>\n"
+            f"🏁 <b>TP:</b> <code>{tp_str}</code> {tp_pct_str}\n"
+            f"⛔ <b>SL:</b> <code>{sl_str}</code> {sl_pct_str}\n"
         )
 
     # --- Add consensus info ---
