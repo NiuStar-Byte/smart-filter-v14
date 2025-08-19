@@ -9,6 +9,7 @@ from check_symbols import get_token_blockchain_info
 SEND_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 SEND_FILE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendDocument"
 
+
 def send_telegram_alert(
     numbered_signal: str,
     symbol: str,
