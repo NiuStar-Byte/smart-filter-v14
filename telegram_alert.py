@@ -138,8 +138,10 @@ def send_telegram_alert(
         
     # Format price for display
     try:
-        price_str = f"{float(price):.6f}"
+        price_float = float(price)
+        price_str = f"{price_float:.6f}"
     except Exception:
+        price_float = None
         price_str = str(price)
 
     # --- Early Breakout Section ---
@@ -155,36 +157,36 @@ def send_telegram_alert(
 
     # --- TP/SL section ---
     tp_sl_msg = ""
-    if tp is not None and sl is not None and price_float is not None:
+    if tp is not None and sl is not None:
         try:
             tp_float = float(tp)
             sl_float = float(sl)
             tp_str = f"{tp_float:.6f}"
             sl_str = f"{sl_float:.6f}"
-
-            # Percent logic for LONG/SHORT
-            if signal_type_upper == "LONG":
-                tp_pct = ((tp_float - price_float) / price_float) * 100
-                sl_pct = ((sl_float - price_float) / price_float) * 100
-            elif signal_type_upper == "SHORT":
-                tp_pct = ((price_float - tp_float) / price_float) * 100
-                sl_pct = ((price_float - sl_float) / price_float) * 100
+            # Only calculate percentage if price_float is a number
+            if price_float is not None:
+                if signal_type_upper == "LONG":
+                    tp_pct = ((tp_float - price_float) / price_float) * 100
+                    sl_pct = ((sl_float - price_float) / price_float) * 100
+                elif signal_type_upper == "SHORT":
+                    tp_pct = ((price_float - tp_float) / price_float) * 100
+                    sl_pct = ((price_float - sl_float) / price_float) * 100
+                else:
+                    tp_pct = 0
+                    sl_pct = 0
+                tp_pct_str = f"({tp_pct:+.2f}%)"
+                sl_pct_str = f"({sl_pct:+.2f}%)"
             else:
-                tp_pct = 0
-                sl_pct = 0
-
-            # Format with sign and two decimals
-            tp_pct_str = f"({tp_pct:+.2f}%)"
-            sl_pct_str = f"({sl_pct:+.2f}%)"
-
+                tp_pct_str = ""
+                sl_pct_str = ""
         except Exception:
             tp_str = str(tp)
             sl_str = str(sl)
             tp_pct_str = ""
             sl_pct_str = ""
         tp_sl_msg = (
-            f"🏁 <b>TP:</b> <code>{tp_str}</code> {tp_pct_str}\n"
-            f"⛔ <b>SL:</b> <code>{sl_str}</code> {sl_pct_str}\n"
+            f"🏁 <b>Take Profit (TP):</b> <code>{tp_str}</code> {tp_pct_str}\n"
+            f"⛔ <b>Stop Loss (SL):</b> <code>{sl_str}</code> {sl_pct_str}\n"
         )
 
     # --- Add consensus info ---
