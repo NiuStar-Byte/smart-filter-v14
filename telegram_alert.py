@@ -155,7 +155,7 @@ def send_telegram_alert(
         eb_price = early_breakout_5m.get("price", "N/A")
         early_breakout_msg += f"\n⚡ <b>5min Early Breakout</b>: {eb_bias} @ {eb_price}"
 
-    # --- TP/SL section ---
+    # --- TP/SL section with percentage ---
     tp_sl_msg = ""
     if tp is not None and sl is not None:
         try:
@@ -172,10 +172,10 @@ def send_telegram_alert(
                     tp_pct = ((price_float - tp_float) / price_float) * 100
                     sl_pct = ((price_float - sl_float) / price_float) * 100
                 else:
-                    tp_pct = 0
-                    sl_pct = 0
-                tp_pct_str = f"({tp_pct:+.2f}%)"
-                sl_pct_str = f"({sl_pct:+.2f}%)"
+                    tp_pct = None
+                    sl_pct = None
+                tp_pct_str = f" ({tp_pct:+.2f}%)" if tp_pct is not None else ""
+                sl_pct_str = f" ({sl_pct:+.2f}%)" if sl_pct is not None else ""
             else:
                 tp_pct_str = ""
                 sl_pct_str = ""
@@ -185,8 +185,8 @@ def send_telegram_alert(
             tp_pct_str = ""
             sl_pct_str = ""
         tp_sl_msg = (
-            f"🏁 <b>Take Profit (TP):</b> <code>{tp_str}</code> {tp_pct_str}\n"
-            f"⛔ <b>Stop Loss (SL):</b> <code>{sl_str}</code> {sl_pct_str}\n"
+            f"🏁 <b>TP:</b> <code>{tp_str}</code>{tp_pct_str}\n"
+            f"⛔ <b>SL:</b> <code>{sl_str}</code>{sl_pct_str}\n"
         )
 
     # --- Add consensus info ---
