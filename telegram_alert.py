@@ -156,38 +156,55 @@ def send_telegram_alert(
         early_breakout_msg += f"\n⚡ <b>5min Early Breakout</b>: {eb_bias} @ {eb_price}"
 
     # --- TP/SL section with percentage ---
+    print(f"[DEBUG] price={price}, tp={tp}, sl={sl}, signal_type={signal_type}")
     tp_sl_msg = ""
-    if tp is not None and sl is not None:
+    tp_pct_str = ""
+    sl_pct_str = ""
+    
+    # Defensive: handle missing/invalid values up front
+    def is_valid_number(val):
         try:
-            tp_float = float(tp)
-            sl_float = float(sl)
-            tp_str = f"{tp_float:.6f}"
-            sl_str = f"{sl_float:.6f}"
-            # Only calculate percentage if price_float is a number
-            if price_float is not None:
-                if signal_type_upper == "LONG":
-                    tp_pct = ((tp_float - price_float) / price_float) * 100
-                    sl_pct = ((sl_float - price_float) / price_float) * 100
-                elif signal_type_upper == "SHORT":
-                    tp_pct = ((price_float - tp_float) / price_float) * 100
-                    sl_pct = ((price_float - sl_float) / price_float) * 100
-                else:
-                    tp_pct = None
-                    sl_pct = None
-                tp_pct_str = f" ({tp_pct:+.2f}%)" if tp_pct is not None else ""
-                sl_pct_str = f" ({sl_pct:+.2f}%)" if sl_pct is not None else ""
-            else:
-                tp_pct_str = ""
-                sl_pct_str = ""
-        except Exception:
-            tp_str = str(tp)
-            sl_str = str(sl)
-            tp_pct_str = ""
-            sl_pct_str = ""
-        tp_sl_msg = (
-            f"🏁 <b>TP:</b> <code>{tp_str}</code>{tp_pct_str}\n"
-            f"⛔ <b>SL:</b> <code>{sl_str}</code>{sl_pct_str}\n"
-        )
+            float(val)
+            return True
+        except (TypeError, ValueError):
+            return False
+    
+    if is_valid_number(tp) and is_valid_number(sl) and is_valid_number(price):
+        tp_float = float(tp)
+        sl_float = float(sl)
+        price_float = float(price)
+    
+        tp_str = f"{tp_float:.6f}"
+        sl_str = f"{sl_float:.6f}"
+    
+        # Standardize signal_type for safety
+        signal_type_test = str(signal_type).strip().upper()
+    
+        if signal_type_test == "LONG":
+            tp_pct = ((tp_float - price_float) / price_float) * 100
+            sl_pct = ((sl_float - price_float) / price_float) * 100
+        elif signal_type_test == "SHORT":
+            tp_pct = ((price_float - tp_float) / price_float) * 100
+            sl_pct = ((price_float - sl_float) / price_float) * 100
+        else:
+            tp_pct = None
+            sl_pct = None
+    
+        tp_pct_str = f" ({tp_pct:+.2f}%)" if tp_pct is not None else ""
+        sl_pct_str = f" ({sl_pct:+.2f}%)" if sl_pct is not None else ""
+    
+        print(f"[DEBUG] Calculated TP_pct={tp_pct_str}, SL_pct={sl_pct_str}")
+    
+    else:
+        # Use raw values if not valid numbers
+        tp_str = str(tp) if tp is not None else "-"
+        sl_str = str(sl) if sl is not None else "-"
+        print(f"[DEBUG] TP/SL not valid numbers, using raw strings")
+    
+    tp_sl_msg = (
+        f"🏁 <b>TP:</b> <code>{tp_str}</code>{tp_pct_str}\n"
+        f"⛔ <b>SL:</b> <code>{sl_str}</code>{sl_pct_str}\n"
+    )
 
     # --- Add consensus info ---
     token_info = get_token_blockchain_info(symbol)
