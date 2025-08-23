@@ -1259,8 +1259,6 @@ class SmartFilter:
     #    else:
     #        return None
 
-
-
     def _check_fractal_zone(self, buffer_pct=0.005, window=20, min_conditions=2):
         # Calculate fractal highs/lows
         fractal_low = self.df['low'].rolling(window).min().iat[-1]
@@ -1284,11 +1282,11 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
     
-        # Require at least 2 out of 3 for signal (reduce noise)
-        if long_met >= min_conditions:
-            return "LONG"
-        elif short_met >= min_conditions:
+        # Prefer SHORT signal if both are met
+        if short_met >= min_conditions:
             return "SHORT"
+        elif long_met >= min_conditions:
+            return "LONG"
         else:
             return None
     
