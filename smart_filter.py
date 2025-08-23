@@ -834,7 +834,7 @@ class SmartFilter:
                 results_status[name] = "ERROR"
                 continue
             try:
-                # PATCH: Enable debug for Fractal Zone filter only!
+                # Only pass debug=True to Fractal Zone filter
                 if name == "Fractal Zone":
                     result = fn(debug=True)
                 else:
