@@ -776,6 +776,9 @@ class SmartFilter:
             print(f"[{self.symbol}] Error: DataFrame empty.")
             return None
 
+        trend_signal, trend_score_long, trend_score_short = self.unified_trend_regime()
+        print(f"[DEBUG] Unified Trend Regime: {trend_signal}, Long Score: {trend_score_long}, Short Score: {trend_score_short}")
+
         # --- Detect reversal and set route correctly (AMBIGUOUS included) ---
         # reversal = self.explicit_reversal_gate()
         # reversal_detected = reversal in ["LONG", "SHORT"]
@@ -834,7 +837,11 @@ class SmartFilter:
                 results_status[name] = "ERROR"
                 continue
             try:
-                result = fn()
+                # PATCH: Enable debug for Fractal Zone filter only!
+                if name == "Fractal Zone":
+                    result = fn(debug=True)
+                else:
+                    result = fn()
                 if result == "LONG":
                     results_long[name] = True
                     results_short[name] = False
@@ -856,7 +863,6 @@ class SmartFilter:
                     results_short[name] = False
                     status = "NONE"
                 results_status[name] = status
-                # PER-FILTER STATUS LOGGING REMOVED
             except Exception as e:
                 print(f"[{self.symbol}] {name} ERROR: {e}")
                 results_long[name] = False
