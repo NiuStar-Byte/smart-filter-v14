@@ -834,11 +834,8 @@ class SmartFilter:
                 results_status[name] = "ERROR"
                 continue
             try:
-                # Only pass debug=True to Fractal Zone filter
-                if name == "Fractal Zone":
-                    result = fn(debug=True)
-                else:
-                    result = fn()
+                # Remove debug argument for all filters (including Fractal Zone)
+                result = fn()
                 if result == "LONG":
                     results_long[name] = True
                     results_short[name] = False
