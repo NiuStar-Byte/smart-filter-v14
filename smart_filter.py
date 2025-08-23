@@ -1239,13 +1239,15 @@ class SmartFilter:
         volume_prev = self.df['volume'].iat[-2]
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
-        higher_tf_volume = self.df['higher_tf_volume'].iat[-1]
-        higher_tf_volume_prev = self.df['higher_tf_volume'].iat[-2]
-        htf_vol_up = higher_tf_volume > np.percentile(self.df['higher_tf_volume'].dropna(), 75)
-
+        higher_tf_volume = self.df['higher_tf_volume']
+        if higher_tf_volume.dropna().shape[0] < 2:
+            return None  # Prevent percentile error
+        higher_tf_volume_latest = higher_tf_volume.iat[-1]
+        htf_vol_up = higher_tf_volume_latest > np.percentile(higher_tf_volume.dropna(), 75)
+    
         long_pass = (volume > volume_prev) and htf_vol_up and (close > close_prev)
         short_pass = (volume > volume_prev) and htf_vol_up and (close < close_prev)
-
+    
         if long_pass:
             return "LONG"
         elif short_pass:
@@ -1677,6 +1679,8 @@ class SmartFilter:
             return None
 
     def _check_liquidity_awareness(self):
+        if 'spread' not in self.df.columns:
+            self.df['spread'] = self.df['ask'] - self.df['bid']
         bid = self.df['bid'].iat[-1]
         ask = self.df['ask'].iat[-1]
         bid_prev = self.df['bid'].iat[-2]
@@ -1688,10 +1692,10 @@ class SmartFilter:
         spread = ask - bid
         spread_prev = ask_prev - bid_prev
         liquidity_change = (spread_prev - spread) / max(spread_prev, 1)
-
+    
         long_pass = liquidity_change > np.median(self.df['spread']) and (close > close_prev)
         short_pass = liquidity_change < -np.median(self.df['spread']) and (close < close_prev)
-
+    
         if long_pass:
             return "LONG"
         elif short_pass:
