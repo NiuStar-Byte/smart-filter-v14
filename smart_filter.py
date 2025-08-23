@@ -1176,6 +1176,101 @@ class SmartFilter:
             return False
         return df5m['volume'].iat[-1] > df5m['volume'].iat[-2]
         
+    
+        
+    # def _check_volume_spike(self, zscore_threshold=1.5):
+        # Calculate z-score of current volume vs recent (rolling 10)
+    #    avg = self.df['volume'].rolling(10).mean().iat[-1]
+    #    std = self.df['volume'].rolling(10).std().iat[-1]
+    #    zscore = self._safe_divide(self.df['volume'].iat[-1] - avg, std)
+    
+        # Price direction
+    #    price_up = self.df['close'].iat[-1] > self.df['close'].iat[-2]
+    #    price_down = self.df['close'].iat[-1] < self.df['close'].iat[-2]
+    
+        # Volume trend
+    #    vol_up = self.df['volume'].iat[-1] > self.df['volume'].iat[-2]
+
+        # use volume multiplier
+    #    volume_spike = self.df['volume'].iat[-1] > avg * self.volume_multiplier
+        
+        # LONG signal: volume spike + price rising + volume rising
+    #    long_conditions = [zscore > zscore_threshold, price_up, vol_up, volume_spike]
+    #    long_met = sum(long_conditions)
+    
+        # SHORT signal: volume spike + price falling + volume rising
+    #    short_conditions = [zscore > zscore_threshold, price_down, vol_up, volume_spike]
+    #    short_met = sum(short_conditions)
+
+        # Require at least 2/3 for a signal
+    #    if long_met >= 2:
+    #        return "LONG"
+    #    elif short_met >= 2:
+    #        return "SHORT"
+    #    else:
+    #        return None
+
+    
+    def _check_macd(self):
+        e12 = self.df['close'].ewm(span=12).mean()
+        e26 = self.df['close'].ewm(span=26).mean()
+        macd = e12 - e26
+        signal = macd.ewm(span=9).mean()
+
+        # LONG conditions
+        condition_1_long = macd.iat[-1] > signal.iat[-1]                # MACD above Signal Line
+        condition_2_long = macd.iat[-1] > macd.iat[-2]                  # MACD is rising
+        condition_3_long = self.df['close'].iat[-1] > self.df['close'].iat[-2]  # Price action rising
+        condition_4_long = macd.iat[-1] > signal.iat[-1] and macd.iat[-1] > macd.iat[-2]  # MACD Divergence
+
+        # SHORT conditions
+        condition_1_short = macd.iat[-1] < signal.iat[-1]                # MACD below Signal Line
+        condition_2_short = macd.iat[-1] < macd.iat[-2]                  # MACD is falling
+        condition_3_short = self.df['close'].iat[-1] < self.df['close'].iat[-2]  # Price action falling
+        condition_4_short = macd.iat[-1] < signal.iat[-1] and macd.iat[-1] < macd.iat[-2]  # MACD Divergence
+
+        long_conditions_met = sum([condition_1_long, condition_2_long, condition_3_long, condition_4_long])
+        short_conditions_met = sum([condition_1_short, condition_2_short, condition_3_short, condition_4_short])
+
+        # If 2 out of 4 conditions are met, we pass the filter
+        if long_conditions_met >= 2:
+            return "LONG"
+        elif short_conditions_met >= 2:
+            return "SHORT"
+        else:
+            return None
+            
+    def _check_mtf_volume_agreement(self):
+        # Current timeframe
+        volume = self.df['volume'].iat[-1]
+        volume_prev = self.df['volume'].iat[-2]
+        close = self.df['close'].iat[-1]
+        close_prev = self.df['close'].iat[-2]
+    
+        # Higher timeframe (e.g., hourly or daily)
+        higher_tf_volume = self.df['higher_tf_volume'].iat[-1]
+        higher_tf_volume_prev = self.df['higher_tf_volume'].iat[-2]
+    
+        # LONG conditions (rising volume and price)
+        cond1_long = volume > volume_prev
+        cond2_long = higher_tf_volume > higher_tf_volume_prev
+        cond3_long = close > close_prev
+    
+        # SHORT conditions (falling volume and price)
+        cond1_short = volume < volume_prev
+        cond2_short = higher_tf_volume < higher_tf_volume_prev
+        cond3_short = close < close_prev
+    
+        long_met = sum([cond1_long, cond2_long, cond3_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short])
+    
+        if long_met >= 2:
+            return "LONG"
+        elif short_met >= 2:
+            return "SHORT"
+        else:
+            return None
+
     def _check_volume_spike(
         self,
         zscore_threshold=1.2,
@@ -1229,39 +1324,108 @@ class SmartFilter:
         if return_directionless and spike:
             return "SPIKE"
         return None
-        
-    # def _check_volume_spike(self, zscore_threshold=1.5):
-        # Calculate z-score of current volume vs recent (rolling 10)
-    #    avg = self.df['volume'].rolling(10).mean().iat[-1]
-    #    std = self.df['volume'].rolling(10).std().iat[-1]
-    #    zscore = self._safe_divide(self.df['volume'].iat[-1] - avg, std)
-    
-        # Price direction
-    #    price_up = self.df['close'].iat[-1] > self.df['close'].iat[-2]
-    #    price_down = self.df['close'].iat[-1] < self.df['close'].iat[-2]
-    
-        # Volume trend
-    #    vol_up = self.df['volume'].iat[-1] > self.df['volume'].iat[-2]
 
-        # use volume multiplier
-    #    volume_spike = self.df['volume'].iat[-1] > avg * self.volume_multiplier
-        
-        # LONG signal: volume spike + price rising + volume rising
-    #    long_conditions = [zscore > zscore_threshold, price_up, vol_up, volume_spike]
-    #    long_met = sum(long_conditions)
+    def _check_liquidity_awareness(self):
+        bid = self.df['bid'].iat[-1]
+        ask = self.df['ask'].iat[-1]
+        bid_prev = self.df['bid'].iat[-2]
+        ask_prev = self.df['ask'].iat[-2]
+        volume = self.df['volume'].iat[-1]
+        volume_prev = self.df['volume'].iat[-2]
+        close = self.df['close'].iat[-1]
+        close_prev = self.df['close'].iat[-2]
     
-        # SHORT signal: volume spike + price falling + volume rising
-    #    short_conditions = [zscore > zscore_threshold, price_down, vol_up, volume_spike]
-    #    short_met = sum(short_conditions)
+        spread = ask - bid
+        spread_prev = ask_prev - bid_prev
+    
+        # LONG conditions: improving liquidity, rising volume, rising price
+        cond1_long = spread < spread_prev
+        cond2_long = volume > volume_prev
+        cond3_long = close > close_prev
+    
+        # SHORT conditions: worsening liquidity, falling volume, falling price
+        cond1_short = spread > spread_prev
+        cond2_short = volume < volume_prev
+        cond3_short = close < close_prev
+    
+        long_met = sum([cond1_long, cond2_long, cond3_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short])
+    
+        if long_met >= 2:
+            return "LONG"
+        elif short_met >= 2:
+            return "SHORT"
+        else:
+            return None
 
-        # Require at least 2/3 for a signal
-    #    if long_met >= 2:
-    #        return "LONG"
-    #    elif short_met >= 2:
-    #        return "SHORT"
-    #    else:
-    #        return None
-
+    def _check_spread_filter(self, window=20):
+        high = self.df['high'].iat[-1]
+        low = self.df['low'].iat[-1]
+        open_ = self.df['open'].iat[-1]
+        close = self.df['close'].iat[-1]
+    
+        high_prev = self.df['high'].iat[-2]
+        low_prev = self.df['low'].iat[-2]
+        open_prev = self.df['open'].iat[-2]
+        close_prev = self.df['close'].iat[-2]
+    
+        spread = high - low
+        spread_prev = high_prev - low_prev
+        spread_ma = self.df['spread'].rolling(window).mean().iat[-1] if 'spread' in self.df.columns else self.df['high'].sub(self.df['low']).rolling(window).mean().iat[-1]
+    
+        # Add spread column if missing
+        if 'spread' not in self.df.columns:
+            self.df['spread'] = self.df['high'] - self.df['low']
+    
+        # LONG conditions: spread expanding and bullish close
+        cond1_long = spread > spread_prev
+        cond2_long = close > open_
+        cond3_long = spread > spread_ma
+    
+        # SHORT conditions: spread contracting and bearish close
+        cond1_short = spread < spread_prev
+        cond2_short = close < open_
+        cond3_short = spread < spread_ma
+    
+        long_met = sum([cond1_long, cond2_long, cond3_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short])
+    
+        if long_met >= 2:
+            return "LONG"
+        elif short_met >= 2:
+            return "SHORT"
+        else:
+            return None
+            
+    def _check_support_resistance(self, window=20, buffer_pct=0.005):
+        # Calculate recent support (local min) and resistance (local max)
+        support = self.df['low'].rolling(window).min().iat[-1]
+        resistance = self.df['high'].rolling(window).max().iat[-1]
+        close = self.df['close'].iat[-1]
+        close_prev = self.df['close'].iat[-2]
+        volume = self.df['volume'].iat[-1]
+        volume_prev = self.df['volume'].iat[-2]
+    
+        # LONG conditions
+        cond1_long = close <= support * (1 + buffer_pct)
+        cond2_long = close > close_prev
+        cond3_long = volume > volume_prev
+    
+        # SHORT conditions
+        cond1_short = close >= resistance * (1 - buffer_pct)
+        cond2_short = close < close_prev
+        cond3_short = volume > volume_prev  # or volume < volume_prev for a more classic reversal
+    
+        long_met = sum([cond1_long, cond2_long, cond3_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short])
+    
+        if long_met >= 2:
+            return "LONG"
+        elif short_met >= 2:
+            return "SHORT"
+        else:
+            return None
+    
     def _check_fractal_zone(self, buffer_pct=0.005, window=20, min_conditions=2, debug=False):
         print("Fractal Zone filter called. Debug =", debug)
         # Calculate fractal highs/lows
@@ -1346,35 +1510,6 @@ class SmartFilter:
     #        return "SHORT"
     #    else:
             return None
-    
-    def _check_macd(self):
-        e12 = self.df['close'].ewm(span=12).mean()
-        e26 = self.df['close'].ewm(span=26).mean()
-        macd = e12 - e26
-        signal = macd.ewm(span=9).mean()
-
-        # LONG conditions
-        condition_1_long = macd.iat[-1] > signal.iat[-1]                # MACD above Signal Line
-        condition_2_long = macd.iat[-1] > macd.iat[-2]                  # MACD is rising
-        condition_3_long = self.df['close'].iat[-1] > self.df['close'].iat[-2]  # Price action rising
-        condition_4_long = macd.iat[-1] > signal.iat[-1] and macd.iat[-1] > macd.iat[-2]  # MACD Divergence
-
-        # SHORT conditions
-        condition_1_short = macd.iat[-1] < signal.iat[-1]                # MACD below Signal Line
-        condition_2_short = macd.iat[-1] < macd.iat[-2]                  # MACD is falling
-        condition_3_short = self.df['close'].iat[-1] < self.df['close'].iat[-2]  # Price action falling
-        condition_4_short = macd.iat[-1] < signal.iat[-1] and macd.iat[-1] < macd.iat[-2]  # MACD Divergence
-
-        long_conditions_met = sum([condition_1_long, condition_2_long, condition_3_long, condition_4_long])
-        short_conditions_met = sum([condition_1_short, condition_2_short, condition_3_short, condition_4_short])
-
-        # If 2 out of 4 conditions are met, we pass the filter
-        if long_conditions_met >= 2:
-            return "LONG"
-        elif short_conditions_met >= 2:
-            return "SHORT"
-        else:
-            return None
 
     def _check_momentum(self, window=10, min_conditions=2):
         # Calculate Rate of Change (ROC)
@@ -1404,6 +1539,45 @@ class SmartFilter:
         else:
             return None
 
+    def _check_atr_momentum_burst(self, threshold_pct=0.10, volume_mult=1.1):
+        for i in [-1, -2]:
+            close = self.df['close'].iat[i]
+            open_ = self.df['open'].iat[i]
+            volume = self.df['volume'].iat[i]
+            avg_vol = self.df['volume'].rolling(10).mean().iat[i]
+            pct_move = (close - open_) / open_ * 100
+            if pct_move > threshold_pct and volume > avg_vol * volume_mult:
+                return "LONG"
+            elif pct_move < -threshold_pct and volume > avg_vol * volume_mult:
+                return "SHORT"
+        return None
+
+    def _check_trend_continuation(self, ma_col='ema21'):
+        close = self.df['close'].iat[-1]
+        close_prev = self.df['close'].iat[-2]
+        ma = self.df[ma_col].iat[-1]
+        ma_prev = self.df[ma_col].iat[-2]
+
+        # LONG conditions
+        cond1_long = close > ma
+        cond2_long = ma > ma_prev
+        cond3_long = close > close_prev
+
+        # SHORT conditions
+        cond1_short = close < ma
+        cond2_short = ma < ma_prev
+        cond3_short = close < close_prev
+
+        long_met = sum([cond1_long, cond2_long, cond3_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short])
+
+        if long_met >= 1:
+            return "LONG"
+        elif short_met >= 1:
+            return "SHORT"
+        else:
+            return None
+    
     def _check_hats(self):
         # Define your moving averages
         fast = self.df['ema10'].iat[-1]
@@ -1436,63 +1610,6 @@ class SmartFilter:
         else:
             return None
 
-    def _check_vwap_divergence(self):
-        vwap = self.df['vwap'].iat[-1]
-        vwap_prev = self.df['vwap'].iat[-2]
-        close = self.df['close'].iat[-1]
-        close_prev = self.df['close'].iat[-2]
-
-        # LONG conditions
-        cond1_long = close < vwap
-        cond2_long = close > close_prev
-        cond3_long = (vwap - close) > (vwap_prev - close_prev)
-
-        # SHORT conditions
-        cond1_short = close > vwap
-        cond2_short = close < close_prev
-        cond3_short = (close - vwap) > (close_prev - vwap_prev)
-
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
-
-        if long_met >= 1:
-            return "LONG"
-        elif short_met >= 1:
-            return "SHORT"
-        else:
-            return None
-            
-    def _check_mtf_volume_agreement(self):
-        # Current timeframe
-        volume = self.df['volume'].iat[-1]
-        volume_prev = self.df['volume'].iat[-2]
-        close = self.df['close'].iat[-1]
-        close_prev = self.df['close'].iat[-2]
-
-        # Higher timeframe (e.g., hourly or daily)
-        higher_tf_volume = self.df['higher_tf_volume'].iat[-1]
-        higher_tf_volume_prev = self.df['higher_tf_volume'].iat[-2]
-
-        # LONG conditions
-        cond1_long = volume > volume_prev
-        cond2_long = higher_tf_volume > higher_tf_volume_prev
-        cond3_long = close > close_prev
-
-        # SHORT conditions
-        cond1_short = volume > volume_prev
-        cond2_short = higher_tf_volume > higher_tf_volume_prev
-        cond3_short = close < close_prev
-
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
-
-        if long_met >= 1:
-            return "LONG"
-        elif short_met >= 1:
-            return "SHORT"
-        else:
-            return None
-        
     def _check_hh_ll(self):
         high = self.df['high'].iat[-1]
         high_prev = self.df['high'].iat[-2]
@@ -1517,6 +1634,33 @@ class SmartFilter:
         if long_met >= 1:
             return "LONG"
         elif short_met >= 1:
+            return "SHORT"
+        else:
+            return None
+
+    def _check_volatility_model(self, atr_col='atr', atr_ma_col='atr_ma'):
+        atr = self.df[atr_col].iat[-1]
+        atr_prev = self.df[atr_col].iat[-2]
+        atr_ma = self.df[atr_ma_col].iat[-1]
+        close = self.df['close'].iat[-1]
+        close_prev = self.df['close'].iat[-2]
+    
+        # LONG conditions: volatility expansion + bullish price
+        cond1_long = atr > atr_prev
+        cond2_long = close > close_prev
+        cond3_long = atr > atr_ma
+    
+        # SHORT conditions: volatility contraction + bearish price
+        cond1_short = atr < atr_prev        # ATR falling
+        cond2_short = close < close_prev
+        cond3_short = atr < atr_ma          # ATR below average
+    
+        long_met = sum([cond1_long, cond2_long, cond3_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short])
+    
+        if long_met >= 2:
+            return "LONG"
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
@@ -1552,26 +1696,29 @@ class SmartFilter:
         else:
             return None
 
-    def _check_chop_zone(self, chop_threshold=40):
-        chop = self.df['chop_zone'].iat[-1]
-        ema9 = self.df['ema9'].iat[-1]
-        ema21 = self.df['ema21'].iat[-1]
-        close = self.df['close'].iat[-1]
-        adx = self.df['adx'].iat[-1] if 'adx' in self.df.columns else None
+    def _check_volatility_squeeze(self):
+        bb_width = self.df['bb_upper'].iat[-1] - self.df['bb_lower'].iat[-1]
+        kc_width = self.df['kc_upper'].iat[-1] - self.df['kc_lower'].iat[-1]
+        bb_width_prev = self.df['bb_upper'].iat[-2] - self.df['bb_lower'].iat[-2]
+        kc_width_prev = self.df['kc_upper'].iat[-2] - self.df['kc_lower'].iat[-2]
 
-        # Filter out choppy market
-        if chop >= chop_threshold:
-            return None
+        close = self.df['close'].iat[-1]
+        close_prev = self.df['close'].iat[-2]
+        volume = self.df['volume'].iat[-1]
+        volume_prev = self.df['volume'].iat[-2]
+
+        # Squeeze fires when BB width expands after contraction below KC width
+        squeeze_firing = bb_width > kc_width and bb_width_prev < kc_width_prev
 
         # LONG conditions
-        cond1_long = ema9 > ema21 if ema9 and ema21 else False
-        cond2_long = adx > 20 if adx else True  # Optional: ADX filter
-        cond3_long = close > ema9
+        cond1_long = squeeze_firing
+        cond2_long = close > close_prev
+        cond3_long = volume > volume_prev
 
         # SHORT conditions
-        cond1_short = ema9 < ema21 if ema9 and ema21 else False
-        cond2_short = adx > 20 if adx else True
-        cond3_short = close < ema9
+        cond1_short = squeeze_firing
+        cond2_short = close < close_prev
+        cond3_short = volume > volume_prev
 
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
@@ -1623,27 +1770,22 @@ class SmartFilter:
             return "SHORT"
         else:
             return None
-
-    def _check_wick_dominance(self):
-        open_ = self.df['open'].iat[-1]
-        high = self.df['high'].iat[-1]
-        low = self.df['low'].iat[-1]
+    
+    def _check_vwap_divergence(self):
+        vwap = self.df['vwap'].iat[-1]
+        vwap_prev = self.df['vwap'].iat[-2]
         close = self.df['close'].iat[-1]
+        close_prev = self.df['close'].iat[-2]
 
-        # Calculate candle components
-        upper_wick = high - max(open_, close)
-        lower_wick = min(open_, close) - low
-        body = abs(close - open_)
+        # LONG conditions
+        cond1_long = close < vwap
+        cond2_long = close > close_prev
+        cond3_long = (vwap - close) > (vwap_prev - close_prev)
 
-        # LONG conditions: dominant lower wick + bullish close
-        cond1_long = lower_wick > 2 * upper_wick
-        cond2_long = lower_wick > 1.5 * body
-        cond3_long = close > open_
-
-        # SHORT conditions: dominant upper wick + bearish close
-        cond1_short = upper_wick > 2 * lower_wick
-        cond2_short = upper_wick > 1.5 * body
-        cond3_short = close < open_
+        # SHORT conditions
+        cond1_short = close > vwap
+        cond2_short = close < close_prev
+        cond3_short = (close - vwap) > (close_prev - vwap_prev)
 
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
@@ -1651,6 +1793,96 @@ class SmartFilter:
         if long_met >= 1:
             return "LONG"
         elif short_met >= 1:
+            return "SHORT"
+        else:
+            return None
+
+    def _check_chop_zone(self, chop_threshold=40):
+        chop = self.df['chop_zone'].iat[-1]
+        ema9 = self.df['ema9'].iat[-1]
+        ema21 = self.df['ema21'].iat[-1]
+        close = self.df['close'].iat[-1]
+        adx = self.df['adx'].iat[-1] if 'adx' in self.df.columns else None
+
+        # Filter out choppy market
+        if chop >= chop_threshold:
+            return None
+
+        # LONG conditions
+        cond1_long = ema9 > ema21 if ema9 and ema21 else False
+        cond2_long = adx > 20 if adx else True  # Optional: ADX filter
+        cond3_long = close > ema9
+
+        # SHORT conditions
+        cond1_short = ema9 < ema21 if ema9 and ema21 else False
+        cond2_short = adx > 20 if adx else True
+        cond3_short = close < ema9
+
+        long_met = sum([cond1_long, cond2_long, cond3_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short])
+
+        if long_met >= 1:
+            return "LONG"
+        elif short_met >= 1:
+            return "SHORT"
+        else:
+            return None
+
+    def _check_liquidity_pool(self, lookback=20):
+        close = self.df['close'].iat[-1]
+        high = self.df['high'].iat[-1]
+        low = self.df['low'].iat[-1]
+    
+        # Identify recent liquidity pools
+        recent_high = self.df['high'].rolling(lookback).max().iat[-2]
+        recent_low = self.df['low'].rolling(lookback).min().iat[-2]
+    
+        # LONG: break or sweep above recent high
+        cond1_long = close > recent_high              # breakout above high
+        cond2_long = low < recent_low and close > recent_low  # sweep below low, then reversal
+    
+        # SHORT: break or sweep below recent low
+        cond1_short = close < recent_low              # breakout below low
+        cond2_short = high > recent_high and close < recent_high  # sweep above high, then reversal
+    
+        long_met = sum([cond1_long, cond2_long])
+        short_met = sum([cond1_short, cond2_short])
+    
+        if long_met >= 1:
+            return "LONG"
+        elif short_met >= 1:
+            return "SHORT"
+        else:
+            return None
+
+    def _check_smart_money_bias(self, volume_window=20):
+        close = self.df['close'].iat[-1]
+        close_prev = self.df['close'].iat[-2]
+        volume = self.df['volume'].iat[-1]
+        volume_prev = self.df['volume'].iat[-2]
+        avg_volume = self.df['volume'].rolling(volume_window).mean().iat[-1]
+        vwap = self.df['vwap'].iat[-1]
+    
+        # Large volume uptick (for LONG)
+        large_vol_up = volume > avg_volume and close > close_prev
+    
+        # Large volume downtick (for SHORT)
+        large_vol_down = volume > avg_volume and close < close_prev
+    
+        # LONG conditions
+        cond1_long = large_vol_up
+        cond2_long = close > vwap
+    
+        # SHORT conditions
+        cond1_short = large_vol_down
+        cond2_short = close < vwap
+    
+        long_met = sum([cond1_long, cond2_long])
+        short_met = sum([cond1_short, cond2_short])
+    
+        if long_met == 2:
+            return "LONG"
+        elif short_met == 2:
             return "SHORT"
         else:
             return None
@@ -1684,183 +1916,27 @@ class SmartFilter:
             return "SHORT"
         else:
             return None
-
-    def _check_support_resistance(self, window=20, buffer_pct=0.005):
-        # Calculate recent support (local min) and resistance (local max)
-        support = self.df['low'].rolling(window).min().iat[-1]
-        resistance = self.df['high'].rolling(window).max().iat[-1]
-        close = self.df['close'].iat[-1]
-        close_prev = self.df['close'].iat[-2]
-        volume = self.df['volume'].iat[-1]
-        volume_prev = self.df['volume'].iat[-2]
-
-        # LONG conditions
-        cond1_long = close <= support * (1 + buffer_pct)
-        cond2_long = close > close_prev
-        cond3_long = volume > volume_prev
-
-        # SHORT conditions
-        cond1_short = close >= resistance * (1 - buffer_pct)
-        cond2_short = close < close_prev
-        cond3_short = volume > volume_prev
-
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
-
-        if long_met >= 1:
-            return "LONG"
-        elif short_met >= 1:
-            return "SHORT"
-        else:
-            return None
-
-    def _check_smart_money_bias(self, volume_window=20):
-        close = self.df['close'].iat[-1]
-        close_prev = self.df['close'].iat[-2]
-        volume = self.df['volume'].iat[-1]
-        volume_prev = self.df['volume'].iat[-2]
-        avg_volume = self.df['volume'].rolling(volume_window).mean().iat[-1]
-        vwap = self.df['vwap'].iat[-1]
-
-        # Check for large volume uptick
-        large_vol = volume > avg_volume and volume > volume_prev
-
-        # LONG conditions
-        cond1_long = large_vol
-        cond2_long = close > close_prev
-        cond3_long = close > vwap
-
-        # SHORT conditions
-        cond1_short = large_vol
-        cond2_short = close < close_prev
-        cond3_short = close < vwap
-
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
-
-        if long_met >= 1:
-            return "LONG"
-        elif short_met >= 1:
-            return "SHORT"
-        else:
-            return None
-
-    def _check_spread_filter(self, window=20):
-        high = self.df['high'].iat[-1]
-        low = self.df['low'].iat[-1]
+            
+    def _check_wick_dominance(self):
         open_ = self.df['open'].iat[-1]
-        close = self.df['close'].iat[-1]
-
-        high_prev = self.df['high'].iat[-2]
-        low_prev = self.df['low'].iat[-2]
-        open_prev = self.df['open'].iat[-2]
-        close_prev = self.df['close'].iat[-2]
-
-        spread = high - low
-        spread_prev = high_prev - low_prev
-        spread_ma = self.df['spread'].rolling(window).mean().iat[-1] if 'spread' in self.df.columns else self.df['high'].sub(self.df['low']).rolling(window).mean().iat[-1]
-
-        # Add spread column if missing
-        if 'spread' not in self.df.columns:
-            self.df['spread'] = self.df['high'] - self.df['low']
-
-        # LONG conditions
-        cond1_long = spread > spread_prev
-        cond2_long = close > open_
-        cond3_long = spread > spread_ma
-
-        # SHORT conditions
-        cond1_short = spread > spread_prev
-        cond2_short = close < open_
-        cond3_short = spread > spread_ma
-
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
-
-        if long_met >= 1:
-            return "LONG"
-        elif short_met >= 1:
-            return "SHORT"
-        else:
-            return None
-
-    def _check_liquidity_pool(self, lookback=20):
-        close = self.df['close'].iat[-1]
         high = self.df['high'].iat[-1]
         low = self.df['low'].iat[-1]
-    
-        # Identify recent liquidity pools
-        recent_high = self.df['high'].rolling(lookback).max().iat[-2]
-        recent_low = self.df['low'].rolling(lookback).min().iat[-2]
-    
-        # LONG: break or sweep above recent high
-        cond1_long = close > recent_high
-        cond2_long = low < recent_low and close > recent_low  # sweep and reversal
-        cond3_long = close > recent_high
-
-        # SHORT: break or sweep below recent low
-        cond1_short = close < recent_low
-        cond2_short = high > recent_high and close < recent_high  # sweep and reversal
-        cond3_short = close < recent_low
-
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
-
-        if long_met >= 1:
-            return "LONG"
-        elif short_met >= 1:
-            return "SHORT"
-        else:
-            return None
-
-    def _check_liquidity_awareness(self):
-        bid = self.df['bid'].iat[-1]
-        ask = self.df['ask'].iat[-1]
-        bid_prev = self.df['bid'].iat[-2]
-        ask_prev = self.df['ask'].iat[-2]
-        volume = self.df['volume'].iat[-1]
-        volume_prev = self.df['volume'].iat[-2]
         close = self.df['close'].iat[-1]
-        close_prev = self.df['close'].iat[-2]
 
-        spread = ask - bid
-        spread_prev = ask_prev - bid_prev
+        # Calculate candle components
+        upper_wick = high - max(open_, close)
+        lower_wick = min(open_, close) - low
+        body = abs(close - open_)
 
-        # LONG conditions
-        cond1_long = spread < spread_prev
-        cond2_long = volume > volume_prev
-        cond3_long = close > close_prev
+        # LONG conditions: dominant lower wick + bullish close
+        cond1_long = lower_wick > 2 * upper_wick
+        cond2_long = lower_wick > 1.5 * body
+        cond3_long = close > open_
 
-        # SHORT conditions
-        cond1_short = spread > spread_prev
-        cond2_short = volume > volume_prev
-        cond3_short = close < close_prev
-
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
-
-        if long_met >= 1:
-            return "LONG"
-        elif short_met >= 1:
-            return "SHORT"
-        else:
-            return None
-
-    def _check_trend_continuation(self, ma_col='ema21'):
-        close = self.df['close'].iat[-1]
-        close_prev = self.df['close'].iat[-2]
-        ma = self.df[ma_col].iat[-1]
-        ma_prev = self.df[ma_col].iat[-2]
-
-        # LONG conditions
-        cond1_long = close > ma
-        cond2_long = ma > ma_prev
-        cond3_long = close > close_prev
-
-        # SHORT conditions
-        cond1_short = close < ma
-        cond2_short = ma < ma_prev
-        cond3_short = close < close_prev
+        # SHORT conditions: dominant upper wick + bearish close
+        cond1_short = upper_wick > 2 * lower_wick
+        cond2_short = upper_wick > 1.5 * body
+        cond3_short = close < open_
 
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
@@ -1871,46 +1947,6 @@ class SmartFilter:
             return "SHORT"
         else:
             return None
-
-    def _check_volatility_model(self, atr_col='atr', atr_ma_col='atr_ma'):
-        atr = self.df[atr_col].iat[-1]
-        atr_prev = self.df[atr_col].iat[-2]
-        atr_ma = self.df[atr_ma_col].iat[-1]
-        close = self.df['close'].iat[-1]
-        close_prev = self.df['close'].iat[-2]
-
-        # LONG conditions
-        cond1_long = atr > atr_prev
-        cond2_long = close > close_prev
-        cond3_long = atr > atr_ma
-
-        # SHORT conditions
-        cond1_short = atr > atr_prev
-        cond2_short = close < close_prev
-        cond3_short = atr > atr_ma
-
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
-
-        if long_met >= 1:
-            return "LONG"
-        elif short_met >= 1:
-            return "SHORT"
-        else:
-            return None
-
-    def _check_atr_momentum_burst(self, threshold_pct=0.10, volume_mult=1.1):
-        for i in [-1, -2]:
-            close = self.df['close'].iat[i]
-            open_ = self.df['open'].iat[i]
-            volume = self.df['volume'].iat[i]
-            avg_vol = self.df['volume'].rolling(10).mean().iat[i]
-            pct_move = (close - open_) / open_ * 100
-            if pct_move > threshold_pct and volume > avg_vol * volume_mult:
-                return "LONG"
-            elif pct_move < -threshold_pct and volume > avg_vol * volume_mult:
-                return "SHORT"
-        return None
             
     # def _check_atr_momentum_burst(self, atr_period=14, burst_mult=1.5):
         # ATR must be calculated and present in self.df['atr']
@@ -1939,40 +1975,6 @@ class SmartFilter:
         #    return "SHORT"
         # else:
         #    return None
-
-    def _check_volatility_squeeze(self):
-        bb_width = self.df['bb_upper'].iat[-1] - self.df['bb_lower'].iat[-1]
-        kc_width = self.df['kc_upper'].iat[-1] - self.df['kc_lower'].iat[-1]
-        bb_width_prev = self.df['bb_upper'].iat[-2] - self.df['bb_lower'].iat[-2]
-        kc_width_prev = self.df['kc_upper'].iat[-2] - self.df['kc_lower'].iat[-2]
-
-        close = self.df['close'].iat[-1]
-        close_prev = self.df['close'].iat[-2]
-        volume = self.df['volume'].iat[-1]
-        volume_prev = self.df['volume'].iat[-2]
-
-        # Squeeze fires when BB width expands after contraction below KC width
-        squeeze_firing = bb_width > kc_width and bb_width_prev < kc_width_prev
-
-        # LONG conditions
-        cond1_long = squeeze_firing
-        cond2_long = close > close_prev
-        cond3_long = volume > volume_prev
-
-        # SHORT conditions
-        cond1_short = squeeze_firing
-        cond2_short = close < close_prev
-        cond3_short = volume > volume_prev
-
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
-
-        if long_met >= 1:
-            return "LONG"
-        elif short_met >= 1:
-            return "SHORT"
-        else:
-            return None
 
     def _market_regime(self, ma_col='ema200', adx_col='adx', adx_threshold=20):
         """
