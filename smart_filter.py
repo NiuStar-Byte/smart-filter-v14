@@ -776,9 +776,6 @@ class SmartFilter:
             print(f"[{self.symbol}] Error: DataFrame empty.")
             return None
 
-        trend_signal, trend_score_long, trend_score_short = self.unified_trend_regime()
-        print(f"[DEBUG] Unified Trend Regime: {trend_signal}, Long Score: {trend_score_long}, Short Score: {trend_score_short}")
-
         # --- Detect reversal and set route correctly (AMBIGUOUS included) ---
         # reversal = self.explicit_reversal_gate()
         # reversal_detected = reversal in ["LONG", "SHORT"]
