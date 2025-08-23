@@ -1,15 +1,14 @@
 """
 Test script for smart-filter-v14: checks that all filters in SmartFilter fire LONG and SHORT signals as expected.
 
-- Run this file directly: python test_filters.py
-- This script instantiates SmartFilter with test DataFrames and runs all filter methods.
+- You can run this as a standalone script, or import and call run_all_filter_tests() from main.py or elsewhere.
+- Optionally, call run_filter_tests_for_symbol(symbol, df) with your own test data.
 """
 
 import pandas as pd
 import numpy as np
 import inspect
 
-# Import SmartFilter class
 from smart_filter import SmartFilter
 
 def make_test_df(case="long", length=25):
@@ -48,7 +47,6 @@ def make_test_df(case="long", length=25):
             "ask":    np.full(length, 110),
         }
     df = pd.DataFrame(data)
-    # Add higher_tf_volume for MTF filters
     df["higher_tf_volume"] = np.linspace(1000, 2000, length)
     return df
 
@@ -57,7 +55,6 @@ def get_filter_methods():
     Returns list of (name, method) for all filters in SmartFilter.
     Only includes methods that start with '_check_' or are in the filter_function_map.
     """
-    # List of canonical filter methods from smart_filter.py
     canonical_filters = [
         "Fractal Zone", "Unified Trend Regime", "Momentum Cluster", "Volume Spike", "VWAP Divergence",
         "MTF Volume Agreement", "HH/LL Trend", "Chop Zone", "Candle Confirmation", "Wick Dominance",
@@ -65,30 +62,28 @@ def get_filter_methods():
         "Liquidity Awareness", "Volatility Model", "Volatility Squeeze"
     ]
     method_map = {
-        "Fractal Zone": "._check_fractal_zone",
-        "Unified Trend Regime": ".unified_trend_regime",
-        "Momentum Cluster": "._check_momentum_cluster",
-        "Volume Spike": "._check_volume_spike",
-        "VWAP Divergence": "._check_vwap_divergence",
-        "MTF Volume Agreement": "._check_mtf_volume_agreement",
-        "HH/LL Trend": "._check_hh_ll",
-        "Chop Zone": "._check_chop_zone",
-        "Candle Confirmation": "._check_candle_close",
-        "Wick Dominance": "._check_wick_dominance",
-        "Absorption": "._check_absorption",
-        "Support/Resistance": "._check_support_resistance",
-        "Smart Money Bias": "._check_smart_money_bias",
-        "Liquidity Pool": "._check_liquidity_pool",
-        "Spread Filter": "._check_spread_filter",
-        "Liquidity Awareness": "._check_liquidity_awareness",
-        "Volatility Model": "._check_volatility_model",
-        "Volatility Squeeze": "._check_volatility_squeeze"
+        "Fractal Zone": "_check_fractal_zone",
+        "Unified Trend Regime": "unified_trend_regime",
+        "Momentum Cluster": "_check_momentum_cluster",
+        "Volume Spike": "_check_volume_spike",
+        "VWAP Divergence": "_check_vwap_divergence",
+        "MTF Volume Agreement": "_check_mtf_volume_agreement",
+        "HH/LL Trend": "_check_hh_ll",
+        "Chop Zone": "_check_chop_zone",
+        "Candle Confirmation": "_check_candle_close",
+        "Wick Dominance": "_check_wick_dominance",
+        "Absorption": "_check_absorption",
+        "Support/Resistance": "_check_support_resistance",
+        "Smart Money Bias": "_check_smart_money_bias",
+        "Liquidity Pool": "_check_liquidity_pool",
+        "Spread Filter": "_check_spread_filter",
+        "Liquidity Awareness": "_check_liquidity_awareness",
+        "Volatility Model": "_check_volatility_model",
+        "Volatility Squeeze": "_check_volatility_squeeze"
     }
     dummy = SmartFilter(symbol="TEST", df=make_test_df("long"))
-
     methods = []
-    for filter_name, method_name in method_map.items():
-        attr = method_name.split(".", 1)[1]
+    for filter_name, attr in method_map.items():
         func = getattr(dummy, attr, None)
         if func is not None and callable(func):
             methods.append((filter_name, func))
@@ -107,33 +102,43 @@ def test_filter(filter_func, filter_name, sf_long, sf_short, sf_neutral):
     except Exception as e:
         print(f"  ERROR while running {filter_name}: {e}")
         return
-
     print(f"  LONG test result:    {result_long}")
     print(f"  SHORT test result:   {result_short}")
     print(f"  NEUTRAL test result: {result_neutral}")
-
     # Accept None as valid for filters that do not always fire
     assert result_long == "LONG" or result_long is None, f"{filter_name} LONG case failed!"
     assert result_short == "SHORT" or result_short is None, f"{filter_name} SHORT case failed!"
     assert result_neutral is None, f"{filter_name} NEUTRAL case failed!"
 
 def run_all_filter_tests():
-    # Prepare SmartFilter instances for each case
+    """
+    Run all filter tests with default test data for each case: LONG, SHORT, NEUTRAL.
+    """
     df_long = make_test_df("long")
     df_short = make_test_df("short")
     df_neutral = make_test_df("neutral")
     sf_long = SmartFilter(symbol="TEST", df=df_long)
     sf_short = SmartFilter(symbol="TEST", df=df_short)
     sf_neutral = SmartFilter(symbol="TEST", df=df_neutral)
-
-    # Get all filter methods
     all_filters = get_filter_methods()
-
-    # Run each filter for all cases
     for filter_name, func in all_filters:
         test_filter(lambda sf: func(), filter_name, sf_long, sf_short, sf_neutral)
-
     print("\nAll filter tests completed. Check results above.")
+
+def run_filter_tests_for_symbol(symbol, df):
+    """
+    Run all filters for a given symbol and DataFrame.
+    Useful for production or debugging with real data.
+    """
+    sf = SmartFilter(symbol=symbol, df=df)
+    all_filters = get_filter_methods()
+    print(f"\nRunning filter tests for symbol: {symbol}")
+    for filter_name, func in all_filters:
+        try:
+            result = func()
+            print(f"{filter_name}: {result}")
+        except Exception as e:
+            print(f"{filter_name}: ERROR - {e}")
 
 if __name__ == "__main__":
     print("Starting all SmartFilter tests...")
