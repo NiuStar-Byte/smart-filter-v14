@@ -132,9 +132,12 @@ def run_all_filter_tests():
     sf_neutral = SmartFilter(symbol="TEST", df=df_neutral)
     all_filters = get_filter_methods()
     for filter_name, func in all_filters:
-        test_filter(lambda sf, debug=False: getattr(sf, func.__name__)(debug=debug), filter_name, sf_long, sf_short, sf_neutral)
+        if filter_name == "Fractal Zone":
+            test_filter(lambda sf: getattr(sf, func.__name__)(debug=True), filter_name, sf_long, sf_short, sf_neutral)
+        else:
+            test_filter(lambda sf: getattr(sf, func.__name__)(), filter_name, sf_long, sf_short, sf_neutral)
     print("\nAll filter tests completed. Check results above.")
-
+    
 def run_filter_tests_for_symbol(symbol, df):
     """
     Run all filters for a given symbol and DataFrame.
