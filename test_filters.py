@@ -101,16 +101,21 @@ def test_filter(filter_func, filter_name, sf_long, sf_short, sf_neutral):
     """
     print(f"\nTesting filter: {filter_name}")
     try:
-        result_long = filter_func(sf_long)
-        result_short = filter_func(sf_short)
-        result_neutral = filter_func(sf_neutral)
+        # Enable debug for Fractal Zone only
+        if filter_name == "Fractal Zone":
+            result_long = filter_func(sf_long, debug=True)
+            result_short = filter_func(sf_short, debug=True)
+            result_neutral = filter_func(sf_neutral, debug=True)
+        else:
+            result_long = filter_func(sf_long)
+            result_short = filter_func(sf_short)
+            result_neutral = filter_func(sf_neutral)
     except Exception as e:
         print(f"  ERROR while running {filter_name}: {e}")
         return
     print(f"  LONG test result:    {result_long}")
     print(f"  SHORT test result:   {result_short}")
     print(f"  NEUTRAL test result: {result_neutral}")
-    # Accept None as valid for filters that do not always fire
     assert result_long == "LONG" or result_long is None, f"{filter_name} LONG case failed!"
     assert result_short == "SHORT" or result_short is None, f"{filter_name} SHORT case failed!"
     assert result_neutral is None, f"{filter_name} NEUTRAL case failed!"
@@ -127,7 +132,7 @@ def run_all_filter_tests():
     sf_neutral = SmartFilter(symbol="TEST", df=df_neutral)
     all_filters = get_filter_methods()
     for filter_name, func in all_filters:
-        test_filter(lambda sf: func(), filter_name, sf_long, sf_short, sf_neutral)
+        test_filter(lambda sf, debug=False: getattr(sf, func.__name__)(debug=debug), filter_name, sf_long, sf_short, sf_neutral)
     print("\nAll filter tests completed. Check results above.")
 
 def run_filter_tests_for_symbol(symbol, df):
