@@ -15,6 +15,10 @@ from telegram_alert import send_telegram_alert, send_telegram_file
 from kucoin_orderbook import get_order_wall_delta
 from pec_engine import run_pec_check, export_pec_log
 from tp_sl_retracement import calculate_tp_sl
+from test_filters import run_all_filter_tests
+
+# Run SmartFilter diagnostics before starting main signal loop
+run_all_filter_tests()  # <-- Add this line
 
 TOKENS = [
     "BTC-USDT", "ETH-USDT",
@@ -437,4 +441,5 @@ if __name__ == "__main__":
             import traceback; traceback.print_exc()
     else:
         print(">>> Entering normal run() branch", flush=True)
+        run_all_filter_tests()  # <--- THIS RUNS DIAGNOSTICS ONCE BEFORE LIVE LOOP
         run()
