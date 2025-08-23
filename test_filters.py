@@ -12,10 +12,9 @@ import inspect
 from smart_filter import SmartFilter
 
 def make_test_df(case="long", length=25):
-    """
-    Returns a DataFrame likely to trigger LONG, SHORT, or NEUTRAL signals.
-    Adjust logic for your filters as needed.
-    """
+    import numpy as np
+    import pandas as pd
+
     if case == "long":
         data = {
             "open":   np.linspace(90, 105, length),
@@ -27,11 +26,17 @@ def make_test_df(case="long", length=25):
             "ask":    np.linspace(100, 115, length),
         }
     elif case == "short":
+        # Make sure last two highs drop for fractal_high < fractal_high_prev
+        highs = np.linspace(115, 100, length - 2)
+        highs = np.append(highs, [115, 110])  # Last two are 115, 110 (creates drop)
+        closes = np.linspace(114, 95, length - 2)
+        closes = np.append(closes, [97, 95])  # Last two are 97, 95 (decreasing)
+
         data = {
             "open":   np.linspace(105, 90, length),
-            "high":   np.linspace(115, 100, length),
+            "high":   highs,
             "low":    np.linspace(100, 85, length),
-            "close":  np.linspace(114, 95, length),
+            "close":  closes,
             "volume": np.linspace(2000, 1000, length),
             "bid":    np.linspace(105, 90, length),
             "ask":    np.linspace(115, 100, length),
