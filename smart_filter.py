@@ -1259,7 +1259,7 @@ class SmartFilter:
     #    else:
     #        return None
 
-    def _check_fractal_zone(self, buffer_pct=0.005, window=20, min_conditions=2):
+    def _check_fractal_zone(self, buffer_pct=0.005, window=20, min_conditions=2, debug=False):
         # Calculate fractal highs/lows
         fractal_low = self.df['low'].rolling(window).min().iat[-1]
         fractal_low_prev = self.df['low'].rolling(window).min().iat[-2]
@@ -1281,6 +1281,17 @@ class SmartFilter:
     
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
+    
+        if debug:
+            print("==== Fractal Zone Debug ====")
+            print("Last two rows of data:")
+            print(self.df.tail(2))
+            print(f"fractal_low: {fractal_low}, fractal_low_prev: {fractal_low_prev}")
+            print(f"fractal_high: {fractal_high}, fractal_high_prev: {fractal_high_prev}")
+            print(f"close: {close}, close_prev: {close_prev}")
+            print(f"[LONG] cond1: {cond1_long}, cond2: {cond2_long}, cond3: {cond3_long}, met: {long_met}")
+            print(f"[SHORT] cond1: {cond1_short}, cond2: {cond2_short}, cond3: {cond3_short}, met: {short_met}")
+            print("===========================")
     
         # Prefer SHORT signal if both are met
         if short_met >= min_conditions:
