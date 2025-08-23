@@ -1260,6 +1260,7 @@ class SmartFilter:
     #        return None
 
     def _check_fractal_zone(self, buffer_pct=0.005, window=20, min_conditions=2, debug=False):
+        print("Fractal Zone filter called. Debug =", debug)
         # Calculate fractal highs/lows
         fractal_low = self.df['low'].rolling(window).min().iat[-1]
         fractal_low_prev = self.df['low'].rolling(window).min().iat[-2]
