@@ -1787,9 +1787,12 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
     
-        if short_met >= 1:
+        if long_met > short_met and long_met > 0:
+            return "LONG"
+        elif short_met > long_met and short_met > 0:
             return "SHORT"
-        elif long_met >= 1:
+        elif long_met == short_met and long_met > 0:
+            # If tie, default to LONG, but you can change this to "SHORT" or None.
             return "LONG"
         else:
             return None
