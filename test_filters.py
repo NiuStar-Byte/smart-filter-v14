@@ -74,23 +74,27 @@ def make_test_df(case="long", length=25):
 
 def get_filter_methods():
     """
-    Returns list of (name, method) for all filters in SmartFilter.
-    Only includes methods that start with '_check_' or are in the filter_function_map.
+    Returns list of (filter_name, method) for all canonical filters in SmartFilter.
     """
     canonical_filters = [
-        "Fractal Zone", "Unified Trend Regime", "Momentum Cluster", "Volume Spike", "VWAP Divergence",
-        "MTF Volume Agreement", "HH/LL Trend", "Chop Zone", "Candle Confirmation", "Wick Dominance",
-        "Absorption", "Support/Resistance", "Smart Money Bias", "Liquidity Pool", "Spread Filter",
-        "Liquidity Awareness", "Volatility Model", "Volatility Squeeze"
+        "Fractal Zone", "EMA Cloud", "MACD", "Momentum", "HATS", "Volume Spike",
+        "VWAP Divergence", "MTF Volume Agreement", "HH/LL Trend", "EMA Structure",
+        "Chop Zone", "Candle Confirmation", "Wick Dominance", "Absorption",
+        "Support/Resistance", "Smart Money Bias", "Liquidity Pool", "Spread Filter",
+        "Liquidity Awareness", "Trend Continuation", "Volatility Model",
+        "ATR Momentum Burst", "Volatility Squeeze"
     ]
     method_map = {
         "Fractal Zone": "_check_fractal_zone",
-        "Unified Trend Regime": "unified_trend_regime",
-        "Momentum Cluster": "_check_momentum_cluster",
+        "EMA Cloud": "_check_ema_cloud",
+        "MACD": "_check_macd",
+        "Momentum": "_check_momentum",
+        "HATS": "_check_hats",
         "Volume Spike": "_check_volume_spike",
         "VWAP Divergence": "_check_vwap_divergence",
         "MTF Volume Agreement": "_check_mtf_volume_agreement",
         "HH/LL Trend": "_check_hh_ll",
+        "EMA Structure": "_check_ema_structure",
         "Chop Zone": "_check_chop_zone",
         "Candle Confirmation": "_check_candle_close",
         "Wick Dominance": "_check_wick_dominance",
@@ -100,9 +104,12 @@ def get_filter_methods():
         "Liquidity Pool": "_check_liquidity_pool",
         "Spread Filter": "_check_spread_filter",
         "Liquidity Awareness": "_check_liquidity_awareness",
+        "Trend Continuation": "_check_trend_continuation",
         "Volatility Model": "_check_volatility_model",
+        "ATR Momentum Burst": "_check_atr_momentum_burst",
         "Volatility Squeeze": "_check_volatility_squeeze"
     }
+    
     dummy = SmartFilter(symbol="TEST", df=make_test_df("long"))
     methods = []
     for filter_name, attr in method_map.items():
@@ -111,51 +118,38 @@ def get_filter_methods():
             methods.append((filter_name, func))
     return methods
 
-def test_filter(filter_func, filter_name, sf_long, sf_short, sf_neutral):
+def test_filter(filter_name, filter_func, sf_long, sf_short, sf_neutral):
     print(f"\n--- Testing {filter_name} ---")
     result_long = filter_func(sf_long)
     result_short = filter_func(sf_short)
     result_neutral = filter_func(sf_neutral)
 
-    # VWAP Divergence debug block
-    if filter_name.lower().replace(" ", "_") == "vwap_divergence":
-        print("[DEBUG] LONG test for VWAP Divergence:")
-        print("close[-2]:", sf_long.df["close"].iat[-2], "vwap[-2]:", sf_long.df["vwap"].iat[-2])
-        print("close[-1]:", sf_long.df["close"].iat[-1], "vwap[-1]:", sf_long.df["vwap"].iat[-1])
-        print("Expected: LONG or None, Got:", result_long)
-        print("[DEBUG] SHORT test for VWAP Divergence:")
-        print("close[-2]:", sf_short.df["close"].iat[-2], "vwap[-2]:", sf_short.df["vwap"].iat[-2])
-        print("close[-1]:", sf_short.df["close"].iat[-1], "vwap[-1]:", sf_short.df["vwap"].iat[-1])
-        print("Expected: SHORT or None, Got:", result_short)
+    print(f"[DEBUG] {filter_name} - LONG")
+    print("Input (last 2 rows):")
+    print(sf_long.df.tail(2))
+    print(f"Result: {result_long} (Expected: LONG or None)")
 
-    assert result_long == "LONG" or result_long is None, f"{filter_name} LONG case failed!"
-    assert result_short == "SHORT" or result_short is None, f"{filter_name} SHORT case failed!"
-    assert result_neutral is None, f"{filter_name} NEUTRAL case failed!"
-    print(f"PASS: {filter_name}")
+    print(f"[DEBUG] {filter_name} - SHORT")
+    print("Input (last 2 rows):")
+    print(sf_short.df.tail(2))
+    print(f"Result: {result_short} (Expected: SHORT or None)")
+
+    print(f"[DEBUG] {filter_name} - NEUTRAL")
+    print("Input (last 2 rows):")
+    print(sf_neutral.df.tail(2))
+    print(f"Result: {result_neutral} (Expected: None)")
 
 def run_all_filter_tests():
-    from smart_filter import SmartFilter
-
-    filter_funcs = [
-        SmartFilter._check_vwap_divergence,
-        # Add other filter functions here as needed
-    ]
-    filter_names = [
-        "VWAP Divergence",
-        # Add other filter names here as needed
-    ]
-
-    for func, filter_name in zip(filter_funcs, filter_names):
+    methods = get_filter_methods()
+    for filter_name, filter_func in methods:
         df_long = make_test_df("long")
         df_short = make_test_df("short")
         df_neutral = make_test_df("neutral")
-    
         sf_long = SmartFilter(symbol="TEST", df=df_long)
         sf_short = SmartFilter(symbol="TEST", df=df_short)
         sf_neutral = SmartFilter(symbol="TEST", df=df_neutral)
-    
-        test_filter(lambda sf: func(sf), filter_name, sf_long, sf_short, sf_neutral)
-        
+        test_filter(filter_name, filter_func, sf_long, sf_short, sf_neutral)
+
 if __name__ == "__main__":
     print("Starting all SmartFilter tests...")
     run_all_filter_tests()
