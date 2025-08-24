@@ -1773,24 +1773,24 @@ class SmartFilter:
         vwap_prev = self.df['vwap'].iat[-2]
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
-
+    
         # LONG conditions
         cond1_long = close < vwap
         cond2_long = close > close_prev
         cond3_long = (vwap - close) > (vwap_prev - close_prev)
-
+    
         # SHORT conditions
         cond1_short = close > vwap
         cond2_short = close < close_prev
         cond3_short = (close - vwap) > (close_prev - vwap_prev)
-
+    
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-
-        if long_met >= 1:
-            return "LONG"
-        elif short_met >= 1:
+    
+        if short_met >= 1:
             return "SHORT"
+        elif long_met >= 1:
+            return "LONG"
         else:
             return None
 
