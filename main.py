@@ -20,7 +20,6 @@ from test_filters import run_all_filter_tests
 # Run SmartFilter diagnostics before starting main signal loop
 run_all_filter_tests()  # <-- Add this line
 
-
 TOKENS = [
     "BTC-USDT", "ETH-USDT",
     "BNB-USDT", "XRP-USDT", "SOL-USDT", "ADA-USDT", "XLM-USDT",
