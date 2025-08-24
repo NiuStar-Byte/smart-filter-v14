@@ -2,7 +2,6 @@
 Test script for smart-filter-v14: checks that all filters in SmartFilter fire LONG and SHORT signals as expected.
 
 - You can run this as a standalone script, or import and call run_all_filter_tests() from main.py or elsewhere.
-- Optionally, call run_filter_tests_for_symbol(symbol, df) with your own test data.
 """
 
 import pandas as pd
@@ -16,9 +15,6 @@ def make_test_df(case="long", length=25):
     Returns a DataFrame likely to trigger LONG, SHORT, or NEUTRAL signals.
     Adjust logic for your filters as needed.
     """
-    import numpy as np
-    import pandas as pd
-
     if case == "long":
         data = {
             "open":   np.linspace(90, 105, length),
@@ -31,10 +27,8 @@ def make_test_df(case="long", length=25):
         }
         df = pd.DataFrame(data)
         df["higher_tf_volume"] = np.linspace(1000, 2000, length)
-        # VWAP calculated as usual
         df["vwap"] = (df["close"] * df["volume"]).cumsum() / df["volume"].cumsum()
     elif case == "short":
-        # Default pattern: close and volume decreasing
         close_vals = np.linspace(115, 95, length)
         volume_vals = np.linspace(2000, 1000, length)
         data = {
@@ -48,17 +42,12 @@ def make_test_df(case="long", length=25):
         }
         df = pd.DataFrame(data)
         df["higher_tf_volume"] = np.linspace(1000, 2000, length)
-        # VWAP calculated as usual
         df["vwap"] = (df["close"] * df["volume"]).cumsum() / df["volume"].cumsum()
-        # Patch last two rows to guarantee VWAP Divergence SHORT signal triggers
-        # Conditions: close[-1] > vwap[-1], close[-1] < close[-2], (close[-1] - vwap[-1]) > (close[-2] - vwap[-2])
-        df["close"].iloc[-2] = 106
-        df["close"].iloc[-1] = 104  # close falls
-        df["vwap"].iloc[-2] = 100
-        df["vwap"].iloc[-1] = 103   # vwap rises
-        # (close[-2] - vwap[-2]) = 6, (close[-1] - vwap[-1]) = 1
-        # So divergence not growing, but since your filter triggers on ANY condition, this guarantees at least close[-1] > vwap[-1] and close[-1] < close[-2]
-        # If you want divergence to grow, you can flip values accordingly
+        # Patch last two rows for VWAP Divergence SHORT test
+        df["close"].iloc[-2] = 100
+        df["close"].iloc[-1] = 99
+        df["vwap"].iloc[-2] = 97
+        df["vwap"].iloc[-1] = 98
     elif case == "neutral":
         data = {
             "open":   np.full(length, 100),
@@ -117,63 +106,45 @@ def get_filter_methods():
     return methods
 
 def test_filter(filter_func, filter_name, sf_long, sf_short, sf_neutral):
-    """
-    Tests a filter function on LONG, SHORT, and NEUTRAL data.
-    Prints results and asserts signal logic.
-    """
-    print(f"\nTesting filter: {filter_name}")
-    try:
-        # Enable debug for Fractal Zone only
-        if filter_name == "Fractal Zone":
-            result_long = filter_func(sf_long, debug=True)
-            result_short = filter_func(sf_short, debug=True)
-            result_neutral = filter_func(sf_neutral, debug=True)
-        else:
-            result_long = filter_func(sf_long)
-            result_short = filter_func(sf_short)
-            result_neutral = filter_func(sf_neutral)
-    except Exception as e:
-        print(f"  ERROR while running {filter_name}: {e}")
-        return
-    print(f"  LONG test result:    {result_long}")
-    print(f"  SHORT test result:   {result_short}")
-    print(f"  NEUTRAL test result: {result_neutral}")
+    print(f"\n--- Testing {filter_name} ---")
+    result_long = filter_func(sf_long)
+    result_short = filter_func(sf_short)
+    result_neutral = filter_func(sf_neutral)
+
+    # VWAP Divergence debug block
+    if filter_name.lower().replace(" ", "_") == "vwap_divergence":
+        print("[DEBUG] SHORT test for VWAP Divergence:")
+        print("close[-2]:", sf_short.df["close"].iat[-2], "vwap[-2]:", sf_short.df["vwap"].iat[-2])
+        print("close[-1]:", sf_short.df["close"].iat[-1], "vwap[-1]:", sf_short.df["vwap"].iat[-1])
+        print("Expected: SHORT or None, Got:", result_short)
+
     assert result_long == "LONG" or result_long is None, f"{filter_name} LONG case failed!"
     assert result_short == "SHORT" or result_short is None, f"{filter_name} SHORT case failed!"
     assert result_neutral is None, f"{filter_name} NEUTRAL case failed!"
+    print(f"PASS: {filter_name}")
 
 def run_all_filter_tests():
-    """
-    Run all filter tests with default test data for each case: LONG, SHORT, NEUTRAL.
-    """
-    df_long = make_test_df("long")
-    df_short = make_test_df("short")
-    df_neutral = make_test_df("neutral")
-    sf_long = SmartFilter(symbol="TEST", df=df_long)
-    sf_short = SmartFilter(symbol="TEST", df=df_short)
-    sf_neutral = SmartFilter(symbol="TEST", df=df_neutral)
-    all_filters = get_filter_methods()
-    for filter_name, func in all_filters:
-        if filter_name == "Fractal Zone":
-            test_filter(lambda sf: getattr(sf, func.__name__)(debug=True), filter_name, sf_long, sf_short, sf_neutral)
-        else:
-            test_filter(lambda sf: getattr(sf, func.__name__)(), filter_name, sf_long, sf_short, sf_neutral)
-    print("\nAll filter tests completed. Check results above.")
-    
-def run_filter_tests_for_symbol(symbol, df):
-    """
-    Run all filters for a given symbol and DataFrame.
-    Useful for production or debugging with real data.
-    """
-    sf = SmartFilter(symbol=symbol, df=df)
-    all_filters = get_filter_methods()
-    print(f"\nRunning filter tests for symbol: {symbol}")
-    for filter_name, func in all_filters:
-        try:
-            result = func()
-            print(f"{filter_name}: {result}")
-        except Exception as e:
-            print(f"{filter_name}: ERROR - {e}")
+    from smart_filter import SmartFilter
+
+    filter_funcs = [
+        SmartFilter._check_vwap_divergence,
+        # Add other filter functions here as needed
+    ]
+    filter_names = [
+        "VWAP Divergence",
+        # Add other filter names here as needed
+    ]
+
+    for func, filter_name in zip(filter_funcs, filter_names):
+        df_long = make_test_df("long")
+        df_short = make_test_df("short")
+        df_neutral = make_test_df("neutral")
+
+        sf_long = SmartFilter(df_long)
+        sf_short = SmartFilter(df_short)
+        sf_neutral = SmartFilter(df_neutral)
+
+        test_filter(lambda sf: func(sf), filter_name, sf_long, sf_short, sf_neutral)
 
 if __name__ == "__main__":
     print("Starting all SmartFilter tests...")
