@@ -1,7 +1,8 @@
 """
 Test script for smart-filter-v14: checks that all filters in SmartFilter fire LONG and SHORT signals as expected.
 
-- You can run this as a standalone script, or import and call run_all_filter_tests() from main.py or elsewhere.
+- Run as a standalone script, or import and call run_all_filter_tests() from main.py or elsewhere.
+Enhanced to provide detailed debug output for VWAP Divergence LONG/SHORT cases.
 """
 
 import pandas as pd
@@ -34,7 +35,6 @@ def make_test_df(case="long", length=25):
         df["vwap"].iloc[-2] = 105
         df["vwap"].iloc[-1] = 106
     elif case == "short":
-        # Build generic data
         close_vals = np.linspace(115, 95, length)
         volume_vals = np.linspace(2000, 1000, length)
         data = {
@@ -119,6 +119,10 @@ def test_filter(filter_func, filter_name, sf_long, sf_short, sf_neutral):
 
     # VWAP Divergence debug block
     if filter_name.lower().replace(" ", "_") == "vwap_divergence":
+        print("[DEBUG] LONG test for VWAP Divergence:")
+        print("close[-2]:", sf_long.df["close"].iat[-2], "vwap[-2]:", sf_long.df["vwap"].iat[-2])
+        print("close[-1]:", sf_long.df["close"].iat[-1], "vwap[-1]:", sf_long.df["vwap"].iat[-1])
+        print("Expected: LONG or None, Got:", result_long)
         print("[DEBUG] SHORT test for VWAP Divergence:")
         print("close[-2]:", sf_short.df["close"].iat[-2], "vwap[-2]:", sf_short.df["vwap"].iat[-2])
         print("close[-1]:", sf_short.df["close"].iat[-1], "vwap[-1]:", sf_short.df["vwap"].iat[-1])
