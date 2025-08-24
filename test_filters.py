@@ -29,6 +29,7 @@ def make_test_df(case="long", length=25):
         df["higher_tf_volume"] = np.linspace(1000, 2000, length)
         df["vwap"] = (df["close"] * df["volume"]).cumsum() / df["volume"].cumsum()
     elif case == "short":
+        # Build generic data
         close_vals = np.linspace(115, 95, length)
         volume_vals = np.linspace(2000, 1000, length)
         data = {
@@ -44,10 +45,10 @@ def make_test_df(case="long", length=25):
         df["higher_tf_volume"] = np.linspace(1000, 2000, length)
         df["vwap"] = (df["close"] * df["volume"]).cumsum() / df["volume"].cumsum()
         # Patch last two rows for VWAP Divergence SHORT test
-        df["close"].iloc[-2] = 100
-        df["close"].iloc[-1] = 99
-        df["vwap"].iloc[-2] = 97
-        df["vwap"].iloc[-1] = 98
+        df["close"].iloc[-2] = 106
+        df["close"].iloc[-1] = 108
+        df["vwap"].iloc[-2] = 104
+        df["vwap"].iloc[-1] = 106
     elif case == "neutral":
         data = {
             "open":   np.full(length, 100),
