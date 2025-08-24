@@ -1612,9 +1612,9 @@ class SmartFilter:
         short_met = sum([cond1_short, cond2_short, cond3_short])
     
         # Fix: Only return LONG if long_met > short_met, and vice versa
-        if long_met >= 1 and long_met > short_met:
+        if long_met >= 2 and long_met > short_met:
             return "LONG"
-        elif short_met >= 1 and short_met > long_met:
+        elif short_met >= 2 and short_met > long_met:
             return "SHORT"
         else:
             return None
@@ -1641,9 +1641,9 @@ class SmartFilter:
         short_met = sum([cond1_short, cond2_short, cond3_short])
     
         # Fix: Only return LONG if long_met > short_met, and vice versa
-        if long_met >= 1 and long_met > short_met:
+        if long_met >= 2 and long_met > short_met:
             return "LONG"
-        elif short_met >= 1 and short_met > long_met:
+        elif short_met >= 2 and short_met > long_met:
             return "SHORT"
         else:
             return None
@@ -1699,9 +1699,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 1:
+        if long_met >= 2:
             return "LONG"
-        elif short_met >= 1:
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
@@ -1775,9 +1775,9 @@ class SmartFilter:
         short_met = sum([cond1_short, cond2_short, cond3_short])
     
         # Fix: Only return LONG if long_met > short_met, and vice versa
-        if long_met >= 1 and long_met > short_met:
+        if long_met >= 2 and long_met > short_met:
             return "LONG"
-        elif short_met >= 1 and short_met > long_met:
+        elif short_met >= 2 and short_met > long_met:
             return "SHORT"
         else:
             return None
@@ -1836,9 +1836,9 @@ class SmartFilter:
         short_met = sum([cond1_short, cond2_short, cond3_short])
     
         # Fix: Only return LONG if long_met > short_met, and vice versa
-        if long_met >= 1 and long_met > short_met:
+        if long_met >= 2 and long_met > short_met:
             return "LONG"
-        elif short_met >= 1 and short_met > long_met:
+        elif short_met >= 2 and short_met > long_met:
             return "SHORT"
         else:
             return None
@@ -1957,9 +1957,9 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
-        if long_met >= 1:
+        if long_met >= 2:
             return "LONG"
-        elif short_met >= 1:
+        elif short_met >= 2:
             return "SHORT"
         else:
             return None
