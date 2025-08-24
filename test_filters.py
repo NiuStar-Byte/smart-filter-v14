@@ -12,9 +12,10 @@ import inspect
 from smart_filter import SmartFilter
 
 def make_test_df(case="long", length=25):
-    import numpy as np
-    import pandas as pd
-
+    """
+    Returns a DataFrame likely to trigger LONG, SHORT, or NEUTRAL signals.
+    Adjust logic for your filters as needed.
+    """
     if case == "long":
         data = {
             "open":   np.linspace(90, 105, length),
@@ -26,21 +27,22 @@ def make_test_df(case="long", length=25):
             "ask":    np.linspace(100, 115, length),
         }
     elif case == "short":
-        # Make sure last two highs drop for fractal_high < fractal_high_prev
-        highs = np.linspace(115, 100, length - 2)
-        highs = np.append(highs, [115, 110])  # Last two are 115, 110 (creates drop)
-        closes = np.linspace(114, 95, length - 2)
-        closes = np.append(closes, [97, 95])  # Last two are 97, 95 (decreasing)
-
+        # Patch: Create a scenario where close > vwap and close is falling
+        # We'll use a high starting close, gradually decreasing, while VWAP rises slower
+        close_vals = np.linspace(115, 95, length)  # High to low (falling)
+        volume_vals = np.linspace(2000, 1000, length)
+        vwap_vals = np.linspace(100, 110, length)  # VWAP rises slightly
         data = {
-            "open":   np.linspace(105, 90, length),
-            "high":   highs,
-            "low":    np.linspace(100, 85, length),
-            "close":  closes,
-            "volume": np.linspace(2000, 1000, length),
-            "bid":    np.linspace(105, 90, length),
-            "ask":    np.linspace(115, 100, length),
+            "open":   close_vals + 5,   # open above close
+            "high":   close_vals + 10,  # high above close
+            "low":    close_vals - 10,  # low below close
+            "close":  close_vals,
+            "volume": volume_vals,
+            "bid":    close_vals - 2,
+            "ask":    close_vals + 2,
         }
+        # We'll set vwap explicitly for the last two rows to ensure (close-vwap) increases
+        # You can set this after DataFrame creation if you want more control
     else:  # Neutral
         data = {
             "open":   np.full(length, 100),
@@ -52,6 +54,7 @@ def make_test_df(case="long", length=25):
             "ask":    np.full(length, 110),
         }
     df = pd.DataFrame(data)
+    # Add higher_tf_volume for MTF filters
     df["higher_tf_volume"] = np.linspace(1000, 2000, length)
     return df
 
