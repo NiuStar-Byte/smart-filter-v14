@@ -1,13 +1,13 @@
 """
 Test script for smart-filter-v14: checks that all filters in SmartFilter fire LONG and SHORT signals as expected.
 
-- Run as a standalone script, or import and call run_all_filter_tests() from main.py or elsewhere.
-Enhanced to provide detailed debug output for VWAP Divergence LONG/SHORT cases.
+Enhanced: Calls each filter as an instance method on SmartFilter.
+All 23 canonical filters are tested if present in the class.
+Outputs detailed debug info for LONG, SHORT, NEUTRAL cases.
 """
 
 import pandas as pd
 import numpy as np
-import inspect
 
 from smart_filter import SmartFilter
 
@@ -74,9 +74,10 @@ def make_test_df(case="long", length=25):
 
 def get_filter_methods():
     """
-    Returns list of (filter_name, method) for all canonical filters in SmartFilter.
+    Returns list of (filter_name, callable) for all canonical filters in SmartFilter.
+    Uses a lambda to call each filter as an instance method.
     """
-    canonical_filters = [
+    filter_names = [
         "Fractal Zone", "EMA Cloud", "MACD", "Momentum", "HATS", "Volume Spike",
         "VWAP Divergence", "MTF Volume Agreement", "HH/LL Trend", "EMA Structure",
         "Chop Zone", "Candle Confirmation", "Wick Dominance", "Absorption",
@@ -109,13 +110,13 @@ def get_filter_methods():
         "ATR Momentum Burst": "_check_atr_momentum_burst",
         "Volatility Squeeze": "_check_volatility_squeeze"
     }
-    
     dummy = SmartFilter(symbol="TEST", df=make_test_df("long"))
     methods = []
-    for filter_name, attr in method_map.items():
-        func = getattr(dummy, attr, None)
-        if func is not None and callable(func):
-            methods.append((filter_name, func))
+    for filter_name in filter_names:
+        attr = method_map.get(filter_name)
+        if hasattr(dummy, attr):
+            # Use a lambda so we call the method properly as instance method
+            methods.append((filter_name, lambda sf, a=attr: getattr(sf, a)()))
     return methods
 
 def test_filter(filter_name, filter_func, sf_long, sf_short, sf_neutral):
