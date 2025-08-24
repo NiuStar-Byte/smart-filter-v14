@@ -139,13 +139,13 @@ def run_all_filter_tests():
         df_long = make_test_df("long")
         df_short = make_test_df("short")
         df_neutral = make_test_df("neutral")
-
-        sf_long = SmartFilter(df_long)
-        sf_short = SmartFilter(df_short)
-        sf_neutral = SmartFilter(df_neutral)
-
+    
+        sf_long = SmartFilter(symbol="TEST", df=df_long)
+        sf_short = SmartFilter(symbol="TEST", df=df_short)
+        sf_neutral = SmartFilter(symbol="TEST", df=df_neutral)
+    
         test_filter(lambda sf: func(sf), filter_name, sf_long, sf_short, sf_neutral)
-
+        
 if __name__ == "__main__":
     print("Starting all SmartFilter tests...")
     run_all_filter_tests()
