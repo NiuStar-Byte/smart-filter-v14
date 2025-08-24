@@ -1213,26 +1213,26 @@ class SmartFilter:
         e26 = self.df['close'].ewm(span=26).mean()
         macd = e12 - e26
         signal = macd.ewm(span=9).mean()
-
+    
         # LONG conditions
         condition_1_long = macd.iat[-1] > signal.iat[-1]                # MACD above Signal Line
         condition_2_long = macd.iat[-1] > macd.iat[-2]                  # MACD is rising
         condition_3_long = self.df['close'].iat[-1] > self.df['close'].iat[-2]  # Price action rising
         condition_4_long = macd.iat[-1] > signal.iat[-1] and macd.iat[-1] > macd.iat[-2]  # MACD Divergence
-
+    
         # SHORT conditions
         condition_1_short = macd.iat[-1] < signal.iat[-1]                # MACD below Signal Line
         condition_2_short = macd.iat[-1] < macd.iat[-2]                  # MACD is falling
         condition_3_short = self.df['close'].iat[-1] < self.df['close'].iat[-2]  # Price action falling
         condition_4_short = macd.iat[-1] < signal.iat[-1] and macd.iat[-1] < macd.iat[-2]  # MACD Divergence
-
+    
         long_conditions_met = sum([condition_1_long, condition_2_long, condition_3_long, condition_4_long])
         short_conditions_met = sum([condition_1_short, condition_2_short, condition_3_short, condition_4_short])
-
-        # If 2 out of 4 conditions are met, we pass the filter
-        if long_conditions_met >= 2:
+    
+        # Fix: Only return LONG if long_conditions_met > short_conditions_met, and vice versa
+        if long_conditions_met >= 2 and long_conditions_met > short_conditions_met:
             return "LONG"
-        elif short_conditions_met >= 2:
+        elif short_conditions_met >= 2 and short_conditions_met > long_conditions_met:
             return "SHORT"
         else:
             return None
@@ -1261,9 +1261,10 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
     
-        if long_met >= 2:
+        # Fix: Only return LONG if long_met > short_met, and vice versa
+        if long_met >= 2 and long_met > short_met:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 2 and short_met > long_met:
             return "SHORT"
         else:
             return None
@@ -1416,9 +1417,10 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
     
-        if long_met >= 2:
+        # Fix: Only return LONG if long_met > short_met, and vice versa
+        if long_met >= 2 and long_met > short_met:
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 2 and short_met > long_met:
             return "SHORT"
         else:
             return None
@@ -1485,9 +1487,10 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
     
-        if long_met >= min_conditions:
+        # Fix: Only return LONG if long_met > short_met, and vice versa
+        if long_met >= min_conditions and long_met > short_met:
             return "LONG"
-        elif short_met >= min_conditions:
+        elif short_met >= min_conditions and short_met > long_met:
             return "SHORT"
         else:
             return None
@@ -1537,6 +1540,8 @@ class SmartFilter:
             return None
 
     def _check_atr_momentum_burst(self, threshold_pct=0.10, volume_mult=1.1):
+        long_met = 0
+        short_met = 0
         for i in [-1, -2]:
             close = self.df['close'].iat[i]
             open_ = self.df['open'].iat[i]
@@ -1544,33 +1549,41 @@ class SmartFilter:
             avg_vol = self.df['volume'].rolling(10).mean().iat[i]
             pct_move = (close - open_) / open_ * 100
             if pct_move > threshold_pct and volume > avg_vol * volume_mult:
-                return "LONG"
+                long_met += 1
             elif pct_move < -threshold_pct and volume > avg_vol * volume_mult:
-                return "SHORT"
-        return None
+                short_met += 1
+    
+        # Fix: Only return LONG if long_met > short_met, and vice versa
+        if long_met >= 1 and long_met > short_met:
+            return "LONG"
+        elif short_met >= 1 and short_met > long_met:
+            return "SHORT"
+        else:
+            return None
 
     def _check_trend_continuation(self, ma_col='ema21'):
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
         ma = self.df[ma_col].iat[-1]
         ma_prev = self.df[ma_col].iat[-2]
-
+    
         # LONG conditions
         cond1_long = close > ma
         cond2_long = ma > ma_prev
         cond3_long = close > close_prev
-
+    
         # SHORT conditions
         cond1_short = close < ma
         cond2_short = ma < ma_prev
         cond3_short = close < close_prev
-
+    
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-
-        if long_met >= 1:
+    
+        # Fix: Only return LONG if long_met > short_met, and vice versa
+        if long_met >= 1 and long_met > short_met:
             return "LONG"
-        elif short_met >= 1:
+        elif short_met >= 1 and short_met > long_met:
             return "SHORT"
         else:
             return None
@@ -1580,29 +1593,30 @@ class SmartFilter:
         fast = self.df['ema10'].iat[-1]
         mid = self.df['ema21'].iat[-1]
         slow = self.df['ema50'].iat[-1]
-
+    
         fast_prev = self.df['ema10'].iat[-2]
         mid_prev = self.df['ema21'].iat[-2]
         slow_prev = self.df['ema50'].iat[-2]
-
+    
         close = self.df['close'].iat[-1]
-
+    
         # LONG conditions
         cond1_long = fast > mid and mid > slow
         cond2_long = fast > fast_prev and mid > mid_prev and slow > slow_prev
         cond3_long = close > fast
-
+    
         # SHORT conditions
         cond1_short = fast < mid and mid < slow
         cond2_short = fast < fast_prev and mid < mid_prev and slow < slow_prev
         cond3_short = close < fast
-
+    
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-
-        if long_met >= 1:
+    
+        # Fix: Only return LONG if long_met > short_met, and vice versa
+        if long_met >= 1 and long_met > short_met:
             return "LONG"
-        elif short_met >= 1:
+        elif short_met >= 1 and short_met > long_met:
             return "SHORT"
         else:
             return None
@@ -1614,23 +1628,24 @@ class SmartFilter:
         low_prev = self.df['low'].iat[-2]
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
-
+    
         # LONG conditions: Higher Highs and Higher Lows
         cond1_long = high > high_prev
         cond2_long = low > low_prev
         cond3_long = close > close_prev
-
+    
         # SHORT conditions: Lower Lows and Lower Highs
         cond1_short = low < low_prev
         cond2_short = high < high_prev
         cond3_short = close < close_prev
-
+    
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-
-        if long_met >= 1:
+    
+        # Fix: Only return LONG if long_met > short_met, and vice versa
+        if long_met >= 1 and long_met > short_met:
             return "LONG"
-        elif short_met >= 1:
+        elif short_met >= 1 and short_met > long_met:
             return "SHORT"
         else:
             return None
@@ -1698,31 +1713,32 @@ class SmartFilter:
         kc_width = self.df['kc_upper'].iat[-1] - self.df['kc_lower'].iat[-1]
         bb_width_prev = self.df['bb_upper'].iat[-2] - self.df['bb_lower'].iat[-2]
         kc_width_prev = self.df['kc_upper'].iat[-2] - self.df['kc_lower'].iat[-2]
-
+    
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
         volume = self.df['volume'].iat[-1]
         volume_prev = self.df['volume'].iat[-2]
-
+    
         # Squeeze fires when BB width expands after contraction below KC width
         squeeze_firing = bb_width > kc_width and bb_width_prev < kc_width_prev
-
+    
         # LONG conditions
         cond1_long = squeeze_firing
         cond2_long = close > close_prev
         cond3_long = volume > volume_prev
-
+    
         # SHORT conditions
         cond1_short = squeeze_firing
         cond2_short = close < close_prev
         cond3_short = volume > volume_prev
-
+    
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-
-        if long_met >= 1:
+    
+        # Fix: Only return LONG if long_met > short_met, and vice versa
+        if long_met >= 1 and long_met > short_met:
             return "LONG"
-        elif short_met >= 1:
+        elif short_met >= 1 and short_met > long_met:
             return "SHORT"
         else:
             return None
@@ -1732,38 +1748,39 @@ class SmartFilter:
         high = self.df['high'].iat[-1]
         low = self.df['low'].iat[-1]
         close = self.df['close'].iat[-1]
-
+    
         open_prev = self.df['open'].iat[-2]
         close_prev = self.df['close'].iat[-2]
-
+    
         # Engulfing
         bullish_engulfing = close > open_prev and open_ < close_prev
         bearish_engulfing = close < open_prev and open_ > close_prev
-
+    
         # Pin bar / Hammer / Shooting Star
         lower_wick = open_ - low if open_ < close else close - low
         upper_wick = high - close if open_ < close else high - open_
         body = abs(close - open_)
-
+    
         bullish_pin_bar = lower_wick > 2 * body and close > open_
         bearish_pin_bar = upper_wick > 2 * body and close < open_
-
+    
         # LONG conditions
         cond1_long = bullish_engulfing
         cond2_long = bullish_pin_bar
         cond3_long = close > close_prev
-
+    
         # SHORT conditions
         cond1_short = bearish_engulfing
         cond2_short = bearish_pin_bar
         cond3_short = close < close_prev
-
+    
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-
-        if long_met >= 1:
+    
+        # Fix: Only return LONG if long_met > short_met, and vice versa
+        if long_met >= 1 and long_met > short_met:
             return "LONG"
-        elif short_met >= 1:
+        elif short_met >= 1 and short_met > long_met:
             return "SHORT"
         else:
             return None
@@ -1803,27 +1820,28 @@ class SmartFilter:
         ema21 = self.df['ema21'].iat[-1]
         close = self.df['close'].iat[-1]
         adx = self.df['adx'].iat[-1] if 'adx' in self.df.columns else None
-
+    
         # Filter out choppy market
         if chop >= chop_threshold:
             return None
-
+    
         # LONG conditions
         cond1_long = ema9 > ema21 if ema9 and ema21 else False
-        cond2_long = adx > 20 if adx else True  # Optional: ADX filter
+        cond2_long = adx > 20 if adx is not None else True  # Optional: ADX filter
         cond3_long = close > ema9
-
+    
         # SHORT conditions
         cond1_short = ema9 < ema21 if ema9 and ema21 else False
-        cond2_short = adx > 20 if adx else True
+        cond2_short = adx > 20 if adx is not None else True
         cond3_short = close < ema9
-
+    
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-
-        if long_met >= 1:
+    
+        # Fix: Only return LONG if long_met > short_met, and vice versa
+        if long_met >= 1 and long_met > short_met:
             return "LONG"
-        elif short_met >= 1:
+        elif short_met >= 1 and short_met > long_met:
             return "SHORT"
         else:
             return None
@@ -1848,9 +1866,10 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long])
         short_met = sum([cond1_short, cond2_short])
     
-        if long_met >= 1:
+        # Fix: Only return LONG if long_met > short_met, and vice versa
+        if long_met >= 1 and long_met > short_met:
             return "LONG"
-        elif short_met >= 1:
+        elif short_met >= 1 and short_met > long_met:
             return "SHORT"
         else:
             return None
@@ -1896,23 +1915,24 @@ class SmartFilter:
         volume = self.df['volume'].iat[-1]
         volume_prev = self.df['volume'].iat[-2]
         avg_volume = self.df['volume'].rolling(window).mean().iat[-1]
-
+    
         # LONG conditions
         cond1_long = close <= low * (1 + buffer_pct)
         cond2_long = volume > avg_volume and volume > volume_prev
         cond3_long = close >= close_prev
-
+    
         # SHORT conditions
         cond1_short = close >= high * (1 - buffer_pct)
         cond2_short = volume > avg_volume and volume > volume_prev
         cond3_short = close <= close_prev
-
+    
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-
-        if long_met >= 1:
+    
+        # Fix: Only return LONG if long_met > short_met, and vice versa
+        if long_met >= 1 and long_met > short_met:
             return "LONG"
-        elif short_met >= 1:
+        elif short_met >= 1 and short_met > long_met:
             return "SHORT"
         else:
             return None
