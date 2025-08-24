@@ -1395,8 +1395,7 @@ class SmartFilter:
         else:
             return None
             
-    def _check_support_resistance(self, window=20, buffer_pct=0.005):
-        # Calculate recent support (local min) and resistance (local max)
+    def _check_support_resistance(self, window=20, buffer_pct=0.005, min_cond=2):
         support = self.df['low'].rolling(window).min().iat[-1]
         resistance = self.df['high'].rolling(window).max().iat[-1]
         close = self.df['close'].iat[-1]
@@ -1412,15 +1411,14 @@ class SmartFilter:
         # SHORT conditions
         cond1_short = close >= resistance * (1 - buffer_pct)
         cond2_short = close < close_prev
-        cond3_short = volume > volume_prev  # or volume < volume_prev for a more classic reversal
+        cond3_short = volume < volume_prev  # Classic reversal logic
     
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
     
-        # Fix: Only return LONG if long_met > short_met, and vice versa
-        if long_met >= 2 and long_met > short_met:
+        if long_met >= min_cond and long_met > short_met:
             return "LONG"
-        elif short_met >= 2 and short_met > long_met:
+        elif short_met >= min_cond and short_met > long_met:
             return "SHORT"
         else:
             return None
@@ -1539,7 +1537,7 @@ class SmartFilter:
         else:
             return None
 
-    def _check_atr_momentum_burst(self, threshold_pct=0.10, volume_mult=1.1):
+    def _check_atr_momentum_burst(self, threshold_pct=0.10, volume_mult=1.1, min_cond=2):
         long_met = 0
         short_met = 0
         for i in [-1, -2]:
@@ -1553,15 +1551,15 @@ class SmartFilter:
             elif pct_move < -threshold_pct and volume > avg_vol * volume_mult:
                 short_met += 1
     
-        # Fix: Only return LONG if long_met > short_met, and vice versa
-        if long_met >= 1 and long_met > short_met:
+        # Only signal if BOTH bars agree (default: min_cond=2)
+        if long_met >= min_cond and long_met > short_met:
             return "LONG"
-        elif short_met >= 1 and short_met > long_met:
+        elif short_met >= min_cond and short_met > long_met:
             return "SHORT"
         else:
             return None
 
-    def _check_trend_continuation(self, ma_col='ema21'):
+    def _check_trend_continuation(self, ma_col='ema21', min_cond=2):
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
         ma = self.df[ma_col].iat[-1]
@@ -1580,10 +1578,10 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
     
-        # Fix: Only return LONG if long_met > short_met, and vice versa
-        if long_met >= 1 and long_met > short_met:
+        # Only return if enough conditions met (default: at least 2 out of 3)
+        if long_met >= min_cond and long_met > short_met:
             return "LONG"
-        elif short_met >= 1 and short_met > long_met:
+        elif short_met >= min_cond and short_met > long_met:
             return "SHORT"
         else:
             return None
@@ -1708,7 +1706,7 @@ class SmartFilter:
         else:
             return None
 
-    def _check_volatility_squeeze(self):
+    def _check_volatility_squeeze(self, min_cond=2):
         bb_width = self.df['bb_upper'].iat[-1] - self.df['bb_lower'].iat[-1]
         kc_width = self.df['kc_upper'].iat[-1] - self.df['kc_lower'].iat[-1]
         bb_width_prev = self.df['bb_upper'].iat[-2] - self.df['bb_lower'].iat[-2]
@@ -1719,7 +1717,6 @@ class SmartFilter:
         volume = self.df['volume'].iat[-1]
         volume_prev = self.df['volume'].iat[-2]
     
-        # Squeeze fires when BB width expands after contraction below KC width
         squeeze_firing = bb_width > kc_width and bb_width_prev < kc_width_prev
     
         # LONG conditions
@@ -1735,10 +1732,10 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
     
-        # Fix: Only return LONG if long_met > short_met, and vice versa
-        if long_met >= 1 and long_met > short_met:
+        # Stricter: Only return LONG/SHORT if enough conditions are met and it beats opposite
+        if long_met >= min_cond and long_met > short_met:
             return "LONG"
-        elif short_met >= 1 and short_met > long_met:
+        elif short_met >= min_cond and short_met > long_met:
             return "SHORT"
         else:
             return None
@@ -1846,7 +1843,7 @@ class SmartFilter:
         else:
             return None
 
-    def _check_liquidity_pool(self, lookback=20):
+    def _check_liquidity_pool(self, lookback=20, min_cond=2):
         close = self.df['close'].iat[-1]
         high = self.df['high'].iat[-1]
         low = self.df['low'].iat[-1]
@@ -1856,29 +1853,28 @@ class SmartFilter:
         recent_low = self.df['low'].rolling(lookback).min().iat[-2]
     
         # LONG: break or sweep above recent high
-        cond1_long = close > recent_high              # breakout above high
-        cond2_long = low < recent_low and close > recent_low  # sweep below low, then reversal
+        cond1_long = close > recent_high
+        cond2_long = low < recent_low and close > recent_low
     
         # SHORT: break or sweep below recent low
-        cond1_short = close < recent_low              # breakout below low
-        cond2_short = high > recent_high and close < recent_high  # sweep above high, then reversal
+        cond1_short = close < recent_low
+        cond2_short = high > recent_high and close < recent_high
     
         long_met = sum([cond1_long, cond2_long])
         short_met = sum([cond1_short, cond2_short])
     
-        # Fix: Only return LONG if long_met > short_met, and vice versa
-        if long_met >= 1 and long_met > short_met:
+        # Only return if enough conditions met (default: both required)
+        if long_met >= min_cond and long_met > short_met:
             return "LONG"
-        elif short_met >= 1 and short_met > long_met:
+        elif short_met >= min_cond and short_met > long_met:
             return "SHORT"
         else:
             return None
 
-    def _check_smart_money_bias(self, volume_window=20):
+    def _check_smart_money_bias(self, volume_window=20, min_cond=2):
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
         volume = self.df['volume'].iat[-1]
-        volume_prev = self.df['volume'].iat[-2]
         avg_volume = self.df['volume'].rolling(volume_window).mean().iat[-1]
         vwap = self.df['vwap'].iat[-1]
     
@@ -1899,14 +1895,14 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long])
         short_met = sum([cond1_short, cond2_short])
     
-        if long_met == 2:
+        if long_met >= min_cond and long_met > short_met:
             return "LONG"
-        elif short_met == 2:
+        elif short_met >= min_cond and short_met > long_met:
             return "SHORT"
         else:
             return None
 
-    def _check_absorption(self, window=20, buffer_pct=0.005):
+    def _check_absorption(self, window=20, buffer_pct=0.005, min_cond=2):
         # Calculate recent low/high for proximity
         low = self.df['low'].rolling(window).min().iat[-1]
         high = self.df['high'].rolling(window).max().iat[-1]
@@ -1929,10 +1925,10 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
     
-        # Fix: Only return LONG if long_met > short_met, and vice versa
-        if long_met >= 1 and long_met > short_met:
+        # Only return if enough conditions met (default: at least 2 out of 3)
+        if long_met >= min_cond and long_met > short_met:
             return "LONG"
-        elif short_met >= 1 and short_met > long_met:
+        elif short_met >= min_cond and short_met > long_met:
             return "SHORT"
         else:
             return None
