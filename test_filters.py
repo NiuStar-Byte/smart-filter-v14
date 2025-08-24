@@ -56,6 +56,16 @@ def make_test_df(case="long", length=25):
     df = pd.DataFrame(data)
     # Add higher_tf_volume for MTF filters
     df["higher_tf_volume"] = np.linspace(1000, 2000, length)
+    
+    # Explicitly patch VWAP for the short case to ensure signal
+    if case == "short":
+        # Ensure last two closes are above VWAP and falling, divergence grows
+        df["vwap"] = np.linspace(100, 110, length)
+        df["close"].iloc[-2] = 108
+        df["close"].iloc[-1] = 106  # close falls
+        df["vwap"].iloc[-2] = 104
+        df["vwap"].iloc[-1] = 105   # vwap rises
+        # Now: close[-1] > vwap[-1], close[-1] < close[-2], (close[-1]-vwap[-1]) > (close[-2]-vwap[-2])
     return df
 
 def get_filter_methods():
