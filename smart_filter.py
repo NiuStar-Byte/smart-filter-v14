@@ -1119,12 +1119,16 @@ class SmartFilter:
         
         # Fix: Only return LONG if long_met > short_met, and vice versa
         if long_met >= 2 and long_met > short_met:
-            print(f"[{self.symbol}] [Candle Confirmation] Signal: LONG | long_met={long_met}, short_met={short_met}, candle_type={candle_type}, close={close}, open={open_}")
+            if debug:
+                print(f"[{self.symbol}] [Candle Confirmation] Signal: LONG | long_met={long_met}, short_met={short_met}, candle_type={candle_type}, close={close}, open={open_}")
             return "LONG"
         elif short_met >= 2 and short_met > long_met:
-            print(f"[{self.symbol}] [Candle Confirmation] Signal: SHORT | long_met={long_met}, short_met={short_met}, candle_type={candle_type}, close={close}, open={open_}")
+            if debug:
+                print(f"[{self.symbol}] [Candle Confirmation] Signal: SHORT | long_met={long_met}, short_met={short_met}, candle_type={candle_type}, close={close}, open={open_}")
             return "SHORT"
         else:
+            if debug:
+                print(f"[{self.symbol}] [Candle Confirmation] No signal fired | long_met={long_met}, short_met={short_met}, candle_type={candle_type}, close={close}, open={open_}")
             return None
             
     def _check_support_resistance(self, window=20, buffer_pct=0.005, min_cond=2, debug=False):
@@ -1281,12 +1285,16 @@ class SmartFilter:
     
         # Only signal if BOTH bars agree (default: min_cond=2)
         if long_met >= min_cond and long_met > short_met:
-            print(f"[{self.symbol}] [ATR Momentum Burst] Signal: LONG | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, atr={atr}, momentum={momentum}, close={close}")
+            if debug:
+                print(f"[{self.symbol}] [ATR Momentum Burst] Signal: LONG | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, atr={atr}, momentum={momentum}, close={close}")
             return "LONG"
         elif short_met >= min_cond and short_met > long_met:
-            print(f"[{self.symbol}] [ATR Momentum Burst] Signal: SHORT | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, atr={atr}, momentum={momentum}, close={close}")
+            if debug:
+                print(f"[{self.symbol}] [ATR Momentum Burst] Signal: SHORT | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, atr={atr}, momentum={momentum}, close={close}")
             return "SHORT"
         else:
+            if debug:
+                print(f"[{self.symbol}] [ATR Momentum Burst] No signal fired | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, atr={atr}, momentum={momentum}, close={close}")
             return None
 
     def _check_trend_continuation(self, ma_col='ema21', min_cond=2, debug=False):
@@ -1693,12 +1701,16 @@ class SmartFilter:
         }
     
         if long_met >= min_cond and long_met > short_met:
-            print(f"[{self.symbol}] [Smart Money Bias] Signal: LONG | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, smart_money={smart_money}")
+            if debug:
+                print(f"[{self.symbol}] [Smart Money Bias] Signal: LONG | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, smart_money={smart_money}")
             return "LONG"
         elif short_met >= min_cond and short_met > long_met:
-            print(f"[{self.symbol}] [Smart Money Bias] Signal: SHORT | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, smart_money={smart_money}")
+            if debug:
+                print(f"[{self.symbol}] [Smart Money Bias] Signal: SHORT | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, smart_money={smart_money}")
             return "SHORT"
         else:
+            if debug:
+                print(f"[{self.symbol}] [Smart Money Bias] No signal fired | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, smart_money={smart_money}")
             return None
 
     def _check_absorption(self, window=20, buffer_pct=0.005, min_cond=2, debug=False):
@@ -1775,12 +1787,16 @@ class SmartFilter:
         short_met = sum([cond1_short, cond2_short, cond3_short])
     
         if long_met >= 2:
-            print(f"[{self.symbol}] [Wick Dominance] Signal: LONG | long_met={long_met}, short_met={short_met}, wick_dom={wick_dom}")
+            if debug:
+                print(f"[{self.symbol}] [Wick Dominance] Signal: LONG | long_met={long_met}, short_met={short_met}, wick_dom={wick_dom}")
             return "LONG"
         elif short_met >= 2:
-            print(f"[{self.symbol}] [Wick Dominance] Signal: SHORT | long_met={long_met}, short_met={short_met}, wick_dom={wick_dom}")
+            if debug:
+                print(f"[{self.symbol}] [Wick Dominance] Signal: SHORT | long_met={long_met}, short_met={short_met}, wick_dom={wick_dom}")
             return "SHORT"
         else:
+            if debug:
+                print(f"[{self.symbol}] [Wick Dominance] No signal fired | long_met={long_met}, short_met={short_met}, wick_dom={wick_dom}")
             return None
 
     def _market_regime(self, ma_col='ema200', adx_col='adx', adx_threshold=20):
