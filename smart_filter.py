@@ -818,7 +818,7 @@ class SmartFilter:
         except Exception:
             return 0.0
 
-    def volume_surge_confirmed(self):
+    def volume_surge_confirmed(self, debug=False):
         """
         Returns 'LONG' or 'SHORT' if a volume spike with price move is confirmed,
         and the 5m volume is trending up. Returns None otherwise.
@@ -829,7 +829,7 @@ class SmartFilter:
                 return result
         return None
 
-    def _check_5m_volume_trend(self):
+    def _check_5m_volume_trend(self, debug=False):
         """
         Confirms if the latest 5m volume is greater than the previous 5m bar.
         Returns True/False.
