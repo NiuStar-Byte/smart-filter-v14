@@ -1179,14 +1179,16 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
     
-        # Prefer SHORT signal if both are met
-        if short_met >= min_conditions:
+        # Only fire signal if one side strictly beats the other and meets min_conditions
+        if short_met >= min_conditions and short_met > long_met:
             print(f"[{self.symbol}] [Fractal Zone] Signal: SHORT | short_met={short_met}, long_met={long_met}, min_conditions={min_conditions}")
             return "SHORT"
-        elif long_met >= min_conditions:
+        elif long_met >= min_conditions and long_met > short_met:
             print(f"[{self.symbol}] [Fractal Zone] Signal: LONG | short_met={short_met}, long_met={long_met}, min_conditions={min_conditions}")
             return "LONG"
         else:
+            if debug:
+                print(f"[{self.symbol}] [Fractal Zone] No signal fired | short_met={short_met}, long_met={long_met}, min_conditions={min_conditions}")
             return None
     
     def _check_ema_cloud(self, min_conditions=2):
