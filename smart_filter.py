@@ -869,7 +869,10 @@ class SmartFilter:
     
         long_conditions_met = sum([condition_1_long, condition_2_long, condition_3_long, condition_4_long])
         short_conditions_met = sum([condition_1_short, condition_2_short, condition_3_short, condition_4_short])
-    
+        # Debug prints (after calculation!)
+        print(f"[{self.symbol}] [MACD DEBUG] macd[-1]={macd.iat[-1]:.6f}, signal[-1]={signal.iat[-1]:.6f}, macd[-2]={macd.iat[-2]:.6f}, signal[-2]={signal.iat[-2]:.6f}, close[-1]={self.df['close'].iat[-1]:.6f}, close[-2]={self.df['close'].iat[-2]:.6f}")
+        print(f"[{self.symbol}] [MACD DEBUG] condition_1_short={condition_1_short}, condition_2_short={condition_2_short}, condition_3_short={condition_3_short}, condition_4_short={condition_4_short}, short_conditions_met={short_conditions_met}")
+        
         # Fix: Only return LONG if long_conditions_met > short_conditions_met, and vice versa
         if long_conditions_met >= 2 and long_conditions_met > short_conditions_met:
             return "LONG"
@@ -901,7 +904,10 @@ class SmartFilter:
     
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-    
+        # Debug prints (after calculation!)
+        print(f"[{self.symbol}] [MTF Volume DEBUG] vol_tf1={vol_tf1:.6f}, vol_tf2={vol_tf2:.6f}, close_tf1={close_tf1:.6f}, close_tf2={close_tf2:.6f}")
+        print(f"[{self.symbol}] [MTF Volume DEBUG] cond1_short={cond1_short}, cond2_short={cond2_short}, cond3_short={cond3_short}, short_met={short_met}")
+
         # Fix: Only return LONG if long_met > short_met, and vice versa
         if long_met >= 2 and long_met > short_met:
             return "LONG"
@@ -948,7 +954,10 @@ class SmartFilter:
     
         long_conditions = [spike, price_up, vol_up]
         short_conditions = [spike, price_down, vol_up]
-    
+        # Debug prints (after calculation!)
+        print(f"[{self.symbol}] [Volume Spike DEBUG] zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}")
+        print(f"[{self.symbol}] [Volume Spike DEBUG] condition_1={condition_1}, condition_2={condition_2}, spike_met={spike_met}")
+
         if require_all:
             if all(long_conditions):
                 return "LONG"
@@ -989,7 +998,10 @@ class SmartFilter:
     
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-    
+        # Debug prints (after calculation!)
+        print(f"[{self.symbol}] [Liquidity DEBUG] spread={spread:.6f}, volume={volume:.6f}, close={close:.6f}")
+        print(f"[{self.symbol}] [Liquidity DEBUG] cond1_short={cond1_short}, cond2_short={cond2_short}, cond3_short={cond3_short}, short_met={short_met}")
+
         if long_met >= 2:
             return "LONG"
         elif short_met >= 2:
@@ -1028,10 +1040,58 @@ class SmartFilter:
     
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-    
+        # Debug prints (after calculation!)
+        print(f"[{self.symbol}] [Spread DEBUG] spread={spread:.6f}, spread_ma={spread_ma:.6f}, close={close:.6f}")
+        print(f"[{self.symbol}] [Spread DEBUG] cond1_short={cond1_short}, cond2_short={cond2_short}, short_met={short_met}")
+        
         if long_met >= 2:
             return "LONG"
         elif short_met >= 2:
+            return "SHORT"
+        else:
+            return None
+
+    def _check_candle_close(self):
+        open_ = self.df['open'].iat[-1]
+        high = self.df['high'].iat[-1]
+        low = self.df['low'].iat[-1]
+        close = self.df['close'].iat[-1]
+    
+        open_prev = self.df['open'].iat[-2]
+        close_prev = self.df['close'].iat[-2]
+    
+        # Engulfing
+        bullish_engulfing = close > open_prev and open_ < close_prev
+        bearish_engulfing = close < open_prev and open_ > close_prev
+    
+        # Pin bar / Hammer / Shooting Star
+        lower_wick = open_ - low if open_ < close else close - low
+        upper_wick = high - close if open_ < close else high - open_
+        body = abs(close - open_)
+    
+        bullish_pin_bar = lower_wick > 2 * body and close > open_
+        bearish_pin_bar = upper_wick > 2 * body and close < open_
+    
+        # LONG conditions
+        cond1_long = bullish_engulfing
+        cond2_long = bullish_pin_bar
+        cond3_long = close > close_prev
+    
+        # SHORT conditions
+        cond1_short = bearish_engulfing
+        cond2_short = bearish_pin_bar
+        cond3_short = close < close_prev
+    
+        long_met = sum([cond1_long, cond2_long, cond3_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short])
+        # Debug prints (after calculation!)
+        print(f"[{self.symbol}] [Candle DEBUG] open={open_:.6f}, close={close:.6f}, open_prev={open_prev:.6f}, close_prev={close_prev:.6f}")
+        print(f"[{self.symbol}] [Candle DEBUG] bullish_engulfing={bullish_engulfing}, bearish_engulfing={bearish_engulfing}, bullish_pin_bar={bullish_pin_bar}, bearish_pin_bar={bearish_pin_bar}")
+
+        # Fix: Only return LONG if long_met > short_met, and vice versa
+        if long_met >= 2 and long_met > short_met:
+            return "LONG"
+        elif short_met >= 2 and short_met > long_met:
             return "SHORT"
         else:
             return None
@@ -1056,7 +1116,10 @@ class SmartFilter:
     
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-    
+        # Debug prints (after calculation!)
+        print(f"[{self.symbol}] [S/R DEBUG] close={close:.6f}, support={support:.6f}, resistance={resistance:.6f}")
+        print(f"[{self.symbol}] [S/R DEBUG] cond1_short={cond1_short}, cond2_short={cond2_short}, cond3_short={cond3_short}, short_met={short_met}")
+
         if long_met >= min_cond and long_met > short_met:
             return "LONG"
         elif short_met >= min_cond and short_met > long_met:
@@ -1202,7 +1265,7 @@ class SmartFilter:
     
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-    
+        
         # Only return if enough conditions met (default: at least 2 out of 3)
         if long_met >= min_cond and long_met > short_met:
             return "LONG"
@@ -1361,48 +1424,6 @@ class SmartFilter:
         if long_met >= min_cond and long_met > short_met:
             return "LONG"
         elif short_met >= min_cond and short_met > long_met:
-            return "SHORT"
-        else:
-            return None
-
-    def _check_candle_close(self):
-        open_ = self.df['open'].iat[-1]
-        high = self.df['high'].iat[-1]
-        low = self.df['low'].iat[-1]
-        close = self.df['close'].iat[-1]
-    
-        open_prev = self.df['open'].iat[-2]
-        close_prev = self.df['close'].iat[-2]
-    
-        # Engulfing
-        bullish_engulfing = close > open_prev and open_ < close_prev
-        bearish_engulfing = close < open_prev and open_ > close_prev
-    
-        # Pin bar / Hammer / Shooting Star
-        lower_wick = open_ - low if open_ < close else close - low
-        upper_wick = high - close if open_ < close else high - open_
-        body = abs(close - open_)
-    
-        bullish_pin_bar = lower_wick > 2 * body and close > open_
-        bearish_pin_bar = upper_wick > 2 * body and close < open_
-    
-        # LONG conditions
-        cond1_long = bullish_engulfing
-        cond2_long = bullish_pin_bar
-        cond3_long = close > close_prev
-    
-        # SHORT conditions
-        cond1_short = bearish_engulfing
-        cond2_short = bearish_pin_bar
-        cond3_short = close < close_prev
-    
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
-    
-        # Fix: Only return LONG if long_met > short_met, and vice versa
-        if long_met >= 2 and long_met > short_met:
-            return "LONG"
-        elif short_met >= 2 and short_met > long_met:
             return "SHORT"
         else:
             return None
