@@ -871,7 +871,15 @@ class SmartFilter:
         else:
             return None
             
-    def _check_mtf_volume_agreement(self):
+    def _check_mtf_volume_agreement(self, DEBUG_GK=True):
+        """
+        MTF Volume Agreement: Checks if volume and price are rising/falling in both current and higher timeframe.
+        - Returns "LONG" if majority of LONG conditions met (> SHORT).
+        - Returns "SHORT" if majority of SHORT conditions met (> LONG).
+        - Returns None otherwise.
+        - DEBUG_GK: bool, print debug logs if True.
+        """
+    
         # Current timeframe
         volume = self.df['volume'].iat[-1]
         volume_prev = self.df['volume'].iat[-2]
@@ -894,16 +902,29 @@ class SmartFilter:
     
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-        # Debug prints (after calculation!)
-        print(f"[{self.symbol}] [MTF Volume DEBUG] vol_tf1={vol_tf1:.6f}, vol_tf2={vol_tf2:.6f}, close_tf1={close_tf1:.6f}, close_tf2={close_tf2:.6f}")
-        print(f"[{self.symbol}] [MTF Volume DEBUG] cond1_short={cond1_short}, cond2_short={cond2_short}, cond3_short={cond3_short}, short_met={short_met}")
-
-        # Fix: Only return LONG if long_met > short_met, and vice versa
+    
+        if DEBUG_GK:
+            print(f"[{self.symbol}] [MTF Volume DEBUG] "
+                  f"volume={volume}, volume_prev={volume_prev}, "
+                  f"higher_tf_volume={higher_tf_volume}, higher_tf_volume_prev={higher_tf_volume_prev}, "
+                  f"close={close}, close_prev={close_prev}")
+            print(f"[{self.symbol}] [MTF Volume DEBUG] "
+                  f"cond1_long={cond1_long}, cond2_long={cond2_long}, cond3_long={cond3_long}, long_met={long_met}")
+            print(f"[{self.symbol}] [MTF Volume DEBUG] "
+                  f"cond1_short={cond1_short}, cond2_short={cond2_short}, cond3_short={cond3_short}, short_met={short_met}")
+    
+        # Only return LONG if long_met > short_met, and vice versa
         if long_met >= 2 and long_met > short_met:
+            if DEBUG_GK:
+                print(f"[{self.symbol}] [MTF Volume DEBUG] Signal fired: LONG (long_met={long_met} > short_met={short_met})")
             return "LONG"
         elif short_met >= 2 and short_met > long_met:
+            if DEBUG_GK:
+                print(f"[{self.symbol}] [MTF Volume DEBUG] Signal fired: SHORT (short_met={short_met} > long_met={long_met})")
             return "SHORT"
         else:
+            if DEBUG_GK:
+                print(f"[{self.symbol}] [MTF Volume DEBUG] No signal fired (long_met={long_met}, short_met={short_met})")
             return None
 
     def _check_volume_spike(
