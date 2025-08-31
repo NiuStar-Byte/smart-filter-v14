@@ -1090,7 +1090,7 @@ class SmartFilter:
         short_met = sum([cond1_short, cond2_short, cond3_short])
         
         # Fix: Only return LONG if long_met > short_met, and vice versa
-       if long_met >= 2 and long_met > short_met:
+        if long_met >= 2 and long_met > short_met:
             print(f"[{self.symbol}] [Candle Confirmation] Signal: LONG | long_met={long_met}, short_met={short_met}, candle_type={candle_type}, close={close}, open={open_}")
             return "LONG"
         elif short_met >= 2 and short_met > long_met:
