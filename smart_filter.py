@@ -19,8 +19,6 @@ class SmartFilter:
     use order book & resting density as SuperGK (blocking/passing) signals fired to Telegram,
     """
 
-    from typing import Optional
-
     def __init__(
         self,
         symbol: str,
@@ -42,15 +40,15 @@ class SmartFilter:
         self.df3m = add_indicators(df3m) if df3m is not None else None
         self.df5m = add_indicators(df5m) if df5m is not None else None
 
-        # Bid/Ask Columns (if not present, fill with NaN or zeros)
-        if "bid" not in self.df.columns:
-            self.df["bid"] = np.nan
-        if "ask" not in self.df.columns:
-            self.df["ask"] = np.nan
+        # --- Ensure essential columns always exist ---
+        for col in ["bid", "ask", "higher_tf_volume"]:
+            if self.df is not None and col not in self.df.columns:
+                self.df[col] = np.nan
 
-        # Higher Timeframe Volume (if not present, fill with NaN)
-        if "higher_tf_volume" not in self.df.columns:
-            self.df["higher_tf_volume"] = np.nan
+        # --- Debug: Print columns and last row for troubleshooting ---
+        if self.df is not None:
+            print(f"[DEBUG] {self.symbol} Columns after indicators:", self.df.columns)
+            print(f"[DEBUG] {self.symbol} Last row after indicators:\n", self.df.iloc[-1])
     
         self.tf = tf
         self.min_score = min_score
@@ -88,12 +86,6 @@ class SmartFilter:
         ]
 
         self.soft_gatekeepers = ["Volume Spike"]
-        
-        # Directional-aware filters are those with different weights between LONG and SHORT
-#        self.directional_aware_filters = [
-#            "MACD", "ATR Momentum Burst", "HATS", "Liquidity Awareness",
-#            "VWAP Divergence", "Support/Resistance", "Smart Money Bias", "Absorption"
-#        ]
 
     
     @property
