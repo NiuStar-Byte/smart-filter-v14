@@ -1323,6 +1323,10 @@ class SmartFilter:
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
     
+        # Define hh and ll for logging
+        hh = high
+        ll = low
+    
         # LONG conditions: Higher Highs and Higher Lows
         cond1_long = high > high_prev
         cond2_long = low > low_prev
