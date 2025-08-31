@@ -1450,6 +1450,9 @@ class SmartFilter:
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
     
+        # Compute VWAP divergence for logging
+        vwap_div = (vwap - close) - (vwap_prev - close_prev)
+    
         # LONG conditions
         cond1_long = close < vwap
         cond2_long = close > close_prev
