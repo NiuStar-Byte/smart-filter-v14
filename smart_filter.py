@@ -553,16 +553,6 @@ class SmartFilter:
                 results_short[name] = False
                 results_status[name] = "ERROR"
 
-        # <---- INSERT THIS BLOCK HERE ---->
-        print(f"\n[{self.symbol}] [GK DEBUG] MACD: {self._check_macd()}")
-        print(f"[{self.symbol}] [GK DEBUG] Volume Spike: {self._check_volume_spike()}")
-        print(f"[{self.symbol}] [GK DEBUG] MTF Volume Agreement: {self._check_mtf_volume_agreement()}")
-        print(f"[{self.symbol}] [GK DEBUG] Liquidity Awareness: {self._check_liquidity_awareness()}")
-        print(f"[{self.symbol}] [GK DEBUG] Spread Filter: {self._check_spread_filter()}")
-        print(f"[{self.symbol}] [GK DEBUG] Candle Confirmation: {self._check_candle_close()}")
-        print(f"[{self.symbol}] [GK DEBUG] Support/Resistance: {self._check_support_resistance()}")
-        # ----------------------------------
-
         # --- Non-GK filter list ---
         non_gk_filters = [f for f in filter_names if f not in self.gatekeepers]
         
@@ -1128,7 +1118,6 @@ class SmartFilter:
             return None
     
     def _check_fractal_zone(self, buffer_pct=0.005, window=20, min_conditions=2, debug=False):
-        print("Fractal Zone filter called. Debug =", debug)
         # Calculate fractal highs/lows
         fractal_low = self.df['low'].rolling(window).min().iat[-1]
         fractal_low_prev = self.df['low'].rolling(window).min().iat[-2]
@@ -1150,17 +1139,6 @@ class SmartFilter:
     
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-    
-        if debug:
-            print("==== Fractal Zone Debug ====")
-            print("Last two rows of data:")
-            print(self.df.tail(2))
-            print(f"fractal_low: {fractal_low}, fractal_low_prev: {fractal_low_prev}")
-            print(f"fractal_high: {fractal_high}, fractal_high_prev: {fractal_high_prev}")
-            print(f"close: {close}, close_prev: {close_prev}")
-            print(f"[LONG] cond1: {cond1_long}, cond2: {cond2_long}, cond3: {cond3_long}, met: {long_met}")
-            print(f"[SHORT] cond1: {cond1_short}, cond2: {cond2_short}, cond3: {cond3_short}, met: {short_met}")
-            print("===========================")
     
         # Prefer SHORT signal if both are met
         if short_met >= min_conditions:
