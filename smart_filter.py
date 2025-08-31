@@ -8,31 +8,8 @@ import logging
 from kucoin_orderbook import get_order_wall_delta
 from kucoin_density import get_resting_density
 from signal_debug_log import export_signal_debug_txt
-from calculations import compute_atr, compute_adx, add_bollinger_bands, add_keltner_channels, add_indicators
+from calculations import add_indicators
 from typing import Optional
-
-# PREVIOUS COMPUTE RSI for New SuperGK ONLY RSI Density & OrderBookWall
-# def compute_rsi(df, period=14):
-#    delta = df['close'].diff()
-#    gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
-#    loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
-#    rs = gain / loss
-#    rsi = 100 - (100 / (1 + rs))
-#    return rsi
-
-# When you get your OHLCV dataframe:
-# df['RSI'] = compute_rsi(df)
-
-# PREVIOUS COMPUTE RSI for New SuperGK
-# def compute_rsi(df, period=14):
-#    delta = df['close'].diff()
-#    up = delta.clip(lower=0)
-#    down = -1 * delta.clip(upper=0)
-#    ema_up = up.ewm(com=period-1, adjust=False).mean()
-#    ema_down = down.ewm(com=period-1, adjust=False).mean()
-#    rs = ema_up / ema_down
-#    return 100 - (100 / (1 + rs)).iat[-1]
-
 
 class SmartFilter:
     """
@@ -64,38 +41,6 @@ class SmartFilter:
         self.df = add_indicators(df)
         self.df3m = add_indicators(df3m) if df3m is not None else None
         self.df5m = add_indicators(df5m) if df5m is not None else None
-        
-        # Essential EMAs
-        # Place this in your __init__ or indicator preparation method
-        self.df["ema6"]   = self.df["close"].ewm(span=6, adjust=False).mean()
-        self.df["ema9"]   = self.df["close"].ewm(span=9, adjust=False).mean()
-        self.df["ema10"]  = self.df["close"].ewm(span=10, adjust=False).mean()
-        self.df["ema13"]  = self.df["close"].ewm(span=13, adjust=False).mean()
-        self.df["ema20"]  = self.df["close"].ewm(span=20, adjust=False).mean()
-        self.df["ema21"]  = self.df["close"].ewm(span=21, adjust=False).mean()
-        self.df["ema50"]  = self.df["close"].ewm(span=50, adjust=False).mean()
-        self.df["ema200"] = self.df["close"].ewm(span=200, adjust=False).mean()
-        self.df["ema12"]  = self.df["close"].ewm(span=12, adjust=False).mean()
-        self.df["ema26"]  = self.df["close"].ewm(span=26, adjust=False).mean()
-        self.df["macd"]   = self.df["ema12"] - self.df["ema26"]
-        self.df["macd_signal"] = self.df["macd"].ewm(span=9, adjust=False).mean()
-        self.df["vwap"] = (self.df["close"] * self.df["volume"]).cumsum() / self.df["volume"].cumsum()
-        self.df['adx'], self.df['plus_di'], self.df['minus_di'] = compute_adx(self.df)
-
-        # Compute RSI as part of initialization or analysis
-        self.df['RSI'] = self.compute_rsi(self.df)
-
-        # ATR + ATR_MA
-        self.df["atr"] = self.df["high"].sub(self.df["low"]).rolling(14).mean()
-        self.df["atr_ma"] = self.df["atr"].rolling(20).mean()
-
-        # Bollinger Bands
-        self.df = add_bollinger_bands(self.df)
-        # Keltner Channels (needs ATR column)
-        self.df = add_keltner_channels(self.df)
-
-        # Chop Zone (simple proxy: rolling std of close, or use your formula)
-        self.df["chop_zone"] = self.df["close"].rolling(14).std()
 
         # Bid/Ask Columns (if not present, fill with NaN or zeros)
         if "bid" not in self.df.columns:
@@ -150,13 +95,6 @@ class SmartFilter:
 #            "VWAP Divergence", "Support/Resistance", "Smart Money Bias", "Absorption"
 #        ]
 
-    def compute_rsi(self, df, period=14):
-        delta = df['close'].diff()
-        gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
-        loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
-        rs = gain / loss
-        rsi = 100 - (100 / (1 + rs))
-        return rsi
     
     @property
     def filter_weights(self):
@@ -286,28 +224,6 @@ class SmartFilter:
         else:
             return "NO_REVERSAL"
 
-    def calculate_adx(df, n=14):
-        # Calculate differences
-        df['up_move'] = df['high'].diff()
-        df['down_move'] = df['low'].diff().abs()
-        df['plus_dm'] = np.where((df['up_move'] > df['down_move']) & (df['up_move'] > 0), df['up_move'], 0)
-        df['minus_dm'] = np.where((df['down_move'] > df['up_move']) & (df['down_move'] > 0), df['down_move'], 0)
-    
-        # ATR calculation (if not present)
-        if 'atr' not in df.columns:
-            df['tr'] = np.maximum(df['high'] - df['low'], 
-                                  np.maximum(abs(df['high'] - df['close'].shift()), abs(df['low'] - df['close'].shift())))
-            df['atr'] = df['tr'].rolling(n).mean()
-    
-        # DI calculations
-        df['plus_di'] = 100 * (df['plus_dm'].rolling(n).sum() / df['atr'])
-        df['minus_di'] = 100 * (df['minus_dm'].rolling(n).sum() / df['atr'])
-    
-        # DX and ADX calculations
-        df['dx'] = (abs(df['plus_di'] - df['minus_di']) / (df['plus_di'] + df['minus_di'])) * 100
-        df['adx'] = df['dx'].rolling(n).mean()
-        return df
-
     def detect_adx_reversal(self, adx_threshold=25):
         logger = logging.getLogger(__name__)
         required = ['adx', 'plus_di', 'minus_di']
@@ -343,29 +259,6 @@ class SmartFilter:
             return "BEARISH_REVERSAL"
         else:
             return "NO_REVERSAL"
-
-    def calculate_stochrsi(df, rsi_period=14, stoch_period=14, smooth_k=3, smooth_d=3):
-        # Calculate RSI if not present
-        if 'RSI' not in df.columns:
-            delta = df['close'].diff()
-            gain = (delta.where(delta > 0, 0)).rolling(rsi_period).mean()
-            loss = (-delta.where(delta < 0, 0)).rolling(rsi_period).mean()
-            rs = gain / loss
-            df['RSI'] = 100 - (100 / (1 + rs))
-        rsi = df['RSI']
-    
-        # Calculate StochRSI raw value
-        min_rsi = rsi.rolling(stoch_period).min()
-        max_rsi = rsi.rolling(stoch_period).max()
-        stochrsi = (rsi - min_rsi) / (max_rsi - min_rsi)
-    
-        # Smooth K and D
-        k = stochrsi.rolling(smooth_k).mean()
-        d = k.rolling(smooth_d).mean()
-    
-        df['stochrsi_k'] = k
-        df['stochrsi_d'] = d
-        return df
         
     def detect_stochrsi_reversal(self, overbought=0.8, oversold=0.2):
         required = ['stochrsi_k', 'stochrsi_d']
@@ -388,16 +281,6 @@ class SmartFilter:
             return "BEARISH_REVERSAL"
         else:
             return "NO_REVERSAL"
-
-    def calculate_cci(df, n=20):
-        # Typical price
-        tp = (df['high'] + df['low'] + df['close']) / 3
-        # Rolling mean and mean deviation
-        ma = tp.rolling(n).mean()
-        md = tp.rolling(n).apply(lambda x: (abs(x - x.mean())).mean())
-        # CCI formula
-        df['cci'] = (tp - ma) / (0.015 * md)
-        return df
         
     def detect_cci_reversal(self, overbought=100, oversold=-100):
         if 'cci' not in self.df.columns:
@@ -484,27 +367,6 @@ class SmartFilter:
             return ("TREND CONTINUATION", continuation)
         else:
             return ("NONE", None)
-        
-#    def _calculate_all_filters_sum(self, results, direction):
-#        """
-#        Calculate the sum of weights for all passed filters for the given direction.
-#        """
-#        weights = self.filter_weights_long if direction == "LONG" else self.filter_weights_short
-#        return sum(weights.get(f, 0) for f, v in results.items() if v and f in weights)
-
-#    def _calculate_gatekeeper_sum(self, results, direction):
-#        """
-#        Calculate the sum of weights for passed gatekeeper filters for the given direction.
-#        """
-#        weights = self.filter_weights_long if direction == "LONG" else self.filter_weights_short
-#        return sum(weights.get(f, 0) for f in self.gatekeepers if results.get(f, False))
-
-#    def _calculate_directional_aware_sum(self, results, direction):
-#        """
-#        Calculate the sum of weights for passed directional-aware filters for the given direction.
-#        """
-#        weights = self.filter_weights_long if direction == "LONG" else self.filter_weights_short
-#        return sum(weights.get(f, 0) for f in self.directional_aware_filters if results.get(f, False))
 
     def get_signal_direction(self, results_long, results_short):
         """
@@ -563,90 +425,6 @@ class SmartFilter:
         else:
             return "NEUTRAL"
 
-# SIGNAL DIRECTION IF USING DIRECTIONAL AWARE FILTERS
-#    def get_signal_direction(self, results_long, results_short):
-#        """
-#        Calculate three sums for both LONG and SHORT directions and return the direction
-#        only if ALL THREE sums are greater for that direction. Otherwise return "NEUTRAL".
-        
-#        The three sums are:
-#        1. Sum of all passed filter weights
-#        2. Sum of passed gatekeeper filter weights
-#        3. Sum of passed directional-aware filter weights
-#        """
-#        # Calculate three sums for LONG direction
-#        long_all_filters = self._calculate_all_filters_sum(results_long, "LONG")
-#        long_gatekeepers = self._calculate_gatekeeper_sum(results_long, "LONG")
-#        long_directional = self._calculate_directional_aware_sum(results_long, "LONG")
-        
-        # Calculate three sums for SHORT direction
-#        short_all_filters = self._calculate_all_filters_sum(results_short, "SHORT")
-#        short_gatekeepers = self._calculate_gatekeeper_sum(results_short, "SHORT")
-#        short_directional = self._calculate_directional_aware_sum(results_short, "SHORT")
-        
-        # Store sums for debugging (accessible via instance)
-#        self._debug_sums = {
-#            "long_all_filters": long_all_filters,
-#            "long_gatekeepers": long_gatekeepers,
-#            "long_directional": long_directional,
-#            "short_all_filters": short_all_filters,
-#            "short_gatekeepers": short_gatekeepers
-#            "short_directional": short_directional
-#        }
-        
-#        # Check if LONG wins all three comparisons
-#        if (long_all_filters > short_all_filters and 
-#            long_gatekeepers > short_gatekeepers):
-#            long_directional > short_directional):
-#            return "LONG"
-        
-        # Check if SHORT wins all three comparisons
-#        elif (short_all_filters > long_all_filters and 
-#              short_gatekeepers > long_gatekeepers):
-#              short_directional > long_directional):
-#            return "SHORT"
-        
-        # If neither direction wins all three, return NEUTRAL
-#        else:
-#            return "NEUTRAL"
-
-#    PARTIAL New Super-GK ONLY RSI, Liquidity (Density) & OrderBookWall  
-#    def superGK_check(self, signal_direction, orderbook_result, density_result):
-#        if orderbook_result is None or density_result is None:
-#            print(f"Signal blocked due to missing order book or density for {self.symbol}")
-#            return False
-
-#        bid_wall = orderbook_result.get('buy_wall', 0)
-#        ask_wall = orderbook_result.get('sell_wall', 0)
-#        bid_density = density_result.get('bid_density', 0)
-#        ask_density = density_result.get('ask_density', 0)
-
-        # Liquidity check
-#        if bid_density < self.liquidity_threshold or ask_density < self.liquidity_threshold:
-#            print(f"Signal blocked due to low liquidity for {self.symbol}")
-#            return False
-
-        # --- RSI Check ---
-#        rsi = self.df['RSI'].iat[-1] if 'RSI' in self.df.columns else None
-#        if rsi is None:
-#            print(f"Signal blocked: RSI data missing for {self.symbol}")
-#            return False
-
-        # LONG: bid_wall > ask_wall AND bid_density > ask_density AND RSI < 70
-#        if signal_direction == "LONG" and bid_wall > ask_wall and bid_density > ask_density and rsi < 70:
-#            print(f"Signal passed for LONG: Wall, density, RSI < 70.")
-#            return True
-        # SHORT: ask_wall > bid_wall AND ask_density > bid_density AND RSI > 30
-#        elif signal_direction == "SHORT" and ask_wall > bid_wall and ask_density > bid_density and rsi > 30:
-#            print(f"Signal passed for SHORT: Wall, density, RSI > 30.")
-#            return True
-#        else:
-#            print(
-#                f"Signal blocked: SuperGK not aligned for {self.symbol} "
-#                f"(bid_wall={bid_wall}, ask_wall={ask_wall}, bid_density={bid_density}, ask_density={ask_density}, RSI={rsi})"
-#            )
-#            return False
-
     # PARTIAL New Super-GK ONLY Liquidity (Density) & OrderBookWall
     def superGK_check(self, signal_direction, orderbook_result, density_result):
         """
@@ -689,86 +467,6 @@ class SmartFilter:
         else:
             print(f"Signal blocked: SuperGK not aligned for {self.symbol} (direction NEUTRAL or undefined)")
             return False
-            
-# COMPLETE New Super-GK ADX, ATR, RSI, Liquidity (Density) & OrderBookWall  
-#    def superGK_check(self, signal_direction, orderbook_result, density_result):
-        # Check if order book data is valid
-#        if (orderbook_result is None 
-#            or orderbook_result.get('buy_wall', 0) == 0 
-#            or orderbook_result.get('sell_wall', 0) == 0):
-#            print(f"Signal blocked due to missing order book data for {self.symbol}")
-#            return False
-
-#        bid_wall = orderbook_result.get('buy_wall', 0)
-#        ask_wall = orderbook_result.get('sell_wall', 0)
-#        midprice = orderbook_result.get('midprice', None)
-
-#        bid_density = density_result.get('bid_density', 0)
-#        ask_density = density_result.get('ask_density', 0)
-
-        # Liquidity check
-#        if bid_density < self.liquidity_threshold or ask_density < self.liquidity_threshold:
-#            print(f"Signal blocked due to low liquidity for {self.symbol}")
-#            return False
-
-        # Wall support logic
-#        if signal_direction == "LONG" and bid_wall < ask_wall:
-#            print(f"Signal blocked due to weak buy-side support for {self.symbol}")
-#            return False
-#        if signal_direction == "SHORT" and ask_wall < bid_wall:
-#            print(f"Signal blocked due to weak sell-side support for {self.symbol}")
-#            return False
-
-        # --- ATR RSI & ADX Calculations ---
-#        atr = compute_atr(self.df)
-#        rsi = compute_rsi(self.df)
-#        adx = compute_adx(self.df)
-#        price = self.df['close'].iat[-1]
-#        atr_pct = atr / price if price else 0
-
-        # --- Dynamic Market Regime Logic ---
-#        low_vol_threshold = 0.005   # ATR < 1% of price = low volatility
-#        high_vol_threshold = 0.05  # ATR > 3% of price = high volatility
-#        bull_rsi = 60
-#        bear_rsi = 40
-
-        # --- ADX Filter ---
- #       adx_threshold = 20
- #       if adx < adx_threshold:
- #           print(f"Signal blocked: Trend strength too weak (ADX={adx:.2f})")
- #           return False
-    
- #       if atr_pct < low_vol_threshold:
- #           print(f"Signal blocked: Volatility too low (ATR={atr:.4f}, ATR%={atr_pct:.2%})")
- #           return False
-
- #       if signal_direction == "LONG":
- #           if rsi < bull_rsi:
- #               print(f"Signal blocked: LONG but RSI not bullish enough (RSI={rsi:.2f})")
- #               return False
- #       elif signal_direction == "SHORT":
- #           if rsi > bear_rsi:
- #               print(f"Signal blocked: SHORT but RSI not bearish enough (RSI={rsi:.2f})")
- #               return False
-
- #       if bear_rsi < rsi < bull_rsi:
- #           print(f"Signal blocked: Market is ranging (RSI={rsi:.2f})")
- #           return False
-
- #       if atr_pct > high_vol_threshold:
- #           print(f"Signal blocked: Volatility extremely high, unstable market (ATR={atr:.4f}, ATR%={atr_pct:.2%})")
- #           return False
-
- # Final regime decision
- #       if signal_direction == "LONG" and bid_density > ask_density:
- #           print(f"Signal passed for LONG: Strong bid-side liquidity for {self.symbol}")
- #           return True
- #       elif signal_direction == "SHORT" and ask_density > bid_density:
- #           print(f"Signal passed for SHORT: Strong ask-side liquidity for {self.symbol}")
- #           return True
- #       else:
- #           print(f"Signal blocked due to neutral market conditions for {self.symbol}")
- #           return False
 
     def analyze(self):
         reversal_detected = False  # <-- Add this here, at the very start of the function
@@ -873,30 +571,6 @@ class SmartFilter:
         # --- Get signal direction ---
         direction = self.get_signal_direction(results_long, results_short)
         self.bias = direction
-        
-        # --- Calculate weighted sums using the correct dicts ---
-        # long_weight_sum = sum(self.filter_weights_long.get(name, 0) for name, passed in results_long.items() if passed)
-        # short_weight_sum = sum(self.filter_weights_short.get(name, 0) for name, passed in results_short.items() if passed)
-        # print(f"[{self.symbol}] Total LONG weight: {long_weight_sum}")
-        # print(f"[{self.symbol}] Total SHORT weight: {short_weight_sum}")
-        
-        # Weighted sums for info only
-        # long_weight_sum = sum(self.filter_weights_long.get(name, 0) for name, passed in results_long.items() if passed)
-        # short_weight_sum = sum(self.filter_weights_short.get(name, 0) for name, passed in results_short.items() if passed)
-        # print(f"[{self.symbol}] Total LONG weight: {long_weight_sum}")
-        # print(f"[{self.symbol}] Total SHORT weight: {short_weight_sum}")
-        
-        # --- previous = all hard GK ---
-        # --- Gatekeeper pass/fail and count ---
-        # passed_gk_long = [f for f in self.gatekeepers if results_long.get(f, False)]
-        # passed_gk_short = [f for f in self.gatekeepers if results_short.get(f, False)]
-        # passes_long = len(passed_gk_long)
-        # passes_short = len(passed_gk_short)
-
-        # --- previous = all hard GK ---
-        # Add failed GK calculations
-        # failed_gk_long = [f for f in self.gatekeepers if f not in passed_gk_long]
-        # failed_gk_short = [f for f in self.gatekeepers if f not in passed_gk_short]
 
         # --- Separate Hard and Soft Gatekeepers ---
         hard_gatekeepers = [gk for gk in self.gatekeepers if gk not in self.soft_gatekeepers]
@@ -1172,41 +846,6 @@ class SmartFilter:
         if df5m is None or len(df5m) < 2:
             return False
         return df5m['volume'].iat[-1] > df5m['volume'].iat[-2]
-        
-    
-        
-    # def _check_volume_spike(self, zscore_threshold=1.5):
-        # Calculate z-score of current volume vs recent (rolling 10)
-    #    avg = self.df['volume'].rolling(10).mean().iat[-1]
-    #    std = self.df['volume'].rolling(10).std().iat[-1]
-    #    zscore = self._safe_divide(self.df['volume'].iat[-1] - avg, std)
-    
-        # Price direction
-    #    price_up = self.df['close'].iat[-1] > self.df['close'].iat[-2]
-    #    price_down = self.df['close'].iat[-1] < self.df['close'].iat[-2]
-    
-        # Volume trend
-    #    vol_up = self.df['volume'].iat[-1] > self.df['volume'].iat[-2]
-
-        # use volume multiplier
-    #    volume_spike = self.df['volume'].iat[-1] > avg * self.volume_multiplier
-        
-        # LONG signal: volume spike + price rising + volume rising
-    #    long_conditions = [zscore > zscore_threshold, price_up, vol_up, volume_spike]
-    #    long_met = sum(long_conditions)
-    
-        # SHORT signal: volume spike + price falling + volume rising
-    #    short_conditions = [zscore > zscore_threshold, price_down, vol_up, volume_spike]
-    #    short_met = sum(short_conditions)
-
-        # Require at least 2/3 for a signal
-    #    if long_met >= 2:
-    #        return "LONG"
-    #    elif short_met >= 2:
-    #        return "SHORT"
-    #    else:
-    #        return None
-
     
     def _check_macd(self):
         e12 = self.df['close'].ewm(span=12).mean()
@@ -1491,22 +1130,6 @@ class SmartFilter:
         elif short_met >= min_conditions and short_met > long_met:
             return "SHORT"
         else:
-            return None
-
-    # alternative of check_ema_cloud
-    # def _check_ema_cloud(self):
-    #    ema20 = self.df['ema20'].iat[-1]
-    #    ema50 = self.df['ema50'].iat[-1]
-    #    ema20_prev = self.df['ema20'].iat[-2]
-    #    close = self.df['close'].iat[-1]
-    
-        # LONG: Trend up + (EMA rising or price above EMA)
-    #    if ema20 > ema50 and (ema20 > ema20_prev or close > ema20):
-    #        return "LONG"
-        # SHORT: Trend down + (EMA falling or price below EMA)
-    #    elif ema20 < ema50 and (ema20 < ema20_prev or close < ema20):
-    #        return "SHORT"
-    #    else:
             return None
 
     def _check_momentum(self, window=10, min_conditions=2):
@@ -1963,34 +1586,6 @@ class SmartFilter:
             return "SHORT"
         else:
             return None
-            
-    # def _check_atr_momentum_burst(self, atr_period=14, burst_mult=1.5):
-        # ATR must be calculated and present in self.df['atr']
-        # atr = self.df['atr'].iat[-1]
-        # atr_prev = self.df['atr'].iat[-2]
-        # close = self.df['close'].iat[-1]
-        # close_prev = self.df['close'].iat[-2]
-        # price_change = close - close_prev
-
-        # LONG conditions
-        # cond1_long = close > close_prev
-        # cond2_long = price_change > burst_mult * atr
-        # cond3_long = atr > atr_prev
-
-        # SHORT conditions
-        # cond1_short = close < close_prev
-        # cond2_short = price_change < -burst_mult * atr
-        # cond3_short = atr > atr_prev
-
-        # long_met = sum([cond1_long, cond2_long, cond3_long])
-        # short_met = sum([cond1_short, cond2_short, cond3_short])
-
-        # if long_met >= 2:
-        #    return "LONG"
-        # elif short_met >= 2:
-        #    return "SHORT"
-        # else:
-        #    return None
 
     def _market_regime(self, ma_col='ema200', adx_col='adx', adx_threshold=20):
         """
@@ -2024,43 +1619,4 @@ class SmartFilter:
             except Exception:
                 continue
         return None, None
-
-# def superGK_check(self, symbol, signal_direction):
-#    # Fetch order book data (Bid/Ask details)
-#    bids, asks = self._fetch_order_book(symbol)
-
-#    # Check if order book data is available
-#    if bids is None or asks is None:
-#        print(f"Signal blocked due to missing order book data for {symbol}")
-#        return False  # Block the signal if no order book data is available
-
-#    # Calculate bid and ask wall sizes (order wall delta)
-#    bid_wall = self.get_order_wall_delta(symbol, side='bid')
-#    ask_wall = self.get_order_wall_delta(symbol, side='ask')
-
-#    # Check market liquidity (Resting Density)
-#    resting_density = self.get_resting_density(symbol)
-#    bid_density = resting_density['bid_density']
-#    ask_density = resting_density['ask_density']
-
-#    # Market strength check based on liquidity (if density is too low, block)
-#    if bid_density < self.liquidity_threshold or ask_density < self.liquidity_threshold:
-#        print(f"Signal blocked due to low liquidity for {symbol}")
-#        return False  # Block signal due to insufficient liquidity
-
-#    # Further check based on bid/ask wall delta
-#    if bid_wall < ask_wall:
-#        print(f"Signal blocked due to weak buy-side support for {symbol}")
-#        return False  # Block signal if ask wall is stronger
-
-#    # Determine signal based on liquidity and market depth
-#    if bid_density > ask_density:
-#        print(f"Signal passed for LONG: Strong bid-side liquidity for {symbol}")
-#        return True  # Allow LONG signal if bid-side liquidity is stronger
-#    elif ask_density > bid_density:
-#        print(f"Signal passed for SHORT: Strong ask-side liquidity for {symbol}")
-#        return True  # Allow SHORT signal if ask-side liquidity is stronger
-#    else:
-#        print(f"Signal blocked due to neutral market conditions for {symbol}")
-#        return False  # Block signal if market liquidity is balanced
 
