@@ -1168,6 +1168,9 @@ class SmartFilter:
         ema20_prev = self.df['ema20'].iat[-2]
         close = self.df['close'].iat[-1]
     
+        # Compute cloud value (difference between EMAs, for context)
+        ema_cloud = ema20 - ema50
+    
         # LONG conditions
         cond1_long = ema20 > ema50
         cond2_long = ema20 > ema20_prev
