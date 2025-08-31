@@ -907,13 +907,14 @@ class SmartFilter:
             return None
 
     def _check_volume_spike(
-        self,
-        zscore_threshold=1.2,
-        min_price_move=0.0002,
-        rolling_window=15,
-        require_all=False,
-        return_directionless=False
-    ):
+            self,
+            zscore_threshold=1.2,
+            min_price_move=0.0002,
+            rolling_window=15,
+            require_all=False,
+            return_directionless=False,
+            DEBUG_GK=True  # Toggle debug output for GK review
+        ):
         """
         Flexible volume spike detection.
         - zscore_threshold: float, threshold for z-score anomaly.
@@ -921,9 +922,12 @@ class SmartFilter:
         - rolling_window: int, how many periods to look back.
         - require_all: if True, require all 3 conditions for signal. If False, require 2/3.
         - return_directionless: if True, return 'SPIKE' if only volume is present.
+        - DEBUG_GK: bool, print debug logs if True.
         """
     
         if len(self.df) < rolling_window + 2:
+            if DEBUG_GK:
+                print(f"[{self.symbol}] [Volume Spike DEBUG] Not enough data to check volume spike.")
             return None  # Not enough data
     
         # Z-score calculation
@@ -944,23 +948,42 @@ class SmartFilter:
     
         long_conditions = [spike, price_up, vol_up]
         short_conditions = [spike, price_down, vol_up]
-        # Debug prints (after calculation!)
-        print(f"[{self.symbol}] [Volume Spike DEBUG] zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}")
-        print(f"[{self.symbol}] [Volume Spike DEBUG] condition_1={condition_1}, condition_2={condition_2}, spike_met={spike_met}")
-
+    
+        if DEBUG_GK:
+            print(
+                f"[{self.symbol}] [Volume Spike DEBUG] "
+                f"zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, "
+                f"price_up={price_up}, price_down={price_down}, "
+                f"long_conditions={long_conditions}, short_conditions={short_conditions}, "
+                f"require_all={require_all}, return_directionless={return_directionless}"
+            )
+    
         if require_all:
             if all(long_conditions):
+                if DEBUG_GK:
+                    print(f"[{self.symbol}] [Volume Spike DEBUG] Signal fired: LONG (all long conditions met)")
                 return "LONG"
             if all(short_conditions):
+                if DEBUG_GK:
+                    print(f"[{self.symbol}] [Volume Spike DEBUG] Signal fired: SHORT (all short conditions met)")
                 return "SHORT"
         else:
             if sum(long_conditions) >= 2:
+                if DEBUG_GK:
+                    print(f"[{self.symbol}] [Volume Spike DEBUG] Signal fired: LONG (>=2 long conditions met)")
                 return "LONG"
             if sum(short_conditions) >= 2:
+                if DEBUG_GK:
+                    print(f"[{self.symbol}] [Volume Spike DEBUG] Signal fired: SHORT (>=2 short conditions met)")
                 return "SHORT"
     
         if return_directionless and spike:
+            if DEBUG_GK:
+                print(f"[{self.symbol}] [Volume Spike DEBUG] Signal fired: SPIKE (directionless spike only)")
             return "SPIKE"
+    
+        if DEBUG_GK:
+            print(f"[{self.symbol}] [Volume Spike DEBUG] No signal fired.")
         return None
 
     def _check_liquidity_awareness(self):
