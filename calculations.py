@@ -125,21 +125,25 @@ def add_keltner_channels(df: pd.DataFrame, period: int = 20, atr_mult: float = 1
 def add_indicators(df: pd.DataFrame) -> pd.DataFrame:
     """
     Adds all standard indicators and EMAs to the DataFrame.
+    Ensures all used columns are present for filter/detector logic.
     """
     df = df.copy()
-    df = add_ema_columns(df)
-    df = compute_macd(df)
-    df['vwap'] = compute_vwap(df)
-    df['RSI'] = compute_rsi(df)
-    df['atr'] = compute_atr(df)
-    adx, plus_di, minus_di = compute_adx(df)
+    df = _add_ema_columns(df)
+    df = _compute_macd(df)
+    df['vwap'] = _compute_vwap(df)
+    df['RSI'] = _compute_rsi(df)
+    df['atr'] = _compute_atr(df)
+    adx, plus_di, minus_di = _compute_adx(df)
     df['adx'] = adx
     df['plus_di'] = plus_di
     df['minus_di'] = minus_di
-    df['cci'] = calculate_cci(df)
-    stochrsi_k, stochrsi_d = calculate_stochrsi(df)
+    df['cci'] = _calculate_cci(df)
+    stochrsi_k, stochrsi_d = _calculate_stochrsi(df)
     df['stochrsi_k'] = stochrsi_k
     df['stochrsi_d'] = stochrsi_d
-    df = add_bollinger_bands(df)
-    df = add_keltner_channels(df)
+    df = _add_bollinger_bands(df)
+    df = _add_keltner_channels(df)
+    # ---- Add chop_zone for filter compatibility ----
+    # Typical chop_zone can be stddev of close price over a rolling window
+    df['chop_zone'] = df['close'].rolling(14).std()
     return df
