@@ -496,7 +496,7 @@ class SmartFilter:
             "HH/LL Trend": getattr(self, "_check_hh_ll", None),
             "EMA Structure": getattr(self, "_check_ema_structure", None),
             "Chop Zone": getattr(self, "_check_chop_zone", None),
-            "Candle Confirmation": getattr(self, "_check_candle_close", None),
+            "Candle Confirmation": getattr(self, "_check_candle_confirmation", None),
             "Wick Dominance": getattr(self, "_check_wick_dominance", None),
             "Absorption": getattr(self, "_check_absorption", None),
             "Support/Resistance": getattr(self, "_check_support_resistance", None),
@@ -1071,7 +1071,7 @@ class SmartFilter:
                 print(f"[{self.symbol}] [Spread Filter] No signal fired | spread={spread:.6f}, long_met={long_met}, short_met={short_met}, spread_prev={spread_prev:.6f}, spread_ma={spread_ma:.6f}, close={close:.2f}, open={open_:.2f}")
             return None
 
-    def _check_candle_close(self, debug=False):
+    def _check_candle_confirmation(self, debug=False):
         open_ = self.df['open'].iat[-1]
         high = self.df['high'].iat[-1]
         low = self.df['low'].iat[-1]
