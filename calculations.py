@@ -122,6 +122,20 @@ def add_keltner_channels(df: pd.DataFrame, period: int = 20, atr_mult: float = 1
     df['kc_lower'] = ma - atr_mult * df['atr']
     return df
 
+def compute_choppiness_index(df: pd.DataFrame, period: int = 14) -> pd.Series:
+    """
+    Computes Choppiness Index and returns it as a pandas Series.
+    """
+    high = df['high']
+    low = df['low']
+    close = df['close']
+    tr = np.maximum(high - low, np.maximum(abs(high - close.shift()), abs(low - close.shift())))
+    atr = tr.rolling(period).mean()
+    highest_high = high.rolling(period).max()
+    lowest_low = low.rolling(period).min()
+    choppiness = 100 * np.log10(atr.rolling(period).sum() / (highest_high - lowest_low)) / np.log10(period)
+    return choppiness
+    
 def add_indicators(df: pd.DataFrame) -> pd.DataFrame:
     """
     Adds all standard indicators and EMAs to the DataFrame.
@@ -133,7 +147,7 @@ def add_indicators(df: pd.DataFrame) -> pd.DataFrame:
     df['vwap'] = compute_vwap(df)
     df['RSI'] = compute_rsi(df)
     df['atr'] = compute_atr(df)
-    df['atr_ma'] = df['atr'].rolling(14).mean()  # Add this line!
+    df['atr_ma'] = df['atr'].rolling(14).mean()
     adx, plus_di, minus_di = compute_adx(df)
     df['adx'] = adx
     df['plus_di'] = plus_di
@@ -144,7 +158,6 @@ def add_indicators(df: pd.DataFrame) -> pd.DataFrame:
     df['stochrsi_d'] = stochrsi_d
     df = add_bollinger_bands(df)
     df = add_keltner_channels(df)
-    # ---- Add chop_zone for filter compatibility ----
-    # Typical chop_zone can be stddev of close price over a rolling window
-    df['chop_zone'] = df['close'].rolling(14).std()
+    # ---- Add chop_zone (Choppiness Index) for filter compatibility ----
+    df['chop_zone'] = compute_choppiness_index(df)
     return df
