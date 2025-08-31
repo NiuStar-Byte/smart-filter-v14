@@ -1389,20 +1389,23 @@ class SmartFilter:
         ema9_prev = self.df['ema9'].iat[-2]
         ema21_prev = self.df['ema21'].iat[-2]
         ema50_prev = self.df['ema50'].iat[-2]
-
+    
+        # Prepare EMAs for logging
+        emas = (ema9, ema21, ema50)
+    
         # LONG conditions
         cond1_long = ema9 > ema21 and ema21 > ema50
         cond2_long = close > ema9 and close > ema21 and close > ema50
         cond3_long = ema9 > ema9_prev and ema21 > ema21_prev and ema50 > ema50_prev
-
+    
         # SHORT conditions
         cond1_short = ema9 < ema21 and ema21 < ema50
         cond2_short = close < ema9 and close < ema21 and close < ema50
         cond3_short = ema9 < ema9_prev and ema21 < ema21_prev and ema50 < ema50_prev
-
+    
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-
+    
         if long_met >= 2:
             print(f"[{self.symbol}] [EMA Structure] Signal: LONG | long_met={long_met}, short_met={short_met}, emas={emas}")
             return "LONG"
