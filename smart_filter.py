@@ -1337,7 +1337,6 @@ class SmartFilter:
     
         close = self.df['close'].iat[-1]
     
-        # You can define 'hats' as a tuple of the three EMAs, which is useful for logging
         hats = (fast, mid, slow)
     
         # LONG conditions
@@ -1353,12 +1352,17 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
     
-        # Fix: Only return LONG if long_met > short_met, and vice versa
+        if debug:
+            if long_met >= 2 and long_met > short_met:
+                print(f"[{self.symbol}] [HATS] Signal: LONG | long_met={long_met}, short_met={short_met}, hats={hats}")
+            elif short_met >= 2 and short_met > long_met:
+                print(f"[{self.symbol}] [HATS] Signal: SHORT | long_met={long_met}, short_met={short_met}, hats={hats}")
+            else:
+                print(f"[{self.symbol}] [HATS] No signal fired | long_met={long_met}, short_met={short_met}, hats={hats}")
+    
         if long_met >= 2 and long_met > short_met:
-            print(f"[{self.symbol}] [HATS] Signal: LONG | long_met={long_met}, short_met={short_met}, hats={hats}")
             return "LONG"
         elif short_met >= 2 and short_met > long_met:
-            print(f"[{self.symbol}] [HATS] Signal: SHORT | long_met={long_met}, short_met={short_met}, hats={hats}")
             return "SHORT"
         else:
             return None
@@ -1449,7 +1453,6 @@ class SmartFilter:
         ema21_prev = self.df['ema21'].iat[-2]
         ema50_prev = self.df['ema50'].iat[-2]
     
-        # Prepare EMAs for logging
         emas = (ema9, ema21, ema50)
     
         # LONG conditions
@@ -1465,11 +1468,17 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
     
+        if debug:
+            if long_met >= 2:
+                print(f"[{self.symbol}] [EMA Structure] Signal: LONG | long_met={long_met}, short_met={short_met}, emas={emas}")
+            elif short_met >= 2:
+                print(f"[{self.symbol}] [EMA Structure] Signal: SHORT | long_met={long_met}, short_met={short_met}, emas={emas}")
+            else:
+                print(f"[{self.symbol}] [EMA Structure] No signal fired | long_met={long_met}, short_met={short_met}, emas={emas}")
+    
         if long_met >= 2:
-            print(f"[{self.symbol}] [EMA Structure] Signal: LONG | long_met={long_met}, short_met={short_met}, emas={emas}")
             return "LONG"
         elif short_met >= 2:
-            print(f"[{self.symbol}] [EMA Structure] Signal: SHORT | long_met={long_met}, short_met={short_met}, emas={emas}")
             return "SHORT"
         else:
             return None
