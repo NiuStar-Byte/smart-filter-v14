@@ -46,9 +46,9 @@ class SmartFilter:
                 self.df[col] = np.nan
 
         # --- Debug: Print columns and last row for troubleshooting ---
-        if self.df is not None:
-            print(f"[DEBUG] {self.symbol} Columns after indicators:", self.df.columns)
-            print(f"[DEBUG] {self.symbol} Last row after indicators:\n", self.df.iloc[-1])
+        # if self.df is not None:
+        #    print(f"[DEBUG] {self.symbol} Columns after indicators:", self.df.columns)
+        #    print(f"[DEBUG] {self.symbol} Last row after indicators:\n", self.df.iloc[-1])
     
         self.tf = tf
         self.min_score = min_score
