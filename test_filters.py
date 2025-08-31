@@ -120,7 +120,7 @@ def get_filter_methods():
     return methods
 
 def test_filter(filter_name, filter_func, sf_long, sf_short, sf_neutral):
-    print(f"\n--- Testing {filter_name} ---")
+    # print(f"\n--- Testing {filter_name} ---")
     result_long = filter_func(sf_long)
     result_short = filter_func(sf_short)
     result_neutral = filter_func(sf_neutral)
