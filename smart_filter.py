@@ -873,13 +873,13 @@ class SmartFilter:
         else:
             return None
             
-    def _check_mtf_volume_agreement(self, DEBUG_GK=True, debug=False):
+    def _check_mtf_volume_agreement(self, debug=False):
         """
         MTF Volume Agreement: Checks if volume and price are rising/falling in both current and higher timeframe.
         - Returns "LONG" if majority of LONG conditions met (> SHORT).
         - Returns "SHORT" if majority of SHORT conditions met (> LONG).
         - Returns None otherwise.
-        - DEBUG_GK: bool, print debug logs if True.
+        - debug: bool, print debug logs if True.
         """
     
         # Current timeframe
@@ -907,12 +907,16 @@ class SmartFilter:
     
         # Only return LONG if long_met > short_met, and vice versa
         if long_met >= 2 and long_met > short_met:
-            print(f"[{self.symbol}] [MTF Volume Agreement] Signal: LONG | long_met={long_met}, short_met={short_met}")
+            if debug:
+                print(f"[{self.symbol}] [MTF Volume Agreement] Signal: LONG | long_met={long_met}, short_met={short_met}, conds_long={[cond1_long, cond2_long, cond3_long]}, conds_short={[cond1_short, cond2_short, cond3_short]}")
             return "LONG"
         elif short_met >= 2 and short_met > long_met:
-            print(f"[{self.symbol}] [MTF Volume Agreement] Signal: SHORT | long_met={long_met}, short_met={short_met}")
+            if debug:
+                print(f"[{self.symbol}] [MTF Volume Agreement] Signal: SHORT | long_met={long_met}, short_met={short_met}, conds_long={[cond1_long, cond2_long, cond3_long]}, conds_short={[cond1_short, cond2_short, cond3_short]}")
             return "SHORT"
         else:
+            if debug:
+                print(f"[{self.symbol}] [MTF Volume Agreement] No signal fired | long_met={long_met}, short_met={short_met}, conds_long={[cond1_long, cond2_long, cond3_long]}, conds_short={[cond1_short, cond2_short, cond3_short]}")
             return None
 
     def _check_volume_spike(
@@ -922,7 +926,6 @@ class SmartFilter:
             rolling_window=15,
             require_all=False,
             return_directionless=False,
-            DEBUG_GK=True,  # Toggle debug output for GK review
             debug=False
         ):
         """
@@ -932,12 +935,12 @@ class SmartFilter:
         - rolling_window: int, how many periods to look back.
         - require_all: if True, require all 3 conditions for signal. If False, require 2/3.
         - return_directionless: if True, return 'SPIKE' if only volume is present.
-        - DEBUG_GK: bool, print debug logs if True.
+        - debug: bool, print debug logs if True.
         """
     
         if len(self.df) < rolling_window + 2:
-            if DEBUG_GK:
-                print(f"[{self.symbol}] [Check Volume Spike DEBUG] Not enough data to check volume spike.")
+            if debug:
+                print(f"[{self.symbol}] [Volume Spike] Not enough data to check volume spike. len={len(self.df)}, rolling_window={rolling_window}")
             return None  # Not enough data
     
         # Z-score calculation
@@ -961,23 +964,30 @@ class SmartFilter:
     
         if require_all:
             if all(long_conditions):
-                print(f"[{self.symbol}] [Volume Spike] Signal: LONG | zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, price_up={price_up}, price_down={price_down}, long_conditions={long_conditions}, short_conditions={short_conditions}, require_all={require_all}, return_directionless={return_directionless}")
+                if debug:
+                    print(f"[{self.symbol}] [Volume Spike] Signal: LONG | zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, price_up={price_up}, price_down={price_down}, long_conditions={long_conditions}, short_conditions={short_conditions}, require_all={require_all}, return_directionless={return_directionless}")
                 return "LONG"
             if all(short_conditions):
-                print(f"[{self.symbol}] [Volume Spike] Signal: SHORT | zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, price_up={price_up}, price_down={price_down}, long_conditions={long_conditions}, short_conditions={short_conditions}, require_all={require_all}, return_directionless={return_directionless}")
+                if debug:
+                    print(f"[{self.symbol}] [Volume Spike] Signal: SHORT | zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, price_up={price_up}, price_down={price_down}, long_conditions={long_conditions}, short_conditions={short_conditions}, require_all={require_all}, return_directionless={return_directionless}")
                 return "SHORT"
         else:
             if sum(long_conditions) >= 2:
-                print(f"[{self.symbol}] [Volume Spike] Signal: LONG | zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, price_up={price_up}, price_down={price_down}, long_conditions={long_conditions}, short_conditions={short_conditions}, require_all={require_all}, return_directionless={return_directionless}")
+                if debug:
+                    print(f"[{self.symbol}] [Volume Spike] Signal: LONG | zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, price_up={price_up}, price_down={price_down}, long_conditions={long_conditions}, short_conditions={short_conditions}, require_all={require_all}, return_directionless={return_directionless}")
                 return "LONG"
             if sum(short_conditions) >= 2:
-                print(f"[{self.symbol}] [Volume Spike] Signal: SHORT | zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, price_up={price_up}, price_down={price_down}, long_conditions={long_conditions}, short_conditions={short_conditions}, require_all={require_all}, return_directionless={return_directionless}")
+                if debug:
+                    print(f"[{self.symbol}] [Volume Spike] Signal: SHORT | zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, price_up={price_up}, price_down={price_down}, long_conditions={long_conditions}, short_conditions={short_conditions}, require_all={require_all}, return_directionless={return_directionless}")
                 return "SHORT"
         
         if return_directionless and spike:
-            print(f"[{self.symbol}] [Volume Spike] Signal: SPIKE | zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, price_up={price_up}, price_down={price_down}, long_conditions={long_conditions}, short_conditions={short_conditions}, require_all={require_all}, return_directionless={return_directionless}")
+            if debug:
+                print(f"[{self.symbol}] [Volume Spike] Signal: SPIKE | zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, price_up={price_up}, price_down={price_down}, long_conditions={long_conditions}, short_conditions={short_conditions}, require_all={require_all}, return_directionless={return_directionless}")
             return "SPIKE"
         
+        if debug:
+            print(f"[{self.symbol}] [Volume Spike] No signal fired | zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, price_up={price_up}, price_down={price_down}, long_conditions={long_conditions}, short_conditions={short_conditions}, require_all={require_all}, return_directionless={return_directionless}")
         return None
 
     def _check_liquidity_awareness(self, debug=False):
