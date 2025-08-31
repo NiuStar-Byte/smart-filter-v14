@@ -979,7 +979,7 @@ class SmartFilter:
         
         return None
 
-    def _check_liquidity_awareness(self):
+    def _check_liquidity_awareness(self, debug=False):
         bid = self.df['bid'].iat[-1]
         ask = self.df['ask'].iat[-1]
         bid_prev = self.df['bid'].iat[-2]
@@ -1014,7 +1014,7 @@ class SmartFilter:
     
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-       
+    
         if long_met >= 2:
             print(f"[{self.symbol}] [Liquidity Awareness] Signal: LONG | long_met={long_met}, short_met={short_met}, liquidity_metrics={liquidity_metrics}")
             return "LONG"
@@ -1022,9 +1022,11 @@ class SmartFilter:
             print(f"[{self.symbol}] [Liquidity Awareness] Signal: SHORT | long_met={long_met}, short_met={short_met}, liquidity_metrics={liquidity_metrics}")
             return "SHORT"
         else:
+            if debug:
+                print(f"[{self.symbol}] [Liquidity Awareness] No signal fired | long_met={long_met}, short_met={short_met}, liquidity_metrics={liquidity_metrics}")
             return None
 
-    def _check_spread_filter(self, window=20):
+    def _check_spread_filter(self, window=20, debug=False):
         high = self.df['high'].iat[-1]
         low = self.df['low'].iat[-1]
         open_ = self.df['open'].iat[-1]
@@ -1058,12 +1060,14 @@ class SmartFilter:
         short_met = sum([cond1_short, cond2_short, cond3_short])
               
         if long_met >= 2:
-            print(f"[{self.symbol}] [Spread Filter] Signal: LONG | spread={spread:.6f}, long_met={long_met}, short_met={short_met}")
+            print(f"[{self.symbol}] [Spread Filter] Signal: LONG | spread={spread:.6f}, long_met={long_met}, short_met={short_met}, spread_prev={spread_prev:.6f}, spread_ma={spread_ma:.6f}, close={close:.2f}, open={open_:.2f}")
             return "LONG"
         elif short_met >= 2:
-            print(f"[{self.symbol}] [Spread Filter] Signal: SHORT | spread={spread:.6f}, long_met={long_met}, short_met={short_met}")
+            print(f"[{self.symbol}] [Spread Filter] Signal: SHORT | spread={spread:.6f}, long_met={long_met}, short_met={short_met}, spread_prev={spread_prev:.6f}, spread_ma={spread_ma:.6f}, close={close:.2f}, open={open_:.2f}")
             return "SHORT"
         else:
+            if debug:
+                print(f"[{self.symbol}] [Spread Filter] No signal fired | spread={spread:.6f}, long_met={long_met}, short_met={short_met}, spread_prev={spread_prev:.6f}, spread_ma={spread_ma:.6f}, close={close:.2f}, open={open_:.2f}")
             return None
 
     def _check_candle_close(self):
@@ -1122,7 +1126,7 @@ class SmartFilter:
         else:
             return None
             
-    def _check_support_resistance(self, window=20, buffer_pct=0.005, min_cond=2):
+    def _check_support_resistance(self, window=20, buffer_pct=0.005, min_cond=2, debug=False):
         support = self.df['low'].rolling(window).min().iat[-1]
         resistance = self.df['high'].rolling(window).max().iat[-1]
         close = self.df['close'].iat[-1]
@@ -1146,7 +1150,7 @@ class SmartFilter:
     
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-       
+        
         if long_met >= min_cond and long_met > short_met:
             print(f"[{self.symbol}] [Support/Resistance] Signal: LONG | support={support}, resistance={resistance}, close={close}, long_met={long_met}, short_met={short_met}, support_prox={support_prox:.4f}")
             return "LONG"
@@ -1154,6 +1158,8 @@ class SmartFilter:
             print(f"[{self.symbol}] [Support/Resistance] Signal: SHORT | support={support}, resistance={resistance}, close={close}, long_met={long_met}, short_met={short_met}, resistance_prox={resistance_prox:.4f}")
             return "SHORT"
         else:
+            if debug:
+                print(f"[{self.symbol}] [Support/Resistance] No signal fired | support={support}, resistance={resistance}, close={close}, close_prev={close_prev}, volume={volume}, volume_prev={volume_prev}, long_met={long_met}, short_met={short_met}, support_prox={support_prox:.4f}, resistance_prox={resistance_prox:.4f}")
             return None
     
     def _check_fractal_zone(self, buffer_pct=0.005, window=20, min_conditions=2, debug=False):
@@ -1181,14 +1187,14 @@ class SmartFilter:
     
         # Only fire signal if one side strictly beats the other and meets min_conditions
         if short_met >= min_conditions and short_met > long_met:
-            print(f"[{self.symbol}] [Fractal Zone] Signal: SHORT | short_met={short_met}, long_met={long_met}, min_conditions={min_conditions}")
+            print(f"[{self.symbol}] [Fractal Zone] Signal: SHORT | short_met={short_met}, long_met={long_met}, min_conditions={min_conditions}, fractal_high={fractal_high:.2f}, fractal_high_prev={fractal_high_prev:.2f}, close={close:.2f}, close_prev={close_prev:.2f}")
             return "SHORT"
         elif long_met >= min_conditions and long_met > short_met:
-            print(f"[{self.symbol}] [Fractal Zone] Signal: LONG | short_met={short_met}, long_met={long_met}, min_conditions={min_conditions}")
+            print(f"[{self.symbol}] [Fractal Zone] Signal: LONG | short_met={short_met}, long_met={long_met}, min_conditions={min_conditions}, fractal_low={fractal_low:.2f}, fractal_low_prev={fractal_low_prev:.2f}, close={close:.2f}, close_prev={close_prev:.2f}")
             return "LONG"
         else:
             if debug:
-                print(f"[{self.symbol}] [Fractal Zone] No signal fired | short_met={short_met}, long_met={long_met}, min_conditions={min_conditions}")
+                print(f"[{self.symbol}] [Fractal Zone] No signal fired | short_met={short_met}, long_met={long_met}, min_conditions={min_conditions}, fractal_high={fractal_high:.2f}, fractal_high_prev={fractal_high_prev:.2f}, fractal_low={fractal_low:.2f}, fractal_low_prev={fractal_low_prev:.2f}, close={close:.2f}, close_prev={close_prev:.2f}")
             return None
     
     def _check_ema_cloud(self, min_conditions=2):
@@ -1605,7 +1611,7 @@ class SmartFilter:
             print(f"[{self.symbol}] [Chop Zone Check] No signal fired | long_met={long_met}, short_met={short_met}, chop_zone={chop_zone}")
             return None
 
-    def _check_liquidity_pool(self, lookback=20, min_cond=2):
+    def _check_liquidity_pool(self, lookback=20, min_cond=2, debug=False):
         close = self.df['close'].iat[-1]
         high = self.df['high'].iat[-1]
         low = self.df['low'].iat[-1]
@@ -1641,6 +1647,8 @@ class SmartFilter:
             print(f"[{self.symbol}] [Liquidity Pool] Signal: SHORT | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, liquidity_pool={liquidity_pool}")
             return "SHORT"
         else:
+            if debug:
+                print(f"[{self.symbol}] [Liquidity Pool] No signal fired | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, liquidity_pool={liquidity_pool}")
             return None
 
     def _check_smart_money_bias(self, volume_window=20, min_cond=2):
