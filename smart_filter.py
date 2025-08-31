@@ -839,7 +839,7 @@ class SmartFilter:
             return False
         return df5m['volume'].iat[-1] > df5m['volume'].iat[-2]
     
-    def _check_macd(self):
+    def _check_macd(self, debug=False):
         e12 = self.df['close'].ewm(span=12).mean()
         e26 = self.df['close'].ewm(span=26).mean()
         macd = e12 - e26
@@ -873,7 +873,7 @@ class SmartFilter:
         else:
             return None
             
-    def _check_mtf_volume_agreement(self, DEBUG_GK=True):
+    def _check_mtf_volume_agreement(self, DEBUG_GK=True, debug=False):
         """
         MTF Volume Agreement: Checks if volume and price are rising/falling in both current and higher timeframe.
         - Returns "LONG" if majority of LONG conditions met (> SHORT).
@@ -922,7 +922,8 @@ class SmartFilter:
             rolling_window=15,
             require_all=False,
             return_directionless=False,
-            DEBUG_GK=True  # Toggle debug output for GK review
+            DEBUG_GK=True,  # Toggle debug output for GK review
+            debug=False
         ):
         """
         Flexible volume spike detection.
@@ -1070,7 +1071,7 @@ class SmartFilter:
                 print(f"[{self.symbol}] [Spread Filter] No signal fired | spread={spread:.6f}, long_met={long_met}, short_met={short_met}, spread_prev={spread_prev:.6f}, spread_ma={spread_ma:.6f}, close={close:.2f}, open={open_:.2f}")
             return None
 
-    def _check_candle_close(self):
+    def _check_candle_close(self, debug=False):
         open_ = self.df['open'].iat[-1]
         high = self.df['high'].iat[-1]
         low = self.df['low'].iat[-1]
@@ -1197,7 +1198,7 @@ class SmartFilter:
                 print(f"[{self.symbol}] [Fractal Zone] No signal fired | short_met={short_met}, long_met={long_met}, min_conditions={min_conditions}, fractal_high={fractal_high:.2f}, fractal_high_prev={fractal_high_prev:.2f}, fractal_low={fractal_low:.2f}, fractal_low_prev={fractal_low_prev:.2f}, close={close:.2f}, close_prev={close_prev:.2f}")
             return None
     
-    def _check_ema_cloud(self, min_conditions=2):
+    def _check_ema_cloud(self, min_conditions=2, debug=False):
         ema20 = self.df['ema20'].iat[-1]
         ema50 = self.df['ema50'].iat[-1]
         ema20_prev = self.df['ema20'].iat[-2]
@@ -1229,7 +1230,7 @@ class SmartFilter:
         else:
             return None
 
-    def _check_momentum(self, window=10, min_conditions=2):
+    def _check_momentum(self, window=10, min_conditions=2, debug=False):
         # Calculate Rate of Change (ROC)
         roc = self.df['close'].pct_change(periods=window)
         momentum = roc.iat[-1]
@@ -1259,7 +1260,7 @@ class SmartFilter:
         else:
             return None
 
-    def _check_atr_momentum_burst(self, threshold_pct=0.10, volume_mult=1.1, min_cond=2):
+    def _check_atr_momentum_burst(self, threshold_pct=0.10, volume_mult=1.1, min_cond=2, debug=False):
         long_met = 0
         short_met = 0
         momentum = []
@@ -1288,7 +1289,7 @@ class SmartFilter:
         else:
             return None
 
-    def _check_trend_continuation(self, ma_col='ema21', min_cond=2):
+    def _check_trend_continuation(self, ma_col='ema21', min_cond=2, debug=False):
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
         ma = self.df[ma_col].iat[-1]
@@ -1324,7 +1325,7 @@ class SmartFilter:
         else:
             return None
     
-    def _check_hats(self):
+    def _check_hats(self, debug=False):
         # Define your moving averages
         fast = self.df['ema10'].iat[-1]
         mid = self.df['ema21'].iat[-1]
@@ -1362,7 +1363,7 @@ class SmartFilter:
         else:
             return None
 
-    def _check_hh_ll(self):
+    def _check_hh_ll(self, debug=False):
         high = self.df['high'].iat[-1]
         high_prev = self.df['high'].iat[-2]
         low = self.df['low'].iat[-1]
@@ -1397,7 +1398,7 @@ class SmartFilter:
         else:
             return None
 
-    def _check_volatility_model(self, atr_col='atr', atr_ma_col='atr_ma'):
+    def _check_volatility_model(self, atr_col='atr', atr_ma_col='atr_ma', debug=False):
         atr = self.df[atr_col].iat[-1]
         atr_prev = self.df[atr_col].iat[-2]
         atr_ma = self.df[atr_ma_col].iat[-1]
@@ -1437,7 +1438,7 @@ class SmartFilter:
         else:
             return None
 
-    def _check_ema_structure(self):
+    def _check_ema_structure(self, debug=False):
         # Current values
         close = self.df['close'].iat[-1]
         ema9 = self.df['ema9'].iat[-1]
@@ -1473,7 +1474,7 @@ class SmartFilter:
         else:
             return None
 
-    def _check_volatility_squeeze(self, min_cond=2):
+    def _check_volatility_squeeze(self, min_cond=2, debug=False):
         bb_width = self.df['bb_upper'].iat[-1] - self.df['bb_lower'].iat[-1]
         kc_width = self.df['kc_upper'].iat[-1] - self.df['kc_lower'].iat[-1]
         bb_width_prev = self.df['bb_upper'].iat[-2] - self.df['bb_lower'].iat[-2]
@@ -1524,7 +1525,7 @@ class SmartFilter:
         else:
             return None
     
-    def _check_vwap_divergence(self):
+    def _check_vwap_divergence(self, debug=False):
         vwap = self.df['vwap'].iat[-1]
         vwap_prev = self.df['vwap'].iat[-2]
         close = self.df['close'].iat[-1]
@@ -1558,7 +1559,7 @@ class SmartFilter:
         else:
             return None
 
-    def _check_chop_zone(self, chop_threshold=40):
+    def _check_chop_zone(self, chop_threshold=40, debug=False):
         """
         Detects and filters out choppy market conditions using the Choppiness Index,
         and then checks for trend signals using EMAs, ADX, and price.
@@ -1651,7 +1652,7 @@ class SmartFilter:
                 print(f"[{self.symbol}] [Liquidity Pool] No signal fired | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, liquidity_pool={liquidity_pool}")
             return None
 
-    def _check_smart_money_bias(self, volume_window=20, min_cond=2):
+    def _check_smart_money_bias(self, volume_window=20, min_cond=2, debug=False):
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
         volume = self.df['volume'].iat[-1]
@@ -1691,7 +1692,7 @@ class SmartFilter:
         else:
             return None
 
-    def _check_absorption(self, window=20, buffer_pct=0.005, min_cond=2):
+    def _check_absorption(self, window=20, buffer_pct=0.005, min_cond=2, debug=False):
         # Calculate recent low/high for proximity
         low = self.df['low'].rolling(window).min().iat[-1]
         high = self.df['high'].rolling(window).max().iat[-1]
@@ -1732,7 +1733,7 @@ class SmartFilter:
         else:
             return None
             
-    def _check_wick_dominance(self):
+    def _check_wick_dominance(self, debug=False):
         open_ = self.df['open'].iat[-1]
         high = self.df['high'].iat[-1]
         low = self.df['low'].iat[-1]
