@@ -992,6 +992,16 @@ class SmartFilter:
         spread = ask - bid
         spread_prev = ask_prev - bid_prev
     
+        # For logging: liquidity metrics
+        liquidity_metrics = {
+            "spread": spread,
+            "spread_prev": spread_prev,
+            "volume": volume,
+            "volume_prev": volume_prev,
+            "close": close,
+            "close_prev": close_prev
+        }
+    
         # LONG conditions: improving liquidity, rising volume, rising price
         cond1_long = spread < spread_prev
         cond2_long = volume > volume_prev
@@ -1006,10 +1016,10 @@ class SmartFilter:
         short_met = sum([cond1_short, cond2_short, cond3_short])
        
         if long_met >= 2:
-            print(f"[{self.symbol}] [Liquidity Awareness] Signal: LONG | long_met={long_met}, short_met={short_met}")
+            print(f"[{self.symbol}] [Liquidity Awareness] Signal: LONG | long_met={long_met}, short_met={short_met}, liquidity_metrics={liquidity_metrics}")
             return "LONG"
         elif short_met >= 2:
-            print(f"[{self.symbol}] [Liquidity Awareness] Signal: SHORT | long_met={long_met}, short_met={short_met}")
+            print(f"[{self.symbol}] [Liquidity Awareness] Signal: SHORT | long_met={long_met}, short_met={short_met}, liquidity_metrics={liquidity_metrics}")
             return "SHORT"
         else:
             return None
@@ -1027,11 +1037,12 @@ class SmartFilter:
     
         spread = high - low
         spread_prev = high_prev - low_prev
-        spread_ma = self.df['spread'].rolling(window).mean().iat[-1] if 'spread' in self.df.columns else self.df['high'].sub(self.df['low']).rolling(window).mean().iat[-1]
     
         # Add spread column if missing
         if 'spread' not in self.df.columns:
             self.df['spread'] = self.df['high'] - self.df['low']
+    
+        spread_ma = self.df['spread'].rolling(window).mean().iat[-1]
     
         # LONG conditions: spread expanding and bullish close
         cond1_long = spread > spread_prev
@@ -1076,6 +1087,18 @@ class SmartFilter:
         bullish_pin_bar = lower_wick > 2 * body and close > open_
         bearish_pin_bar = upper_wick > 2 * body and close < open_
     
+        # Determine candle_type for logging
+        if bullish_engulfing:
+            candle_type = "Bullish Engulfing"
+        elif bearish_engulfing:
+            candle_type = "Bearish Engulfing"
+        elif bullish_pin_bar:
+            candle_type = "Bullish Pin Bar"
+        elif bearish_pin_bar:
+            candle_type = "Bearish Pin Bar"
+        else:
+            candle_type = "Neutral"
+    
         # LONG conditions
         cond1_long = bullish_engulfing
         cond2_long = bullish_pin_bar
@@ -1107,6 +1130,10 @@ class SmartFilter:
         volume = self.df['volume'].iat[-1]
         volume_prev = self.df['volume'].iat[-2]
     
+        # For logging: proximity metrics
+        support_prox = (close - support) / support
+        resistance_prox = (resistance - close) / resistance
+    
         # LONG conditions
         cond1_long = close <= support * (1 + buffer_pct)
         cond2_long = close > close_prev
@@ -1121,10 +1148,10 @@ class SmartFilter:
         short_met = sum([cond1_short, cond2_short, cond3_short])
        
         if long_met >= min_cond and long_met > short_met:
-            print(f"[{self.symbol}] [Support/Resistance] Signal: LONG | support={support}, resistance={resistance}, close={close}, long_met={long_met}, short_met={short_met}")
+            print(f"[{self.symbol}] [Support/Resistance] Signal: LONG | support={support}, resistance={resistance}, close={close}, long_met={long_met}, short_met={short_met}, support_prox={support_prox:.4f}")
             return "LONG"
         elif short_met >= min_cond and short_met > long_met:
-            print(f"[{self.symbol}] [Support/Resistance] Signal: SHORT | support={support}, resistance={resistance}, close={close}, long_met={long_met}, short_met={short_met}")
+            print(f"[{self.symbol}] [Support/Resistance] Signal: SHORT | support={support}, resistance={resistance}, close={close}, long_met={long_met}, short_met={short_met}, resistance_prox={resistance_prox:.4f}")
             return "SHORT"
         else:
             return None
@@ -1227,12 +1254,17 @@ class SmartFilter:
     def _check_atr_momentum_burst(self, threshold_pct=0.10, volume_mult=1.1, min_cond=2):
         long_met = 0
         short_met = 0
+        momentum = []
+        atr = []
         for i in [-1, -2]:
             close = self.df['close'].iat[i]
             open_ = self.df['open'].iat[i]
             volume = self.df['volume'].iat[i]
             avg_vol = self.df['volume'].rolling(10).mean().iat[i]
             pct_move = (close - open_) / open_ * 100
+            momentum.append(pct_move)
+            atr_val = self.df['atr'].iat[i] if 'atr' in self.df.columns else None
+            atr.append(atr_val)
             if pct_move > threshold_pct and volume > avg_vol * volume_mult:
                 long_met += 1
             elif pct_move < -threshold_pct and volume > avg_vol * volume_mult:
@@ -1266,6 +1298,13 @@ class SmartFilter:
     
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
+    
+        # Proactively define trend_strength for logging
+        trend_strength = {
+            "ma_diff": ma - ma_prev,
+            "close_vs_ma": close - ma,
+            "close_vs_prev": close - close_prev
+        }
         
         # Only return if enough conditions met (default: at least 2 out of 3)
         if long_met >= min_cond and long_met > short_met:
@@ -1357,6 +1396,17 @@ class SmartFilter:
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
     
+        # For logging: volatility metrics
+        volatility = {
+            "atr": atr,
+            "atr_prev": atr_prev,
+            "atr_ma": atr_ma,
+            "close": close,
+            "close_prev": close_prev,
+            "atr_vs_ma": atr - atr_ma,
+            "atr_vs_prev": atr - atr_prev
+        }
+    
         # LONG conditions: volatility expansion + bullish price
         cond1_long = atr > atr_prev
         cond2_long = close > close_prev
@@ -1427,6 +1477,21 @@ class SmartFilter:
         volume_prev = self.df['volume'].iat[-2]
     
         squeeze_firing = bb_width > kc_width and bb_width_prev < kc_width_prev
+    
+        # For logging: squeeze and volatility metrics
+        squeeze = {
+            "bb_width": bb_width,
+            "kc_width": kc_width,
+            "bb_width_prev": bb_width_prev,
+            "kc_width_prev": kc_width_prev,
+            "squeeze_firing": squeeze_firing
+        }
+        volatility = {
+            "close": close,
+            "close_prev": close_prev,
+            "volume": volume,
+            "volume_prev": volume_prev
+        }
     
         # LONG conditions
         cond1_long = squeeze_firing
@@ -1506,9 +1571,12 @@ class SmartFilter:
             print(f"[{self.symbol}] [Chop Zone Check] Missing required columns or insufficient data.")
             return None
     
+        # Define for logging
+        chop_zone = chop
+    
         # Filter out choppy market
         if chop >= chop_threshold:
-            print(f"[{self.symbol}] [Chop Zone Check] Market too choppy (chop_zone={chop:.2f} >= {chop_threshold})")
+            print(f"[{self.symbol}] [Chop Zone Check] Market too choppy (chop_zone={chop_zone:.2f} >= {chop_threshold})")
             return None
     
         # LONG conditions
@@ -1543,6 +1611,14 @@ class SmartFilter:
         # Identify recent liquidity pools
         recent_high = self.df['high'].rolling(lookback).max().iat[-2]
         recent_low = self.df['low'].rolling(lookback).min().iat[-2]
+    
+        # For logging: liquidity pool metrics
+        liquidity_pool = {
+            "recent_high": recent_high,
+            "recent_low": recent_low,
+            "close_vs_high": close - recent_high,
+            "close_vs_low": close - recent_low
+        }
     
         # LONG: break or sweep above recent high
         cond1_long = close > recent_high
@@ -1589,6 +1665,13 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long])
         short_met = sum([cond1_short, cond2_short])
     
+        # For logging: smart money metrics
+        smart_money = {
+            "volume_vs_avg": volume / avg_volume if avg_volume != 0 else None,
+            "close_vs_prev": close - close_prev,
+            "close_vs_vwap": close - vwap
+        }
+    
         if long_met >= min_cond and long_met > short_met:
             print(f"[{self.symbol}] [Smart Money Bias] Signal: LONG | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, smart_money={smart_money}")
             return "LONG"
@@ -1607,6 +1690,14 @@ class SmartFilter:
         volume = self.df['volume'].iat[-1]
         volume_prev = self.df['volume'].iat[-2]
         avg_volume = self.df['volume'].rolling(window).mean().iat[-1]
+    
+        # For logging: absorption proximity metric
+        absorption = {
+            "close_to_low_pct": (close - low) / low,
+            "close_to_high_pct": (high - close) / high,
+            "volume_vs_avg": volume / avg_volume,
+            "volume_vs_prev": volume / volume_prev
+        }
     
         # LONG conditions
         cond1_long = close <= low * (1 + buffer_pct)
@@ -1636,25 +1727,33 @@ class SmartFilter:
         high = self.df['high'].iat[-1]
         low = self.df['low'].iat[-1]
         close = self.df['close'].iat[-1]
-
+    
         # Calculate candle components
         upper_wick = high - max(open_, close)
         lower_wick = min(open_, close) - low
         body = abs(close - open_)
-
+    
+        # Determine wick dominance for logging
+        if lower_wick > upper_wick:
+            wick_dom = f"Lower wick dominant ({lower_wick:.2f} > {upper_wick:.2f})"
+        elif upper_wick > lower_wick:
+            wick_dom = f"Upper wick dominant ({upper_wick:.2f} > {lower_wick:.2f})"
+        else:
+            wick_dom = f"No dominance (upper={upper_wick:.2f}, lower={lower_wick:.2f})"
+    
         # LONG conditions: dominant lower wick + bullish close
         cond1_long = lower_wick > 2 * upper_wick
         cond2_long = lower_wick > 1.5 * body
         cond3_long = close > open_
-
+    
         # SHORT conditions: dominant upper wick + bearish close
         cond1_short = upper_wick > 2 * lower_wick
         cond2_short = upper_wick > 1.5 * body
         cond3_short = close < open_
-
+    
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-
+    
         if long_met >= 2:
             print(f"[{self.symbol}] [Wick Dominance] Signal: LONG | long_met={long_met}, short_met={short_met}, wick_dom={wick_dom}")
             return "LONG"
