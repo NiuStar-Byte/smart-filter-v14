@@ -125,20 +125,20 @@ def test_filter(filter_name, filter_func, sf_long, sf_short, sf_neutral):
     result_short = filter_func(sf_short)
     result_neutral = filter_func(sf_neutral)
 
-    print(f"[DEBUG] {filter_name} - LONG")
-    print("Input (last 2 rows):")
-    print(sf_long.df.tail(2))
-    print(f"Result: {result_long} (Expected: LONG or None)")
+    # print(f"[DEBUG] {filter_name} - LONG")
+    # print("Input (last 2 rows):")
+    # print(sf_long.df.tail(2))
+    # print(f"Result: {result_long} (Expected: LONG or None)")
 
-    print(f"[DEBUG] {filter_name} - SHORT")
-    print("Input (last 2 rows):")
-    print(sf_short.df.tail(2))
-    print(f"Result: {result_short} (Expected: SHORT or None)")
+    # print(f"[DEBUG] {filter_name} - SHORT")
+    # print("Input (last 2 rows):")
+    # print(sf_short.df.tail(2))
+    # print(f"Result: {result_short} (Expected: SHORT or None)")
 
-    print(f"[DEBUG] {filter_name} - NEUTRAL")
-    print("Input (last 2 rows):")
-    print(sf_neutral.df.tail(2))
-    print(f"Result: {result_neutral} (Expected: None)")
+    # print(f"[DEBUG] {filter_name} - NEUTRAL")
+    # print("Input (last 2 rows):")
+    # print(sf_neutral.df.tail(2))
+    # print(f"Result: {result_neutral} (Expected: None)")
 
 def run_all_filter_tests():
     methods = get_filter_methods()
