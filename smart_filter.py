@@ -636,8 +636,8 @@ class SmartFilter:
         signal_long_ok = passes_long >= required_passed_long
         signal_short_ok = passes_short >= required_passed_short
         
-        print(f"[DEBUG] passes_long: {passes_long} required_passed_long: {required_passed_long}")
-        print(f"[DEBUG] passes_short: {passes_short} required_passed_short: {required_passed_short}")
+        # print(f"[DEBUG] passes_long: {passes_long} required_passed_long: {required_passed_long}")
+        # print(f"[DEBUG] passes_short: {passes_short} required_passed_short: {required_passed_short}")
         
         if not signal_long_ok:
             print(f"[{self.symbol}] Signal BLOCKED for LONG: Failed hard GKs: {failed_hard_gk_long}")
@@ -860,13 +860,15 @@ class SmartFilter:
         long_conditions_met = sum([condition_1_long, condition_2_long, condition_3_long, condition_4_long])
         short_conditions_met = sum([condition_1_short, condition_2_short, condition_3_short, condition_4_short])
         # Debug prints (after calculation!)
-        print(f"[{self.symbol}] [Check MACD DEBUG] macd[-1]={macd.iat[-1]:.6f}, signal[-1]={signal.iat[-1]:.6f}, macd[-2]={macd.iat[-2]:.6f}, signal[-2]={signal.iat[-2]:.6f}, close[-1]={self.df['close'].iat[-1]:.6f}, close[-2]={self.df['close'].iat[-2]:.6f}")
-        print(f"[{self.symbol}] [Check MACD DEBUG] condition_1_short={condition_1_short}, condition_2_short={condition_2_short}, condition_3_short={condition_3_short}, condition_4_short={condition_4_short}, short_conditions_met={short_conditions_met}")
+        # print(f"[{self.symbol}] [Check MACD DEBUG] macd[-1]={macd.iat[-1]:.6f}, signal[-1]={signal.iat[-1]:.6f}, macd[-2]={macd.iat[-2]:.6f}, signal[-2]={signal.iat[-2]:.6f}, close[-1]={self.df['close'].iat[-1]:.6f}, close[-2]={self.df['close'].iat[-2]:.6f}")
+        # print(f"[{self.symbol}] [Check MACD DEBUG] condition_1_short={condition_1_short}, condition_2_short={condition_2_short}, condition_3_short={condition_3_short}, condition_4_short={condition_4_short}, short_conditions_met={short_conditions_met}")
         
         # Fix: Only return LONG if long_conditions_met > short_conditions_met, and vice versa
         if long_conditions_met >= 2 and long_conditions_met > short_conditions_met:
+            print(f"[{self.symbol}] [MACD] Signal: LONG | long_conditions_met={long_conditions_met}, short_conditions_met={short_conditions_met}")
             return "LONG"
         elif short_conditions_met >= 2 and short_conditions_met > long_conditions_met:
+            print(f"[{self.symbol}] [MACD] Signal: SHORT | long_conditions_met={long_conditions_met}, short_conditions_met={short_conditions_met}")
             return "SHORT"
         else:
             return None
@@ -903,28 +905,14 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
     
-        if DEBUG_GK:
-            print(f"[{self.symbol}] [Check MTF Volume Agreement DEBUG] "
-                  f"volume={volume}, volume_prev={volume_prev}, "
-                  f"higher_tf_volume={higher_tf_volume}, higher_tf_volume_prev={higher_tf_volume_prev}, "
-                  f"close={close}, close_prev={close_prev}")
-            print(f"[{self.symbol}] [Check MTF Volume Agreement DEBUG] "
-                  f"cond1_long={cond1_long}, cond2_long={cond2_long}, cond3_long={cond3_long}, long_met={long_met}")
-            print(f"[{self.symbol}] [Check MTF Volume Agreement DEBUG] "
-                  f"cond1_short={cond1_short}, cond2_short={cond2_short}, cond3_short={cond3_short}, short_met={short_met}")
-    
         # Only return LONG if long_met > short_met, and vice versa
         if long_met >= 2 and long_met > short_met:
-            if DEBUG_GK:
-                print(f"[{self.symbol}] [Check MTF Volume Agreement DEBUG] Signal fired: LONG (long_met={long_met} > short_met={short_met})")
+            print(f"[{self.symbol}] [MTF Volume Agreement] Signal: LONG | long_met={long_met}, short_met={short_met}")
             return "LONG"
         elif short_met >= 2 and short_met > long_met:
-            if DEBUG_GK:
-                print(f"[{self.symbol}] [Check MTF Volume Agreement DEBUG] Signal fired: SHORT (short_met={short_met} > long_met={long_met})")
+            print(f"[{self.symbol}] [MTF Volume Agreement] Signal: SHORT | long_met={long_met}, short_met={short_met}")
             return "SHORT"
         else:
-            if DEBUG_GK:
-                print(f"[{self.symbol}] [Check MTF Volume Agreement DEBUG] No signal fired (long_met={long_met}, short_met={short_met})")
             return None
 
     def _check_volume_spike(
@@ -970,41 +958,25 @@ class SmartFilter:
         long_conditions = [spike, price_up, vol_up]
         short_conditions = [spike, price_down, vol_up]
     
-        if DEBUG_GK:
-            print(
-                f"[{self.symbol}] [Check Volume Spike DEBUG] "
-                f"zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, "
-                f"price_up={price_up}, price_down={price_down}, "
-                f"long_conditions={long_conditions}, short_conditions={short_conditions}, "
-                f"require_all={require_all}, return_directionless={return_directionless}"
-            )
-    
         if require_all:
             if all(long_conditions):
-                if DEBUG_GK:
-                    print(f"[{self.symbol}] [Check Volume Spike DEBUG] Signal fired: LONG (all long conditions met)")
+                print(f"[{self.symbol}] [Volume Spike] Signal: LONG | zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, price_up={price_up}, price_down={price_down}, long_conditions={long_conditions}, short_conditions={short_conditions}, require_all={require_all}, return_directionless={return_directionless}")
                 return "LONG"
             if all(short_conditions):
-                if DEBUG_GK:
-                    print(f"[{self.symbol}] [Check Volume Spike DEBUG] Signal fired: SHORT (all short conditions met)")
+                print(f"[{self.symbol}] [Volume Spike] Signal: SHORT | zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, price_up={price_up}, price_down={price_down}, long_conditions={long_conditions}, short_conditions={short_conditions}, require_all={require_all}, return_directionless={return_directionless}")
                 return "SHORT"
         else:
             if sum(long_conditions) >= 2:
-                if DEBUG_GK:
-                    print(f"[{self.symbol}] [Check Volume Spike DEBUG] Signal fired: LONG (>=2 long conditions met)")
+                print(f"[{self.symbol}] [Volume Spike] Signal: LONG | zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, price_up={price_up}, price_down={price_down}, long_conditions={long_conditions}, short_conditions={short_conditions}, require_all={require_all}, return_directionless={return_directionless}")
                 return "LONG"
             if sum(short_conditions) >= 2:
-                if DEBUG_GK:
-                    print(f"[{self.symbol}] [Check Volume Spike DEBUG] Signal fired: SHORT (>=2 short conditions met)")
+                print(f"[{self.symbol}] [Volume Spike] Signal: SHORT | zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, price_up={price_up}, price_down={price_down}, long_conditions={long_conditions}, short_conditions={short_conditions}, require_all={require_all}, return_directionless={return_directionless}")
                 return "SHORT"
-    
+        
         if return_directionless and spike:
-            if DEBUG_GK:
-                print(f"[{self.symbol}] [Check Volume Spike DEBUG] Signal fired: SPIKE (directionless spike only)")
+            print(f"[{self.symbol}] [Volume Spike] Signal: SPIKE | zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, price_up={price_up}, price_down={price_down}, long_conditions={long_conditions}, short_conditions={short_conditions}, require_all={require_all}, return_directionless={return_directionless}")
             return "SPIKE"
-    
-        if DEBUG_GK:
-            print(f"[{self.symbol}] [Check Volume Spike DEBUG] No signal fired.")
+        
         return None
 
     def _check_liquidity_awareness(self):
@@ -1032,13 +1004,12 @@ class SmartFilter:
     
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-        # Debug prints (after calculation!)
-        print(f"[{self.symbol}] [Check Liquidity Awareness DEBUG] spread={spread:.6f}, volume={volume:.6f}, close={close:.6f}")
-        print(f"[{self.symbol}] [Check Liquidity Awareness DEBUG] cond1_short={cond1_short}, cond2_short={cond2_short}, cond3_short={cond3_short}, short_met={short_met}")
-
+       
         if long_met >= 2:
+            print(f"[{self.symbol}] [Liquidity Awareness] Signal: LONG | long_met={long_met}, short_met={short_met}")
             return "LONG"
         elif short_met >= 2:
+            print(f"[{self.symbol}] [Liquidity Awareness] Signal: SHORT | long_met={long_met}, short_met={short_met}")
             return "SHORT"
         else:
             return None
@@ -1074,13 +1045,12 @@ class SmartFilter:
     
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-        # Debug prints (after calculation!)
-        print(f"[{self.symbol}] [Spread Filter DEBUG] spread={spread:.6f}, spread_ma={spread_ma:.6f}, close={close:.6f}")
-        print(f"[{self.symbol}] [Spread Filter DEBUG] cond1_short={cond1_short}, cond2_short={cond2_short}, short_met={short_met}")
-        
+              
         if long_met >= 2:
+            print(f"[{self.symbol}] [Spread Filter] Signal: LONG | spread={spread:.6f}, long_met={long_met}, short_met={short_met}")
             return "LONG"
         elif short_met >= 2:
+            print(f"[{self.symbol}] [Spread Filter] Signal: SHORT | spread={spread:.6f}, long_met={long_met}, short_met={short_met}")
             return "SHORT"
         else:
             return None
@@ -1118,14 +1088,13 @@ class SmartFilter:
     
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-        # Debug prints (after calculation!)
-        print(f"[{self.symbol}] [Candle Confirmation DEBUG] open={open_:.6f}, close={close:.6f}, open_prev={open_prev:.6f}, close_prev={close_prev:.6f}")
-        print(f"[{self.symbol}] [Candle Confirmation DEBUG] bullish_engulfing={bullish_engulfing}, bearish_engulfing={bearish_engulfing}, bullish_pin_bar={bullish_pin_bar}, bearish_pin_bar={bearish_pin_bar}")
-
+        
         # Fix: Only return LONG if long_met > short_met, and vice versa
-        if long_met >= 2 and long_met > short_met:
+       if long_met >= 2 and long_met > short_met:
+            print(f"[{self.symbol}] [Candle Confirmation] Signal: LONG | long_met={long_met}, short_met={short_met}, candle_type={candle_type}, close={close}, open={open_}")
             return "LONG"
         elif short_met >= 2 and short_met > long_met:
+            print(f"[{self.symbol}] [Candle Confirmation] Signal: SHORT | long_met={long_met}, short_met={short_met}, candle_type={candle_type}, close={close}, open={open_}")
             return "SHORT"
         else:
             return None
@@ -1150,13 +1119,12 @@ class SmartFilter:
     
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-        # Debug prints (after calculation!)
-        print(f"[{self.symbol}] [S/R DEBUG] close={close:.6f}, support={support:.6f}, resistance={resistance:.6f}")
-        print(f"[{self.symbol}] [S/R DEBUG] cond1_short={cond1_short}, cond2_short={cond2_short}, cond3_short={cond3_short}, short_met={short_met}")
-
+       
         if long_met >= min_cond and long_met > short_met:
+            print(f"[{self.symbol}] [Support/Resistance] Signal: LONG | support={support}, resistance={resistance}, close={close}, long_met={long_met}, short_met={short_met}")
             return "LONG"
         elif short_met >= min_cond and short_met > long_met:
+            print(f"[{self.symbol}] [Support/Resistance] Signal: SHORT | support={support}, resistance={resistance}, close={close}, long_met={long_met}, short_met={short_met}")
             return "SHORT"
         else:
             return None
@@ -1186,8 +1154,10 @@ class SmartFilter:
     
         # Prefer SHORT signal if both are met
         if short_met >= min_conditions:
+            print(f"[{self.symbol}] [Fractal Zone] Signal: SHORT | short_met={short_met}, long_met={long_met}, min_conditions={min_conditions}")
             return "SHORT"
         elif long_met >= min_conditions:
+            print(f"[{self.symbol}] [Fractal Zone] Signal: LONG | short_met={short_met}, long_met={long_met}, min_conditions={min_conditions}")
             return "LONG"
         else:
             return None
@@ -1213,8 +1183,10 @@ class SmartFilter:
     
         # Fix: Only return LONG if long_met > short_met, and vice versa
         if long_met >= min_conditions and long_met > short_met:
+            print(f"[{self.symbol}] [EMA Cloud] Signal: LONG | long_met={long_met}, short_met={short_met}, min_conditions={min_conditions}, ema_cloud={ema_cloud}, close={close}")
             return "LONG"
         elif short_met >= min_conditions and short_met > long_met:
+            print(f"[{self.symbol}] [EMA Cloud] Signal: SHORT | long_met={long_met}, short_met={short_met}, min_conditions={min_conditions}, ema_cloud={ema_cloud}, close={close}")
             return "SHORT"
         else:
             return None
@@ -1241,8 +1213,10 @@ class SmartFilter:
         short_met = sum([cond1_short, cond2_short, cond3_short])
     
         if long_met >= min_conditions:
+            print(f"[{self.symbol}] [Momentum] Signal: LONG | long_met={long_met}, short_met={short_met}, min_conditions={min_conditions}, momentum={momentum}")
             return "LONG"
         elif short_met >= min_conditions:
+            print(f"[{self.symbol}] [Momentum] Signal: SHORT | long_met={long_met}, short_met={short_met}, min_conditions={min_conditions}, momentum={momentum}")
             return "SHORT"
         else:
             return None
@@ -1263,8 +1237,10 @@ class SmartFilter:
     
         # Only signal if BOTH bars agree (default: min_cond=2)
         if long_met >= min_cond and long_met > short_met:
+            print(f"[{self.symbol}] [ATR Momentum Burst] Signal: LONG | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, atr={atr}, momentum={momentum}, close={close}")
             return "LONG"
         elif short_met >= min_cond and short_met > long_met:
+            print(f"[{self.symbol}] [ATR Momentum Burst] Signal: SHORT | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, atr={atr}, momentum={momentum}, close={close}")
             return "SHORT"
         else:
             return None
@@ -1290,8 +1266,10 @@ class SmartFilter:
         
         # Only return if enough conditions met (default: at least 2 out of 3)
         if long_met >= min_cond and long_met > short_met:
+            print(f"[{self.symbol}] [Trend Continuation] Signal: LONG | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, trend_strength={trend_strength}, close={close}")
             return "LONG"
         elif short_met >= min_cond and short_met > long_met:
+            print(f"[{self.symbol}] [Trend Continuation] Signal: SHORT | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, trend_strength={trend_strength}, close={close}")
             return "SHORT"
         else:
             return None
@@ -1323,8 +1301,10 @@ class SmartFilter:
     
         # Fix: Only return LONG if long_met > short_met, and vice versa
         if long_met >= 2 and long_met > short_met:
+            print(f"[{self.symbol}] [HATS] Signal: LONG | long_met={long_met}, short_met={short_met}, hats={hats}")
             return "LONG"
         elif short_met >= 2 and short_met > long_met:
+            print(f"[{self.symbol}] [HATS] Signal: SHORT | long_met={long_met}, short_met={short_met}, hats={hats}")
             return "SHORT"
         else:
             return None
@@ -1352,8 +1332,10 @@ class SmartFilter:
     
         # Fix: Only return LONG if long_met > short_met, and vice versa
         if long_met >= 2 and long_met > short_met:
+            print(f"[{self.symbol}] [HH/LL] Signal: LONG | long_met={long_met}, short_met={short_met}, hh={hh}, ll={ll}")
             return "LONG"
         elif short_met >= 2 and short_met > long_met:
+            print(f"[{self.symbol}] [HH/LL] Signal: SHORT | long_met={long_met}, short_met={short_met}, hh={hh}, ll={ll}")
             return "SHORT"
         else:
             return None
@@ -1379,8 +1361,10 @@ class SmartFilter:
         short_met = sum([cond1_short, cond2_short, cond3_short])
     
         if long_met >= 2:
+            print(f"[{self.symbol}] [Volatility Model] Signal: LONG | long_met={long_met}, short_met={short_met}, volatility={volatility}")
             return "LONG"
         elif short_met >= 2:
+            print(f"[{self.symbol}] [Volatility Model] Signal: SHORT | long_met={long_met}, short_met={short_met}, volatility={volatility}")
             return "SHORT"
         else:
             return None
@@ -1410,8 +1394,10 @@ class SmartFilter:
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
         if long_met >= 2:
+            print(f"[{self.symbol}] [EMA Structure] Signal: LONG | long_met={long_met}, short_met={short_met}, emas={emas}")
             return "LONG"
         elif short_met >= 2:
+            print(f"[{self.symbol}] [EMA Structure] Signal: SHORT | long_met={long_met}, short_met={short_met}, emas={emas}")
             return "SHORT"
         else:
             return None
@@ -1444,8 +1430,10 @@ class SmartFilter:
     
         # Stricter: Only return LONG/SHORT if enough conditions are met and it beats opposite
         if long_met >= min_cond and long_met > short_met:
+            print(f"[{self.symbol}] [Volatility Squeeze] Signal: LONG | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, squeeze={squeeze}, volatility={volatility}")
             return "LONG"
         elif short_met >= min_cond and short_met > long_met:
+            print(f"[{self.symbol}] [Volatility Squeeze] Signal: SHORT | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, squeeze={squeeze}, volatility={volatility}")
             return "SHORT"
         else:
             return None
@@ -1470,45 +1458,65 @@ class SmartFilter:
         short_met = sum([cond1_short, cond2_short, cond3_short])
     
         if long_met > short_met and long_met > 0:
+            print(f"[{self.symbol}] [VWAP Divergence] Signal: LONG | long_met={long_met}, short_met={short_met}, vwap_div={vwap_div}")
             return "LONG"
         elif short_met > long_met and short_met > 0:
+            print(f"[{self.symbol}] [VWAP Divergence] Signal: SHORT | long_met={long_met}, short_met={short_met}, vwap_div={vwap_div}")
             return "SHORT"
         elif long_met == short_met and long_met > 0:
-            # If tie, default to LONG, but you can change this to "SHORT" or None.
-            return "LONG"
+            print(f"[{self.symbol}] [VWAP Divergence] Signal: LONG (tie) | long_met={long_met}, short_met={short_met}, vwap_div={vwap_div}")
+            return "LONG"  # Change to "SHORT" or None if desired
         else:
             return None
 
     def _check_chop_zone(self, chop_threshold=40):
-        chop = self.df['chop_zone'].iat[-1]
-        ema9 = self.df['ema9'].iat[-1]
-        ema21 = self.df['ema21'].iat[-1]
-        close = self.df['close'].iat[-1]
-        adx = self.df['adx'].iat[-1] if 'adx' in self.df.columns else None
+        """
+        Detects and filters out choppy market conditions using the Choppiness Index,
+        and then checks for trend signals using EMAs, ADX, and price.
+    
+        Returns:
+            "LONG" if long conditions are met,
+            "SHORT" if short conditions are met,
+            None if market is too choppy or no signal.
+        """
+        # Retrieve required columns safely
+        try:
+            chop = self.df['chop_zone'].iat[-1]
+            ema9 = self.df['ema9'].iat[-1]
+            ema21 = self.df['ema21'].iat[-1]
+            close = self.df['close'].iat[-1]
+            adx = self.df['adx'].iat[-1] if 'adx' in self.df.columns else None
+        except (KeyError, IndexError):
+            print(f"[{self.symbol}] [Chop Zone Check] Missing required columns or insufficient data.")
+            return None
     
         # Filter out choppy market
         if chop >= chop_threshold:
+            print(f"[{self.symbol}] [Chop Zone Check] Market too choppy (chop_zone={chop:.2f} >= {chop_threshold})")
             return None
     
         # LONG conditions
-        cond1_long = ema9 > ema21 if ema9 and ema21 else False
-        cond2_long = adx > 20 if adx is not None else True  # Optional: ADX filter
+        cond1_long = ema9 > ema21
+        cond2_long = adx is not None and adx > 20 if adx is not None else True  # ADX filter optional
         cond3_long = close > ema9
     
         # SHORT conditions
-        cond1_short = ema9 < ema21 if ema9 and ema21 else False
-        cond2_short = adx > 20 if adx is not None else True
+        cond1_short = ema9 < ema21
+        cond2_short = adx is not None and adx > 20 if adx is not None else True
         cond3_short = close < ema9
     
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
     
-        # Fix: Only return LONG if long_met > short_met, and vice versa
+        # Only return LONG if long_met > short_met, and vice versa
         if long_met >= 2 and long_met > short_met:
+            print(f"[{self.symbol}] [Chop Zone Check] Signal: LONG | long_met={long_met}, short_met={short_met}, chop_zone={chop_zone}")
             return "LONG"
         elif short_met >= 2 and short_met > long_met:
+            print(f"[{self.symbol}] [Chop Zone Check] Signal: SHORT | long_met={long_met}, short_met={short_met}, chop_zone={chop_zone}")
             return "SHORT"
         else:
+            print(f"[{self.symbol}] [Chop Zone Check] No signal fired | long_met={long_met}, short_met={short_met}, chop_zone={chop_zone}")
             return None
 
     def _check_liquidity_pool(self, lookback=20, min_cond=2):
@@ -1533,8 +1541,10 @@ class SmartFilter:
     
         # Only return if enough conditions met (default: both required)
         if long_met >= min_cond and long_met > short_met:
+            print(f"[{self.symbol}] [Liquidity Pool] Signal: LONG | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, liquidity_pool={liquidity_pool}")
             return "LONG"
         elif short_met >= min_cond and short_met > long_met:
+            print(f"[{self.symbol}] [Liquidity Pool] Signal: SHORT | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, liquidity_pool={liquidity_pool}")
             return "SHORT"
         else:
             return None
@@ -1564,8 +1574,10 @@ class SmartFilter:
         short_met = sum([cond1_short, cond2_short])
     
         if long_met >= min_cond and long_met > short_met:
+            print(f"[{self.symbol}] [Smart Money Bias] Signal: LONG | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, smart_money={smart_money}")
             return "LONG"
         elif short_met >= min_cond and short_met > long_met:
+            print(f"[{self.symbol}] [Smart Money Bias] Signal: SHORT | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, smart_money={smart_money}")
             return "SHORT"
         else:
             return None
@@ -1595,8 +1607,10 @@ class SmartFilter:
     
         # Only return if enough conditions met (default: at least 2 out of 3)
         if long_met >= min_cond and long_met > short_met:
+            print(f"[{self.symbol}] [Absorption] Signal: LONG | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, absorption={absorption}")
             return "LONG"
         elif short_met >= min_cond and short_met > long_met:
+            print(f"[{self.symbol}] [Absorption] Signal: SHORT | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, absorption={absorption}")
             return "SHORT"
         else:
             return None
@@ -1626,8 +1640,10 @@ class SmartFilter:
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
         if long_met >= 2:
+            print(f"[{self.symbol}] [Wick Dominance] Signal: LONG | long_met={long_met}, short_met={short_met}, wick_dom={wick_dom}")
             return "LONG"
         elif short_met >= 2:
+            print(f"[{self.symbol}] [Wick Dominance] Signal: SHORT | long_met={long_met}, short_met={short_met}, wick_dom={wick_dom}")
             return "SHORT"
         else:
             return None
