@@ -553,6 +553,16 @@ class SmartFilter:
                 results_short[name] = False
                 results_status[name] = "ERROR"
 
+        # <---- INSERT THIS BLOCK HERE ---->
+        print(f"\n[{self.symbol}] [GK DEBUG] MACD: {self._check_macd()}")
+        print(f"[{self.symbol}] [GK DEBUG] Volume Spike: {self._check_volume_spike()}")
+        print(f"[{self.symbol}] [GK DEBUG] MTF Volume Agreement: {self._check_mtf_volume_agreement()}")
+        print(f"[{self.symbol}] [GK DEBUG] Liquidity Awareness: {self._check_liquidity_awareness()}")
+        print(f"[{self.symbol}] [GK DEBUG] Spread Filter: {self._check_spread_filter()}")
+        print(f"[{self.symbol}] [GK DEBUG] Candle Confirmation: {self._check_candle_close()}")
+        print(f"[{self.symbol}] [GK DEBUG] Support/Resistance: {self._check_support_resistance()}")
+        # ----------------------------------
+
         # --- Non-GK filter list ---
         non_gk_filters = [f for f in filter_names if f not in self.gatekeepers]
         
