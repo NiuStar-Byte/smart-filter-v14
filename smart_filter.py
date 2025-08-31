@@ -1289,6 +1289,9 @@ class SmartFilter:
     
         close = self.df['close'].iat[-1]
     
+        # You can define 'hats' as a tuple of the three EMAs, which is useful for logging
+        hats = (fast, mid, slow)
+    
         # LONG conditions
         cond1_long = fast > mid and mid > slow
         cond2_long = fast > fast_prev and mid > mid_prev and slow > slow_prev
