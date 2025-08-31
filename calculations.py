@@ -133,6 +133,7 @@ def add_indicators(df: pd.DataFrame) -> pd.DataFrame:
     df['vwap'] = compute_vwap(df)
     df['RSI'] = compute_rsi(df)
     df['atr'] = compute_atr(df)
+    df['atr_ma'] = df['atr'].rolling(14).mean()  # Add this line!
     adx, plus_di, minus_di = compute_adx(df)
     df['adx'] = adx
     df['plus_di'] = plus_di
