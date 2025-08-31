@@ -514,7 +514,7 @@ class SmartFilter:
         results_long = {}
         results_short = {}
         results_status = {}
-
+        
         for name in filter_names:
             fn = filter_function_map.get(name)
             if fn is None:
@@ -524,8 +524,8 @@ class SmartFilter:
                 results_status[name] = "ERROR"
                 continue
             try:
-                # Remove debug argument for all filters (including Fractal Zone)
-                result = fn()
+                # Always call with debug=True so all filters log every run
+                result = fn(debug=True)
                 if result == "LONG":
                     results_long[name] = True
                     results_short[name] = False
@@ -548,7 +548,7 @@ class SmartFilter:
                     status = "NONE"
                 results_status[name] = status
             except Exception as e:
-                print(f"[{self.symbol}] {name} ERROR: {e}")
+                print(f"[{self.symbol}] [{name}] ERROR: {e}")
                 results_long[name] = False
                 results_short[name] = False
                 results_status[name] = "ERROR"
