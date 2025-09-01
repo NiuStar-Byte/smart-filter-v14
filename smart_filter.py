@@ -822,22 +822,39 @@ class SmartFilter:
         """
         Returns 'LONG' or 'SHORT' if a volume spike with price move is confirmed,
         and the 5m volume is trending up. Returns None otherwise.
+        Always prints debug output if debug=True.
         """
-        result = self._check_volume_spike()
+        result = self._check_volume_spike(debug=debug)
+        if debug:
+            print(f"[{self.symbol}] [Volume Spike] volume_surge_confirmed called. spike_result={result}")
         if result in ["LONG", "SHORT"]:
-            if self._check_5m_volume_trend():
+            vol_trend = self._check_5m_volume_trend(debug=debug)
+            if debug:
+                print(f"[{self.symbol}] [Volume Spike] 5m volume trend check: {vol_trend}")
+            if vol_trend:
                 return result
+            else:
+                if debug:
+                    print(f"[{self.symbol}] [Volume Spike] Spike detected but 5m volume not trending up.")
+        else:
+            if debug:
+                print(f"[{self.symbol}] [Volume Spike] No spike detected by _check_volume_spike.")
         return None
 
     def _check_5m_volume_trend(self, debug=False):
         """
         Confirms if the latest 5m volume is greater than the previous 5m bar.
-        Returns True/False.
+        Returns True/False. Prints debug if debug=True.
         """
         df5m = getattr(self, 'df5m', None)
         if df5m is None or len(df5m) < 2:
+            if debug:
+                print(f"[{self.symbol}] [Volume Spike] Not enough 5m data for volume trend check.")
             return False
-        return df5m['volume'].iat[-1] > df5m['volume'].iat[-2]
+        result = df5m['volume'].iat[-1] > df5m['volume'].iat[-2]
+        if debug:
+            print(f"[{self.symbol}] [Volume Spike] _check_5m_volume_trend: latest={df5m['volume'].iat[-1]}, prev={df5m['volume'].iat[-2]}, result={result}")
+        return result
     
     def _check_macd(self, debug=False):
         e12 = self.df['close'].ewm(span=12).mean()
