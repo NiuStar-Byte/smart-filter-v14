@@ -490,7 +490,8 @@ class SmartFilter:
             "MACD": getattr(self, "_check_macd", None),
             "Momentum": getattr(self, "_check_momentum", None),
             "HATS": getattr(self, "_check_hats", None),
-            "Volume Spike": self.volume_surge_confirmed if self.tf == "3min" else getattr(self, "_check_volume_spike", None),
+            # "Volume Spike": self.volume_surge_confirmed if self.tf == "3min" else getattr(self, "_check_volume_spike", None),
+            "Volume Spike": lambda: self.volume_spike_detector(debug=True),
             "VWAP Divergence": getattr(self, "_check_vwap_divergence", None),
             "MTF Volume Agreement": getattr(self, "_check_mtf_volume_agreement", None),
             "HH/LL Trend": getattr(self, "_check_hh_ll", None),
@@ -818,43 +819,43 @@ class SmartFilter:
         except Exception:
             return 0.0
 
-    def volume_surge_confirmed(self, debug=False):
-        """
-        Returns 'LONG' or 'SHORT' if a volume spike with price move is confirmed,
-        and the 5m volume is trending up. Returns None otherwise.
-        Always prints debug output if debug=True.
-        """
-        result = self._check_volume_spike(debug=debug)
-        if debug:
-            print(f"[{self.symbol}] [Volume Spike] volume_surge_confirmed called. spike_result={result}")
-        if result in ["LONG", "SHORT"]:
-            vol_trend = self._check_5m_volume_trend(debug=debug)
-            if debug:
-                print(f"[{self.symbol}] [Volume Spike] 5m volume trend check: {vol_trend}")
-            if vol_trend:
-                return result
-            else:
-                if debug:
-                    print(f"[{self.symbol}] [Volume Spike] Spike detected but 5m volume not trending up.")
-        else:
-            if debug:
-                print(f"[{self.symbol}] [Volume Spike] No spike detected by _check_volume_spike.")
-        return None
+    # def volume_surge_confirmed(self, debug=False):
+    #    """
+    #    Returns 'LONG' or 'SHORT' if a volume spike with price move is confirmed,
+    #    and the 5m volume is trending up. Returns None otherwise.
+    #    Always prints debug output if debug=True.
+    #    """
+    #    result = self._check_volume_spike(debug=debug)
+    #    if debug:
+    #        print(f"[{self.symbol}] [Volume Spike] volume_surge_confirmed called. spike_result={result}")
+    #    if result in ["LONG", "SHORT"]:
+    #        vol_trend = self._check_5m_volume_trend(debug=debug)
+    #        if debug:
+    #            print(f"[{self.symbol}] [Volume Spike] 5m volume trend check: {vol_trend}")
+    #        if vol_trend:
+    #            return result
+    #        else:
+    #            if debug:
+    #                print(f"[{self.symbol}] [Volume Spike] Spike detected but 5m volume not trending up.")
+    #    else:
+    #        if debug:
+    #            print(f"[{self.symbol}] [Volume Spike] No spike detected by _check_volume_spike.")
+    #    return None
 
-    def _check_5m_volume_trend(self, debug=False):
-        """
-        Confirms if the latest 5m volume is greater than the previous 5m bar.
-        Returns True/False. Prints debug if debug=True.
-        """
-        df5m = getattr(self, 'df5m', None)
-        if df5m is None or len(df5m) < 2:
-            if debug:
-                print(f"[{self.symbol}] [Volume Spike] Not enough 5m data for volume trend check.")
-            return False
-        result = df5m['volume'].iat[-1] > df5m['volume'].iat[-2]
-        if debug:
-            print(f"[{self.symbol}] [Volume Spike] _check_5m_volume_trend: latest={df5m['volume'].iat[-1]}, prev={df5m['volume'].iat[-2]}, result={result}")
-        return result
+    # def _check_5m_volume_trend(self, debug=False):
+    #    """
+    #    Confirms if the latest 5m volume is greater than the previous 5m bar.
+    #    Returns True/False. Prints debug if debug=True.
+    #    """
+    #    df5m = getattr(self, 'df5m', None)
+    #    if df5m is None or len(df5m) < 2:
+    #        if debug:
+    #            print(f"[{self.symbol}] [Volume Spike] Not enough 5m data for volume trend check.")
+    #        return False
+    #    result = df5m['volume'].iat[-1] > df5m['volume'].iat[-2]
+    #    if debug:
+    #        print(f"[{self.symbol}] [Volume Spike] _check_5m_volume_trend: latest={df5m['volume'].iat[-1]}, prev={df5m['volume'].iat[-2]}, result={result}")
+    #    return result
     
     def _check_macd(self, debug=False):
         e12 = self.df['close'].ewm(span=12).mean()
@@ -936,29 +937,31 @@ class SmartFilter:
                 print(f"[{self.symbol}] [MTF Volume Agreement] No signal fired | long_met={long_met}, short_met={short_met}, conds_long={[cond1_long, cond2_long, cond3_long]}, conds_short={[cond1_short, cond2_short, cond3_short]}")
             return None
 
-    def _check_volume_spike(
-            self,
-            zscore_threshold=1.2,
-            min_price_move=0.0002,
-            rolling_window=15,
-            require_all=False,
-            return_directionless=False,
-            debug=False
-        ):
+    def volume_spike_detector(self, debug=False):
         """
-        Flexible volume spike detection.
-        - zscore_threshold: float, threshold for z-score anomaly.
-        - min_price_move: float, minimum proportional price move.
-        - rolling_window: int, how many periods to look back.
-        - require_all: if True, require all 3 conditions for signal. If False, require 2/3.
-        - return_directionless: if True, return 'SPIKE' if only volume is present.
-        - debug: bool, print debug logs if True.
+        Unified volume spike detection for all timeframes.
+        - Adapts rolling window and trend confirmation logic based on self.tf.
+        - Prints debug output at every stage if debug=True.
+        - Returns 'LONG', 'SHORT', or None.
         """
     
+        # Set parameters based on timeframe
+        if self.tf == "3min":
+            rolling_window = 15
+            min_price_move = 0.0002
+            zscore_threshold = 1.2
+            require_5m_trend = True
+        else:
+            rolling_window = 5
+            min_price_move = 0.0002
+            zscore_threshold = 1.2
+            require_5m_trend = False
+    
+        # Ensure enough data for rolling window
         if len(self.df) < rolling_window + 2:
             if debug:
                 print(f"[{self.symbol}] [Volume Spike] Not enough data to check volume spike. len={len(self.df)}, rolling_window={rolling_window}")
-            return None  # Not enough data
+            return None
     
         # Z-score calculation
         avg = self.df['volume'].rolling(rolling_window).mean().iat[-2]
@@ -979,33 +982,40 @@ class SmartFilter:
         long_conditions = [spike, price_up, vol_up]
         short_conditions = [spike, price_down, vol_up]
     
+        # Flexible require_all logic (could add as param if you want)
+        require_all = False
+    
+        signal = None
         if require_all:
             if all(long_conditions):
-                if debug:
-                    print(f"[{self.symbol}] [Volume Spike] Signal: LONG | zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, price_up={price_up}, price_down={price_down}, long_conditions={long_conditions}, short_conditions={short_conditions}, require_all={require_all}, return_directionless={return_directionless}")
-                return "LONG"
-            if all(short_conditions):
-                if debug:
-                    print(f"[{self.symbol}] [Volume Spike] Signal: SHORT | zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, price_up={price_up}, price_down={price_down}, long_conditions={long_conditions}, short_conditions={short_conditions}, require_all={require_all}, return_directionless={return_directionless}")
-                return "SHORT"
+                signal = "LONG"
+            elif all(short_conditions):
+                signal = "SHORT"
         else:
             if sum(long_conditions) >= 2:
-                if debug:
-                    print(f"[{self.symbol}] [Volume Spike] Signal: LONG | zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, price_up={price_up}, price_down={price_down}, long_conditions={long_conditions}, short_conditions={short_conditions}, require_all={require_all}, return_directionless={return_directionless}")
-                return "LONG"
-            if sum(short_conditions) >= 2:
-                if debug:
-                    print(f"[{self.symbol}] [Volume Spike] Signal: SHORT | zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, price_up={price_up}, price_down={price_down}, long_conditions={long_conditions}, short_conditions={short_conditions}, require_all={require_all}, return_directionless={return_directionless}")
-                return "SHORT"
-        
-        if return_directionless and spike:
-            if debug:
-                print(f"[{self.symbol}] [Volume Spike] Signal: SPIKE | zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, price_up={price_up}, price_down={price_down}, long_conditions={long_conditions}, short_conditions={short_conditions}, require_all={require_all}, return_directionless={return_directionless}")
-            return "SPIKE"
-        
+                signal = "LONG"
+            elif sum(short_conditions) >= 2:
+                signal = "SHORT"
+    
         if debug:
-            print(f"[{self.symbol}] [Volume Spike] No signal fired | zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, price_up={price_up}, price_down={price_down}, long_conditions={long_conditions}, short_conditions={short_conditions}, require_all={require_all}, return_directionless={return_directionless}")
-        return None
+            print(f"[{self.symbol}] [Volume Spike] signal={signal} | zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, price_up={price_up}, price_down={price_down}, long_conditions={long_conditions}, short_conditions={short_conditions}, require_5m_trend={require_5m_trend}")
+    
+        # 5m volume trend confirmation if required
+        if signal in ["LONG", "SHORT"] and require_5m_trend:
+            df5m = getattr(self, 'df5m', None)
+            if df5m is None or len(df5m) < 2:
+                if debug:
+                    print(f"[{self.symbol}] [Volume Spike] Not enough 5m data for volume trend check.")
+                return None
+            vol_trend = df5m['volume'].iat[-1] > df5m['volume'].iat[-2]
+            if debug:
+                print(f"[{self.symbol}] [Volume Spike] 5m volume trend check: {vol_trend} (latest={df5m['volume'].iat[-1]}, prev={df5m['volume'].iat[-2]})")
+            if not vol_trend:
+                if debug:
+                    print(f"[{self.symbol}] [Volume Spike] Spike detected but 5m volume not trending up.")
+                return None
+    
+        return signal
 
     def _check_liquidity_awareness(self, debug=False):
         bid = self.df['bid'].iat[-1]
