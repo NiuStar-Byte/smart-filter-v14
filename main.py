@@ -38,7 +38,7 @@ TOKENS = [
 #    "FUEL-USDT", "TUT-USDT", "SKATE-USDT", "LA-USDT", "HIPPO-USDT", "VOXEL-USDT", "TURBO-USDT", "PROMPT-USDT"
 # ]
 
-COOLDOWN = {"3min": 30, "5min": 30}
+COOLDOWN = {"3min": 60, "5min": 60}
 last_sent = {}
 
 PEC_BARS = 5
@@ -50,7 +50,7 @@ def get_local_wib(dt):
         dt = pd.Timestamp(dt)
     return dt.tz_localize('UTC').tz_convert('Asia/Jakarta').replace(microsecond=0).strftime('%Y-%m-%d %H:%M:%S')
 
-def get_resting_order_density(symbol, depth=100, band_pct=0.005):
+def get_resting_order_density(symbol, depth=100, band_pct=0.01):  # PATCHED: band_pct default is now 0.01
     try:
         from kucoin_orderbook import fetch_orderbook
         bids, asks = fetch_orderbook(symbol, depth)
