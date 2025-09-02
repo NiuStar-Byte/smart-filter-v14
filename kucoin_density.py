@@ -1,7 +1,7 @@
 import pandas as pd
 import requests
 
-def get_resting_density(symbol, depth=100, levels=10):
+def get_resting_density(symbol, depth=100, levels=5):
     """
     Computes resting bid/ask density as a percentage of top N levels
     relative to total book for the given symbol.
