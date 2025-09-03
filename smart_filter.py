@@ -1053,7 +1053,8 @@ class SmartFilter:
                              rolling_window=15,
                              min_price_move=0.0002,
                              zscore_threshold=1.2,
-                             require_5m_trend=True):
+                             require_5m_trend=True,
+                             debug=False):
         # --- Parameter overrides by timeframe ---
         if self.tf != "3min":
             rolling_window = 5
@@ -1105,7 +1106,7 @@ class SmartFilter:
 
         return signal
 
-    def _check_mtf_volume_agreement(self):
+    def _check_mtf_volume_agreement(self, debug=False):
         # Current TF
         volume = self.df['volume'].iat[-1]
         volume_prev = self.df['volume'].iat[-2]
@@ -1130,7 +1131,7 @@ class SmartFilter:
 
         return signal
         
-    def _check_liquidity_awareness(self):
+    def _check_liquidity_awareness(self, debug=False):
         bid, ask = self.df['bid'].iat[-1], self.df['ask'].iat[-1]
         bid_prev, ask_prev = self.df['bid'].iat[-2], self.df['ask'].iat[-2]
         volume, volume_prev = self.df['volume'].iat[-1], self.df['volume'].iat[-2]
@@ -1162,7 +1163,7 @@ class SmartFilter:
 
         return signal
 
-    def _check_spread_filter(self, window=20):
+    def _check_spread_filter(self, window=20, debug=False):
         high, low, open_, close = self.df['high'].iat[-1], self.df['low'].iat[-1], self.df['open'].iat[-1], self.df['close'].iat[-1]
         high_prev, low_prev, open_prev, close_prev = self.df['high'].iat[-2], self.df['low'].iat[-2], self.df['open'].iat[-2], self.df['close'].iat[-2]
 
@@ -1189,7 +1190,7 @@ class SmartFilter:
 
         return signal
 
-    def _check_smart_money_bias(self, volume_window=20, min_cond=2):
+    def _check_smart_money_bias(self, volume_window=20, min_cond=2, debug=False):
         close, close_prev = self.df['close'].iat[-1], self.df['close'].iat[-2]
         volume = self.df['volume'].iat[-1]
         avg_volume = self.get_rolling_avg('volume', volume_window)
@@ -1215,7 +1216,7 @@ class SmartFilter:
 
         return signal
 
-    def _check_absorption(self, window=20, buffer_pct=0.005, min_cond=2):
+    def _check_absorption(self, window=20, buffer_pct=0.005, min_cond=2, debug=False):
         low = self.df['low'].rolling(window).min().iat[-1]
         high = self.df['high'].rolling(window).max().iat[-1]
         close = self.df['close'].iat[-1]
