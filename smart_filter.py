@@ -8,7 +8,7 @@ import logging
 from kucoin_orderbook import get_order_wall_delta
 from kucoin_density import get_resting_density
 from signal_debug_log import export_signal_debug_txt
-from calculations import add_indicators
+from calculations import add_indicators, compute_rsi, calculate_cci, calculate_stochrsi
 from typing import Optional
 
 class SmartFilter:
@@ -894,41 +894,148 @@ class SmartFilter:
         else:
             print(f"[{self.symbol}] [TREND] No signal fired | long_met={long_met}, short_met={short_met}")
             return None
+
+    def _check_macd(self, fast=12, slow=26, signal=9, min_conditions=3, debug=False):
+        """
+        Composite MACD filter: MACD, Signal line, Histogram, Price action, MACD Cross, MACD Divergence.
+        Returns 'LONG', 'SHORT', or None.
+        """
+        if len(self.df) < slow + 3:
+            if debug:
+                print(f"[{self.symbol}] [MACD] Not enough data for slow EMA={slow}")
+            return None
     
-    def _check_macd(self, debug=False):
-        e12 = self.df['close'].ewm(span=12).mean()
-        e26 = self.df['close'].ewm(span=26).mean()
-        macd = e12 - e26
-        signal = macd.ewm(span=9).mean()
+        efast = self.df['close'].ewm(span=fast, adjust=False).mean()
+        eslow = self.df['close'].ewm(span=slow, adjust=False).mean()
+        macd = efast - eslow
+        signal_line = macd.ewm(span=signal, adjust=False).mean()
+        macd_hist = macd - signal_line
+    
+        close = self.df['close'].iloc[-1]
+        close_prev = self.df['close'].iloc[-2]
+    
+        # MACD Cross Detection
+        cross_up = macd.iloc[-2] < signal_line.iloc[-2] and macd.iloc[-1] > signal_line.iloc[-1]
+        cross_down = macd.iloc[-2] > signal_line.iloc[-2] and macd.iloc[-1] < signal_line.iloc[-1]
+    
+        # MACD Divergence Detection
+        price_delta = close - close_prev
+        macd_delta = macd.iloc[-1] - macd.iloc[-2]
+        # True if price and MACD move in opposite directions
+        divergence = price_delta * macd_delta < 0
     
         # LONG conditions
-        condition_1_long = macd.iat[-1] > signal.iat[-1]                # MACD above Signal Line
-        condition_2_long = macd.iat[-1] > macd.iat[-2]                  # MACD is rising
-        condition_3_long = self.df['close'].iat[-1] > self.df['close'].iat[-2]  # Price action rising
-        condition_4_long = macd.iat[-1] > signal.iat[-1] and macd.iat[-1] > macd.iat[-2]  # MACD Divergence
+        cond1_long = macd.iloc[-1] > signal_line.iloc[-1]                    # MACD above signal
+        cond2_long = macd.iloc[-1] > macd.iloc[-2]                           # MACD rising
+        cond3_long = macd_hist.iloc[-1] > 0 and macd_hist.iloc[-1] > macd_hist.iloc[-2]
+        cond4_long = close > close_prev
+        cond5_long = cross_up
+        cond6_long = divergence and macd_delta > 0                           # Bullish divergence
     
         # SHORT conditions
-        condition_1_short = macd.iat[-1] < signal.iat[-1]                # MACD below Signal Line
-        condition_2_short = macd.iat[-1] < macd.iat[-2]                  # MACD is falling
-        condition_3_short = self.df['close'].iat[-1] < self.df['close'].iat[-2]  # Price action falling
-        condition_4_short = macd.iat[-1] < signal.iat[-1] and macd.iat[-1] < macd.iat[-2]  # MACD Divergence
+        cond1_short = macd.iloc[-1] < signal_line.iloc[-1]                   # MACD below signal
+        cond2_short = macd.iloc[-1] < macd.iloc[-2]                          # MACD falling
+        cond3_short = macd_hist.iloc[-1] < 0 and macd_hist.iloc[-1] < macd_hist.iloc[-2]
+        cond4_short = close < close_prev
+        cond5_short = cross_down
+        cond6_short = divergence and macd_delta < 0                          # Bearish divergence
     
-        long_conditions_met = sum([condition_1_long, condition_2_long, condition_3_long, condition_4_long])
-        short_conditions_met = sum([condition_1_short, condition_2_short, condition_3_short, condition_4_short])
-        # Debug prints (after calculation!)
-        # print(f"[{self.symbol}] [Check MACD DEBUG] macd[-1]={macd.iat[-1]:.6f}, signal[-1]={signal.iat[-1]:.6f}, macd[-2]={macd.iat[-2]:.6f}, signal[-2]={signal.iat[-2]:.6f}, close[-1]={self.df['close'].iat[-1]:.6f}, close[-2]={self.df['close'].iat[-2]:.6f}")
-        # print(f"[{self.symbol}] [Check MACD DEBUG] condition_1_short={condition_1_short}, condition_2_short={condition_2_short}, condition_3_short={condition_3_short}, condition_4_short={condition_4_short}, short_conditions_met={short_conditions_met}")
-        
-        # Fix: Only return LONG if long_conditions_met > short_conditions_met, and vice versa
-        if long_conditions_met >= 2 and long_conditions_met > short_conditions_met:
-            print(f"[{self.symbol}] [MACD] Signal: LONG | long_conditions_met={long_conditions_met}, short_conditions_met={short_conditions_met}")
+        long_conditions_met = sum([cond1_long, cond2_long, cond3_long, cond4_long, cond5_long, cond6_long])
+        short_conditions_met = sum([cond1_short, cond2_short, cond3_short, cond4_short, cond5_short, cond6_short])
+    
+        if debug:
+            print(f"[{self.symbol}] [MACD] macd={macd.iloc[-1]:.6f}, signal={signal_line.iloc[-1]:.6f}, "
+                  f"macd_hist={macd_hist.iloc[-1]:.6f}, close={close}, close_prev={close_prev}, "
+                  f"cross_up={cross_up}, cross_down={cross_down}, divergence={divergence}, "
+                  f"long_met={long_conditions_met}, short_met={short_conditions_met}")
+    
+        if long_conditions_met >= min_conditions and long_conditions_met > short_conditions_met:
+            print(f"[{self.symbol}] [MACD] Signal: LONG | long_met={long_conditions_met}, short_met={short_conditions_met}")
             return "LONG"
-        elif short_conditions_met >= 2 and short_conditions_met > long_conditions_met:
-            print(f"[{self.symbol}] [MACD] Signal: SHORT | long_conditions_met={long_conditions_met}, short_conditions_met={short_conditions_met}")
+        elif short_conditions_met >= min_conditions and short_conditions_met > long_conditions_met:
+            print(f"[{self.symbol}] [MACD] Signal: SHORT | long_met={long_conditions_met}, short_met={short_conditions_met}")
             return "SHORT"
         else:
             return None
-            
+
+    def compute_williams_r(df, period=14):
+        """
+        Computes Williams %R indicator.
+        Returns a pandas Series.
+        """
+        highest_high = df['high'].rolling(window=period).max()
+        lowest_low = df['low'].rolling(window=period).min()
+        williams_r = (highest_high - df['close']) / (highest_high - lowest_low) * -100
+        return williams_r
+    
+    def _check_momentum(self, window=10, min_conditions=3, threshold=1e-6,
+                        rsi_period=14, rsi_overbought=70, rsi_oversold=30,
+                        cci_period=20, stochrsi_period=14, willr_period=14, debug=False):
+        """
+        Composite momentum filter: ROC, acceleration, price action, RSI, CCI, StochRSI, Williams %R.
+        Returns 'LONG', 'SHORT', or None.
+        """
+        required_len = max(window + 2, rsi_period + 2, cci_period + 2, stochrsi_period + 2, willr_period + 2)
+        if len(self.df) < required_len:
+            if debug:
+                print(f"[{self.symbol}] [Momentum] Not enough data for required indicators.")
+            return None
+    
+        roc = self.df['close'].pct_change(periods=window)
+        momentum = roc.iloc[-1]
+        momentum_prev = roc.iloc[-2]
+        acceleration = momentum - momentum_prev
+        close = self.df['close'].iloc[-1]
+        close_prev = self.df['close'].iloc[-2]
+    
+        rsi = compute_rsi(self.df, rsi_period)
+        rsi_latest = rsi.iloc[-1]
+    
+        cci = calculate_cci(self.df, cci_period)
+        cci_latest = cci.iloc[-1]
+    
+        stochrsi_k, stochrsi_d = calculate_stochrsi(self.df, rsi_period, stochrsi_period)
+        stochrsi_latest = stochrsi_k.iloc[-1]
+    
+        willr = compute_williams_r(self.df, willr_period)
+        willr_latest = willr.iloc[-1]
+    
+        # LONG conditions
+        cond1_long = momentum > threshold
+        cond2_long = acceleration > 0
+        cond3_long = close > close_prev
+        cond4_long = rsi_latest < rsi_oversold
+        cond5_long = cci_latest < -100
+        cond6_long = stochrsi_latest < 0.2
+        cond7_long = willr_latest < -80
+    
+        # SHORT conditions
+        cond1_short = momentum < -threshold
+        cond2_short = acceleration < 0
+        cond3_short = close < close_prev
+        cond4_short = rsi_latest > rsi_overbought
+        cond5_short = cci_latest > 100
+        cond6_short = stochrsi_latest > 0.8
+        cond7_short = willr_latest > -20
+    
+        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long, cond5_long, cond6_long, cond7_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short, cond5_short, cond6_short, cond7_short])
+    
+        if debug:
+            print(f"[{self.symbol}] [Momentum] values: "
+                  f"momentum={momentum:.6f}, acceleration={acceleration:.6f}, close={close}, close_prev={close_prev}, "
+                  f"rsi={rsi_latest:.2f}, cci={cci_latest:.2f}, stochrsi={stochrsi_latest:.2f}, willr={willr_latest:.2f}, "
+                  f"long_met={long_met}, short_met={short_met}")
+    
+        if long_met >= min_conditions and long_met > short_met:
+            print(f"[{self.symbol}] [Momentum] Signal: LONG | long_met={long_met}, short_met={short_met}")
+            return "LONG"
+        elif short_met >= min_conditions and short_met > long_met:
+            print(f"[{self.symbol}] [Momentum] Signal: SHORT | long_met={long_met}, short_met={short_met}")
+            return "SHORT"
+        else:
+            return None
+        
     def _check_mtf_volume_agreement(self, debug=False):
         """
         MTF Volume Agreement: Checks if volume and price are rising/falling in both current and higher timeframe.
@@ -1275,36 +1382,6 @@ class SmartFilter:
         else:
             if debug:
                 print(f"[{self.symbol}] [Fractal Zone] No signal fired | short_met={short_met}, long_met={long_met}, min_conditions={min_conditions}, fractal_high={fractal_high:.2f}, fractal_high_prev={fractal_high_prev:.2f}, fractal_low={fractal_low:.2f}, fractal_low_prev={fractal_low_prev:.2f}, close={close:.2f}, close_prev={close_prev:.2f}")
-            return None
-
-    def _check_momentum(self, window=10, min_conditions=2, debug=False):
-        # Calculate Rate of Change (ROC)
-        roc = self.df['close'].pct_change(periods=window)
-        momentum = roc.iat[-1]
-        momentum_prev = roc.iat[-2]
-        close = self.df['close'].iat[-1]
-        close_prev = self.df['close'].iat[-2]
-    
-        # LONG conditions
-        cond1_long = momentum > 0
-        cond2_long = momentum > momentum_prev
-        cond3_long = close > close_prev
-    
-        # SHORT conditions
-        cond1_short = momentum < 0
-        cond2_short = momentum < momentum_prev
-        cond3_short = close < close_prev
-    
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
-    
-        if long_met >= min_conditions:
-            print(f"[{self.symbol}] [Momentum] Signal: LONG | long_met={long_met}, short_met={short_met}, min_conditions={min_conditions}, momentum={momentum}")
-            return "LONG"
-        elif short_met >= min_conditions:
-            print(f"[{self.symbol}] [Momentum] Signal: SHORT | long_met={long_met}, short_met={short_met}, min_conditions={min_conditions}, momentum={momentum}")
-            return "SHORT"
-        else:
             return None
 
     def _check_atr_momentum_burst(self, threshold_pct=0.10, volume_mult=1.1, min_cond=2, debug=False):
