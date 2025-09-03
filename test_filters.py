@@ -78,24 +78,20 @@ def get_filter_methods():
     Uses a lambda to call each filter as an instance method.
     """
     filter_names = [
-        "Fractal Zone", "EMA Cloud", "MACD", "Momentum", "HATS", "Volume Spike",
-        "VWAP Divergence", "MTF Volume Agreement", "HH/LL Trend", "EMA Structure",
+        "Fractal Zone", "TREND", "MACD", "Momentum", "Volume Spike",
+        "VWAP Divergence", "MTF Volume Agreement", "HH/LL Trend",
         "Chop Zone", "Candle Confirmation", "Wick Dominance", "Absorption",
         "Support/Resistance", "Smart Money Bias", "Liquidity Pool", "Spread Filter",
-        "Liquidity Awareness", "Trend Continuation", "Volatility Model",
-        "ATR Momentum Burst", "Volatility Squeeze"
+        "Liquidity Awareness", "Volatility Model", "ATR Momentum Burst", "Volatility Squeeze"
     ]
     method_map = {
         "Fractal Zone": "_check_fractal_zone",
-        "EMA Cloud": "_check_ema_cloud",
+        "TREND": "_check_unified_trend",
         "MACD": "_check_macd",
         "Momentum": "_check_momentum",
-        "HATS": "_check_hats",
         "Volume Spike": "_check_volume_spike",
         "VWAP Divergence": "_check_vwap_divergence",
         "MTF Volume Agreement": "_check_mtf_volume_agreement",
-        "HH/LL Trend": "_check_hh_ll",
-        "EMA Structure": "_check_ema_structure",
         "Chop Zone": "_check_chop_zone",
         "Candle Confirmation": "_check_candle_close",
         "Wick Dominance": "_check_wick_dominance",
