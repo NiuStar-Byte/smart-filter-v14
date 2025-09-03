@@ -89,26 +89,26 @@ class SmartFilter:
 
     # ==== SHARED HELPERS ====
     @staticmethod
-        def safe_divide(a, b):
-            try:
-                return a / b if b else 0.0
-            except Exception:
-                return 0.0
+    def safe_divide(a, b):
+        try:
+            return a / b if b else 0.0
+        except Exception:
+            return 0.0
     
-        def get_rolling_avg(self, col, window):
-            return self.df[col].rolling(window).mean().iat[-1]
+    def get_rolling_avg(self, col, window):
+        return self.df[col].rolling(window).mean().iat[-1]
     
-        def is_rising(self, col, window=1):
-            return self.df[col].iat[-1] > self.df[col].iat[-window-1]
+    def is_rising(self, col, window=1):
+        return self.df[col].iat[-1] > self.df[col].iat[-window-1]
     
-        def is_falling(self, col, window=1):
-            return self.df[col].iat[-1] < self.df[col].iat[-window-1]
+    def is_falling(self, col, window=1):
+        return self.df[col].iat[-1] < self.df[col].iat[-window-1]
     
-        def proximity_to_high_low(self, close, high, low):
-            return {
-                "to_low": self.safe_divide(close - low, low),
-                "to_high": self.safe_divide(high - close, high)
-            }
+    def proximity_to_high_low(self, close, high, low):
+        return {
+            "to_low": self.safe_divide(close - low, low),
+            "to_high": self.safe_divide(high - close, high)
+        }
             
     @property
     def filter_weights(self):
