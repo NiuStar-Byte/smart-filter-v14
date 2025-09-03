@@ -18,7 +18,7 @@ TOKENS = [
     "PEPE-USDT", "ERA-USDT", "PENGU-USDT", "CFX-USDT", "ENA-USDT",
     "SUI-USDT", "EIGEN-USDT", "UNI-USDT", "HYPE-USDT", "TON-USDT",
     "KAS-USDT", "HBAR-USDT", "ONDO-USDT", "VIRTUAL-USDT", "AAVE-USDT",
-    "GALA-USDT", "PUMP-USDT", "PEPE-USDT", "WIF-USDT"
+    "GALA-USDT", "PUMP-USDT", "PEPE-USDT", "WIF-USDT", "BERA-USDT", "DYDX-USDT"
  ]
 
 # Load market symbols from each exchange
