@@ -59,19 +59,19 @@ class SmartFilter:
 
         # Weights for filters
         self.filter_weights_long = {
-            "MACD": 4.9, "Volume Spike": 4.7, "Fractal Zone": 4.6, "TREND": 4.5, "Momentum": 4.8, "ATR Momentum Burst": 4.4,
-            "MTF Volume Agreement": 4.3, "HH/LL Trend": 3.9, "Volatility Model": 3.8,
-            "Liquidity Awareness": 3.6, "Volatility Squeeze": 3.5, "Candle Confirmation": 3.4,
-            "VWAP Divergence": 3.3, "Spread Filter": 3.2, "Chop Zone": 3.1, "Liquidity Pool": 2.9, "Support/Resistance": 2.8,
-            "Smart Money Bias": 2.7, "Absorption": 2.6, "Wick Dominance": 2.5
+            "MACD": 5.0, "Volume Spike": 5.0, "Fractal Zone": 4.5, "TREND": 4.7, "Momentum": 4.9, "ATR Momentum Burst": 4.3,
+            "MTF Volume Agreement": 5.0, "HH/LL Trend": 4.1, "Volatility Model": 3.9,
+            "Liquidity Awareness": 5.0, "Volatility Squeeze": 3.7, "Candle Confirmation": 5.0,
+            "VWAP Divergence": 3.5, "Spread Filter": 5.0, "Chop Zone": 3.3, "Liquidity Pool": 3.1, "Support/Resistance": 5.0,
+            "Smart Money Bias": 2.9, "Absorption": 2.7, "Wick Dominance": 2.5
         }
         
         self.filter_weights_short = {
-            "MACD": 4.9, "Volume Spike": 4.7, "Fractal Zone": 4.6, "TREND": 4.5, "Momentum": 4.8, "ATR Momentum Burst": 4.4,
-            "MTF Volume Agreement": 4.3, "HH/LL Trend": 3.9, "Volatility Model": 3.8,
-            "Liquidity Awareness": 3.6, "Volatility Squeeze": 3.5, "Candle Confirmation": 3.4,
-            "VWAP Divergence": 3.3, "Spread Filter": 3.2, "Chop Zone": 3.1, "Liquidity Pool": 2.9, "Support/Resistance": 2.8,
-            "Smart Money Bias": 2.7, "Absorption": 2.6, "Wick Dominance": 2.5
+            "MACD": 5.0, "Volume Spike": 5.0, "Fractal Zone": 4.5, "TREND": 4.7, "Momentum": 4.9, "ATR Momentum Burst": 4.3,
+            "MTF Volume Agreement": 5.0, "HH/LL Trend": 4.1, "Volatility Model": 3.9,
+            "Liquidity Awareness": 5.0, "Volatility Squeeze": 3.7, "Candle Confirmation": 5.0,
+            "VWAP Divergence": 3.5, "Spread Filter": 5.0, "Chop Zone": 3.3, "Liquidity Pool": 3.1, "Support/Resistance": 5.0,
+            "Smart Money Bias": 2.9, "Absorption": 2.7, "Wick Dominance": 2.5
         }
 
         self.filter_names = list(set(self.filter_weights_long.keys()) | set(self.filter_weights_short.keys()))
