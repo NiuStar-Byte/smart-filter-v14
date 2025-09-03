@@ -1711,12 +1711,19 @@ class SmartFilter:
         volume_prev = self.df['volume'].iat[-2]
         avg_volume = self.df['volume'].rolling(window).mean().iat[-1]
     
+        # Safe division helper
+        def safe_divide(a, b):
+            try:
+                return a / b if b else 0.0
+            except Exception:
+                return 0.0
+    
         # For logging: absorption proximity metric
         absorption = {
-            "close_to_low_pct": (close - low) / low,
-            "close_to_high_pct": (high - close) / high,
-            "volume_vs_avg": volume / avg_volume,
-            "volume_vs_prev": volume / volume_prev
+            "close_to_low_pct": safe_divide(close - low, low),
+            "close_to_high_pct": safe_divide(high - close, high),
+            "volume_vs_avg": safe_divide(volume, avg_volume),
+            "volume_vs_prev": safe_divide(volume, volume_prev)
         }
     
         # LONG conditions
@@ -1740,6 +1747,8 @@ class SmartFilter:
             print(f"[{self.symbol}] [Absorption] Signal: SHORT | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, absorption={absorption}")
             return "SHORT"
         else:
+            if debug:
+                print(f"[{self.symbol}] [Absorption] No signal fired | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, absorption={absorption}")
             return None
             
     def _check_wick_dominance(self, debug=False):
