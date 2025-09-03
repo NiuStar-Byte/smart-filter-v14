@@ -58,7 +58,7 @@ class SmartFilter:
 
         # Weights for filters
         self.filter_weights_long = {
-            "MACD": 4.9, "Volume Spike": 4.8, "Fractal Zone": 4.7, "TREND": 4.6, "Momentum": 4.5, "ATR Momentum Burst": 4.4,
+            "MACD": 4.9, "Volume Spike": 4.7, "Fractal Zone": 4.6, "TREND": 4.5, "Momentum": 4.8, "ATR Momentum Burst": 4.4,
             "MTF Volume Agreement": 4.3, "HH/LL Trend": 3.9, "Volatility Model": 3.8,
             "Liquidity Awareness": 3.6, "Volatility Squeeze": 3.5, "Candle Confirmation": 3.4,
             "VWAP Divergence": 3.3, "Spread Filter": 3.2, "Chop Zone": 3.1, "Liquidity Pool": 2.9, "Support/Resistance": 2.8,
@@ -66,7 +66,7 @@ class SmartFilter:
         }
         
         self.filter_weights_short = {
-            "MACD": 4.9, "Volume Spike": 4.8, "Fractal Zone": 4.7, "TREND": 4.6, "Momentum": 4.5, "ATR Momentum Burst": 4.4,
+            "MACD": 4.9, "Volume Spike": 4.7, "Fractal Zone": 4.6, "TREND": 4.5, "Momentum": 4.8, "ATR Momentum Burst": 4.4,
             "MTF Volume Agreement": 4.3, "HH/LL Trend": 3.9, "Volatility Model": 3.8,
             "Liquidity Awareness": 3.6, "Volatility Squeeze": 3.5, "Candle Confirmation": 3.4,
             "VWAP Divergence": 3.3, "Spread Filter": 3.2, "Chop Zone": 3.1, "Liquidity Pool": 2.9, "Support/Resistance": 2.8,
