@@ -18,7 +18,7 @@ from tp_sl_retracement import calculate_tp_sl
 from test_filters import run_all_filter_tests
 
 # Run SmartFilter diagnostics before starting main signal loop
-run_all_filter_tests()  # <-- Add this line
+# run_all_filter_tests()  # <-- Add this line
 
 TOKENS = [
     "BTC-USDT", "ETH-USDT",
