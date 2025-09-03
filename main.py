@@ -138,7 +138,7 @@ def run():
     while True:
         try:
             # Run filter diagnostics every cycle (VWAP Divergence debug will appear each time)
-            run_all_filter_tests()
+            # run_all_filter_tests()
             now = time.time()
             valid_debugs = []
             pec_candidates = []
