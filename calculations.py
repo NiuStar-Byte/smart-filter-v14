@@ -101,6 +101,16 @@ def calculate_stochrsi(df: pd.DataFrame, rsi_period: int = 14, stoch_period: int
     stochrsi_d = stochrsi_k.rolling(smooth_d).mean()
     return stochrsi_k, stochrsi_d
 
+def compute_williams_r(df: pd.DataFrame, period: int = 14) -> pd.Series:
+    """
+    Computes Williams %R indicator.
+    Returns a pandas Series.
+    """
+    highest_high = df['high'].rolling(window=period).max()
+    lowest_low = df['low'].rolling(window=period).min()
+    williams_r = (highest_high - df['close']) / (highest_high - lowest_low) * -100
+    return williams_r
+
 def add_bollinger_bands(df: pd.DataFrame, period: int = 20, num_std: float = 2.0) -> pd.DataFrame:
     """
     Adds Bollinger Bands columns to DataFrame.
@@ -135,7 +145,7 @@ def compute_choppiness_index(df: pd.DataFrame, period: int = 14) -> pd.Series:
     lowest_low = low.rolling(period).min()
     choppiness = 100 * np.log10(atr.rolling(period).sum() / (highest_high - lowest_low)) / np.log10(period)
     return choppiness
-    
+
 def add_indicators(df: pd.DataFrame) -> pd.DataFrame:
     """
     Adds all standard indicators and EMAs to the DataFrame.
@@ -160,4 +170,6 @@ def add_indicators(df: pd.DataFrame) -> pd.DataFrame:
     df = add_keltner_channels(df)
     # ---- Add chop_zone (Choppiness Index) for filter compatibility ----
     df['chop_zone'] = compute_choppiness_index(df)
+    # ---- Add Williams %R ----
+    df['williams_r'] = compute_williams_r(df)
     return df
