@@ -108,6 +108,8 @@ TOKEN_BLOCKCHAIN_INFO = {
     "EIGEN-USDT":   {"base": "EIGEN",   "blockchain": "Ethereum",     "consensus": "PoS"},
     "HYPE-USDT":    {"base": "HYPE",    "blockchain": "Solana",       "consensus": "PoH+PoS"},
     "PUMP-USDT":    {"base": "PUMP",    "blockchain": "Ethereum",     "consensus": "PoS"},
+    "BERA-USDT":    {"base": "BERA",    "blockchain": "Berachain",    "consensus": "Proof-of-Liquidity (PoL)"},
+    "DYDX-USDT":    {"base": "DYDX",    "blockchain": "DYDX Chain",   "consensus": "PoS (via Cosmos SDK)"}
 
     # Add further tokens below as needed, with best-guess or "Unknown" if truly uncertain:
     # Examples:
