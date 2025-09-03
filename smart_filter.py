@@ -1495,7 +1495,6 @@ class SmartFilter:
     
         squeeze_firing = bb_width > kc_width and bb_width_prev < kc_width_prev
     
-        # For logging: squeeze and volatility metrics
         squeeze = {
             "bb_width": bb_width,
             "kc_width": kc_width,
@@ -1510,12 +1509,10 @@ class SmartFilter:
             "volume_prev": volume_prev
         }
     
-        # LONG conditions
         cond1_long = squeeze_firing
         cond2_long = close > close_prev
         cond3_long = volume > volume_prev
     
-        # SHORT conditions
         cond1_short = squeeze_firing
         cond2_short = close < close_prev
         cond3_short = volume > volume_prev
@@ -1523,7 +1520,6 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
     
-        # Stricter: Only return LONG/SHORT if enough conditions are met and it beats opposite
         if long_met >= min_cond and long_met > short_met:
             print(f"[{self.symbol}] [Volatility Squeeze] Signal: LONG | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, squeeze={squeeze}, volatility={volatility}")
             return "LONG"
@@ -1531,6 +1527,7 @@ class SmartFilter:
             print(f"[{self.symbol}] [Volatility Squeeze] Signal: SHORT | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, squeeze={squeeze}, volatility={volatility}")
             return "SHORT"
         else:
+            print(f"[{self.symbol}] [Volatility Squeeze] No signal fired | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, squeeze={squeeze}, volatility={volatility}")
             return None
     
     def _check_vwap_divergence(self, debug=False):
