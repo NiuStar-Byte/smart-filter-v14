@@ -8,7 +8,7 @@ import logging
 from kucoin_orderbook import get_order_wall_delta
 from kucoin_density import get_resting_density
 from signal_debug_log import export_signal_debug_txt
-from calculations import add_indicators, compute_rsi, calculate_cci, calculate_stochrsi
+from calculations import add_indicators, compute_rsi, calculate_cci, calculate_stochrsi, compute_williams_r
 from typing import Optional
 
 class SmartFilter:
@@ -957,17 +957,7 @@ class SmartFilter:
             return "SHORT"
         else:
             return None
-
-    def compute_williams_r(df, period=14):
-        """
-        Computes Williams %R indicator.
-        Returns a pandas Series.
-        """
-        highest_high = df['high'].rolling(window=period).max()
-        lowest_low = df['low'].rolling(window=period).min()
-        williams_r = (highest_high - df['close']) / (highest_high - lowest_low) * -100
-        return williams_r
-    
+  
     def _check_momentum(self, window=10, min_conditions=3, threshold=1e-6,
                         rsi_period=14, rsi_overbought=70, rsi_oversold=30,
                         cci_period=20, stochrsi_period=14, willr_period=14, debug=False):
