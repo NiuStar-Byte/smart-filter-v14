@@ -444,5 +444,5 @@ if __name__ == "__main__":
             import traceback; traceback.print_exc()
     else:
         print(">>> Entering normal run() branch", flush=True)
-        run_all_filter_tests()  # <--- THIS RUNS DIAGNOSTICS ONCE BEFORE LIVE LOOP
+        # run_all_filter_tests()  # <--- THIS RUNS DIAGNOSTICS ONCE BEFORE LIVE LOOP
         run()
