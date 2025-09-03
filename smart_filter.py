@@ -1049,108 +1049,121 @@ class SmartFilter:
             return None
     
     # ==== FILTERS ====    
-    def _check_volume_spike_detector(self,
-                             rolling_window=15,
-                             min_price_move=0.0002,
-                             zscore_threshold=1.2,
-                             require_5m_trend=True,
-                             debug=False):
+    def _check_volume_spike_detector(
+        self,
+        rolling_window: int = 15,
+        min_price_move: float = 0.0002,
+        zscore_threshold: float = 1.2,
+        require_5m_trend: bool = True,
+        debug: bool = False
+    ) -> str | None:
+        """
+        Detects volume spikes with price move and optional 5m trend confirmation.
+        Returns "LONG", "SHORT", or None.
+        """
         # --- Parameter overrides by timeframe ---
         if self.tf != "3min":
             rolling_window = 5
             require_5m_trend = False
-
+    
+        # Defensive: Check rolling window length
         if len(self.df) < rolling_window + 2:
-            if self.debug:
+            if debug:
                 print(f"[{self.symbol}] [Volume Spike] Not enough data for rolling window")
             return None
-
+    
         avg = self.get_rolling_avg('volume', rolling_window)
         std = self.df['volume'].rolling(rolling_window).std().iat[-2]
         curr_vol = self.df['volume'].iat[-1]
         zscore = self.safe_divide(curr_vol - avg, std if std != 0 else 1)
-
+    
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
         price_move = self.safe_divide(close - close_prev, close_prev if close_prev != 0 else 1)
-
+    
         price_up = price_move > min_price_move
         price_down = price_move < -min_price_move
         vol_up = curr_vol > self.df['volume'].iat[-2]
         spike = zscore > zscore_threshold
-
+    
         long_conditions = [spike, price_up, vol_up]
         short_conditions = [spike, price_down, vol_up]
-
+    
         signal = None
         if sum(long_conditions) >= 2:
             signal = "LONG"
         elif sum(short_conditions) >= 2:
             signal = "SHORT"
-
-        if self.debug:
+    
+        if debug:
             print(f"[{self.symbol}] [Volume Spike] signal={signal} | zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, price_up={price_up}, price_down={price_down}, long_conditions={long_conditions}, short_conditions={short_conditions}, require_5m_trend={require_5m_trend}")
-
+    
         # 5m volume trend confirmation
         if signal and require_5m_trend:
-            df5m = self.df5m
+            df5m = getattr(self, "df5m", None)
             if df5m is None or len(df5m) < 2:
-                if self.debug:
+                if debug:
                     print(f"[{self.symbol}] [Volume Spike] Not enough 5m data for trend check.")
                 return None
             vol_trend = df5m['volume'].iat[-1] > df5m['volume'].iat[-2]
-            if self.debug:
+            if debug:
                 print(f"[{self.symbol}] [Volume Spike] 5m volume trend check: {vol_trend} (latest={df5m['volume'].iat[-1]}, prev={df5m['volume'].iat[-2]})")
             if not vol_trend:
                 return None
-
+    
         return signal
 
-    def _check_mtf_volume_agreement(self, debug=False):
-        # Current TF
+    def _check_mtf_volume_agreement(self, debug: bool = False) -> str | None:
+        """
+        Multi-timeframe volume agreement filter.
+        Returns "LONG", "SHORT", or None.
+        """
         volume = self.df['volume'].iat[-1]
         volume_prev = self.df['volume'].iat[-2]
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
-        # Higher TF
         higher_tf_volume = self.df['higher_tf_volume'].iat[-1]
         higher_tf_volume_prev = self.df['higher_tf_volume'].iat[-2]
-
+    
         conds_long = [volume > volume_prev, higher_tf_volume > higher_tf_volume_prev, close > close_prev]
         conds_short = [volume < volume_prev, higher_tf_volume < higher_tf_volume_prev, close < close_prev]
-
+    
         long_met, short_met = sum(conds_long), sum(conds_short)
         signal = None
         if long_met >= 2 and long_met > short_met:
             signal = "LONG"
         elif short_met >= 2 and short_met > long_met:
             signal = "SHORT"
-
-        if self.debug:
+    
+        if debug:
             print(f"[{self.symbol}] [MTF Volume Agreement] signal={signal} | long_met={long_met}, short_met={short_met}, conds_long={conds_long}, conds_short={conds_short}")
-
+    
         return signal
         
-    def _check_liquidity_awareness(self, debug=False):
+    def _check_liquidity_awareness(self, debug: bool = False) -> str | None:
+        """
+        Liquidity awareness filter based on spread, volume, and close price.
+        Returns "LONG", "SHORT", or None.
+        """
         bid, ask = self.df['bid'].iat[-1], self.df['ask'].iat[-1]
         bid_prev, ask_prev = self.df['bid'].iat[-2], self.df['ask'].iat[-2]
         volume, volume_prev = self.df['volume'].iat[-1], self.df['volume'].iat[-2]
         close, close_prev = self.df['close'].iat[-1], self.df['close'].iat[-2]
-
+    
         spread = ask - bid
         spread_prev = ask_prev - bid_prev
-
+    
         conds_long = [spread < spread_prev, volume > volume_prev, close > close_prev]
         conds_short = [spread > spread_prev, volume < volume_prev, close < close_prev]
-
+    
         long_met, short_met = sum(conds_long), sum(conds_short)
         signal = None
         if long_met >= 2 and long_met > short_met:
             signal = "LONG"
         elif short_met >= 2 and short_met > long_met:
             signal = "SHORT"
-
-        if self.debug:
+    
+        if debug:
             liquidity_metrics = {
                 "spread": spread,
                 "spread_prev": spread_prev,
@@ -1160,63 +1173,75 @@ class SmartFilter:
                 "close_prev": close_prev
             }
             print(f"[{self.symbol}] [Liquidity Awareness] signal={signal} | long_met={long_met}, short_met={short_met}, liquidity_metrics={liquidity_metrics}")
-
+    
         return signal
 
-    def _check_spread_filter(self, window=20, debug=False):
+    def _check_spread_filter(self, window: int = 20, debug: bool = False) -> str | None:
+        """
+        Spread filter based on current/historical spreads and price action.
+        Returns "LONG", "SHORT", or None.
+        """
         high, low, open_, close = self.df['high'].iat[-1], self.df['low'].iat[-1], self.df['open'].iat[-1], self.df['close'].iat[-1]
         high_prev, low_prev, open_prev, close_prev = self.df['high'].iat[-2], self.df['low'].iat[-2], self.df['open'].iat[-2], self.df['close'].iat[-2]
-
+    
         # Add spread column if missing
         if 'spread' not in self.df.columns:
             self.df['spread'] = self.df['high'] - self.df['low']
-
+    
         spread = high - low
         spread_prev = high_prev - low_prev
         spread_ma = self.df['spread'].rolling(window).mean().iat[-1]
-
+    
         conds_long = [spread > spread_prev, close > open_, spread > spread_ma]
         conds_short = [spread < spread_prev, close < open_, spread < spread_ma]
-
+    
         long_met, short_met = sum(conds_long), sum(conds_short)
         signal = None
         if long_met >= 2 and long_met > short_met:
             signal = "LONG"
         elif short_met >= 2 and short_met > long_met:
             signal = "SHORT"
-
-        if self.debug:
+    
+        if debug:
             print(f"[{self.symbol}] [Spread Filter] signal={signal} | spread={spread:.6f}, long_met={long_met}, short_met={short_met}, spread_prev={spread_prev:.6f}, spread_ma={spread_ma:.6f}, close={close:.2f}, open={open_:.2f}")
-
+    
         return signal
 
-    def _check_smart_money_bias(self, volume_window=20, min_cond=2, debug=False):
+    def _check_smart_money_bias(self, volume_window: int = 20, min_cond: int = 2, debug: bool = False) -> str | None:
+        """
+        Smart money bias filter combining volume and VWAP.
+        Returns "LONG", "SHORT", or None.
+        """
         close, close_prev = self.df['close'].iat[-1], self.df['close'].iat[-2]
         volume = self.df['volume'].iat[-1]
         avg_volume = self.get_rolling_avg('volume', volume_window)
         vwap = self.df['vwap'].iat[-1]
-
+    
         conds_long = [volume > avg_volume and close > close_prev, close > vwap]
         conds_short = [volume > avg_volume and close < close_prev, close < vwap]
-
+    
         long_met, short_met = sum(conds_long), sum(conds_short)
         signal = None
         if long_met >= min_cond and long_met > short_met:
             signal = "LONG"
         elif short_met >= min_cond and short_met > long_met:
             signal = "SHORT"
-
-        if self.debug:
+    
+        if debug:
             smart_money = {
                 "volume_vs_avg": self.safe_divide(volume, avg_volume),
                 "close_vs_prev": close - close_prev,
                 "close_vs_vwap": close - vwap
             }
             print(f"[{self.symbol}] [Smart Money Bias] signal={signal} | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, smart_money={smart_money}")
-
+    
         return signal
 
-    def _check_absorption(self, window=20, buffer_pct=0.005, min_cond=2, debug=False):
+    def _check_absorption(self, window: int = 20, buffer_pct: float = 0.005, min_cond: int = 2, debug: bool = False) -> str | None:
+        """
+        Absorption filter for detecting price action near highs/lows with volume confirmation.
+        Returns "LONG", "SHORT", or None.
+        """
         low = self.df['low'].rolling(window).min().iat[-1]
         high = self.df['high'].rolling(window).max().iat[-1]
         close = self.df['close'].iat[-1]
@@ -1224,32 +1249,35 @@ class SmartFilter:
         volume = self.df['volume'].iat[-1]
         volume_prev = self.df['volume'].iat[-2]
         avg_volume = self.get_rolling_avg('volume', window)
-
+    
         absorption_metrics = {
             "close_to_low_pct": self.safe_divide(close - low, low),
             "close_to_high_pct": self.safe_divide(high - close, high),
             "volume_vs_avg": self.safe_divide(volume, avg_volume),
             "volume_vs_prev": self.safe_divide(volume, volume_prev)
         }
-
-        conds_long = [close <= low * (1 + buffer_pct),
-                      volume > avg_volume and volume > volume_prev,
-                      close >= close_prev]
-        conds_short = [close >= high * (1 - buffer_pct),
-                       volume > avg_volume and volume > volume_prev,
-                       close <= close_prev]
-
+    
+        conds_long = [
+            close <= low * (1 + buffer_pct),
+            volume > avg_volume and volume > volume_prev,
+            close >= close_prev
+        ]
+        conds_short = [
+            close >= high * (1 - buffer_pct),
+            volume > avg_volume and volume > volume_prev,
+            close <= close_prev
+        ]
+    
         long_met, short_met = sum(conds_long), sum(conds_short)
-
         signal = None
         if long_met >= min_cond and long_met > short_met:
             signal = "LONG"
         elif short_met >= min_cond and short_met > long_met:
             signal = "SHORT"
-
-        if self.debug:
+    
+        if debug:
             print(f"[{self.symbol}] [Absorption] signal={signal} | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, absorption={absorption_metrics}")
-
+    
         return signal
 
     def _check_candle_confirmation(self, debug=False):
