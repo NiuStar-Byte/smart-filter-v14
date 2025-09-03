@@ -1,10 +1,11 @@
 # smart_filter.py
 
 import datetime
+import logging
+import math
 import requests
 import pandas as pd
 import numpy as np
-import logging
 from kucoin_orderbook import get_order_wall_delta
 from kucoin_density import get_resting_density
 from signal_debug_log import export_signal_debug_txt
@@ -510,7 +511,7 @@ class SmartFilter:
             "TREND": getattr(self, "_check_unified_trend", None),
             "MACD": getattr(self, "_check_macd", None),
             "Momentum": getattr(self, "_check_momentum", None),
-            "Volume Spike": lambda debug=False: self.volume_spike_detector(debug=debug),
+            "Volume Spike": lambda debug=False: self._check_volume_spike_detector(debug=debug),
             "VWAP Divergence": getattr(self, "_check_vwap_divergence", None),
             "MTF Volume Agreement": getattr(self, "_check_mtf_volume_agreement", None),
             "HH/LL Trend": getattr(self, "_check_hh_ll", None),
@@ -1146,6 +1147,10 @@ class SmartFilter:
         Returns "LONG", "SHORT", or None.
         """
         bid, ask = self.df['bid'].iat[-1], self.df['ask'].iat[-1]
+        if math.isnan(bid) or math.isnan(ask):
+            if debug:
+                print(f"[{self.symbol}] [Liquidity Awareness] Missing bid/ask values, cannot compute spread.")
+            return None
         bid_prev, ask_prev = self.df['bid'].iat[-2], self.df['ask'].iat[-2]
         volume, volume_prev = self.df['volume'].iat[-1], self.df['volume'].iat[-2]
         close, close_prev = self.df['close'].iat[-1], self.df['close'].iat[-2]
