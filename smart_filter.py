@@ -26,7 +26,7 @@ class SmartFilter:
         df3m: Optional[pd.DataFrame] = None,
         df5m: Optional[pd.DataFrame] = None,
         tf: Optional[str] = None,
-        min_score: int = 8,
+        min_score: int = 6,
         required_passed: Optional[int] = None,  # int or None allowed
         volume_multiplier: float = 2.0,
         liquidity_threshold: float = 0.50,
