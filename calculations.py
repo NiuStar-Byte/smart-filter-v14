@@ -149,13 +149,26 @@ def compute_choppiness_index(df: pd.DataFrame, period: int = 14) -> pd.Series:
     choppiness = 100 * np.log10(atr.rolling(period).sum() / (highest_high - lowest_low)) / np.log10(period)
     return choppiness
 
+# Ensure all indicator functions are imported or defined above this function.
+
 def add_indicators(df: pd.DataFrame) -> pd.DataFrame:
     """
     Adds all standard indicators and EMAs to the DataFrame.
     Ensures all used columns are present for filter/detector logic.
+    Diagnostic logs are included for debugging.
     """
     df = df.copy()
-    print(f"[add_indicators] DataFrame shape: {df.shape}")  # Step 3a: Print DataFrame shape
+    print(f"[add_indicators] DataFrame shape: {df.shape}")
+
+    # Diagnostic: List columns and check NaNs in critical columns
+    required_cols = ['high', 'low', 'close']
+    print(f"[add_indicators] Columns: {df.columns.tolist()}")
+    for col in required_cols:
+        if col in df.columns:
+            nan_count = df[col].isna().sum()
+            print(f"[add_indicators] NaN count in '{col}': {nan_count}")
+        else:
+            print(f"[add_indicators] Missing column: {col}")
 
     df = add_ema_columns(df)
     df = compute_macd(df)
@@ -163,18 +176,18 @@ def add_indicators(df: pd.DataFrame) -> pd.DataFrame:
     df['RSI'] = compute_rsi(df)
     df['atr'] = compute_atr(df)
     df['atr_ma'] = df['atr'].rolling(14).mean()
+
+    # ADX calculation and diagnostics
     adx, plus_di, minus_di = compute_adx(df)
     df['adx'] = adx
     df['plus_di'] = plus_di
     df['minus_di'] = minus_di
 
-    # Step 3b: ADX diagnostics
     adx_valid_count = df['adx'].notna().sum()
     print(f"[add_indicators] ADX non-NaN count: {adx_valid_count} / {len(df)}")
     if adx_valid_count < 5:
         print("[add_indicators] Warning: ADX has fewer than 5 valid values. Check input data length and format.")
 
-    # Step 3c: Print last 20 ADX values
     print("[add_indicators] ADX last 20 values:")
     print(df['adx'].tail(20))
 
@@ -184,8 +197,6 @@ def add_indicators(df: pd.DataFrame) -> pd.DataFrame:
     df['stochrsi_d'] = stochrsi_d
     df = add_bollinger_bands(df)
     df = add_keltner_channels(df)
-    # ---- Add chop_zone (Choppiness Index) for filter compatibility ----
     df['chop_zone'] = compute_choppiness_index(df)
-    # ---- Add Williams %R ----
     df['williams_r'] = compute_williams_r(df)
     return df
