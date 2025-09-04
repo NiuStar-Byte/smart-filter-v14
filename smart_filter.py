@@ -1053,8 +1053,8 @@ class SmartFilter:
     def _check_volume_spike_detector(
         self,
         rolling_window: int = 15,
-        min_price_move: float = 0.0002,
-        zscore_threshold: float = 1.2,
+        min_price_move: float = 0.0001,
+        zscore_threshold: float = 1.1,
         require_5m_trend: bool = True,
         debug: bool = False
     ) -> str | None:
@@ -1131,9 +1131,9 @@ class SmartFilter:
     
         long_met, short_met = sum(conds_long), sum(conds_short)
         signal = None
-        if long_met >= 2 and long_met > short_met:
+        if long_met >= 1 and long_met > short_met:
             signal = "LONG"
-        elif short_met >= 2 and short_met > long_met:
+        elif short_met >= 1 and short_met > long_met:
             signal = "SHORT"
     
         if debug:
@@ -1167,9 +1167,9 @@ class SmartFilter:
     
         long_met, short_met = sum(conds_long), sum(conds_short)
         signal = None
-        if long_met >= 2 and long_met > short_met:
+        if long_met >= 1 and long_met > short_met:
             signal = "LONG"
-        elif short_met >= 2 and short_met > long_met:
+        elif short_met >= 1 and short_met > long_met:
             signal = "SHORT"
     
         if debug:
@@ -1206,9 +1206,9 @@ class SmartFilter:
     
         long_met, short_met = sum(conds_long), sum(conds_short)
         signal = None
-        if long_met >= 2 and long_met > short_met:
+        if long_met >= 1 and long_met > short_met:
             signal = "LONG"
-        elif short_met >= 2 and short_met > long_met:
+        elif short_met >= 1 and short_met > long_met:
             signal = "SHORT"
     
         if debug:
@@ -1216,7 +1216,7 @@ class SmartFilter:
     
         return signal
 
-    def _check_smart_money_bias(self, volume_window: int = 20, min_cond: int = 2, debug: bool = False) -> str | None:
+    def _check_smart_money_bias(self, volume_window: int = 20, min_cond: int = 1, debug: bool = False) -> str | None:
         """
         Smart money bias filter combining volume and VWAP.
         Returns "LONG", "SHORT", or None.
@@ -1246,7 +1246,7 @@ class SmartFilter:
     
         return signal
 
-    def _check_absorption(self, window: int = 20, buffer_pct: float = 0.005, min_cond: int = 2, debug: bool = False) -> str | None:
+    def _check_absorption(self, window: int = 20, buffer_pct: float = 0.005, min_cond: int = 1, debug: bool = False) -> str | None:
         """
         Absorption filter for detecting price action near highs/lows with volume confirmation.
         Returns "LONG", "SHORT", or None.
