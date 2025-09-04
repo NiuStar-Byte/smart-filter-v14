@@ -158,7 +158,7 @@ def run():
                 try:
                     key3 = f"{symbol}_3min"
                     sf3 = SmartFilter(symbol, df3, df3m=df3, df5m=df5, tf="3min")
-                    regime3 = sf3._market_regime(debug=True)
+                    regime3 = sf3._market_regime()
                     res3 = sf3.analyze()
                     if isinstance(res3, dict) and res3.get("valid_signal") is True:
                         last3 = last_sent.get(key3, 0)
@@ -274,7 +274,7 @@ def run():
                 try:
                     key5 = f"{symbol}_5min"
                     sf5 = SmartFilter(symbol, df5, df3m=df3, df5m=df5, tf="5min")
-                    regime5 = sf5._market_regime(debug=True)
+                    regime5 = sf5._market_regime()
                     res5 = sf5.analyze()
                     if isinstance(res5, dict) and res5.get("valid_signal") is True:
                         last5 = last_sent.get(key5, 0)
