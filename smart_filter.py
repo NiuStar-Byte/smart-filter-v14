@@ -1755,24 +1755,68 @@ class SmartFilter:
                 print(f"[{self.symbol}] [Wick Dominance] No signal fired | long_met={long_met}, short_met={short_met}, wick_dom={wick_dom}")
             return None
 
-    def _market_regime(self, ma_col='ema200', adx_col='adx', adx_threshold=20):
+    def _market_regime(
+        self,
+        ma_col='ema200',
+        adx_col='adx',
+        adx_threshold=20,
+        range_adx_threshold=15,
+        secondary_ma_col=None,
+        debug=False
+    ):
         """
-        Returns 'BULL' if market is in uptrend, 'BEAR' if downtrend, None if ranging.
+        Enhanced Market Regime Detector.
+        Returns:
+            'BULL'      -- strong uptrend
+            'BEAR'      -- strong downtrend
+            'RANGING'   -- sideways/ranging market
+            'NO_REGIME' -- cannot classify (missing data)
         """
-        close = self.df['close'].iat[-1]
-        ma = self.df[ma_col].iat[-1]
-        ma_prev = self.df[ma_col].iat[-2]
-        adx = self.df[adx_col].iat[-1] if adx_col in self.df.columns else None
-
-        # Optional: require ADX above threshold to confirm trend
-        trending = adx is None or adx > adx_threshold
-
-        if close > ma and ma > ma_prev and trending:
-            return "BULL"
-        elif close < ma and ma < ma_prev and trending:
-            return "BEAR"
-        else:
-            return None
+        try:
+            close = self.df['close'].iat[-1]
+            ma = self.df[ma_col].iat[-1]
+            ma_prev = self.df[ma_col].iat[-2]
+            adx = self.df[adx_col].iat[-1] if adx_col in self.df.columns else None
+    
+            # Optional: secondary MA confirmation (e.g. EMA50 above EMA200 for bull)
+            secondary_ma = None
+            secondary_trend = True
+            if secondary_ma_col and secondary_ma_col in self.df.columns:
+                secondary_ma = self.df[secondary_ma_col].iat[-1]
+                secondary_ma_prev = self.df[secondary_ma_col].iat[-2]
+                secondary_trend = secondary_ma > ma if close > ma else secondary_ma < ma
+    
+            # ADX regime logic
+            if adx is None or math.isnan(adx):
+                regime = 'NO_REGIME'
+            elif adx >= adx_threshold:
+                # Strong trend
+                if close > ma and ma > ma_prev and secondary_trend:
+                    regime = 'BULL'
+                elif close < ma and ma < ma_prev and secondary_trend:
+                    regime = 'BEAR'
+                else:
+                    regime = 'RANGING'
+            elif adx >= range_adx_threshold:
+                # Weak trend/range zone
+                regime = 'RANGING'
+            else:
+                # Choppy/flat, low strength
+                regime = 'RANGING'
+    
+            if debug:
+                debug_msg = (
+                    f"[Market Regime] close={close}, ma={ma}, ma_prev={ma_prev}, "
+                    f"adx={adx}, secondary_ma={secondary_ma}, regime={regime}"
+                )
+                print(debug_msg)
+    
+            return regime
+    
+        except Exception as e:
+            if debug:
+                print(f"[Market Regime] Error: {e}")
+            return 'NO_REGIME'
     
     def _fetch_order_book(self, depth=100):
         for sym in (self.symbol, self.symbol.replace('-', '/')):
