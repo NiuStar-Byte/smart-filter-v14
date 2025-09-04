@@ -49,23 +49,30 @@ def compute_adx(df: pd.DataFrame, period: int = 14):
     Returns adx, plus_di, minus_di.
     """
     df = df.copy()
+    # Calculate directional movement
     up_move = df['high'].diff()
-    down_move = df['low'].diff().abs()
+    down_move = -df['low'].diff()
     plus_dm = np.where((up_move > down_move) & (up_move > 0), up_move, 0)
     minus_dm = np.where((down_move > up_move) & (down_move > 0), down_move, 0)
-    tr = np.maximum(df['high'] - df['low'],
-                    np.maximum(abs(df['high'] - df['close'].shift()), abs(df['low'] - df['close'].shift())))
-    atr = pd.Series(tr).rolling(period).mean()
-    plus_di = 100 * pd.Series(plus_dm).rolling(period).sum() / atr
-    minus_di = 100 * pd.Series(minus_dm).rolling(period).sum() / atr
+
+    # True range
+    tr1 = df['high'] - df['low']
+    tr2 = (df['high'] - df['close'].shift()).abs()
+    tr3 = (df['low'] - df['close'].shift()).abs()
+    tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+
+    atr = tr.rolling(window=period, min_periods=period).mean()
+
+    plus_dm = pd.Series(plus_dm, index=df.index)
+    minus_dm = pd.Series(minus_dm, index=df.index)
+
+    plus_di = 100 * (plus_dm.rolling(window=period, min_periods=period).sum() / atr)
+    minus_di = 100 * (minus_dm.rolling(window=period, min_periods=period).sum() / atr)
+
     dx = (abs(plus_di - minus_di) / (plus_di + minus_di)) * 100
-    adx = dx.rolling(period).mean()
-    df['adx'] = adx
-    df['plus_di'] = plus_di
-    df['minus_di'] = minus_di
-    # Diagnostics
-    print(f"[compute_adx] ADX valid count: {adx.notna().sum()} / {len(adx)}")
-    print("[compute_adx] ADX last 10 values:", adx.tail(10).to_list())
+
+    adx = dx.rolling(window=period, min_periods=period).mean()
+
     return adx, plus_di, minus_di
 
 def compute_rsi(df: pd.DataFrame, period: int = 14) -> pd.Series:
