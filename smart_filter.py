@@ -30,7 +30,7 @@ class SmartFilter:
         min_score: int = 7,
         required_passed: Optional[int] = None,  # int or None allowed
         volume_multiplier: float = 2.0,
-        liquidity_threshold: float = 0.50,
+        liquidity_threshold: float = 0.25,
         kwargs: Optional[dict] = None
     ):
         if kwargs is None:
@@ -159,7 +159,7 @@ class SmartFilter:
         else:
             return "NO_REVERSAL"
 
-    def detect_rsi_reversal(self, threshold_overbought=65, threshold_oversold=35):
+    def detect_rsi_reversal(self, threshold_overbought=80, threshold_oversold=20):
         rsi = self.df['RSI']
     
         # Only allow reversal if we move out of oversold or overbought zones (transition event)
@@ -239,7 +239,7 @@ class SmartFilter:
         else:
             return "NO_REVERSAL"
 
-    def detect_adx_reversal(self, adx_threshold=25):
+    def detect_adx_reversal(self, adx_threshold=15):
         logger = logging.getLogger(__name__)
         required = ['adx', 'plus_di', 'minus_di']
         missing = [col for col in required if col not in self.df.columns]
@@ -297,7 +297,7 @@ class SmartFilter:
         else:
             return "NO_REVERSAL"
         
-    def detect_cci_reversal(self, overbought=100, oversold=-100):
+    def detect_cci_reversal(self, overbought=110, oversold=-110):
         if 'cci' not in self.df.columns:
             return "NO_REVERSAL"
     
@@ -918,7 +918,7 @@ class SmartFilter:
             print(f"[{self.symbol}] [TREND] No signal fired | long_met={long_met}, short_met={short_met}")
             return None
 
-    def _check_macd(self, fast=12, slow=26, signal=9, min_conditions=3, debug=False):
+    def _check_macd(self, fast=12, slow=26, signal=9, min_conditions=2, debug=False):
         """
         Composite MACD filter: MACD, Signal line, Histogram, Price action, MACD Cross, MACD Divergence.
         Returns 'LONG', 'SHORT', or None.
@@ -981,8 +981,8 @@ class SmartFilter:
         else:
             return None
   
-    def _check_momentum(self, window=10, min_conditions=3, threshold=1e-6,
-                        rsi_period=14, rsi_overbought=70, rsi_oversold=30,
+    def _check_momentum(self, window=10, min_conditions=2, threshold=1e-6,
+                        rsi_period=14, rsi_overbought=80, rsi_oversold=20,
                         cci_period=20, stochrsi_period=14, willr_period=14, debug=False):
         """
         Composite momentum filter: ROC, acceleration, price action, RSI, CCI, StochRSI, Williams %R.
@@ -1343,11 +1343,11 @@ class SmartFilter:
         short_met = sum([cond1_short, cond2_short, cond3_short])
         
         # Fix: Only return LONG if long_met > short_met, and vice versa
-        if long_met >= 2 and long_met > short_met:
+        if long_met >= 1 and long_met > short_met:
             if debug:
                 print(f"[{self.symbol}] [Candle Confirmation] Signal: LONG | long_met={long_met}, short_met={short_met}, candle_type={candle_type}, close={close}, open={open_}")
             return "LONG"
-        elif short_met >= 2 and short_met > long_met:
+        elif short_met >= 1 and short_met > long_met:
             if debug:
                 print(f"[{self.symbol}] [Candle Confirmation] Signal: SHORT | long_met={long_met}, short_met={short_met}, candle_type={candle_type}, close={close}, open={open_}")
             return "SHORT"
