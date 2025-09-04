@@ -63,6 +63,9 @@ def compute_adx(df: pd.DataFrame, period: int = 14):
     df['adx'] = adx
     df['plus_di'] = plus_di
     df['minus_di'] = minus_di
+    # Diagnostics
+    print(f"[compute_adx] ADX valid count: {adx.notna().sum()} / {len(adx)}")
+    print("[compute_adx] ADX last 10 values:", adx.tail(10).to_list())
     return adx, plus_di, minus_di
 
 def compute_rsi(df: pd.DataFrame, period: int = 14) -> pd.Series:
@@ -152,6 +155,8 @@ def add_indicators(df: pd.DataFrame) -> pd.DataFrame:
     Ensures all used columns are present for filter/detector logic.
     """
     df = df.copy()
+    print(f"[add_indicators] DataFrame shape: {df.shape}")  # Step 3a: Print DataFrame shape
+
     df = add_ema_columns(df)
     df = compute_macd(df)
     df['vwap'] = compute_vwap(df)
@@ -162,6 +167,17 @@ def add_indicators(df: pd.DataFrame) -> pd.DataFrame:
     df['adx'] = adx
     df['plus_di'] = plus_di
     df['minus_di'] = minus_di
+
+    # Step 3b: ADX diagnostics
+    adx_valid_count = df['adx'].notna().sum()
+    print(f"[add_indicators] ADX non-NaN count: {adx_valid_count} / {len(df)}")
+    if adx_valid_count < 5:
+        print("[add_indicators] Warning: ADX has fewer than 5 valid values. Check input data length and format.")
+
+    # Step 3c: Print last 20 ADX values
+    print("[add_indicators] ADX last 20 values:")
+    print(df['adx'].tail(20))
+
     df['cci'] = calculate_cci(df)
     stochrsi_k, stochrsi_d = calculate_stochrsi(df)
     df['stochrsi_k'] = stochrsi_k
