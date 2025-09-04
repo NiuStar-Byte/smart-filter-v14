@@ -128,13 +128,15 @@ def send_telegram_alert(
         route_icon = "❓"
         route_str = f"{Route if Route else 'NO ROUTE'}"
 
-    # -- Regime icon logic --
+    # -- Regime icon logic (enhanced for BULL, BEAR, RANGE, NO_REGIME) --
     if regime == "BULL":
         regime_str = "📈 Regime: <b>BULL</b>\n"
     elif regime == "BEAR":
         regime_str = "📉 Regime: <b>BEAR</b>\n"
-    else:
-        regime_str = "💢 Regime: <b>NO REGIME</b>\n"  # <-- This ensures it's always shown
+    elif regime == "RANGE":
+        regime_str = "〰️ Regime: <b>RANGING/SIDEWAYS</b>\n"
+    else:  # For NO_REGIME or any other fallback
+        regime_str = "💢 Regime: <b>NO REGIME</b>\n"
         
     # Format price for display
     try:
