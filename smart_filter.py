@@ -38,7 +38,7 @@ class SmartFilter:
 
         self.symbol = symbol
         self.df = add_indicators(df)
-        print(f"[{self.symbol}][{tf}] Indicators:", self.df.tail(5)[['adx','ema200','close']])
+        # print(f"[{self.symbol}][{tf}] Indicators:", self.df.tail(5)[['adx','ema200','close']])
         self.df3m = add_indicators(df3m) if df3m is not None else None
         self.df5m = add_indicators(df5m) if df5m is not None else None
 
