@@ -1759,57 +1759,34 @@ class SmartFilter:
         self,
         ma_col='ema200',
         adx_col='adx',
-        adx_threshold=20,
-        range_adx_threshold=15,
-        secondary_ma_col=None,
+        adx_threshold=15,
+        range_adx_threshold=10,
         debug=False
     ):
-        """
-        Enhanced Market Regime Detector.
-        Returns:
-            'BULL'      -- strong uptrend
-            'BEAR'      -- strong downtrend
-            'RANGING'   -- sideways/ranging market
-            'NO_REGIME' -- cannot classify (missing data)
-        """
         try:
             close = self.df['close'].iat[-1]
             ma = self.df[ma_col].iat[-1]
             ma_prev = self.df[ma_col].iat[-2]
             adx = self.df[adx_col].iat[-1] if adx_col in self.df.columns else None
     
-            # Optional: secondary MA confirmation (e.g. EMA50 above EMA200 for bull)
-            secondary_ma = None
-            secondary_trend = True
-            if secondary_ma_col and secondary_ma_col in self.df.columns:
-                secondary_ma = self.df[secondary_ma_col].iat[-1]
-                secondary_ma_prev = self.df[secondary_ma_col].iat[-2]
-                secondary_trend = secondary_ma > ma if close > ma else secondary_ma < ma
-    
-            # ADX regime logic
-            if adx is None or math.isnan(adx):
-                regime = 'NO_REGIME'
-            elif adx >= adx_threshold:
-                # Strong trend
-                if close > ma and ma > ma_prev and secondary_trend:
-                    regime = 'BULL'
-                elif close < ma and ma < ma_prev and secondary_trend:
-                    regime = 'BEAR'
+            if adx is not None and not math.isnan(adx):
+                if adx >= adx_threshold:
+                    if close > ma:
+                        regime = 'BULL'
+                    elif close < ma:
+                        regime = 'BEAR'
+                    else:
+                        regime = 'RANGING'
+                elif adx >= range_adx_threshold:
+                    regime = 'RANGING'
                 else:
                     regime = 'RANGING'
-            elif adx >= range_adx_threshold:
-                # Weak trend/range zone
-                regime = 'RANGING'
             else:
-                # Choppy/flat, low strength
+                # If ADX is missing, fallback to RANGE (not NO_REGIME)
                 regime = 'RANGING'
     
             if debug:
-                debug_msg = (
-                    f"[Market Regime] close={close}, ma={ma}, ma_prev={ma_prev}, "
-                    f"adx={adx}, secondary_ma={secondary_ma}, regime={regime}"
-                )
-                print(debug_msg)
+                print(f"[Market Regime] close={close}, ma={ma}, ma_prev={ma_prev}, adx={adx}, regime={regime}")
     
             return regime
     
