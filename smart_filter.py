@@ -1761,32 +1761,67 @@ class SmartFilter:
         adx_col='adx',
         adx_threshold=15,
         range_adx_threshold=10,
+        secondary_ma_col=None,
         debug=False
     ):
+        """
+        Enhanced Market Regime Detector.
+        Returns:
+            'BULL'      -- strong uptrend
+            'BEAR'      -- strong downtrend
+            'RANGE'     -- sideways/ranging market
+            'NO_REGIME' -- cannot classify (missing data)
+        """
         try:
+            # Check required columns
+            if ma_col not in self.df.columns or adx_col not in self.df.columns:
+                if debug:
+                    print(f"[Market Regime] Missing required column(s): {ma_col}, {adx_col}")
+                return 'NO_REGIME'
+    
             close = self.df['close'].iat[-1]
             ma = self.df[ma_col].iat[-1]
             ma_prev = self.df[ma_col].iat[-2]
-            adx = self.df[adx_col].iat[-1] if adx_col in self.df.columns else None
+            adx = self.df[adx_col].iat[-1]
     
-            if adx is not None and not math.isnan(adx):
-                if adx >= adx_threshold:
-                    if close > ma:
-                        regime = 'BULL'
-                    elif close < ma:
-                        regime = 'BEAR'
-                    else:
-                        regime = 'RANGING'
-                elif adx >= range_adx_threshold:
-                    regime = 'RANGING'
+            # If any critical value is nan, return NO_REGIME
+            if any(map(lambda x: x is None or (isinstance(x, float) and math.isnan(x)), [close, ma, ma_prev, adx])):
+                if debug:
+                    print(f"[Market Regime] NaN detected in input values: close={close}, ma={ma}, ma_prev={ma_prev}, adx={adx}")
+                return 'NO_REGIME'
+    
+            # Optionally use a secondary MA for confirmation (e.g., EMA50 above EMA200 for bull)
+            secondary_trend = True
+            if secondary_ma_col and secondary_ma_col in self.df.columns:
+                secondary_ma = self.df[secondary_ma_col].iat[-1]
+                secondary_ma_prev = self.df[secondary_ma_col].iat[-2]
+                # Confirm secondary MA is also trending in the same direction
+                if close > ma:
+                    secondary_trend = secondary_ma > ma and secondary_ma > secondary_ma_prev
+                elif close < ma:
+                    secondary_trend = secondary_ma < ma and secondary_ma < secondary_ma_prev
+    
+            # ADX regime logic
+            if adx >= adx_threshold:
+                # Strong trend
+                if close > ma and ma > ma_prev and secondary_trend:
+                    regime = 'BULL'
+                elif close < ma and ma < ma_prev and secondary_trend:
+                    regime = 'BEAR'
                 else:
-                    regime = 'RANGING'
+                    regime = 'RANGE'
+            elif adx >= range_adx_threshold:
+                # Weak trend/range zone
+                regime = 'RANGE'
             else:
-                # If ADX is missing, fallback to RANGE (not NO_REGIME)
-                regime = 'RANGING'
+                # Choppy/flat, low strength
+                regime = 'RANGE'
     
             if debug:
-                print(f"[Market Regime] close={close}, ma={ma}, ma_prev={ma_prev}, adx={adx}, regime={regime}")
+                print(
+                    f"[Market Regime] close={close}, ma={ma}, ma_prev={ma_prev}, adx={adx}, "
+                    f"secondary_ma_col={secondary_ma_col}, secondary_trend={secondary_trend}, regime={regime}"
+                )
     
             return regime
     
