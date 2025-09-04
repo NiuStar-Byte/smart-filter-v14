@@ -162,20 +162,19 @@ def add_indicators(df: pd.DataFrame) -> pd.DataFrame:
     """
     Adds all standard indicators and EMAs to the DataFrame.
     Ensures all used columns are present for filter/detector logic.
-    Diagnostic logs are included for debugging.
+    Diagnostic logs are now removed/commented out for production.
     """
     df = df.copy()
-    print(f"[add_indicators] DataFrame shape: {df.shape}")
-
-    # Diagnostic: List columns and check NaNs in critical columns
-    required_cols = ['high', 'low', 'close']
-    print(f"[add_indicators] Columns: {df.columns.tolist()}")
-    for col in required_cols:
-        if col in df.columns:
-            nan_count = df[col].isna().sum()
-            print(f"[add_indicators] NaN count in '{col}': {nan_count}")
-        else:
-            print(f"[add_indicators] Missing column: {col}")
+    # -- Diagnostics commented out for production --
+    # print(f"[add_indicators] DataFrame shape: {df.shape}")
+    # required_cols = ['high', 'low', 'close']
+    # print(f"[add_indicators] Columns: {df.columns.tolist()}")
+    # for col in required_cols:
+    #    if col in df.columns:
+    #        nan_count = df[col].isna().sum()
+    #        print(f"[add_indicators] NaN count in '{col}': {nan_count}")
+    #    else:
+    #        print(f"[add_indicators] Missing column: {col}")
 
     df = add_ema_columns(df)
     df = compute_macd(df)
@@ -184,19 +183,19 @@ def add_indicators(df: pd.DataFrame) -> pd.DataFrame:
     df['atr'] = compute_atr(df)
     df['atr_ma'] = df['atr'].rolling(14).mean()
 
-    # ADX calculation and diagnostics
+    # ADX calculation
     adx, plus_di, minus_di = compute_adx(df)
     df['adx'] = adx
     df['plus_di'] = plus_di
     df['minus_di'] = minus_di
 
-    adx_valid_count = df['adx'].notna().sum()
-    print(f"[add_indicators] ADX non-NaN count: {adx_valid_count} / {len(df)}")
-    if adx_valid_count < 5:
-        print("[add_indicators] Warning: ADX has fewer than 5 valid values. Check input data length and format.")
-
-    print("[add_indicators] ADX last 20 values:")
-    print(df['adx'].tail(20))
+    # -- ADX diagnostics commented out for production --
+    # adx_valid_count = df['adx'].notna().sum()
+    # print(f"[add_indicators] ADX non-NaN count: {adx_valid_count} / {len(df)}")
+    # if adx_valid_count < 5:
+    #     print("[add_indicators] Warning: ADX has fewer than 5 valid values. Check input data length and format.")
+    # print("[add_indicators] ADX last 20 values:")
+    # print(df['adx'].tail(20))
 
     df['cci'] = calculate_cci(df)
     stochrsi_k, stochrsi_d = calculate_stochrsi(df)
