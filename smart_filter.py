@@ -1073,14 +1073,14 @@ class SmartFilter:
                 print(f"[{self.symbol}] [Volume Spike] Not enough data for rolling window")
             return None
     
-        avg = self.get_rolling_avg('volume', rolling_window)
+        avg = self.df['volume'].rolling(rolling_window).mean().iat[-2]
         std = self.df['volume'].rolling(rolling_window).std().iat[-2]
         curr_vol = self.df['volume'].iat[-1]
-        zscore = self.safe_divide(curr_vol - avg, std if std != 0 else 1)
+        zscore = (curr_vol - avg) / (std if std != 0 else 1)
     
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
-        price_move = self.safe_divide(close - close_prev, close_prev if close_prev != 0 else 1)
+        price_move = (close - close_prev) / close_prev if close_prev != 0 else 0
     
         price_up = price_move > min_price_move
         price_down = price_move < -min_price_move
@@ -1147,19 +1147,23 @@ class SmartFilter:
         Returns "LONG", "SHORT", or None.
         """
         bid, ask = self.df['bid'].iat[-1], self.df['ask'].iat[-1]
-        if math.isnan(bid) or math.isnan(ask):
-            if debug:
-                print(f"[{self.symbol}] [Liquidity Awareness] Missing bid/ask values, cannot compute spread.")
-            return None
         bid_prev, ask_prev = self.df['bid'].iat[-2], self.df['ask'].iat[-2]
         volume, volume_prev = self.df['volume'].iat[-1], self.df['volume'].iat[-2]
         close, close_prev = self.df['close'].iat[-1], self.df['close'].iat[-2]
     
-        spread = ask - bid
-        spread_prev = ask_prev - bid_prev
+        spread = ask - bid if not (math.isnan(bid) or math.isnan(ask)) else None
+        spread_prev = ask_prev - bid_prev if not (math.isnan(bid_prev) or math.isnan(ask_prev)) else None
     
-        conds_long = [spread < spread_prev, volume > volume_prev, close > close_prev]
-        conds_short = [spread > spread_prev, volume < volume_prev, close < close_prev]
+        conds_long = [
+            spread is not None and spread_prev is not None and spread < spread_prev,
+            volume > volume_prev,
+            close > close_prev
+        ]
+        conds_short = [
+            spread is not None and spread_prev is not None and spread > spread_prev,
+            volume < volume_prev,
+            close < close_prev
+        ]
     
         long_met, short_met = sum(conds_long), sum(conds_short)
         signal = None
@@ -1219,7 +1223,7 @@ class SmartFilter:
         """
         close, close_prev = self.df['close'].iat[-1], self.df['close'].iat[-2]
         volume = self.df['volume'].iat[-1]
-        avg_volume = self.get_rolling_avg('volume', volume_window)
+        avg_volume = self.df['volume'].rolling(volume_window).mean().iat[-1]
         vwap = self.df['vwap'].iat[-1]
     
         conds_long = [volume > avg_volume and close > close_prev, close > vwap]
@@ -1234,7 +1238,7 @@ class SmartFilter:
     
         if debug:
             smart_money = {
-                "volume_vs_avg": self.safe_divide(volume, avg_volume),
+                "volume_vs_avg": volume / avg_volume if avg_volume != 0 else None,
                 "close_vs_prev": close - close_prev,
                 "close_vs_vwap": close - vwap
             }
@@ -1253,13 +1257,20 @@ class SmartFilter:
         close_prev = self.df['close'].iat[-2]
         volume = self.df['volume'].iat[-1]
         volume_prev = self.df['volume'].iat[-2]
-        avg_volume = self.get_rolling_avg('volume', window)
+        avg_volume = self.df['volume'].rolling(window).mean().iat[-1]
+    
+        # Safe division helper
+        def safe_divide(a, b):
+            try:
+                return a / b if b else 0.0
+            except Exception:
+                return 0.0
     
         absorption_metrics = {
-            "close_to_low_pct": self.safe_divide(close - low, low),
-            "close_to_high_pct": self.safe_divide(high - close, high),
-            "volume_vs_avg": self.safe_divide(volume, avg_volume),
-            "volume_vs_prev": self.safe_divide(volume, volume_prev)
+            "close_to_low_pct": safe_divide(close - low, low),
+            "close_to_high_pct": safe_divide(high - close, high),
+            "volume_vs_avg": safe_divide(volume, avg_volume),
+            "volume_vs_prev": safe_divide(volume, volume_prev)
         }
     
         conds_long = [
