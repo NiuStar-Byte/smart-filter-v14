@@ -378,16 +378,18 @@ class SmartFilter:
         bullish = results.count("BULLISH_REVERSAL")
         bearish = results.count("BEARISH_REVERSAL")
     
-        # print("[DEBUG] Reversal detector results:", results)
-    
+        # --- Minimal summary log ---
         if bullish >= 2 and bearish == 0:
+            print(f"[SUMMARY] Reversal decision: BULLISH (Detectors: {bullish})")
             return ("REVERSAL", "BULLISH")
         elif bearish >= 2 and bullish == 0:
+            print(f"[SUMMARY] Reversal decision: BEARISH (Detectors: {bearish})")
             return ("REVERSAL", "BEARISH")
         elif bullish > 0 and bearish > 0:
-            # Ambiguous signal: both bullish and bearish detected
+            print(f"[SUMMARY] Reversal decision: AMBIGUOUS (Bullish: {bullish}, Bearish: {bearish})")
             return ("AMBIGUOUS", ["BULLISH", "BEARISH"])
         else:
+            print("[SUMMARY] Reversal decision: NONE")
             return ("NONE", None)
                     
     def detect_trend_continuation(self):
