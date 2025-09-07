@@ -320,22 +320,22 @@ class SmartFilter:
     def explicit_reversal_gate(self):
         signals = [
             self.detect_ema_reversal(),
-            self.detect_rsi_reversal(),
+            self.detect_rsi_reversal(threshold_overbought=70, threshold_oversold=30),  # relaxed
             self.detect_engulfing_reversal(),
-            self.detect_adx_reversal(),
-            self.detect_stochrsi_reversal(),
-            self.detect_cci_reversal(),
+            self.detect_adx_reversal(adx_threshold=10),  # relaxed
+            self.detect_stochrsi_reversal(overbought=0.7, oversold=0.3),  # relaxed
+            self.detect_cci_reversal(overbought=100, oversold=-100),  # relaxed
         ]
         print("Reversal detector results:", signals)
         bullish = signals.count("BULLISH_REVERSAL")
         bearish = signals.count("BEARISH_REVERSAL")
     
-        if bullish > 0 and bearish == 0:
+        # Fire reversal if at least 2 detectors agree, none oppose
+        if bullish >= 2 and bearish == 0:
             return ("REVERSAL", "BULLISH")
-        elif bearish > 0 and bullish == 0:
+        elif bearish >= 2 and bullish == 0:
             return ("REVERSAL", "BEARISH")
         elif bullish > 0 and bearish > 0:
-            # Ambiguous signal: both bullish and bearish detected
             return ("AMBIGUOUS", ["BULLISH", "BEARISH"])
         else:
             return ("NONE", None)
