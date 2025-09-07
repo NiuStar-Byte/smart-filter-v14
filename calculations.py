@@ -47,6 +47,7 @@ def compute_adx(df: pd.DataFrame, period: int = 14):
     """
     Computes ADX, +DI, -DI as Series and adds them to the DataFrame.
     Returns adx, plus_di, minus_di.
+    Uses standard Wilder's smoothing for DM and ATR.
     """
     df = df.copy()
     # Calculate directional movement
@@ -61,17 +62,17 @@ def compute_adx(df: pd.DataFrame, period: int = 14):
     tr3 = (df['low'] - df['close'].shift()).abs()
     tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
 
-    atr = tr.rolling(window=period, min_periods=period).mean()
+    # Wilder's smoothing (EMA with alpha=1/period)
+    atr = tr.ewm(alpha=1/period, min_periods=period, adjust=False).mean()
+    plus_dm_smooth = pd.Series(plus_dm, index=df.index).ewm(alpha=1/period, min_periods=period, adjust=False).mean()
+    minus_dm_smooth = pd.Series(minus_dm, index=df.index).ewm(alpha=1/period, min_periods=period, adjust=False).mean()
 
-    plus_dm = pd.Series(plus_dm, index=df.index)
-    minus_dm = pd.Series(minus_dm, index=df.index)
-
-    plus_di = 100 * (plus_dm.rolling(window=period, min_periods=period).sum() / atr)
-    minus_di = 100 * (minus_dm.rolling(window=period, min_periods=period).sum() / atr)
+    plus_di = 100 * (plus_dm_smooth / atr)
+    minus_di = 100 * (minus_dm_smooth / atr)
 
     dx = (abs(plus_di - minus_di) / (plus_di + minus_di)) * 100
 
-    adx = dx.rolling(window=period, min_periods=period).mean()
+    adx = dx.ewm(alpha=1/period, min_periods=period, adjust=False).mean()
 
     return adx, plus_di, minus_di
 
