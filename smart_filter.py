@@ -330,6 +330,24 @@ class SmartFilter:
             else:
                 print(f"{col}: [MISSING]")
     
+        # Diagnostic: print the latest value actually used in reversal detection
+        print("[INFO] Detector check values:")
+        if 'RSI' in self.df.columns:
+            latest_rsi = self.df['RSI'].iloc[-1]
+            print(f"RSI latest: {latest_rsi} (thresholds: 70/30)")
+        if 'adx' in self.df.columns and 'plus_di' in self.df.columns and 'minus_di' in self.df.columns:
+            latest_adx = self.df['adx'].iloc[-1]
+            latest_plus_di = self.df['plus_di'].iloc[-1]
+            latest_minus_di = self.df['minus_di'].iloc[-1]
+            print(f"ADX latest: {latest_adx} (threshold: 10)")
+            print(f"plus_di latest: {latest_plus_di}, minus_di latest: {latest_minus_di}")
+            if latest_plus_di > latest_minus_di:
+                print("DI Crossover: Bullish")
+            elif latest_plus_di < latest_minus_di:
+                print("DI Crossover: Bearish")
+            else:
+                print("DI Crossover: Neutral / No crossover")
+    
         # Prepare reversal detectors and log their outputs
         detectors = [
             ("EMA", self.detect_ema_reversal),
