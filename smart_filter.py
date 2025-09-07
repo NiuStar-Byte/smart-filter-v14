@@ -318,6 +318,9 @@ class SmartFilter:
             return "NO_REVERSAL"
 
     def explicit_reversal_gate(self):
+        # Print latest indicator values for diagnostics
+        print(self.df.tail(10)[['ema6','ema13','RSI','adx','plus_di','minus_di','stochrsi_k','stochrsi_d','cci']])
+
         # Run all detectors and log their outputs + assert correctness
         detectors = [
             ("EMA", self.detect_ema_reversal),
