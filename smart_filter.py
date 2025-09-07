@@ -318,8 +318,11 @@ class SmartFilter:
             return "NO_REVERSAL"
 
     def explicit_reversal_gate(self):
-        # Print latest indicator values for diagnostics
-        print(self.df.tail(10)[['ema6','ema13','RSI','adx','plus_di','minus_di','stochrsi_k','stochrsi_d','cci']])
+        # Print all columns present in self.df for diagnostics
+        print("Columns in self.df:", self.df.columns)
+        
+        # (optional) Print indicator values as before
+        # print(self.df.tail(10)[['ema6','ema13','RSI','adx','plus_di','minus_di','stochrsi_k','stochrsi_d','cci']])
 
         # Run all detectors and log their outputs + assert correctness
         detectors = [
@@ -334,7 +337,7 @@ class SmartFilter:
         for name, func in detectors:
             try:
                 result = func()
-                print(f"[DEBUG] {name} reversal result:", result)
+                # print(f"[DEBUG] {name} reversal result:", result)
                 assert result in ["BULLISH_REVERSAL", "BEARISH_REVERSAL", "NO_REVERSAL"], \
                     f"{name} reversal detector returned unexpected value: {result}"
                 results.append(result)
