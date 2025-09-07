@@ -321,31 +321,37 @@ class SmartFilter:
         # Print all columns present in self.df for diagnostics
         print("Columns in self.df:", self.df.columns)
         
-        # (optional) Print indicator values as before
-        # print(self.df.tail(10)[['ema6','ema13','RSI','adx','plus_di','minus_di','stochrsi_k','stochrsi_d','cci']])
-
-        # Run all detectors and log their outputs + assert correctness
+        # Print the last 10 indicator values for all required columns, handle missing columns gracefully
+        indicator_cols = ['ema6', 'ema13', 'RSI', 'adx', 'plus_di', 'minus_di', 'stochrsi_k', 'stochrsi_d', 'cci']
+        print("[INFO] Latest indicator values:")
+        for col in indicator_cols:
+            if col in self.df.columns:
+                print(f"{col}: {self.df[col].tail(10).values}")
+            else:
+                print(f"{col}: [MISSING]")
+    
+        # Prepare reversal detectors and log their outputs
         detectors = [
             ("EMA", self.detect_ema_reversal),
-            ("RSI", lambda: self.detect_rsi_reversal(threshold_overbought=70, threshold_oversold=30)),  # relaxed thresholds
+            ("RSI", lambda: self.detect_rsi_reversal(threshold_overbought=70, threshold_oversold=30)),
             ("Engulfing", self.detect_engulfing_reversal),
-            ("ADX", lambda: self.detect_adx_reversal(adx_threshold=10)),  # relaxed threshold
-            ("StochRSI", lambda: self.detect_stochrsi_reversal(overbought=0.7, oversold=0.3)),  # relaxed thresholds
-            ("CCI", lambda: self.detect_cci_reversal(overbought=100, oversold=-100)),  # relaxed thresholds
+            ("ADX", lambda: self.detect_adx_reversal(adx_threshold=10)),
+            ("StochRSI", lambda: self.detect_stochrsi_reversal(overbought=0.7, oversold=0.3)),
+            ("CCI", lambda: self.detect_cci_reversal(overbought=100, oversold=-100)),
         ]
         results = []
         for name, func in detectors:
             try:
                 result = func()
-                # print(f"[DEBUG] {name} reversal result:", result)
+                print(f"[DEBUG] {name} reversal result: {result}")
                 assert result in ["BULLISH_REVERSAL", "BEARISH_REVERSAL", "NO_REVERSAL"], \
                     f"{name} reversal detector returned unexpected value: {result}"
                 results.append(result)
             except Exception as e:
                 print(f"[ERROR] Exception in {name} reversal detector:", e)
-                results.append("NO_REVERSAL")  # Fallback to NO_REVERSAL on error
+                results.append("NO_REVERSAL")  # Fallback on error
     
-        # More inclusive: fire if at least 2 detectors agree, none oppose
+        # Inclusive logic: fire if at least 2 detectors agree and none oppose
         bullish = results.count("BULLISH_REVERSAL")
         bearish = results.count("BEARISH_REVERSAL")
     
