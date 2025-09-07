@@ -341,35 +341,35 @@ class SmartFilter:
             return ("NONE", None)
                     
     def detect_trend_continuation(self):
-        # Check required columns
         required_cols = ['ema6', 'ema13', 'macd', 'RSI']
         for col in required_cols:
             if col not in self.df.columns:
                 print(f"[ERROR] '{col}' column missing in DataFrame!")
-                return "NO_CONTINUATION"  # Or handle as needed
+                return "NO_CONTINUATION"
     
-        # Safe to extract values now
         ema_fast = self.df['ema6'].iat[-1]
         ema_slow = self.df['ema13'].iat[-1]
         macd = self.df['macd'].iat[-1]
         rsi = self.df['RSI'].iat[-1]
         adx = self.df['adx'].iat[-1] if 'adx' in self.df.columns else None
     
-        bullish = (
-            ema_fast > ema_slow and
-            macd > 0 and
-            rsi > 50 and
+        bullish_conditions = [
+            ema_fast > ema_slow,
+            macd > 0,
+            rsi > 50,
             (adx is None or adx > 20)
-        )
-        bearish = (
-            ema_fast < ema_slow and
-            macd < 0 and
-            rsi < 50 and
+        ]
+        bearish_conditions = [
+            ema_fast < ema_slow,
+            macd < 0,
+            rsi < 50,
             (adx is None or adx > 20)
-        )
-        if bullish:
+        ]
+    
+        # More inclusive: require at least 3 out of 4 conditions
+        if sum(bullish_conditions) >= 3:
             return "BULLISH_CONTINUATION"
-        elif bearish:
+        elif sum(bearish_conditions) >= 3:
             return "BEARISH_CONTINUATION"
         else:
             return "NO_CONTINUATION"
