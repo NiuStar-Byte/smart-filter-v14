@@ -318,24 +318,39 @@ class SmartFilter:
             return "NO_REVERSAL"
 
     def explicit_reversal_gate(self):
-        signals = [
-            self.detect_ema_reversal(),
-            self.detect_rsi_reversal(threshold_overbought=70, threshold_oversold=30),  # relaxed
-            self.detect_engulfing_reversal(),
-            self.detect_adx_reversal(adx_threshold=10),  # relaxed
-            self.detect_stochrsi_reversal(overbought=0.7, oversold=0.3),  # relaxed
-            self.detect_cci_reversal(overbought=100, oversold=-100),  # relaxed
+        # Run all detectors and log their outputs + assert correctness
+        detectors = [
+            ("EMA", self.detect_ema_reversal),
+            ("RSI", lambda: self.detect_rsi_reversal(threshold_overbought=70, threshold_oversold=30)),  # relaxed thresholds
+            ("Engulfing", self.detect_engulfing_reversal),
+            ("ADX", lambda: self.detect_adx_reversal(adx_threshold=10)),  # relaxed threshold
+            ("StochRSI", lambda: self.detect_stochrsi_reversal(overbought=0.7, oversold=0.3)),  # relaxed thresholds
+            ("CCI", lambda: self.detect_cci_reversal(overbought=100, oversold=-100)),  # relaxed thresholds
         ]
-        print("Reversal detector results:", signals)
-        bullish = signals.count("BULLISH_REVERSAL")
-        bearish = signals.count("BEARISH_REVERSAL")
+        results = []
+        for name, func in detectors:
+            try:
+                result = func()
+                print(f"[DEBUG] {name} reversal result:", result)
+                assert result in ["BULLISH_REVERSAL", "BEARISH_REVERSAL", "NO_REVERSAL"], \
+                    f"{name} reversal detector returned unexpected value: {result}"
+                results.append(result)
+            except Exception as e:
+                print(f"[ERROR] Exception in {name} reversal detector:", e)
+                results.append("NO_REVERSAL")  # Fallback to NO_REVERSAL on error
     
-        # Fire reversal if at least 2 detectors agree, none oppose
+        # More inclusive: fire if at least 2 detectors agree, none oppose
+        bullish = results.count("BULLISH_REVERSAL")
+        bearish = results.count("BEARISH_REVERSAL")
+    
+        print("[DEBUG] Reversal detector results:", results)
+    
         if bullish >= 2 and bearish == 0:
             return ("REVERSAL", "BULLISH")
         elif bearish >= 2 and bullish == 0:
             return ("REVERSAL", "BEARISH")
         elif bullish > 0 and bearish > 0:
+            # Ambiguous signal: both bullish and bearish detected
             return ("AMBIGUOUS", ["BULLISH", "BEARISH"])
         else:
             return ("NONE", None)
