@@ -319,34 +319,39 @@ class SmartFilter:
 
     def explicit_reversal_gate(self):
         # Print all columns present in self.df for diagnostics
-        print("Columns in self.df:", self.df.columns)
+        # print("Columns in self.df:", self.df.columns)
         
         # Print the last 10 indicator values for all required columns, handle missing columns gracefully
         indicator_cols = ['ema6', 'ema13', 'RSI', 'adx', 'plus_di', 'minus_di', 'stochrsi_k', 'stochrsi_d', 'cci']
-        print("[INFO] Latest indicator values:")
+        # print("[INFO] Latest indicator values:")
         for col in indicator_cols:
             if col in self.df.columns:
-                print(f"{col}: {self.df[col].tail(10).values}")
+                # print(f"{col}: {self.df[col].tail(10).values}")
+                pass
             else:
-                print(f"{col}: [MISSING]")
+                # print(f"{col}: [MISSING]")
+                pass
     
         # Diagnostic: print the latest value actually used in reversal detection
-        print("[INFO] Detector check values:")
+        # print("[INFO] Detector check values:")
         if 'RSI' in self.df.columns:
             latest_rsi = self.df['RSI'].iloc[-1]
-            print(f"RSI latest: {latest_rsi} (thresholds: 70/30)")
+            # print(f"RSI latest: {latest_rsi} (thresholds: 70/30)")
         if 'adx' in self.df.columns and 'plus_di' in self.df.columns and 'minus_di' in self.df.columns:
             latest_adx = self.df['adx'].iloc[-1]
             latest_plus_di = self.df['plus_di'].iloc[-1]
             latest_minus_di = self.df['minus_di'].iloc[-1]
-            print(f"ADX latest: {latest_adx} (threshold: 10)")
-            print(f"plus_di latest: {latest_plus_di}, minus_di latest: {latest_minus_di}")
+            # print(f"ADX latest: {latest_adx} (threshold: 10)")
+            # print(f"plus_di latest: {latest_plus_di}, minus_di latest: {latest_minus_di}")
             if latest_plus_di > latest_minus_di:
-                print("DI Crossover: Bullish")
+                # print("DI Crossover: Bullish")
+                pass
             elif latest_plus_di < latest_minus_di:
-                print("DI Crossover: Bearish")
+                # print("DI Crossover: Bearish")
+                pass
             else:
-                print("DI Crossover: Neutral / No crossover")
+                # print("DI Crossover: Neutral / No crossover")
+                pass
     
         # Prepare reversal detectors and log their outputs
         detectors = [
@@ -361,7 +366,7 @@ class SmartFilter:
         for name, func in detectors:
             try:
                 result = func()
-                print(f"[DEBUG] {name} reversal result: {result}")
+                # print(f"[DEBUG] {name} reversal result: {result}")
                 assert result in ["BULLISH_REVERSAL", "BEARISH_REVERSAL", "NO_REVERSAL"], \
                     f"{name} reversal detector returned unexpected value: {result}"
                 results.append(result)
@@ -373,7 +378,7 @@ class SmartFilter:
         bullish = results.count("BULLISH_REVERSAL")
         bearish = results.count("BEARISH_REVERSAL")
     
-        print("[DEBUG] Reversal detector results:", results)
+        # print("[DEBUG] Reversal detector results:", results)
     
         if bullish >= 2 and bearish == 0:
             return ("REVERSAL", "BULLISH")
