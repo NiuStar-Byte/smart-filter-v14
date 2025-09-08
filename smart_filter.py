@@ -1349,6 +1349,55 @@ class SmartFilter:
     
         return signal
 
+    def _check_vwap_divergence(self, debug=False):
+        vwap = self.df['vwap'].iat[-1]
+        vwap_prev = self.df['vwap'].iat[-2]
+        close = self.df['close'].iat[-1]
+        close_prev = self.df['close'].iat[-2]
+    
+        volume = self.df['volume'].iat[-1]
+        volume_ma = self.df['volume'].rolling(window=20).mean().iat[-1]
+        min_vol_threshold = volume_ma * 0.9  # 10% below moving avg is still acceptable
+    
+        # Compute VWAP divergence for logging
+        vwap_div = (vwap - close) - (vwap_prev - close_prev)
+        min_vwap_div = 0.001  # Example: only fire if divergence > 0.1%
+    
+        # LONG conditions
+        cond1_long = close < vwap
+        cond2_long = close > close_prev
+        cond3_long = (vwap - close) > (vwap_prev - close_prev)
+        cond4_long = volume > min_vol_threshold
+        cond5_long = abs(vwap_div) > min_vwap_div
+    
+        # SHORT conditions
+        cond1_short = close > vwap
+        cond2_short = close < close_prev
+        cond3_short = (close - vwap) > (close_prev - vwap_prev)
+        cond4_short = volume > min_vol_threshold
+        cond5_short = abs(vwap_div) > min_vwap_div
+    
+        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long, cond5_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short, cond5_short])
+    
+        if debug:
+            print(f"[{self.symbol}] [VWAP Divergence] Values | vwap={vwap}, vwap_prev={vwap_prev}, close={close}, close_prev={close_prev}, volume={volume}, volume_ma={volume_ma}")
+            print(f"[{self.symbol}] [VWAP Divergence] Conditions | conds_long={[cond1_long, cond2_long, cond3_long, cond4_long, cond5_long]}, conds_short={[cond1_short, cond2_short, cond3_short, cond4_short, cond5_short]}")
+            print(f"[{self.symbol}] [VWAP Divergence] Met Counts | long_met={long_met}, short_met={short_met}, vwap_div={vwap_div}")
+    
+        if long_met > short_met and long_met >= 4:
+            print(f"[{self.symbol}] [VWAP Divergence] Signal: LONG | long_met={long_met}, short_met={short_met}, vwap_div={vwap_div}, volume={volume}, volume_ma={volume_ma}")
+            return "LONG"
+        elif short_met > long_met and short_met >= 4:
+            print(f"[{self.symbol}] [VWAP Divergence] Signal: SHORT | long_met={long_met}, short_met={short_met}, vwap_div={vwap_div}, volume={volume}, volume_ma={volume_ma}")
+            return "SHORT"
+        elif long_met == short_met and long_met >= 4:
+            print(f"[{self.symbol}] [VWAP Divergence] Signal: LONG (tie) | long_met={long_met}, short_met={short_met}, vwap_div={vwap_div}, volume={volume}, volume_ma={volume_ma}")
+            return "LONG"  # Or "SHORT"/None if desired
+        else:
+            print(f"[{self.symbol}] [VWAP Divergence] No signal fired | long_met={long_met}, short_met={short_met}, vwap_div={vwap_div}, volume={volume}, volume_ma={volume_ma}")
+            return None
+
     def _check_candle_confirmation(self, debug=False):
         open_ = self.df['open'].iat[-1]
         high = self.df['high'].iat[-1]
@@ -1674,40 +1723,6 @@ class SmartFilter:
             return "SHORT"
         else:
             print(f"[{self.symbol}] [Volatility Squeeze] No signal fired | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, squeeze={squeeze}, volatility={volatility}")
-            return None
-    
-    def _check_vwap_divergence(self, debug=False):
-        vwap = self.df['vwap'].iat[-1]
-        vwap_prev = self.df['vwap'].iat[-2]
-        close = self.df['close'].iat[-1]
-        close_prev = self.df['close'].iat[-2]
-    
-        # Compute VWAP divergence for logging
-        vwap_div = (vwap - close) - (vwap_prev - close_prev)
-    
-        # LONG conditions
-        cond1_long = close < vwap
-        cond2_long = close > close_prev
-        cond3_long = (vwap - close) > (vwap_prev - close_prev)
-    
-        # SHORT conditions
-        cond1_short = close > vwap
-        cond2_short = close < close_prev
-        cond3_short = (close - vwap) > (close_prev - vwap_prev)
-    
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
-    
-        if long_met > short_met and long_met > 0:
-            print(f"[{self.symbol}] [VWAP Divergence] Signal: LONG | long_met={long_met}, short_met={short_met}, vwap_div={vwap_div}")
-            return "LONG"
-        elif short_met > long_met and short_met > 0:
-            print(f"[{self.symbol}] [VWAP Divergence] Signal: SHORT | long_met={long_met}, short_met={short_met}, vwap_div={vwap_div}")
-            return "SHORT"
-        elif long_met == short_met and long_met > 0:
-            print(f"[{self.symbol}] [VWAP Divergence] Signal: LONG (tie) | long_met={long_met}, short_met={short_met}, vwap_div={vwap_div}")
-            return "LONG"  # Change to "SHORT" or None if desired
-        else:
             return None
 
     def _check_chop_zone(self, chop_threshold=40, debug=False):
