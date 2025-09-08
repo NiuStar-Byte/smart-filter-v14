@@ -1397,66 +1397,6 @@ class SmartFilter:
         else:
             print(f"[{self.symbol}] [VWAP Divergence] No signal fired | long_met={long_met}, short_met={short_met}, vwap_div={vwap_div}, volume={volume}, volume_ma={volume_ma}")
             return None
-
-    def _check_candle_confirmation(self, debug=False):
-        open_ = self.df['open'].iat[-1]
-        high = self.df['high'].iat[-1]
-        low = self.df['low'].iat[-1]
-        close = self.df['close'].iat[-1]
-    
-        open_prev = self.df['open'].iat[-2]
-        close_prev = self.df['close'].iat[-2]
-    
-        # Engulfing
-        bullish_engulfing = close > open_prev and open_ < close_prev
-        bearish_engulfing = close < open_prev and open_ > close_prev
-    
-        # Pin bar / Hammer / Shooting Star
-        lower_wick = open_ - low if open_ < close else close - low
-        upper_wick = high - close if open_ < close else high - open_
-        body = abs(close - open_)
-    
-        bullish_pin_bar = lower_wick > 2 * body and close > open_
-        bearish_pin_bar = upper_wick > 2 * body and close < open_
-    
-        # Determine candle_type for logging
-        if bullish_engulfing:
-            candle_type = "Bullish Engulfing"
-        elif bearish_engulfing:
-            candle_type = "Bearish Engulfing"
-        elif bullish_pin_bar:
-            candle_type = "Bullish Pin Bar"
-        elif bearish_pin_bar:
-            candle_type = "Bearish Pin Bar"
-        else:
-            candle_type = "Neutral"
-    
-        # LONG conditions
-        cond1_long = bullish_engulfing
-        cond2_long = bullish_pin_bar
-        cond3_long = close > close_prev
-    
-        # SHORT conditions
-        cond1_short = bearish_engulfing
-        cond2_short = bearish_pin_bar
-        cond3_short = close < close_prev
-    
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
-        
-        # Fix: Only return LONG if long_met > short_met, and vice versa
-        if long_met >= 1 and long_met > short_met:
-            if debug:
-                print(f"[{self.symbol}] [Candle Confirmation] Signal: LONG | long_met={long_met}, short_met={short_met}, candle_type={candle_type}, close={close}, open={open_}")
-            return "LONG"
-        elif short_met >= 1 and short_met > long_met:
-            if debug:
-                print(f"[{self.symbol}] [Candle Confirmation] Signal: SHORT | long_met={long_met}, short_met={short_met}, candle_type={candle_type}, close={close}, open={open_}")
-            return "SHORT"
-        else:
-            if debug:
-                print(f"[{self.symbol}] [Candle Confirmation] No signal fired | long_met={long_met}, short_met={short_met}, candle_type={candle_type}, close={close}, open={open_}")
-            return None
             
     def _get_rolling_extremes(self, col, window, prev=False):
         """Helper to get rolling min/max for current or previous index."""
@@ -1604,47 +1544,95 @@ class SmartFilter:
                 print(f"[{self.symbol}] [Liquidity Pool] No signal fired | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, liquidity_pool={liquidity_pool}")
             return None
 
-    def _check_atr_momentum_burst(self, threshold_pct=0.10, volume_mult=1.1, min_cond=2, debug=False):
+    def _check_atr_momentum_burst(
+        self,
+        threshold_pct=0.10,
+        volume_mult=1.1,
+        min_cond=2,
+        min_atr=0.5,
+        debug=False
+    ):
+        """
+        Enhanced ATR Momentum Burst:
+        - Requires minimum ATR for signal quality.
+        - Logs all relevant metrics.
+        - Keeps logic independent and robust.
+        """
         long_met = 0
         short_met = 0
         momentum = []
         atr = []
+        volumes = []
+        avg_vols = []
+        atr_vals = []
+    
         for i in [-1, -2]:
             close = self.df['close'].iat[i]
             open_ = self.df['open'].iat[i]
             volume = self.df['volume'].iat[i]
             avg_vol = self.df['volume'].rolling(10).mean().iat[i]
             pct_move = (close - open_) / open_ * 100
-            momentum.append(pct_move)
             atr_val = self.df['atr'].iat[i] if 'atr' in self.df.columns else None
+    
+            momentum.append(pct_move)
             atr.append(atr_val)
+            volumes.append(volume)
+            avg_vols.append(avg_vol)
+            atr_vals.append(atr_val)
+    
+            # Enhancement: Only consider bar if ATR is sufficient
+            if atr_val is not None and atr_val < min_atr:
+                continue
+    
             if pct_move > threshold_pct and volume > avg_vol * volume_mult:
                 long_met += 1
             elif pct_move < -threshold_pct and volume > avg_vol * volume_mult:
                 short_met += 1
     
-        # Only signal if BOTH bars agree (default: min_cond=2)
+        if debug:
+            print(
+                f"[{self.symbol}] [ATR Momentum Burst] Metrics | momentum={momentum}, atr={atr}, volumes={volumes}, avg_vols={avg_vols}, min_atr={min_atr}"
+            )
+    
         if long_met >= min_cond and long_met > short_met:
-            if debug:
-                print(f"[{self.symbol}] [ATR Momentum Burst] Signal: LONG | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, atr={atr}, momentum={momentum}, close={close}")
+            print(
+                f"[{self.symbol}] [ATR Momentum Burst] Signal: LONG | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, atr={atr}, momentum={momentum}"
+            )
             return "LONG"
         elif short_met >= min_cond and short_met > long_met:
-            if debug:
-                print(f"[{self.symbol}] [ATR Momentum Burst] Signal: SHORT | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, atr={atr}, momentum={momentum}, close={close}")
+            print(
+                f"[{self.symbol}] [ATR Momentum Burst] Signal: SHORT | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, atr={atr}, momentum={momentum}"
+            )
             return "SHORT"
         else:
-            if debug:
-                print(f"[{self.symbol}] [ATR Momentum Burst] No signal fired | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, atr={atr}, momentum={momentum}, close={close}")
+            print(
+                f"[{self.symbol}] [ATR Momentum Burst] No signal fired | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, atr={atr}, momentum={momentum}"
+            )
             return None
 
-    def _check_volatility_model(self, atr_col='atr', atr_ma_col='atr_ma', debug=False):
+
+    def _check_volatility_model(
+        self,
+        atr_col='atr',
+        atr_ma_col='atr_ma',
+        min_atr_diff=0.1,
+        volume_confirm=False,
+        debug=False
+    ):
+        """
+        Enhanced Volatility Model:
+        - Configurable minimum ATR difference versus average.
+        - Optional volume confirmation.
+        - Detailed logging.
+        """
         atr = self.df[atr_col].iat[-1]
         atr_prev = self.df[atr_col].iat[-2]
         atr_ma = self.df[atr_ma_col].iat[-1]
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
+        volume = self.df['volume'].iat[-1]
+        volume_ma = self.df['volume'].rolling(10).mean().iat[-1]
     
-        # For logging: volatility metrics
         volatility = {
             "atr": atr,
             "atr_prev": atr_prev,
@@ -1652,32 +1640,60 @@ class SmartFilter:
             "close": close,
             "close_prev": close_prev,
             "atr_vs_ma": atr - atr_ma,
-            "atr_vs_prev": atr - atr_prev
+            "atr_vs_prev": atr - atr_prev,
+            "volume": volume,
+            "volume_ma": volume_ma,
+            "min_atr_diff": min_atr_diff,
         }
     
-        # LONG conditions: volatility expansion + bullish price
+        # Enhancement: ATR must exceed MA by min_atr_diff
         cond1_long = atr > atr_prev
         cond2_long = close > close_prev
-        cond3_long = atr > atr_ma
+        cond3_long = (atr - atr_ma) > min_atr_diff
+        cond4_long = (volume > volume_ma) if volume_confirm else True
     
-        # SHORT conditions: volatility contraction + bearish price
-        cond1_short = atr < atr_prev        # ATR falling
+        cond1_short = atr < atr_prev
         cond2_short = close < close_prev
-        cond3_short = atr < atr_ma          # ATR below average
+        cond3_short = (atr_ma - atr) > min_atr_diff
+        cond4_short = (volume > volume_ma) if volume_confirm else True
     
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
     
-        if long_met >= 2:
-            print(f"[{self.symbol}] [Volatility Model] Signal: LONG | long_met={long_met}, short_met={short_met}, volatility={volatility}")
+        if debug:
+            print(
+                f"[{self.symbol}] [Volatility Model] Metrics | volatility={volatility}, long_met={long_met}, short_met={short_met}"
+            )
+    
+        if long_met >= 3:
+            print(
+                f"[{self.symbol}] [Volatility Model] Signal: LONG | long_met={long_met}, short_met={short_met}, volatility={volatility}"
+            )
             return "LONG"
-        elif short_met >= 2:
-            print(f"[{self.symbol}] [Volatility Model] Signal: SHORT | long_met={long_met}, short_met={short_met}, volatility={volatility}")
+        elif short_met >= 3:
+            print(
+                f"[{self.symbol}] [Volatility Model] Signal: SHORT | long_met={long_met}, short_met={short_met}, volatility={volatility}"
+            )
             return "SHORT"
         else:
+            print(
+                f"[{self.symbol}] [Volatility Model] No signal fired | long_met={long_met}, short_met={short_met}, volatility={volatility}"
+            )
             return None
 
-    def _check_volatility_squeeze(self, min_cond=2, debug=False):
+    def _check_volatility_squeeze(
+        self,
+        min_cond=2,
+        min_squeeze_diff=0.05,
+        volume_confirm=True,
+        debug=False
+    ):
+        """
+        Enhanced Volatility Squeeze:
+        - Minimum squeeze magnitude filter.
+        - Optional volume confirmation for breakouts.
+        - Detailed logging.
+        """
         bb_width = self.df['bb_upper'].iat[-1] - self.df['bb_lower'].iat[-1]
         kc_width = self.df['kc_upper'].iat[-1] - self.df['kc_lower'].iat[-1]
         bb_width_prev = self.df['bb_upper'].iat[-2] - self.df['bb_lower'].iat[-2]
@@ -1687,55 +1703,77 @@ class SmartFilter:
         close_prev = self.df['close'].iat[-2]
         volume = self.df['volume'].iat[-1]
         volume_prev = self.df['volume'].iat[-2]
+        volume_ma = self.df['volume'].rolling(10).mean().iat[-1]
     
-        squeeze_firing = bb_width > kc_width and bb_width_prev < kc_width_prev
+        squeeze_diff = bb_width - kc_width
+        squeeze_firing = (
+            squeeze_diff > min_squeeze_diff
+            and bb_width_prev < kc_width_prev
+        )
     
         squeeze = {
             "bb_width": bb_width,
             "kc_width": kc_width,
             "bb_width_prev": bb_width_prev,
             "kc_width_prev": kc_width_prev,
-            "squeeze_firing": squeeze_firing
+            "squeeze_firing": squeeze_firing,
+            "squeeze_diff": squeeze_diff,
+            "min_squeeze_diff": min_squeeze_diff,
         }
         volatility = {
             "close": close,
             "close_prev": close_prev,
             "volume": volume,
-            "volume_prev": volume_prev
+            "volume_prev": volume_prev,
+            "volume_ma": volume_ma,
         }
     
         cond1_long = squeeze_firing
         cond2_long = close > close_prev
-        cond3_long = volume > volume_prev
+        cond3_long = volume > volume_prev if volume_confirm else True
+        cond4_long = volume > volume_ma if volume_confirm else True
     
         cond1_short = squeeze_firing
         cond2_short = close < close_prev
-        cond3_short = volume > volume_prev
+        cond3_short = volume > volume_prev if volume_confirm else True
+        cond4_short = volume > volume_ma if volume_confirm else True
     
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
+    
+        if debug:
+            print(
+                f"[{self.symbol}] [Volatility Squeeze] Metrics | squeeze={squeeze}, volatility={volatility}, long_met={long_met}, short_met={short_met}"
+            )
     
         if long_met >= min_cond and long_met > short_met:
-            print(f"[{self.symbol}] [Volatility Squeeze] Signal: LONG | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, squeeze={squeeze}, volatility={volatility}")
+            print(
+                f"[{self.symbol}] [Volatility Squeeze] Signal: LONG | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, squeeze={squeeze}, volatility={volatility}"
+            )
             return "LONG"
         elif short_met >= min_cond and short_met > long_met:
-            print(f"[{self.symbol}] [Volatility Squeeze] Signal: SHORT | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, squeeze={squeeze}, volatility={volatility}")
+            print(
+                f"[{self.symbol}] [Volatility Squeeze] Signal: SHORT | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, squeeze={squeeze}, volatility={volatility}"
+            )
             return "SHORT"
         else:
-            print(f"[{self.symbol}] [Volatility Squeeze] No signal fired | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, squeeze={squeeze}, volatility={volatility}")
+            print(
+                f"[{self.symbol}] [Volatility Squeeze] No signal fired | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, squeeze={squeeze}, volatility={volatility}"
+            )
             return None
 
-    def _check_chop_zone(self, chop_threshold=40, debug=False):
+    def _check_chop_zone(
+        self,
+        chop_threshold=40,
+        adx_strict=25,
+        debug=False
+    ):
         """
-        Detects and filters out choppy market conditions using the Choppiness Index,
-        and then checks for trend signals using EMAs, ADX, and price.
-    
-        Returns:
-            "LONG" if long conditions are met,
-            "SHORT" if short conditions are met,
-            None if market is too choppy or no signal.
+        Enhanced Chop Zone Check:
+        - Configurable choppiness and ADX thresholds.
+        - Logs all relevant metrics.
+        - Keeps signal logic robust.
         """
-        # Retrieve required columns safely
         try:
             chop = self.df['chop_zone'].iat[-1]
             ema9 = self.df['ema9'].iat[-1]
@@ -1746,37 +1784,103 @@ class SmartFilter:
             print(f"[{self.symbol}] [Chop Zone Check] Missing required columns or insufficient data.")
             return None
     
-        # Define for logging
         chop_zone = chop
     
-        # Filter out choppy market
         if chop >= chop_threshold:
             print(f"[{self.symbol}] [Chop Zone Check] Market too choppy (chop_zone={chop_zone:.2f} >= {chop_threshold})")
             return None
     
-        # LONG conditions
         cond1_long = ema9 > ema21
-        cond2_long = adx is not None and adx > 20 if adx is not None else True  # ADX filter optional
+        cond2_long = adx is not None and adx > adx_strict if adx is not None else True
         cond3_long = close > ema9
     
-        # SHORT conditions
         cond1_short = ema9 < ema21
-        cond2_short = adx is not None and adx > 20 if adx is not None else True
+        cond2_short = adx is not None and adx > adx_strict if adx is not None else True
         cond3_short = close < ema9
     
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
     
-        # Only return LONG if long_met > short_met, and vice versa
+        if debug:
+            print(
+                f"[{self.symbol}] [Chop Zone Check] Metrics | chop_zone={chop_zone}, ema9={ema9}, ema21={ema21}, adx={adx}, adx_strict={adx_strict}, long_met={long_met}, short_met={short_met}"
+            )
+    
         if long_met >= 2 and long_met > short_met:
-            print(f"[{self.symbol}] [Chop Zone Check] Signal: LONG | long_met={long_met}, short_met={short_met}, chop_zone={chop_zone}")
+            print(
+                f"[{self.symbol}] [Chop Zone Check] Signal: LONG | long_met={long_met}, short_met={short_met}, chop_zone={chop_zone}, ema9={ema9}, ema21={ema21}, adx={adx}"
+            )
             return "LONG"
         elif short_met >= 2 and short_met > long_met:
-            print(f"[{self.symbol}] [Chop Zone Check] Signal: SHORT | long_met={long_met}, short_met={short_met}, chop_zone={chop_zone}")
+            print(
+                f"[{self.symbol}] [Chop Zone Check] Signal: SHORT | long_met={long_met}, short_met={short_met}, chop_zone={chop_zone}, ema9={ema9}, ema21={ema21}, adx={adx}"
+            )
             return "SHORT"
         else:
-            print(f"[{self.symbol}] [Chop Zone Check] No signal fired | long_met={long_met}, short_met={short_met}, chop_zone={chop_zone}")
+            print(
+                f"[{self.symbol}] [Chop Zone Check] No signal fired | long_met={long_met}, short_met={short_met}, chop_zone={chop_zone}, ema9={ema9}, ema21={ema21}, adx={adx}"
+            )
             return None
+    
+    def _check_candle_confirmation(self, debug=False):
+        open_ = self.df['open'].iat[-1]
+        high = self.df['high'].iat[-1]
+        low = self.df['low'].iat[-1]
+        close = self.df['close'].iat[-1]
+    
+        open_prev = self.df['open'].iat[-2]
+        close_prev = self.df['close'].iat[-2]
+    
+        # Engulfing
+        bullish_engulfing = close > open_prev and open_ < close_prev
+        bearish_engulfing = close < open_prev and open_ > close_prev
+    
+        # Pin bar / Hammer / Shooting Star
+        lower_wick = open_ - low if open_ < close else close - low
+        upper_wick = high - close if open_ < close else high - open_
+        body = abs(close - open_)
+    
+        bullish_pin_bar = lower_wick > 2 * body and close > open_
+        bearish_pin_bar = upper_wick > 2 * body and close < open_
+    
+        # Determine candle_type for logging
+        if bullish_engulfing:
+            candle_type = "Bullish Engulfing"
+        elif bearish_engulfing:
+            candle_type = "Bearish Engulfing"
+        elif bullish_pin_bar:
+            candle_type = "Bullish Pin Bar"
+        elif bearish_pin_bar:
+            candle_type = "Bearish Pin Bar"
+        else:
+            candle_type = "Neutral"
+    
+        # LONG conditions
+        cond1_long = bullish_engulfing
+        cond2_long = bullish_pin_bar
+        cond3_long = close > close_prev
+    
+        # SHORT conditions
+        cond1_short = bearish_engulfing
+        cond2_short = bearish_pin_bar
+        cond3_short = close < close_prev
+    
+        long_met = sum([cond1_long, cond2_long, cond3_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short])
+        
+        # Fix: Only return LONG if long_met > short_met, and vice versa
+        if long_met >= 1 and long_met > short_met:
+            if debug:
+                print(f"[{self.symbol}] [Candle Confirmation] Signal: LONG | long_met={long_met}, short_met={short_met}, candle_type={candle_type}, close={close}, open={open_}")
+            return "LONG"
+        elif short_met >= 1 and short_met > long_met:
+            if debug:
+                print(f"[{self.symbol}] [Candle Confirmation] Signal: SHORT | long_met={long_met}, short_met={short_met}, candle_type={candle_type}, close={close}, open={open_}")
+            return "SHORT"
+        else:
+            if debug:
+                print(f"[{self.symbol}] [Candle Confirmation] No signal fired | long_met={long_met}, short_met={short_met}, candle_type={candle_type}, close={close}, open={open_}")
+            return None    
             
     def _check_wick_dominance(self, debug=False):
         open_ = self.df['open'].iat[-1]
