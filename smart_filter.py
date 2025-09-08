@@ -1481,34 +1481,42 @@ class SmartFilter:
             return None
 
     def _check_hh_ll(self, debug=False):
+        print(f"[{self.symbol}] [HH/LL Trend] Function called")
         high = self.df['high'].iat[-1]
         high_prev = self.df['high'].iat[-2]
         low = self.df['low'].iat[-1]
         low_prev = self.df['low'].iat[-2]
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
-
+    
+        print(f"[{self.symbol}] [HH/LL Trend] Values | high={high}, high_prev={high_prev}, low={low}, low_prev={low_prev}, close={close}, close_prev={close_prev}")
+    
         hh = high
         ll = low
-
+    
         cond1_long = high > high_prev
         cond2_long = low > low_prev
         cond3_long = close > close_prev
-
+    
         cond1_short = low < low_prev
         cond2_short = high < high_prev
         cond3_short = close < close_prev
-
+    
+        print(f"[{self.symbol}] [HH/LL Trend] Conditions | cond1_long={cond1_long}, cond2_long={cond2_long}, cond3_long={cond3_long}, cond1_short={cond1_short}, cond2_short={cond2_short}, cond3_short={cond3_short}")
+    
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-
+    
+        print(f"[{self.symbol}] [HH/LL Trend] Met Counts | long_met={long_met}, short_met={short_met}")
+    
         if long_met >= 2 and long_met > short_met:
-            print(f"[{self.symbol}] [HH/LL] Signal: LONG | long_met={long_met}, short_met={short_met}, hh={hh}, ll={ll}")
+            print(f"[{self.symbol}] [HH/LL Trend] Signal: LONG | long_met={long_met}, short_met={short_met}, hh={hh}, ll={ll}")
             return "LONG"
         elif short_met >= 2 and short_met > long_met:
-            print(f"[{self.symbol}] [HH/LL] Signal: SHORT | long_met={long_met}, short_met={short_met}, hh={hh}, ll={ll}")
+            print(f"[{self.symbol}] [HH/LL Trend] Signal: SHORT | long_met={long_met}, short_met={short_met}, hh={hh}, ll={ll}")
             return "SHORT"
         else:
+            print(f"[{self.symbol}] [HH/LL Trend] No signal fired | long_met={long_met}, short_met={short_met}, hh={hh}, ll={ll}")
             return None
 
     def _check_liquidity_pool(self, lookback=20, min_cond=2, debug=False):
