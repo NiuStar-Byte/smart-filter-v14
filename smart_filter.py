@@ -1409,31 +1409,36 @@ class SmartFilter:
                 print(f"[{self.symbol}] [Candle Confirmation] No signal fired | long_met={long_met}, short_met={short_met}, candle_type={candle_type}, close={close}, open={open_}")
             return None
             
+    def _get_rolling_extremes(self, col, window, prev=False):
+        """Helper to get rolling min/max for current or previous index."""
+        series = self.df[col].rolling(window)
+        if prev:
+            return series.min().iat[-2], series.max().iat[-2]
+        else:
+            return series.min().iat[-1], series.max().iat[-1]
+    
     def _check_support_resistance(self, window=20, buffer_pct=0.005, min_cond=2, debug=False):
-        support = self.df['low'].rolling(window).min().iat[-1]
-        resistance = self.df['high'].rolling(window).max().iat[-1]
+        support, _ = self._get_rolling_extremes('low', window)
+        _, resistance = self._get_rolling_extremes('high', window)
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
         volume = self.df['volume'].iat[-1]
         volume_prev = self.df['volume'].iat[-2]
-    
-        # For logging: proximity metrics
+
         support_prox = (close - support) / support
         resistance_prox = (resistance - close) / resistance
-    
-        # LONG conditions
+
         cond1_long = close <= support * (1 + buffer_pct)
         cond2_long = close > close_prev
         cond3_long = volume > volume_prev
-    
-        # SHORT conditions
+
         cond1_short = close >= resistance * (1 - buffer_pct)
         cond2_short = close < close_prev
-        cond3_short = volume < volume_prev  # Classic reversal logic
-    
+        cond3_short = volume < volume_prev
+
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-        
+
         if long_met >= min_cond and long_met > short_met:
             print(f"[{self.symbol}] [Support/Resistance] Signal: LONG | support={support}, resistance={resistance}, close={close}, long_met={long_met}, short_met={short_met}, support_prox={support_prox:.4f}")
             return "LONG"
@@ -1444,31 +1449,26 @@ class SmartFilter:
             if debug:
                 print(f"[{self.symbol}] [Support/Resistance] No signal fired | support={support}, resistance={resistance}, close={close}, close_prev={close_prev}, volume={volume}, volume_prev={volume_prev}, long_met={long_met}, short_met={short_met}, support_prox={support_prox:.4f}, resistance_prox={resistance_prox:.4f}")
             return None
-    
+
     def _check_fractal_zone(self, buffer_pct=0.005, window=20, min_conditions=2, debug=False):
-        # Calculate fractal highs/lows
-        fractal_low = self.df['low'].rolling(window).min().iat[-1]
-        fractal_low_prev = self.df['low'].rolling(window).min().iat[-2]
-        fractal_high = self.df['high'].rolling(window).max().iat[-1]
-        fractal_high_prev = self.df['high'].rolling(window).max().iat[-2]
-    
+        fractal_low, _ = self._get_rolling_extremes('low', window)
+        _, fractal_high = self._get_rolling_extremes('high', window)
+        fractal_low_prev, _ = self._get_rolling_extremes('low', window, prev=True)
+        _, fractal_high_prev = self._get_rolling_extremes('high', window, prev=True)
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
-    
-        # LONG: Strong break above recent range with confirmation
+
         cond1_long = close > fractal_low * (1 + buffer_pct)
         cond2_long = close > close_prev
         cond3_long = fractal_low > fractal_low_prev
-    
-        # SHORT: Strong break below recent range with confirmation
+
         cond1_short = close < fractal_high * (1 - buffer_pct)
         cond2_short = close < close_prev
         cond3_short = fractal_high < fractal_high_prev
-    
+
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-    
-        # Only fire signal if one side strictly beats the other and meets min_conditions
+
         if short_met >= min_conditions and short_met > long_met:
             print(f"[{self.symbol}] [Fractal Zone] Signal: SHORT | short_met={short_met}, long_met={long_met}, min_conditions={min_conditions}, fractal_high={fractal_high:.2f}, fractal_high_prev={fractal_high_prev:.2f}, close={close:.2f}, close_prev={close_prev:.2f}")
             return "SHORT"
@@ -1478,6 +1478,73 @@ class SmartFilter:
         else:
             if debug:
                 print(f"[{self.symbol}] [Fractal Zone] No signal fired | short_met={short_met}, long_met={long_met}, min_conditions={min_conditions}, fractal_high={fractal_high:.2f}, fractal_high_prev={fractal_high_prev:.2f}, fractal_low={fractal_low:.2f}, fractal_low_prev={fractal_low_prev:.2f}, close={close:.2f}, close_prev={close_prev:.2f}")
+            return None
+
+    def _check_hh_ll(self, debug=False):
+        high = self.df['high'].iat[-1]
+        high_prev = self.df['high'].iat[-2]
+        low = self.df['low'].iat[-1]
+        low_prev = self.df['low'].iat[-2]
+        close = self.df['close'].iat[-1]
+        close_prev = self.df['close'].iat[-2]
+
+        hh = high
+        ll = low
+
+        cond1_long = high > high_prev
+        cond2_long = low > low_prev
+        cond3_long = close > close_prev
+
+        cond1_short = low < low_prev
+        cond2_short = high < high_prev
+        cond3_short = close < close_prev
+
+        long_met = sum([cond1_long, cond2_long, cond3_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short])
+
+        if long_met >= 2 and long_met > short_met:
+            print(f"[{self.symbol}] [HH/LL] Signal: LONG | long_met={long_met}, short_met={short_met}, hh={hh}, ll={ll}")
+            return "LONG"
+        elif short_met >= 2 and short_met > long_met:
+            print(f"[{self.symbol}] [HH/LL] Signal: SHORT | long_met={long_met}, short_met={short_met}, hh={hh}, ll={ll}")
+            return "SHORT"
+        else:
+            return None
+
+    def _check_liquidity_pool(self, lookback=20, min_cond=2, debug=False):
+        close = self.df['close'].iat[-1]
+        high = self.df['high'].iat[-1]
+        low = self.df['low'].iat[-1]
+
+        # Use helper for previous rolling extremes
+        recent_low, recent_high = self._get_rolling_extremes('low', lookback, prev=True)
+        # Note: For liquidity pools, recent_high = previous rolling max, recent_low = previous rolling min
+
+        liquidity_pool = {
+            "recent_high": recent_high,
+            "recent_low": recent_low,
+            "close_vs_high": close - recent_high,
+            "close_vs_low": close - recent_low
+        }
+
+        cond1_long = close > recent_high
+        cond2_long = low < recent_low and close > recent_low
+
+        cond1_short = close < recent_low
+        cond2_short = high > recent_high and close < recent_high
+
+        long_met = sum([cond1_long, cond2_long])
+        short_met = sum([cond1_short, cond2_short])
+
+        if long_met >= min_cond and long_met > short_met:
+            print(f"[{self.symbol}] [Liquidity Pool] Signal: LONG | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, liquidity_pool={liquidity_pool}")
+            return "LONG"
+        elif short_met >= min_cond and short_met > long_met:
+            print(f"[{self.symbol}] [Liquidity Pool] Signal: SHORT | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, liquidity_pool={liquidity_pool}")
+            return "SHORT"
+        else:
+            if debug:
+                print(f"[{self.symbol}] [Liquidity Pool] No signal fired | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, liquidity_pool={liquidity_pool}")
             return None
 
     def _check_atr_momentum_burst(self, threshold_pct=0.10, volume_mult=1.1, min_cond=2, debug=False):
@@ -1511,41 +1578,6 @@ class SmartFilter:
         else:
             if debug:
                 print(f"[{self.symbol}] [ATR Momentum Burst] No signal fired | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, atr={atr}, momentum={momentum}, close={close}")
-            return None
-
-    def _check_hh_ll(self, debug=False):
-        high = self.df['high'].iat[-1]
-        high_prev = self.df['high'].iat[-2]
-        low = self.df['low'].iat[-1]
-        low_prev = self.df['low'].iat[-2]
-        close = self.df['close'].iat[-1]
-        close_prev = self.df['close'].iat[-2]
-    
-        # Define hh and ll for logging
-        hh = high
-        ll = low
-    
-        # LONG conditions: Higher Highs and Higher Lows
-        cond1_long = high > high_prev
-        cond2_long = low > low_prev
-        cond3_long = close > close_prev
-    
-        # SHORT conditions: Lower Lows and Lower Highs
-        cond1_short = low < low_prev
-        cond2_short = high < high_prev
-        cond3_short = close < close_prev
-    
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
-    
-        # Fix: Only return LONG if long_met > short_met, and vice versa
-        if long_met >= 2 and long_met > short_met:
-            print(f"[{self.symbol}] [HH/LL] Signal: LONG | long_met={long_met}, short_met={short_met}, hh={hh}, ll={ll}")
-            return "LONG"
-        elif short_met >= 2 and short_met > long_met:
-            print(f"[{self.symbol}] [HH/LL] Signal: SHORT | long_met={long_met}, short_met={short_met}, hh={hh}, ll={ll}")
-            return "SHORT"
-        else:
             return None
 
     def _check_volatility_model(self, atr_col='atr', atr_ma_col='atr_ma', debug=False):
@@ -1721,46 +1753,6 @@ class SmartFilter:
             return "SHORT"
         else:
             print(f"[{self.symbol}] [Chop Zone Check] No signal fired | long_met={long_met}, short_met={short_met}, chop_zone={chop_zone}")
-            return None
-
-    def _check_liquidity_pool(self, lookback=20, min_cond=2, debug=False):
-        close = self.df['close'].iat[-1]
-        high = self.df['high'].iat[-1]
-        low = self.df['low'].iat[-1]
-    
-        # Identify recent liquidity pools
-        recent_high = self.df['high'].rolling(lookback).max().iat[-2]
-        recent_low = self.df['low'].rolling(lookback).min().iat[-2]
-    
-        # For logging: liquidity pool metrics
-        liquidity_pool = {
-            "recent_high": recent_high,
-            "recent_low": recent_low,
-            "close_vs_high": close - recent_high,
-            "close_vs_low": close - recent_low
-        }
-    
-        # LONG: break or sweep above recent high
-        cond1_long = close > recent_high
-        cond2_long = low < recent_low and close > recent_low
-    
-        # SHORT: break or sweep below recent low
-        cond1_short = close < recent_low
-        cond2_short = high > recent_high and close < recent_high
-    
-        long_met = sum([cond1_long, cond2_long])
-        short_met = sum([cond1_short, cond2_short])
-    
-        # Only return if enough conditions met (default: both required)
-        if long_met >= min_cond and long_met > short_met:
-            print(f"[{self.symbol}] [Liquidity Pool] Signal: LONG | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, liquidity_pool={liquidity_pool}")
-            return "LONG"
-        elif short_met >= min_cond and short_met > long_met:
-            print(f"[{self.symbol}] [Liquidity Pool] Signal: SHORT | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, liquidity_pool={liquidity_pool}")
-            return "SHORT"
-        else:
-            if debug:
-                print(f"[{self.symbol}] [Liquidity Pool] No signal fired | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, liquidity_pool={liquidity_pool}")
             return None
             
     def _check_wick_dominance(self, debug=False):
