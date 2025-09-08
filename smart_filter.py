@@ -1822,28 +1822,41 @@ class SmartFilter:
             )
             return None
     
-    def _check_candle_confirmation(self, debug=False):
+    def _check_candle_confirmation(
+        self,
+        min_pin_wick_ratio=2.0,
+        require_volume_confirm=False,
+        debug=False
+    ):
+        """
+        Enhanced Candle Confirmation:
+        - Configurable wick/body ratio for pin bar detection.
+        - Optionally requires volume confirmation.
+        - Standardized detailed logging.
+        """
         open_ = self.df['open'].iat[-1]
         high = self.df['high'].iat[-1]
         low = self.df['low'].iat[-1]
         close = self.df['close'].iat[-1]
+        volume = self.df['volume'].iat[-1]
+        volume_ma = self.df['volume'].rolling(10).mean().iat[-1] if 'volume' in self.df.columns else None
     
         open_prev = self.df['open'].iat[-2]
         close_prev = self.df['close'].iat[-2]
     
-        # Engulfing
+        # Engulfing patterns
         bullish_engulfing = close > open_prev and open_ < close_prev
         bearish_engulfing = close < open_prev and open_ > close_prev
     
-        # Pin bar / Hammer / Shooting Star
+        # Pin bar logic (wick/body ratio configurable)
         lower_wick = open_ - low if open_ < close else close - low
         upper_wick = high - close if open_ < close else high - open_
         body = abs(close - open_)
     
-        bullish_pin_bar = lower_wick > 2 * body and close > open_
-        bearish_pin_bar = upper_wick > 2 * body and close < open_
+        bullish_pin_bar = lower_wick > min_pin_wick_ratio * body and close > open_
+        bearish_pin_bar = upper_wick > min_pin_wick_ratio * body and close < open_
     
-        # Determine candle_type for logging
+        # Candle type for logging
         if bullish_engulfing:
             candle_type = "Bullish Engulfing"
         elif bearish_engulfing:
@@ -1855,45 +1868,86 @@ class SmartFilter:
         else:
             candle_type = "Neutral"
     
+        # Optional volume confirmation
+        volume_confirm = volume > volume_ma if require_volume_confirm and volume_ma is not None else True
+    
         # LONG conditions
         cond1_long = bullish_engulfing
         cond2_long = bullish_pin_bar
         cond3_long = close > close_prev
+        cond4_long = volume_confirm
     
         # SHORT conditions
         cond1_short = bearish_engulfing
         cond2_short = bearish_pin_bar
         cond3_short = close < close_prev
+        cond4_short = volume_confirm
     
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
-        
-        # Fix: Only return LONG if long_met > short_met, and vice versa
-        if long_met >= 1 and long_met > short_met:
+        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
+    
+        log_info = (
+            f"candle_type={candle_type}, open={open_}, close={close}, high={high}, low={low}, "
+            f"body={body:.2f}, upper_wick={upper_wick:.2f}, lower_wick={lower_wick:.2f}, "
+            f"open_prev={open_prev}, close_prev={close_prev}, volume={volume}, volume_ma={volume_ma}, "
+            f"min_pin_wick_ratio={min_pin_wick_ratio}, require_volume_confirm={require_volume_confirm}"
+        )
+    
+        if long_met >= 2 and long_met > short_met:
             if debug:
-                print(f"[{self.symbol}] [Candle Confirmation] Signal: LONG | long_met={long_met}, short_met={short_met}, candle_type={candle_type}, close={close}, open={open_}")
+                print(f"[{self.symbol}] [Candle Confirmation] Signal: LONG | long_met={long_met}, short_met={short_met}, {log_info}")
             return "LONG"
-        elif short_met >= 1 and short_met > long_met:
+        elif short_met >= 2 and short_met > long_met:
             if debug:
-                print(f"[{self.symbol}] [Candle Confirmation] Signal: SHORT | long_met={long_met}, short_met={short_met}, candle_type={candle_type}, close={close}, open={open_}")
+                print(f"[{self.symbol}] [Candle Confirmation] Signal: SHORT | long_met={long_met}, short_met={short_met}, {log_info}")
             return "SHORT"
         else:
             if debug:
-                print(f"[{self.symbol}] [Candle Confirmation] No signal fired | long_met={long_met}, short_met={short_met}, candle_type={candle_type}, close={close}, open={open_}")
-            return None    
+                print(f"[{self.symbol}] [Candle Confirmation] No signal fired | long_met={long_met}, short_met={short_met}, {log_info}")
+            return None   
             
-    def _check_wick_dominance(self, debug=False):
+    def _check_wick_dominance(
+        self,
+        min_wick_dom_ratio=2.0,
+        min_body_ratio=1.5,
+        require_volume_confirm=False,
+        debug=False
+    ):
+        """
+        Enhanced Wick Dominance:
+        - Configurable wick dominance and body ratio thresholds.
+        - Optionally requires volume confirmation.
+        - Standardized detailed logging.
+        """
         open_ = self.df['open'].iat[-1]
         high = self.df['high'].iat[-1]
         low = self.df['low'].iat[-1]
         close = self.df['close'].iat[-1]
+        volume = self.df['volume'].iat[-1]
+        volume_ma = self.df['volume'].rolling(10).mean().iat[-1] if 'volume' in self.df.columns else None
     
-        # Calculate candle components
         upper_wick = high - max(open_, close)
         lower_wick = min(open_, close) - low
         body = abs(close - open_)
     
-        # Determine wick dominance for logging
+        # Optional volume confirmation
+        volume_confirm = volume > volume_ma if require_volume_confirm and volume_ma is not None else True
+    
+        # Wick dominance logic (configurable thresholds)
+        cond1_long = lower_wick > min_wick_dom_ratio * upper_wick
+        cond2_long = lower_wick > min_body_ratio * body
+        cond3_long = close > open_
+        cond4_long = volume_confirm
+    
+        cond1_short = upper_wick > min_wick_dom_ratio * lower_wick
+        cond2_short = upper_wick > min_body_ratio * body
+        cond3_short = close < open_
+        cond4_short = volume_confirm
+    
+        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
+    
+        # Wick dominance for logging
         if lower_wick > upper_wick:
             wick_dom = f"Lower wick dominant ({lower_wick:.2f} > {upper_wick:.2f})"
         elif upper_wick > lower_wick:
@@ -1901,30 +1955,23 @@ class SmartFilter:
         else:
             wick_dom = f"No dominance (upper={upper_wick:.2f}, lower={lower_wick:.2f})"
     
-        # LONG conditions: dominant lower wick + bullish close
-        cond1_long = lower_wick > 2 * upper_wick
-        cond2_long = lower_wick > 1.5 * body
-        cond3_long = close > open_
+        log_info = (
+            f"wick_dom={wick_dom}, open={open_}, close={close}, high={high}, low={low}, "
+            f"body={body:.2f}, upper_wick={upper_wick:.2f}, lower_wick={lower_wick:.2f}, volume={volume}, volume_ma={volume_ma}, "
+            f"min_wick_dom_ratio={min_wick_dom_ratio}, min_body_ratio={min_body_ratio}, require_volume_confirm={require_volume_confirm}"
+        )
     
-        # SHORT conditions: dominant upper wick + bearish close
-        cond1_short = upper_wick > 2 * lower_wick
-        cond2_short = upper_wick > 1.5 * body
-        cond3_short = close < open_
-    
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
-    
-        if long_met >= 2:
+        if long_met >= 2 and long_met > short_met:
             if debug:
-                print(f"[{self.symbol}] [Wick Dominance] Signal: LONG | long_met={long_met}, short_met={short_met}, wick_dom={wick_dom}")
+                print(f"[{self.symbol}] [Wick Dominance] Signal: LONG | long_met={long_met}, short_met={short_met}, {log_info}")
             return "LONG"
-        elif short_met >= 2:
+        elif short_met >= 2 and short_met > long_met:
             if debug:
-                print(f"[{self.symbol}] [Wick Dominance] Signal: SHORT | long_met={long_met}, short_met={short_met}, wick_dom={wick_dom}")
+                print(f"[{self.symbol}] [Wick Dominance] Signal: SHORT | long_met={long_met}, short_met={short_met}, {log_info}")
             return "SHORT"
         else:
             if debug:
-                print(f"[{self.symbol}] [Wick Dominance] No signal fired | long_met={long_met}, short_met={short_met}, wick_dom={wick_dom}")
+                print(f"[{self.symbol}] [Wick Dominance] No signal fired | long_met={long_met}, short_met={short_met}, {log_info}")
             return None
 
     def _market_regime(
