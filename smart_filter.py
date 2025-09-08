@@ -1875,7 +1875,7 @@ class SmartFilter:
                     f"[Market Regime] close={close}, ma={ma}, ma_prev={ma_prev}, adx={adx}, "
                     f"secondary_ma_col={secondary_ma_col}, secondary_trend={secondary_trend}, regime={regime}"
                 )
-    
+            print(f"[SUMMARY] Market regime detected: {regime}")
             return regime
     
         except Exception as e:
