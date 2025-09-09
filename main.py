@@ -8,7 +8,7 @@ import pandas as pd
 import random
 import pytz
 from datetime import datetime
-from kucoin_data import get_live_entry_price
+from kucoin_data import get_live_entry_price, DEFAULT_SLIPPAGE
 from kucoin_data import get_ohlcv
 from smart_filter import SmartFilter
 from telegram_alert import send_telegram_alert, send_telegram_file
@@ -179,7 +179,7 @@ def run():
                                 res3.get("symbol"),
                                 bias,
                                 tf=res3.get("tf"),
-                                slippage=0.001
+                                slippage=DEFAULT_SLIPPAGE
                             ) or res3.get("price", 0.0)
 
                             score = res3.get("score", 0)
@@ -295,7 +295,7 @@ def run():
                                 res5.get("symbol"),
                                 bias,
                                 tf=res5.get("tf"),
-                                slippage=0.001
+                                slippage=DEFAULT_SLIPPAGE
                             ) or res5.get("price", 0.0)
 
                             score = res5.get("score", 0)
