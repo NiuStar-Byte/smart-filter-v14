@@ -134,7 +134,7 @@ def send_telegram_alert(
     elif regime == "BEAR":
         regime_str = "📉 Regime: <b>BEAR</b>\n"
     elif regime == "RANGE":
-        regime_str = "〰️ Regime: <b>RANGING/SIDEWAYS</b>\n"
+        regime_str = "🚧 Regime: <b>RANGING/SIDEWAYS</b>\n"
     else:  # For NO_REGIME or any other fallback
         regime_str = "💢 Regime: <b>NO REGIME</b>\n"
         
