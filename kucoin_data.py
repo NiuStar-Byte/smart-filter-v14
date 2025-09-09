@@ -144,46 +144,76 @@ def fetch_trade_ticks(symbol: str, limit: int = 1000) -> pd.DataFrame:
 # ENHANCEMENT: Entry Price
 # =========================
 
-def get_live_entry_price(symbol: str, signal_type: str, tf: str = "5min", slippage: float = 0.0) -> float | None:
+# Define default slippage globally (recommended 0.1% for most liquid pairs)
+DEFAULT_SLIPPAGE = 0.001  # 0.1%
+
+def get_live_entry_price(
+    symbol: str,
+    signal_type: str,
+    tf: str = "5min",  # Accepts any timeframe, "5min" is just default
+    slippage: float = DEFAULT_SLIPPAGE,    # Use the global default
+    long_adjust: float = 0.9950,
+    short_adjust: float = 1.0050,
+    debug: bool = False
+) -> float | None:
     """
     Fetch the best bid/ask price from KuCoin's orderbook for the symbol.
     Use as entry price for market orders. Fallback to OHLCV close price if unavailable.
     :param symbol: Trading symbol.
     :param signal_type: "LONG" or "SHORT".
     :param tf: Timeframe (used for OHLCV fallback).
-    :param slippage: Fractional slippage (e.g., 0.001 for 0.1%).
+                Accepts any timeframe string, e.g., "3min", "5min", "15min", "1h", etc.
+    :param slippage: Fractional slippage (e.g., 0.001 for 0.1%). Default: 0.1%.
+    :param long_adjust: Multiplicative adjustment for LONG entries (default 0.995).
+    :param short_adjust: Multiplicative adjustment for SHORT entries (default 1.005).
+    :param debug: Print detailed log output.
     :return: Adjusted entry price (float) or None.
     """
     bids, asks = fetch_orderbook_l2(symbol, depth=20)
+    entry_price = None
+    source = None
     try:
         if signal_type.upper() == "LONG" and asks is not None and len(asks) > 0:
             entry_price = asks['price'].iloc[0] * (1 + slippage)
+            source = "orderbook_ask"
         elif signal_type.upper() == "SHORT" and bids is not None and len(bids) > 0:
             entry_price = bids['price'].iloc[0] * (1 - slippage)
+            source = "orderbook_bid"
         elif bids is not None and len(bids) > 0 and asks is not None and len(asks) > 0:
-            # Fallback to midprice
             entry_price = (bids['price'].iloc[0] + asks['price'].iloc[0]) / 2
+            source = "orderbook_mid"
         else:
             entry_price = None
-    except Exception:
+            source = "orderbook_none"
+    except Exception as e:
         entry_price = None
+        source = f"error: {e}"
 
-    # Final fallback: use OHLCV close price
+    if entry_price is not None and debug:
+        print(f"[EntryPrice] {symbol} {signal_type} ({tf}): {source} price before adjustment: {entry_price:.6f}, slippage={slippage}")
+
+    # Final fallback: use OHLCV close price for the requested timeframe
     if entry_price is None:
         df = fetch_ohlcv(symbol, tf)
         if df is not None and not df.empty:
             entry_price = float(df["close"].iloc[-1])
+            source = f"ohlcv_close_{tf}"
+            if debug:
+                print(f"[EntryPrice] {symbol} {signal_type} ({tf}): Fallback to OHLCV close price: {entry_price:.6f}")
         else:
+            if debug:
+                print(f"[EntryPrice] {symbol} {signal_type} ({tf}): No data available for entry price.")
             return None
 
-    # Adjustment: 0.15% less for LONG, 5% more for SHORT
+    # Adjustment: configurable for LONG/SHORT
     if signal_type.upper() == "LONG":
-        entry_price *= 0.9950
+        entry_price *= long_adjust
+        if debug:
+            print(f"[EntryPrice] {symbol} LONG ({tf}): Final adjusted entry price: {entry_price:.6f} (adjust={long_adjust})")
     elif signal_type.upper() == "SHORT":
-        entry_price *= 1.0050
+        entry_price *= short_adjust
+        if debug:
+            print(f"[EntryPrice] {symbol} SHORT ({tf}): Final adjusted entry price: {entry_price:.6f} (adjust={short_adjust})")
 
     return float(entry_price)
-
-# Example usage:
-# entry_price = get_live_entry_price("BTC-USDT", "LONG", tf="5min", slippage=0.001)
 
