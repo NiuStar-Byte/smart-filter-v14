@@ -19,7 +19,8 @@ TOKENS = [
     "SUI-USDT", "EIGEN-USDT", "UNI-USDT", "HYPE-USDT", "TON-USDT",
     "KAS-USDT", "HBAR-USDT", "ONDO-USDT", "VIRTUAL-USDT", "AAVE-USDT",
     "GALA-USDT", "PUMP-USDT", "PEPE-USDT", "WIF-USDT", "BERA-USDT", "DYDX-USDT",
-    "KAITO-USDT", "ARKM-USDT", "ATH-USDT", "NMR-USDT", "ARB-USDT"
+    "KAITO-USDT", "ARKM-USDT", "ATH-USDT", "NMR-USDT", "ARB-USDT",
+    "WLFI-USDT"
  ]
 
 # Load market symbols from each exchange
