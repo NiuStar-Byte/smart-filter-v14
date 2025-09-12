@@ -414,13 +414,13 @@ def run():
                                 "signal_debug_temp.txt",
                                 caption=debug_info["caption"]
                             )
-                            # Send signal_tracking.txt together after debug file
-                            send_telegram_file(
-                                "signal_tracking.txt",
-                                caption="Signal logs sent together with debug"
-                            )
                         except Exception as e:
                             print(f"[ERROR] Exception in Telegram debug send: {e}", flush=True)
+                    # <--- NEW: send tracking log ONCE after the loop
+                    send_telegram_file(
+                        "signal_tracking.txt",
+                        caption="Signal logs sent this cycle"
+                    )
                 else:
                     print("[FIRED] valid_debugs is empty — no debug files to send to Telegram.", flush=True)
             except Exception as e:
