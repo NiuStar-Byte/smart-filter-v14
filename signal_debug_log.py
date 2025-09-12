@@ -11,7 +11,7 @@ def parse_fired_log_line(line):
     Supports fields: SCORE, MAX SCORE, PASSED, MAX PASSED, WEIGHTS, MAX WEIGHTS, CONFIDENCE RATE.
     Returns empty string for missing values (backward compatibility).
     Example line:
-    [FIRED] Logged: 86ff64e8-ad63-4961-820b-d6ac9afaef46, AERO-USDT, 5min, LONG, 2025-07-16T11:44:16.217760, 99, SCORE: 17, MAX SCORE: 23, PASSED: 14, MAX PASSED: 17, WEIGHTS: 54.7, MAX WEIGHTS: 65.8, CONFIDENCE RATE: 83.1%
+    [FIRED] Logged: 86ff64e8-ad63-4961-820b-d6ac9afaef46, AERO-USDT, 5min, LONG, 2025-07-16T11:44:16.217760, 99, SCORE: 17, MAX SCORE: 23, PASSED: 14, MAX PASSED: 17, WEIGHTS: 54.7, MAX WEIGHTS: 65.8,[...]
     """
     result = {}
 
@@ -225,6 +225,13 @@ def log_fired_signal(
         f"CONFIDENCE RATE: {confidence_rate if confidence_rate is not None else 'None'}%"
     )
     print(log_line)
+
+    # --- NEW: Write log_line to signal_tracking.txt ---
+    try:
+        with open("signal_tracking.txt", "a") as f:
+            f.write(log_line + "\n")
+    except Exception as e:
+        print(f"[ERROR] Failed to write to signal_tracking.txt: {e}")
 
     # DEPRECATED: CSV logging kept for backward compatibility
     log_file = "fired_signals_temp.csv"
