@@ -1,14 +1,10 @@
-# telegram_alert.py
-
 import os
 import requests
 from tg_config import BOT_TOKEN, CHAT_ID
 from check_symbols import get_token_blockchain_info
 
-# ——— CONFIG ——————————————————————————
 SEND_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 SEND_FILE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendDocument"
-
 
 def send_telegram_alert(
     numbered_signal: str,
@@ -32,21 +28,8 @@ def send_telegram_alert(
     sl=None                # <-- NEW ARG
 ) -> None:
     print(f"📨 Telegram alert sent: {symbol} {signal_type} {Route} @ {price}")
-    # print(f"[DEBUG] signal_type received in send_telegram_alert: '{signal_type}'")
-    """
-    Sends a formatted Telegram message to your channel/group.
-    Format varies by timeframe (3min includes "[Confirmed]").
-    'signal_type' should be 'REVERSAL' or 'CONTINUATION'.
-    """
     confirmed_tag = " [Confirmed]" if tf == "3min" else ""
 
-    # Fix values if accidentally tuple/list
-    # for vname in ['score', 'passed', 'score_max', 'gatekeepers_total', 'weighted', 'total_weight']:
-    #    v = locals()[vname]
-    #    if isinstance(v, (tuple, list)):
-    #        locals()[vname] = v[0]
-
-    # --- Fix values if accidentally tuple/str ---
     if isinstance(score, (tuple, list)): score = score[0]
     if isinstance(passed, (tuple, list)): passed = passed[0]
     if isinstance(score_max, (tuple, list)): score_max = score_max[0]
@@ -54,23 +37,19 @@ def send_telegram_alert(
     if isinstance(weighted, (tuple, list)): weighted = weighted[0]
     if isinstance(total_weight, (tuple, list)): total_weight = total_weight[0]
 
-    # --- Recalculate confidence (for safety) ---
     try:
         confidence = round((weighted / total_weight) * 100, 1) if total_weight else 0.0
     except Exception:
         confidence = 0.0
 
-    # --- Format weighted display ---
     weighted_str = f"{weighted:.1f}/{total_weight:.1f}" if total_weight else "0.0/0.0"
 
-    # --- Confidence icon ---
     confidence_icon = (
         "🟢" if confidence >= 76 else
         "🟡" if confidence >= 51 else
         "🔴"
     )
 
-    # Signal type icon and string logic (LONG/SHORT)
     if str(signal_type).upper() == "LONG":
         signal_icon = "✈️"
         signal_str = "LONG"
@@ -81,7 +60,6 @@ def send_telegram_alert(
         signal_icon = "❓"
         signal_str = str(signal_type).upper()
 
-    # --- Route icon and string (for REVERSAL/BULLISH CONTINUATION/BEARISH CONTINUATION/AMBIGUOUS/NO ROUTE) ---
     route_upper = str(Route).upper() if Route is not None else "NO ROUTE"
     route_icon = "❓"
     route_str = "NO ROUTE"
@@ -103,7 +81,6 @@ def send_telegram_alert(
         route_icon = "🔃🔄"
         route_str = "Ambiguous Reversal Trend"
     elif route_upper == "TREND CONTINUATION":
-        # Check for explicit bullish or bearish continuation
         if isinstance(reversal_side, str):
             if "BULLISH" in reversal_side:
                 route_icon = "↗️➡️"
@@ -124,21 +101,18 @@ def send_telegram_alert(
         route_icon = "🚫"
         route_str = "NO ROUTE"
     else:
-        # fallback for any truly unexpected value
         route_icon = "❓"
         route_str = f"{Route if Route else 'NO ROUTE'}"
 
-    # -- Regime icon logic (enhanced for BULL, BEAR, RANGE, NO_REGIME) --
     if regime == "BULL":
         regime_str = "📈 Regime: <b>BULL</b>\n"
     elif regime == "BEAR":
         regime_str = "📉 Regime: <b>BEAR</b>\n"
     elif regime == "RANGE":
         regime_str = "🚧 Regime: <b>RANGING/SIDEWAYS</b>\n"
-    else:  # For NO_REGIME or any other fallback
+    else:
         regime_str = "💢 Regime: <b>NO REGIME</b>\n"
         
-    # Format price for display
     try:
         price_float = float(price)
         price_str = f"{price_float:.6f}"
@@ -146,7 +120,6 @@ def send_telegram_alert(
         price_float = None
         price_str = str(price)
 
-    # --- Early Breakout Section ---
     early_breakout_msg = ""
     if early_breakout_3m and isinstance(early_breakout_3m, dict) and early_breakout_3m.get("valid_signal"):
         eb_bias = early_breakout_3m.get("bias", "N/A")
@@ -157,13 +130,11 @@ def send_telegram_alert(
         eb_price = early_breakout_5m.get("price", "N/A")
         early_breakout_msg += f"\n⚡ <b>5min Early Breakout</b>: {eb_bias} @ {eb_price}"
 
-    # --- TP/SL section with percentage ---
     print(f"[DEBUG] price={price}, tp={tp}, sl={sl}, signal_type={signal_type}")
     tp_sl_msg = ""
     tp_pct_str = ""
     sl_pct_str = ""
     
-    # Defensive: handle missing/invalid values up front
     def is_valid_number(val):
         try:
             float(val)
@@ -179,7 +150,6 @@ def send_telegram_alert(
         tp_str = f"{tp_float:.6f}"
         sl_str = f"{sl_float:.6f}"
     
-        # Standardize signal_type for safety
         signal_type_test = str(signal_type).strip().upper()
     
         if signal_type_test == "LONG":
@@ -198,7 +168,6 @@ def send_telegram_alert(
         print(f"[DEBUG] Calculated TP_pct={tp_pct_str}, SL_pct={sl_pct_str}")
     
     else:
-        # Use raw values if not valid numbers
         tp_str = str(tp) if tp is not None else "-"
         sl_str = str(sl) if sl is not None else "-"
         print(f"[DEBUG] TP/SL not valid numbers, using raw strings")
@@ -208,14 +177,12 @@ def send_telegram_alert(
         f"⛔ <b>SL:</b> <code>{sl_str}</code>{sl_pct_str}\n"
     )
 
-    # --- Add consensus info ---
     token_info = get_token_blockchain_info(symbol)
     if token_info:
         consensus_str = f"\n🔗 Consensus: <b>{token_info['consensus']}</b> ({token_info['blockchain']})"
     else:
         consensus_str = "\n🔗 Consensus: <b>Unknown</b>"
         
-    # --- Final message format ---
     message = (
         f"{numbered_signal}. {symbol} ({tf}){confirmed_tag}\n"
         f"{regime_str}"
@@ -238,13 +205,13 @@ def send_telegram_alert(
         "text": message,
         "parse_mode": "HTML"
     }
-
+    resp = None
     try:
         resp = requests.post(SEND_URL, json=payload, timeout=10)
         resp.raise_for_status()
-        # print(f"📨 Telegram alert sent: {symbol} {signal_str} @ {price}")
     except requests.RequestException as e:
-        print(f"❗ Telegram send error: {e} — response: {getattr(resp, 'text', '')}")
+        resp_text = resp.text if resp is not None else ''
+        print(f"❗ Telegram send error: {e} — response: {resp_text}")
 
 def send_telegram_file(filepath, caption=None):
     """
@@ -259,9 +226,11 @@ def send_telegram_file(filepath, caption=None):
             'chat_id': CHAT_ID,
             'caption': caption or "Signal debug log"
         }
+        resp = None
         try:
             resp = requests.post(SEND_FILE_URL, data=data, files=files, timeout=20)
             resp.raise_for_status()
             print(f"📄 File sent to Telegram: {filepath}")
         except requests.RequestException as e:
-            print(f"❗ Telegram file send error: {e} — response: {getattr(resp, 'text', '')}")
+            resp_text = resp.text if resp is not None else ''
+            print(f"❗ Telegram file send error: {e} — response: {resp_text}")
