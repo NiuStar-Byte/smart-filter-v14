@@ -416,11 +416,19 @@ def run():
                             )
                         except Exception as e:
                             print(f"[ERROR] Exception in Telegram debug send: {e}", flush=True)
-                    # <--- NEW: send tracking log ONCE after the loop
-                    send_telegram_file(
-                        "signal_tracking.txt",
-                        caption="Signal logs sent this cycle"
-                    )
+                    # --- NEW: send tracking log ONLY at 01:00, 07:00, 13:00, 19:00 UTC ---
+                    now_utc = datetime.datetime.utcnow()
+                    if now_utc.hour in [1, 7, 13, 19] and now_utc.minute == 0:
+                        try:
+                            send_telegram_file(
+                                "signal_tracking.txt",
+                                caption=f"Signal logs sent at {now_utc.strftime('%H:%M UTC')}"
+                            )
+                            print(f"[INFO] Sent signal_tracking.txt at scheduled time {now_utc.strftime('%H:%M UTC')}", flush=True)
+                        except Exception as e:
+                            print(f"[ERROR] Exception sending signal_tracking.txt: {e}", flush=True)
+                    else:
+                        print(f"[INFO] Skipped sending signal_tracking.txt (current time: {now_utc.strftime('%H:%M UTC')})", flush=True)
                 else:
                     print("[FIRED] valid_debugs is empty — no debug files to send to Telegram.", flush=True)
             except Exception as e:
