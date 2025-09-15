@@ -417,7 +417,7 @@ def run():
                         except Exception as e:
                             print(f"[ERROR] Exception in Telegram debug send: {e}", flush=True)
                     # --- NEW: send tracking log ONLY at 01:00, 07:00, 13:00, 19:00 UTC ---
-                    now_utc = datetime.datetime.utcnow()
+                    now_utc = datetime.utcnow()  # <-- FIXED LINE
                     if now_utc.hour in [1, 7, 13, 19] and now_utc.minute == 0:
                         try:
                             send_telegram_file(
