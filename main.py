@@ -389,65 +389,86 @@ def run():
                 except Exception as e:
                     print(f"[ERROR] Exception in processing 5min for {symbol}: {e}", flush=True)
 
-            # --- Send up to 2 debug files to Telegram (Signal Debug txt sampling) ---
+            
+            interval_signals = []
+            last_sent_hour = None
+            
+            scheduled_hours = [1, 7, 13, 19]
+            intervals = {
+                1: (19, 1),    # 19:00 - 01:00
+                7: (1, 7),     # 01:00 - 07:00
+                13: (7, 13),   # 07:00 - 13:00
+                19: (13, 19),  # 13:00 - 19:00
+            }
+            
             try:
-                if valid_debugs:
-                    print(f"[FIRED] About to send {min(len(valid_debugs), 2)} debug files to Telegram.", flush=True)
-                    num = min(len(valid_debugs), 2)
-                    for debug_info in random.sample(valid_debugs, num):
-                        try:
-                            print("[FIRED] LONG filter weights:", debug_info["filter_weights_long"], flush=True)
-                            print("[FIRED] SHORT filter weights:", debug_info["filter_weights_short"], flush=True)
-                            export_signal_debug_txt(
-                                symbol=debug_info["symbol"],
-                                tf=debug_info["tf"],
-                                bias=debug_info["bias"],
-                                filter_weights_long=debug_info["filter_weights_long"],
-                                filter_weights_short=debug_info["filter_weights_short"],
-                                gatekeepers=debug_info["gatekeepers"],
-                                results_long=debug_info.get("results_long", {}),
-                                results_short=debug_info.get("results_short", {}),
-                                orderbook_result=debug_info.get("orderbook_result"),
-                                density_result=debug_info.get("density_result")
-                            )
-                            send_telegram_file(
-                                "signal_debug_temp.txt",
-                                caption=debug_info["caption"]
-                            )
-                        except Exception as e:
-                            print(f"[ERROR] Exception in Telegram debug send: {e}", flush=True)
-                    # --- NEW: send tracking log ONLY at 01:00, 07:00, 13:00, 19:00 UTC ---
-                    now_utc = datetime.utcnow()  # <-- FIXED LINE
-                    if now_utc.hour in [1, 7, 13, 19] and now_utc.minute == 0:
-                        try:
-                            send_telegram_file(
-                                "signal_tracking.txt",
-                                caption=f"Signal logs sent at {now_utc.strftime('%H:%M UTC')}"
-                            )
-                            print(f"[INFO] Sent signal_tracking.txt at scheduled time {now_utc.strftime('%H:%M UTC')}", flush=True)
-                        except Exception as e:
-                            print(f"[ERROR] Exception sending signal_tracking.txt: {e}", flush=True)
+                while True:
+                    try:
+                        # Append signals to interval_signals here as they are processed elsewhere in your code.
+                        # interval_signals.append(...)
+                        
+                        # Debug file sampling
+                        if interval_signals:
+                            print(f"[FIRED] About to send {min(len(interval_signals), 2)} debug files to Telegram.", flush=True)
+                            num = min(len(interval_signals), 2)
+                            for debug_info in random.sample(interval_signals, num):
+                                try:
+                                    print("[FIRED] LONG filter weights:", debug_info["filter_weights_long"], flush=True)
+                                    print("[FIRED] SHORT filter weights:", debug_info["filter_weights_short"], flush=True)
+                                    export_signal_debug_txt(
+                                        symbol=debug_info["symbol"],
+                                        tf=debug_info["tf"],
+                                        bias=debug_info["bias"],
+                                        filter_weights_long=debug_info["filter_weights_long"],
+                                        filter_weights_short=debug_info["filter_weights_short"],
+                                        gatekeepers=debug_info["gatekeepers"],
+                                        results_long=debug_info.get("results_long", {}),
+                                        results_short=debug_info.get("results_short", {}),
+                                        orderbook_result=debug_info.get("orderbook_result"),
+                                        density_result=debug_info.get("density_result")
+                                    )
+                                    send_telegram_file(
+                                        "signal_debug_temp.txt",
+                                        caption=debug_info["caption"]
+                                    )
+                                except Exception as e:
+                                    print(f"[ERROR] Exception in Telegram debug send: {e}", flush=True)
+                        else:
+                            print("[FIRED] interval_signals is empty — no debug files to send to Telegram.", flush=True)
+                        
+                        # --- Cumulative signal tracking: send tracking log at scheduled UTC times ---
+                        now_utc = datetime.utcnow()
+                        if (now_utc.hour in scheduled_hours) and (last_sent_hour != now_utc.hour):
+                            try:
+                                send_telegram_file(
+                                    "signal_tracking.txt",
+                                    caption=f"Cumulative signal logs sent at {now_utc.strftime('%H:%M UTC')} for interval {intervals[now_utc.hour][0]:02d}:00–{intervals[now_utc.hour][1]:02d}:00"
+                                )
+                                print(f"[INFO] Sent signal_tracking.txt at scheduled time {now_utc.strftime('%H:%M UTC')}", flush=True)
+                                last_sent_hour = now_utc.hour
+                                interval_signals.clear()  # Clear buffer for next interval
+                            except Exception as e:
+                                print(f"[ERROR] Exception sending signal_tracking.txt: {e}", flush=True)
+                        else:
+                            print(f"[INFO] Skipped sending signal_tracking.txt (current time: {now_utc.strftime('%H:%M UTC')})", flush=True)
+            
+                    except Exception as e:
+                        print(f"[FATAL] Exception in debug sending block: {e}", flush=True)
+                    
+                    if interval_signals:
+                        print(f"[FIRED] Processed {len(interval_signals)} valid signals this cycle", flush=True)
                     else:
-                        print(f"[INFO] Skipped sending signal_tracking.txt (current time: {now_utc.strftime('%H:%M UTC')})", flush=True)
-                else:
-                    print("[FIRED] valid_debugs is empty — no debug files to send to Telegram.", flush=True)
+                        print("[FIRED] No valid signals processed this cycle", flush=True)
+                    
+                    print("[INFO] ✅ Cycle complete. Sleeping 60 seconds...\n", flush=True)
+                    time.sleep(60)
+            
             except Exception as e:
-                print(f"[FATAL] Exception in debug sending block: {e}", flush=True)
-            
-            if valid_debugs:
-                print(f"[FIRED] Processed {len(valid_debugs)} valid signals this cycle", flush=True)
-            else:
-                print("[FIRED] No valid signals processed this cycle", flush=True)
-            
-            print("[INFO] ✅ Cycle complete. Sleeping 60 seconds...\n", flush=True)
-            time.sleep(60)
-
-        except Exception as e:
-            print(f"[FATAL] Exception in main loop: {e}", flush=True)
-            import traceback
-            traceback.print_exc()
-            print("[INFO] Sleeping 10 seconds before retrying main loop...\n", flush=True)
-            time.sleep(10)
+                print(f"[FATAL] Exception in main loop: {e}", flush=True)
+                import traceback
+                traceback.print_exc()
+                print("[INFO] Sleeping 10 seconds before retrying main loop...\n", flush=True)
+                time.sleep(10)
 
 if __name__ == "__main__":
     print(">>> ENTERED main.py", flush=True)
