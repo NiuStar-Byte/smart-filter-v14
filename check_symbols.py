@@ -111,7 +111,13 @@ TOKEN_BLOCKCHAIN_INFO = {
     "HYPE-USDT":    {"base": "HYPE",    "blockchain": "Solana",       "consensus": "PoH+PoS"},
     "PUMP-USDT":    {"base": "PUMP",    "blockchain": "Ethereum",     "consensus": "PoS"},
     "BERA-USDT":    {"base": "BERA",    "blockchain": "Berachain",    "consensus": "PoL"},
-    "DYDX-USDT":    {"base": "DYDX",    "blockchain": "DYDX Chain",   "consensus": "PoS Cosmos"}
+    "DYDX-USDT":    {"base": "DYDX",    "blockchain": "DYDX Chain",   "consensus": "PoS Cosmos"},
+    "KAITO-USDT":   {"base": "KAITO",   "blockchain": "Ethereum",     "consensus": "PoS"},
+    "ARKM-USDT":    {"base": "ARKM",    "blockchain": "Ethereum",     "consensus": "PoS"},
+    "ATH-USDT":     {"base": "ATH",     "blockchain": "Ethereum",     "consensus": "PoS"},
+    "NMR-USDT":     {"base": "NMR",     "blockchain": "Ethereum",     "consensus": "PoS"},
+    "ARB-USDT":     {"base": "ARB",     "blockchain": "Arbitrum One", "consensus": "PoS"},
+    "WLFI-USDT":    {"base": "WLFI",    "blockchain": "Ethereum",     "consensus": "PoS"}
 
     # Add further tokens below as needed, with best-guess or "Unknown" if truly uncertain:
     # Examples:
