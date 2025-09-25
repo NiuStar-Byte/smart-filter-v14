@@ -67,7 +67,6 @@ class SmartFilter:
         }
         
         self.filter_weights_short = {
-        self.filter_weights_long = {
             "MACD": 3.0, "Volume Spike": 3.0, "MTF Volume Agreement": 3.0, "Liquidity Awareness": 3.0, "Candle Confirmation": 3.0,
             "Spread Filter": 3.0, "Support/Resistance": 3.0, "TREND": 2.9, "Momentum": 2.8, "Fractal Zone": 2.7,
             "ATR Momentum Burst": 2.6, "HH/LL Trend": 2.5, "Volatility Model": 2.4, "Volatility Squeeze": 2.3, "VWAP Divergence": 2.2,
