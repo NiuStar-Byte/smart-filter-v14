@@ -61,16 +61,16 @@ class SmartFilter:
         # Weights for filters
         self.filter_weights_long = {
             "MACD": 5.0, "Volume Spike": 5.0, "Fractal Zone": 4.5, "TREND": 4.7, "Momentum": 4.9, "ATR Momentum Burst": 4.3,
-            "MTF Volume Agreement": 5.0, "HH/LL Trend": 4.1, "Volatility Model": 3.9,
-            "Liquidity Awareness": 5.0, "Volatility Squeeze": 3.7, "Candle Confirmation": 2.7,
+            "MTF Volume Agreement": 2.7, "HH/LL Trend": 4.1, "Volatility Model": 3.9,
+            "Liquidity Awareness": 5.0, "Volatility Squeeze": 3.7, "Candle Confirmation": 5.0,
             "VWAP Divergence": 3.5, "Spread Filter": 2.5, "Chop Zone": 3.3, "Liquidity Pool": 3.1, "Support/Resistance": 5.0,
             "Smart Money Bias": 2.9, "Absorption": 2.3, "Wick Dominance": 2.1
         }
         
         self.filter_weights_short = {
             "MACD": 5.0, "Volume Spike": 5.0, "Fractal Zone": 4.5, "TREND": 4.7, "Momentum": 4.9, "ATR Momentum Burst": 4.3,
-            "MTF Volume Agreement": 5.0, "HH/LL Trend": 4.1, "Volatility Model": 3.9,
-            "Liquidity Awareness": 5.0, "Volatility Squeeze": 3.7, "Candle Confirmation": 2.7,
+            "MTF Volume Agreement": 2.7, "HH/LL Trend": 4.1, "Volatility Model": 3.9,
+            "Liquidity Awareness": 5.0, "Volatility Squeeze": 3.7, "Candle Confirmation": 5.0,
             "VWAP Divergence": 3.5, "Spread Filter": 2.5, "Chop Zone": 3.3, "Liquidity Pool": 3.1, "Support/Resistance": 5.0,
             "Smart Money Bias": 2.9, "Absorption": 2.3, "Wick Dominance": 2.1
         }
@@ -80,9 +80,9 @@ class SmartFilter:
         self.gatekeepers = [
             "MACD",
             "Volume Spike",
-            "MTF Volume Agreement",
+        #    "MTF Volume Agreement",
             "Liquidity Awareness",
-        #    "Candle Confirmation",
+            "Candle Confirmation",
         #    "Spread Filter",    
             "Support/Resistance"
         ]
