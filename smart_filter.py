@@ -60,17 +60,17 @@ class SmartFilter:
 
         # Weights for filters
         self.filter_weights_long = {
-            "MACD": 3.0, "Volume Spike": 3.0, "MTF Volume Agreement": 3.0, "Liquidity Awareness": 3.0, "Candle Confirmation": 3.0,
-            "Spread Filter": 3.0, "Support/Resistance": 3.0, "TREND": 2.9, "Momentum": 2.8, "Fractal Zone": 2.7,
-            "ATR Momentum Burst": 2.6, "HH/LL Trend": 2.5, "Volatility Model": 2.4, "Volatility Squeeze": 2.3, "VWAP Divergence": 2.2,
-            "Chop Zone": 2.1, "Liquidity Pool": 2.0, "Smart Money Bias": 1.9, "Absorption": 1.8, "Wick Dominance": 1.7
+            "MACD": 6.0, "Volume Spike": 6.0, "MTF Volume Agreement": 6.0, "Liquidity Awareness": 6.0, "Candle Confirmation": 6.0,
+            "Spread Filter": 6.0, "Support/Resistance": 6.0, "TREND": 5.6, "Momentum": 5.5, "Fractal Zone": 5.4,
+            "ATR Momentum Burst": 5.1, "HH/LL Trend": 4.8, "Volatility Model": 4.7, "Volatility Squeeze": 4.4, "VWAP Divergence": 4.3,
+            "Chop Zone": 4.1, "Liquidity Pool": 3.8, "Smart Money Bias": 3.6, "Absorption": 3.4, "Wick Dominance": 3.3
         }
         
         self.filter_weights_short = {
-            "MACD": 3.0, "Volume Spike": 3.0, "MTF Volume Agreement": 3.0, "Liquidity Awareness": 3.0, "Candle Confirmation": 3.0,
-            "Spread Filter": 3.0, "Support/Resistance": 3.0, "TREND": 2.9, "Momentum": 2.8, "Fractal Zone": 2.7,
-            "ATR Momentum Burst": 2.6, "HH/LL Trend": 2.5, "Volatility Model": 2.4, "Volatility Squeeze": 2.3, "VWAP Divergence": 2.2,
-            "Chop Zone": 2.1, "Liquidity Pool": 2.0, "Smart Money Bias": 1.9, "Absorption": 1.8, "Wick Dominance": 1.7
+            "MACD": 6.0, "Volume Spike": 6.0, "MTF Volume Agreement": 6.0, "Liquidity Awareness": 6.0, "Candle Confirmation": 6.0,
+            "Spread Filter": 6.0, "Support/Resistance": 6.0, "TREND": 5.6, "Momentum": 5.5, "Fractal Zone": 5.4,
+            "ATR Momentum Burst": 5.1, "HH/LL Trend": 4.8, "Volatility Model": 4.7, "Volatility Squeeze": 4.4, "VWAP Divergence": 4.3,
+            "Chop Zone": 4.1, "Liquidity Pool": 3.8, "Smart Money Bias": 3.6, "Absorption": 3.4, "Wick Dominance": 3.3
         }
 
         self.filter_names = list(set(self.filter_weights_long.keys()) | set(self.filter_weights_short.keys()))
@@ -85,7 +85,7 @@ class SmartFilter:
             "Support/Resistance"
         ]
 
-        self.soft_gatekeepers = ["Volume Spike", "Spread Filter"]
+        self.soft_gatekeepers = ["Volume Spike"]
 
     # ==== SHARED HELPERS ====
     @staticmethod
