@@ -61,16 +61,16 @@ class SmartFilter:
         # Weights for filters
         self.filter_weights_long = {
             "MACD": 6.0, "Volume Spike": 6.0, "MTF Volume Agreement": 6.0, "Liquidity Awareness": 6.0, "Candle Confirmation": 6.0,
-            "Spread Filter": 6.0, "Support/Resistance": 6.0, "TREND": 5.6, "Momentum": 5.5, "Fractal Zone": 5.4,
-            "ATR Momentum Burst": 5.1, "HH/LL Trend": 4.8, "Volatility Model": 4.7, "Volatility Squeeze": 4.4, "VWAP Divergence": 4.3,
-            "Chop Zone": 4.1, "Liquidity Pool": 3.8, "Smart Money Bias": 3.6, "Absorption": 3.4, "Wick Dominance": 3.3
+            "Spread Filter": 6.0, "Support/Resistance": 6.0, "TREND": 5, "Momentum": 5, "Fractal Zone": 5,
+            "ATR Momentum Burst": 5, "HH/LL Trend": 5, "Volatility Model": 5, "Volatility Squeeze": 5, "VWAP Divergence": 5,
+            "Chop Zone": 5, "Liquidity Pool": 5, "Smart Money Bias": 5, "Absorption": 5, "Wick Dominance": 5
         }
         
         self.filter_weights_short = {
             "MACD": 6.0, "Volume Spike": 6.0, "MTF Volume Agreement": 6.0, "Liquidity Awareness": 6.0, "Candle Confirmation": 6.0,
-            "Spread Filter": 6.0, "Support/Resistance": 6.0, "TREND": 5.6, "Momentum": 5.5, "Fractal Zone": 5.4,
-            "ATR Momentum Burst": 5.1, "HH/LL Trend": 4.8, "Volatility Model": 4.7, "Volatility Squeeze": 4.4, "VWAP Divergence": 4.3,
-            "Chop Zone": 4.1, "Liquidity Pool": 3.8, "Smart Money Bias": 3.6, "Absorption": 3.4, "Wick Dominance": 3.3
+            "Spread Filter": 6.0, "Support/Resistance": 6.0, "TREND": 5, "Momentum": 5, "Fractal Zone": 5,
+            "ATR Momentum Burst": 5, "HH/LL Trend": 5, "Volatility Model": 5, "Volatility Squeeze": 5, "VWAP Divergence": 5,
+            "Chop Zone": 5, "Liquidity Pool": 5, "Smart Money Bias": 5, "Absorption": 5, "Wick Dominance": 5
         }
 
         self.filter_names = list(set(self.filter_weights_long.keys()) | set(self.filter_weights_short.keys()))
