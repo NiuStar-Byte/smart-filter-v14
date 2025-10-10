@@ -27,10 +27,10 @@ class SmartFilter:
         df3m: Optional[pd.DataFrame] = None,
         df5m: Optional[pd.DataFrame] = None,
         tf: Optional[str] = None,
-        min_score: int = 8,
+        min_score: int = 9,
         required_passed: Optional[int] = None,  # int or None allowed
-        volume_multiplier: float = 2.0,
-        liquidity_threshold: float = 0.25,
+        volume_multiplier: float = 1.5,
+        liquidity_threshold: float = 0.5,
         kwargs: Optional[dict] = None
     ):
         if kwargs is None:
