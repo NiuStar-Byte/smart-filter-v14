@@ -22,9 +22,9 @@ def fetch_orderbook(symbol: str, depth: int = 100) -> tuple[pd.DataFrame, pd.Dat
 def get_order_wall_delta(
     symbol: str,
     wall_levels: int = 5,             # PATCHED: Reduced from 10 to 5
-    min_wall_size: float = 0.5,       # PATCHED: Increased from 0 to 0.5
-    depth: int = 100,
-    band_pct: float = 0.01            # PATCHED: Increased from 0.005 to 0.01
+    min_wall_size: float = 0.75,       # PATCHED: Increased from 0.5 to 0.75
+    depth: int = 200,
+    band_pct: float = 0.025            # PATCHED: Increased from 0.01 t0 0.025
 ) -> dict:
     """
     Computes order book wall delta for a given symbol.
