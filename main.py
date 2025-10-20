@@ -55,7 +55,7 @@ def get_local_wib(dt):
         dt = pd.Timestamp(dt)
     return dt.tz_localize('UTC').tz_convert('Asia/Jakarta').replace(microsecond=0).strftime('%Y-%m-%d %H:%M:%S')
 
-def get_resting_order_density(symbol, depth=100, band_pct=0.01):  # PATCHED: band_pct default is now 0.01
+def get_resting_order_density(symbol, depth=100, band_pct=0.025):  # PATCHED: band_pct default is 0.025 from 0.01
     try:
         from kucoin_orderbook import fetch_orderbook
         bids, asks = fetch_orderbook(symbol, depth)
