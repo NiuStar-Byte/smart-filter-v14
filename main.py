@@ -2,10 +2,10 @@
 
 print("[INFO] main.py script started.", flush=True)
 from signal_debug_log import export_signal_debug_txt, log_fired_signal
-import time
-import random
 import os
+import time
 import pandas as pd
+import random
 import pytz
 from datetime import datetime
 from kucoin_data import get_live_entry_price, DEFAULT_SLIPPAGE
@@ -139,21 +139,10 @@ def super_gk_aligned(bias, orderbook_result, density_result):
 
 def run():
     print("[INFO] Starting Smart Filter engine (LIVE MODE)...\n", flush=True)
-    # Buffer to accumulate signals during the current interval
-    interval_signals = []
-    last_sent_hour = None
-
-    # UTC scheduled send times and their respective intervals
-    scheduled_hours = [1, 7, 13, 19]
-    intervals = {
-        1: (19, 1),    # 19:00 - 01:00
-        7: (1, 7),     # 01:00 - 07:00
-        13: (7, 13),   # 07:00 - 13:00
-        19: (13, 19),  # 13:00 - 19:00
-    }
-
     while True:
         try:
+            # Run filter diagnostics every cycle (VWAP Divergence debug will appear each time)
+            # run_all_filter_tests()
             now = time.time()
             valid_debugs = []
             pec_candidates = []
@@ -213,12 +202,13 @@ def run():
                                 confidence = 0.0
                             entry_idx = df3.index.get_loc(df3.index[-1])
 
+                            # --- NEW: Calculate TP/SL ---
                             tp_sl = calculate_tp_sl(df3, entry_price, signal_type)
                             tp = tp_sl.get('tp')
                             sl = tp_sl.get('sl')
-                            fib_levels = tp_sl.get('fib_levels')
-
-                            debug_obj_3m = {
+                            fib_levels = tp_sl.get('fib_levels')  # optional, for debug/log
+                            
+                            valid_debugs.append({
                                 "symbol": symbol_val,
                                 "tf": tf_val,
                                 "bias": bias,
@@ -232,13 +222,11 @@ def run():
                                 "density_result": density_result,
                                 "entry_price": entry_price,
                                 "fired_time_utc": fired_time_utc,
-                                "early_breakout_3m": early_breakout_3m,
+                                "early_breakout_3m": early_breakout_3m,  # <-- Add this line
                                 "tp": tp,
                                 "sl": sl,
                                 "fib_levels": fib_levels
-                            }
-                            valid_debugs.append(debug_obj_3m)
-                            interval_signals.append(debug_obj_3m)  # <--- Append to cumulative buffer
+                            })
 
                             log_fired_signal(
                                 symbol=symbol_val,
@@ -256,8 +244,9 @@ def run():
                                 entry_price=entry_price
                             )
 
+                            # --- Regime is defined here using sf3 ---
                             regime = sf3._market_regime() if hasattr(sf3, "_market_regime") else None
-
+        
                             if os.getenv("DRY_RUN", "false").lower() != "true":
                                 send_telegram_alert(
                                     numbered_signal=numbered_signal,
@@ -275,9 +264,9 @@ def run():
                                     total_weight=total_weight,
                                     reversal_side=res3.get("reversal_side"),
                                     regime=regime,
-                                    early_breakout_3m=early_breakout_3m,
-                                    tp=tp,
-                                    sl=sl
+                                    early_breakout_3m=early_breakout_3m,  # <-- Pass to alert (if supported)
+                                    tp=tp,       # NEW ARGUMENT
+                                    sl=sl        # NEW ARGUMENT
                                 )
                             last_sent[key3] = now
                     else:
@@ -303,7 +292,6 @@ def run():
                             if not super_gk_aligned(bias, orderbook_result, density_result):
                                 print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
                                 continue
-
                             print(f"[LOG] Sending 5min alert for {res5.get('symbol')}", flush=True)
 
                             fired_time_utc = datetime.utcnow()
@@ -330,12 +318,13 @@ def run():
                                 confidence = 0.0
                             entry_idx = df5.index.get_loc(df5.index[-1])
 
+                            # --- NEW: Calculate TP/SL ---
                             tp_sl = calculate_tp_sl(df5, entry_price, signal_type)
                             tp = tp_sl.get('tp')
                             sl = tp_sl.get('sl')
                             fib_levels = tp_sl.get('fib_levels')
-
-                            debug_obj_5m = {
+                            
+                            valid_debugs.append({
                                 "symbol": symbol_val,
                                 "tf": tf_val,
                                 "bias": bias,
@@ -349,13 +338,11 @@ def run():
                                 "density_result": density_result,
                                 "entry_price": entry_price,
                                 "fired_time_utc": fired_time_utc,
-                                "early_breakout_5m": early_breakout_5m,
+                                "early_breakout_5m": early_breakout_5m,  # <-- Add this line
                                 "tp": tp,
                                 "sl": sl,
                                 "fib_levels": fib_levels
-                            }
-                            valid_debugs.append(debug_obj_5m)
-                            interval_signals.append(debug_obj_5m)  # <--- Append to cumulative buffer
+                            })
 
                             log_fired_signal(
                                 symbol=symbol_val,
@@ -373,6 +360,7 @@ def run():
                                 entry_price=entry_price
                             )
 
+                            # --- Regime is defined here using sf5 ---
                             regime = sf5._market_regime() if hasattr(sf5, "_market_regime") else None
 
                             if os.getenv("DRY_RUN", "false").lower() != "true":
@@ -392,9 +380,9 @@ def run():
                                     total_weight=total_weight,
                                     reversal_side=res5.get("reversal_side"),
                                     regime=regime,
-                                    early_breakout_5m=early_breakout_5m,
-                                    tp=tp,
-                                    sl=sl
+                                    early_breakout_5m=early_breakout_5m,  # <-- Pass to alert (if supported)
+                                    tp=tp,       # NEW ARGUMENT
+                                    sl=sl        # NEW ARGUMENT
                                 )
                             last_sent[key5] = now
                     else:
@@ -402,53 +390,40 @@ def run():
                 except Exception as e:
                     print(f"[ERROR] Exception in processing 5min for {symbol}: {e}", flush=True)
 
-            # --- Debug file sampling: send up to 2 debug files ---
+            # --- Send up to 2 debug files to Telegram (Signal Debug txt sampling) ---
+            try:
+                if valid_debugs:
+                    print(f"[FIRED] About to send {min(len(valid_debugs), 2)} debug files to Telegram.", flush=True)
+                    num = min(len(valid_debugs), 2)
+                    for debug_info in random.sample(valid_debugs, num):
+                        try:
+                            print("[FIRED] LONG filter weights:", debug_info["filter_weights_long"], flush=True)
+                            print("[FIRED] SHORT filter weights:", debug_info["filter_weights_short"], flush=True)
+                            export_signal_debug_txt(
+                                symbol=debug_info["symbol"],
+                                tf=debug_info["tf"],
+                                bias=debug_info["bias"],
+                                filter_weights_long=debug_info["filter_weights_long"],
+                                filter_weights_short=debug_info["filter_weights_short"],
+                                gatekeepers=debug_info["gatekeepers"],
+                                results_long=debug_info.get("results_long", {}),
+                                results_short=debug_info.get("results_short", {}),
+                                orderbook_result=debug_info.get("orderbook_result"),
+                                density_result=debug_info.get("density_result")
+                            )
+                            send_telegram_file(
+                                "signal_debug_temp.txt",
+                                caption=debug_info["caption"]
+                            )
+                        except Exception as e:
+                            print(f"[ERROR] Exception in Telegram debug send: {e}", flush=True)
+                else:
+                    print("[FIRED] valid_debugs is empty — no debug files to send to Telegram.", flush=True)
+            except Exception as e:
+                print(f"[FATAL] Exception in debug sending block: {e}", flush=True)
+
             if valid_debugs:
-                print(f"[FIRED] About to send {min(len(valid_debugs), 2)} debug files to Telegram.", flush=True)
-                num = min(len(valid_debugs), 2)
-                for debug_info in random.sample(valid_debugs, num):
-                    try:
-                        print("[FIRED] LONG filter weights:", debug_info["filter_weights_long"], flush=True)
-                        print("[FIRED] SHORT filter weights:", debug_info["filter_weights_short"], flush=True)
-                        export_signal_debug_txt(
-                            symbol=debug_info["symbol"],
-                            tf=debug_info["tf"],
-                            bias=debug_info["bias"],
-                            filter_weights_long=debug_info["filter_weights_long"],
-                            filter_weights_short=debug_info["filter_weights_short"],
-                            gatekeepers=debug_info["gatekeepers"],
-                            results_long=debug_info.get("results_long", {}),
-                            results_short=debug_info.get("results_short", {}),
-                            orderbook_result=debug_info.get("orderbook_result"),
-                            density_result=debug_info.get("density_result")
-                        )
-                        send_telegram_file(
-                            "signal_debug_temp.txt",
-                            caption=debug_info["caption"]
-                        )
-                    except Exception as e:
-                        print(f"[ERROR] Exception in Telegram debug send: {e}", flush=True)
-            else:
-                print("[FIRED] valid_debugs is empty — no debug files to send to Telegram.", flush=True)
-
-            # --- Cumulative signal tracking: send tracking log at scheduled UTC times ---
-            now_utc = datetime.utcnow()
-            if (now_utc.hour in scheduled_hours) and (last_sent_hour != now_utc.hour):
-                try:
-                    send_telegram_file(
-                        "signal_tracking.txt",
-                        caption=f"Cumulative signal logs sent at {now_utc.strftime('%H:%M UTC')} for interval {intervals[now_utc.hour][0]:02d}:00–{intervals[now_utc.hour][1]:02d}:00"
-                    )
-                    print(f"[INFO] Sent signal_tracking.txt at scheduled time {now_utc.strftime('%H:%M UTC')}", flush=True)
-                    last_sent_hour = now_utc.hour
-                    interval_signals.clear()  # Clear buffer for next interval
-                except Exception as e:
-                    print(f"[ERROR] Exception sending signal_tracking.txt: {e}", flush=True)
-            else:
-                print(f"[INFO] Skipped sending signal_tracking.txt (current time: {now_utc.strftime('%H:%M UTC')})", flush=True)
-
-            if interval_signals:
-                print(f"[FIRED] Processed {len(interval_signals)} valid signals this cycle", flush=True)
+                print(f"[FIRED] Processed {len(valid_debugs)} valid signals this cycle", flush=True)
             else:
                 print("[FIRED] No valid signals processed this cycle", flush=True)
 
@@ -456,7 +431,7 @@ def run():
             time.sleep(60)
 
         except Exception as e:
-            print(f"[FATAL] Exception in main run loop: {e}", flush=True)
+            print(f"[FATAL] Exception in main loop: {e}", flush=True)
             import traceback
             traceback.print_exc()
             print("[INFO] Sleeping 10 seconds before retrying main loop...\n", flush=True)
