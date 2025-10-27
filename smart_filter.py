@@ -87,7 +87,7 @@ class SmartFilter:
             "Support/Resistance"
         ]
 
-        self.soft_gatekeepers = ["Volume Spike"]
+        self.soft_gatekeepers = ["MACD", "Volume Spike", "MTF Volume Agreement", "Liquidity Awareness", "Spread Filter", "Candle Confirmation", "Support/Resistance"]
 
     # ==== SHARED HELPERS ====
     @staticmethod
