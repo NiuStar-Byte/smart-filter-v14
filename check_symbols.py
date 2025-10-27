@@ -21,7 +21,7 @@ TOKENS = [
     "GALA-USDT", "PUMP-USDT", "PEPE-USDT", "WIF-USDT", "BERA-USDT", "DYDX-USDT",
     "KAITO-USDT", "ARKM-USDT", "ATH-USDT", "NMR-USDT", "ARB-USDT",
     "WLFI-USDT", "BIO-USDT", "ASTER-USDT", "XPL-USDT", "AVNT-USDT",
-    "ORDER-USDT"
+    "ORDER-USDT", "XAUT-USDT"
  ]
 
 # Load market symbols from each exchange
