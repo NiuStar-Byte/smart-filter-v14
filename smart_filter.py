@@ -78,16 +78,16 @@ class SmartFilter:
         self.filter_names = list(set(self.filter_weights_long.keys()) | set(self.filter_weights_short.keys()))
         
         self.gatekeepers = [
-            "MACD",
-            "Volume Spike",
-            "MTF Volume Agreement",
-            "Liquidity Awareness",
-            "Spread Filter",
+            # "MACD",
+            # "Volume Spike",
+            # "MTF Volume Agreement",
+            # "Liquidity Awareness",
+            #"Spread Filter",
             "Candle Confirmation",
             "Support/Resistance"
         ]
 
-        self.soft_gatekeepers = ["MACD", "Volume Spike", "MTF Volume Agreement", "Liquidity Awareness", "Spread Filter", "Candle Confirmation", "Support/Resistance"]
+        self.soft_gatekeepers = ["Support/Resistance"]
 
     # ==== SHARED HELPERS ====
     @staticmethod
