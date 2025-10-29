@@ -1349,19 +1349,36 @@ class SmartFilter:
     
         return signal
 
-    def _check_vwap_divergence(self, debug=False):
-        vwap = self.df['vwap'].iat[-1]
-        vwap_prev = self.df['vwap'].iat[-2]
-        close = self.df['close'].iat[-1]
-        close_prev = self.df['close'].iat[-2]
+    def _check_vwap_divergence(self, debug: bool = False):
+        """
+        VWAP divergence filter.
+        - Requires a strict majority (long_met > short_met or short_met > long_met)
+          and a minimum number of conditions met (>=4) to declare LONG or SHORT.
+        - No longer prefers LONG on ties.
+        - Debug logging is standardized and guarded.
+        """
+        # Defensive extraction of required series values
+        try:
+            vwap = self.df['vwap'].iat[-1]
+            vwap_prev = self.df['vwap'].iat[-2]
+            close = self.df['close'].iat[-1]
+            close_prev = self.df['close'].iat[-2]
+            volume = self.df['volume'].iat[-1]
+            volume_ma = self.df['volume'].rolling(window=20).mean().iat[-1]
+        except Exception as e:
+            if debug:
+                print(f"[{self.symbol}] [VWAP Divergence] Missing data or index error: {e}")
+            return None
     
-        volume = self.df['volume'].iat[-1]
-        volume_ma = self.df['volume'].rolling(window=20).mean().iat[-1]
+        # Graceful handling for NaN volume_ma
+        if volume_ma is None or (isinstance(volume_ma, float) and math.isnan(volume_ma)):
+            volume_ma = volume  # fallback to using current volume so the volume checks don't fail
+    
         min_vol_threshold = volume_ma * 0.9  # 10% below moving avg is still acceptable
     
-        # Compute VWAP divergence for logging
+        # Compute VWAP divergence for logging/thresholding
         vwap_div = (vwap - close) - (vwap_prev - close_prev)
-        min_vwap_div = 0.001  # Example: only fire if divergence > 0.1%
+        min_vwap_div = 0.001  # e.g., 0.1% as a minimal meaningful divergence
     
         # LONG conditions
         cond1_long = close < vwap
@@ -1381,21 +1398,42 @@ class SmartFilter:
         short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short, cond5_short])
     
         if debug:
-            print(f"[{self.symbol}] [VWAP Divergence] Values | vwap={vwap}, vwap_prev={vwap_prev}, close={close}, close_prev={close_prev}, volume={volume}, volume_ma={volume_ma}")
-            print(f"[{self.symbol}] [VWAP Divergence] Conditions | conds_long={[cond1_long, cond2_long, cond3_long, cond4_long, cond5_long]}, conds_short={[cond1_short, cond2_short, cond3_short, cond4_short, cond5_short]}")
-            print(f"[{self.symbol}] [VWAP Divergence] Met Counts | long_met={long_met}, short_met={short_met}, vwap_div={vwap_div}")
+            print(
+                f"[{self.symbol}] [VWAP Divergence] Values | "
+                f"vwap={vwap}, vwap_prev={vwap_prev}, close={close}, close_prev={close_prev}, "
+                f"volume={volume}, volume_ma={volume_ma:.6f}"
+            )
+            print(
+                f"[{self.symbol}] [VWAP Divergence] Conditions | "
+                f"conds_long={[cond1_long, cond2_long, cond3_long, cond4_long, cond5_long]}, "
+                f"conds_short={[cond1_short, cond2_short, cond3_short, cond4_short, cond5_short]}"
+            )
+            print(
+                f"[{self.symbol}] [VWAP Divergence] Met Counts | long_met={long_met}, short_met={short_met}, vwap_div={vwap_div:.6f}"
+            )
     
-        if long_met > short_met and long_met >= 4:
-            print(f"[{self.symbol}] [VWAP Divergence] Signal: LONG | long_met={long_met}, short_met={short_met}, vwap_div={vwap_div}, volume={volume}, volume_ma={volume_ma}")
+        # Require a strict majority and minimum met count to declare a direction. Do NOT prefer LONG on ties.
+        MIN_MET_COUNT = 4
+        if long_met > short_met and long_met >= MIN_MET_COUNT:
+            if debug:
+                print(
+                    f"[{self.symbol}] [VWAP Divergence] Signal: LONG | "
+                    f"long_met={long_met}, short_met={short_met}, vwap_div={vwap_div:.6f}, volume={volume}, volume_ma={volume_ma:.6f}"
+                )
             return "LONG"
-        elif short_met > long_met and short_met >= 4:
-            print(f"[{self.symbol}] [VWAP Divergence] Signal: SHORT | long_met={long_met}, short_met={short_met}, vwap_div={vwap_div}, volume={volume}, volume_ma={volume_ma}")
+        elif short_met > long_met and short_met >= MIN_MET_COUNT:
+            if debug:
+                print(
+                    f"[{self.symbol}] [VWAP Divergence] Signal: SHORT | "
+                    f"long_met={long_met}, short_met={short_met}, vwap_div={vwap_div:.6f}, volume={volume}, volume_ma={volume_ma:.6f}"
+                )
             return "SHORT"
-        elif long_met == short_met and long_met >= 4:
-            print(f"[{self.symbol}] [VWAP Divergence] Signal: LONG (tie) | long_met={long_met}, short_met={short_met}, vwap_div={vwap_div}, volume={volume}, volume_ma={volume_ma}")
-            return "LONG"  # Or "SHORT"/None if desired
         else:
-            print(f"[{self.symbol}] [VWAP Divergence] No signal fired | long_met={long_met}, short_met={short_met}, vwap_div={vwap_div}, volume={volume}, volume_ma={volume_ma}")
+            if debug:
+                print(
+                    f"[{self.symbol}] [VWAP Divergence] No signal fired | "
+                    f"long_met={long_met}, short_met={short_met}, vwap_div={vwap_div:.6f}, volume={volume}, volume_ma={volume_ma:.6f}"
+                )
             return None
             
     def _get_rolling_extremes(self, col, window, prev=False):
@@ -1406,37 +1444,122 @@ class SmartFilter:
         else:
             return series.min().iat[-1], series.max().iat[-1]
     
-    def _check_support_resistance(self, window=20, buffer_pct=0.005, min_cond=2, debug=False):
-        support, _ = self._get_rolling_extremes('low', window)
-        _, resistance = self._get_rolling_extremes('high', window)
-        close = self.df['close'].iat[-1]
-        close_prev = self.df['close'].iat[-2]
-        volume = self.df['volume'].iat[-1]
-        volume_prev = self.df['volume'].iat[-2]
-
-        support_prox = (close - support) / support
-        resistance_prox = (resistance - close) / resistance
-
-        cond1_long = close <= support * (1 + buffer_pct)
+    def _check_support_resistance(
+        self,
+        window: int = 20,
+        buffer_pct: float = 0.005,
+        min_cond: int = 2,
+        require_volume_confirm: bool = False,
+        debug: bool = False
+    ) -> str | None:
+        """
+        Support / Resistance proximity filter.
+    
+        Improvements over the original:
+        - Defensive checks for required columns and sufficient history.
+        - Uses safe division to avoid ZeroDivisionError / NaN issues.
+        - Optional volume confirmation toggle (require_volume_confirm).
+        - Clearer proximity calculations and consistent debug messages.
+        - No variable-name typos in debug prints.
+        - Explicit tie handling: only return LONG or SHORT when conditions strictly favor one side.
+    
+        Returns:
+            "LONG", "SHORT", or None
+        """
+        # Required columns / length check
+        required_cols = ['low', 'high', 'close', 'volume']
+        missing = [c for c in required_cols if c not in self.df.columns]
+        if missing:
+            if debug:
+                print(f"[{self.symbol}] [Support/Resistance] Missing columns: {missing}")
+            return None
+    
+        if len(self.df) < window + 1:
+            if debug:
+                print(f"[{self.symbol}] [Support/Resistance] Not enough data (need at least {window + 1} rows).")
+            return None
+    
+        # Safely get rolling extremes (the helper may raise if indices are short)
+        try:
+            support, _ = self._get_rolling_extremes('low', window)
+            _, resistance = self._get_rolling_extremes('high', window)
+        except Exception as e:
+            if debug:
+                print(f"[{self.symbol}] [Support/Resistance] Error getting rolling extremes: {e}")
+            return None
+    
+        # Latest price/volume values
+        try:
+            close = float(self.df['close'].iat[-1])
+            close_prev = float(self.df['close'].iat[-2])
+            volume = float(self.df['volume'].iat[-1])
+            volume_prev = float(self.df['volume'].iat[-2])
+        except Exception as e:
+            if debug:
+                print(f"[{self.symbol}] [Support/Resistance] Error reading price/volume: {e}")
+            return None
+    
+        # Safe proximity calculations
+        # support_prox: how far above support the close is (as fraction of support)
+        support_prox = self.safe_divide(close - support, support)
+        # resistance_prox: how far below resistance the close is (as fraction of resistance)
+        resistance_prox = self.safe_divide(resistance - close, resistance)
+    
+        # Volume confirmation (optional)
+        volume_confirm_long = volume > volume_prev if require_volume_confirm else True
+        volume_confirm_short = volume < volume_prev if require_volume_confirm else True
+    
+        # Conditions (use proximity instead of direct multiplication to avoid rounding issues)
+        cond1_long = support_prox <= buffer_pct  # close within buffer_pct above support
         cond2_long = close > close_prev
-        cond3_long = volume > volume_prev
-
-        cond1_short = close >= resistance * (1 - buffer_pct)
+        cond3_long = volume_confirm_long
+    
+        cond1_short = resistance_prox <= buffer_pct  # close within buffer_pct below resistance
         cond2_short = close < close_prev
-        cond3_short = volume < volume_prev
-
+        cond3_short = volume_confirm_short
+    
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-
+    
+        if debug:
+            print(
+                f"[{self.symbol}] [Support/Resistance] Values | support={support}, resistance={resistance}, "
+                f"close={close}, close_prev={close_prev}, volume={volume}, volume_prev={volume_prev}"
+            )
+            print(
+                f"[{self.symbol}] [Support/Resistance] Proximity | support_prox={support_prox:.6f}, "
+                f"resistance_prox={resistance_prox:.6f}, buffer_pct={buffer_pct:.6f}"
+            )
+            print(
+                f"[{self.symbol}] [Support/Resistance] Conditions Long | "
+                f"[near_support={cond1_long}, close_up={cond2_long}, volume_confirm={cond3_long}] -> long_met={long_met}"
+            )
+            print(
+                f"[{self.symbol}] [Support/Resistance] Conditions Short | "
+                f"[near_resistance={cond1_short}, close_down={cond2_short}, volume_confirm={cond3_short}] -> short_met={short_met}"
+            )
+    
+        # Decision: require strict majority and >= min_cond to declare direction
         if long_met >= min_cond and long_met > short_met:
-            print(f"[{self.symbol}] [Support/Resistance] Signal: LONG | support={support}, resistance={resistance}, close={close}, long_met={long_met}, short_met={short_met}, support_prox={support_prox:.4f}")
+            if debug:
+                print(
+                    f"[{self.symbol}] [Support/Resistance] Signal: LONG | support={support}, resistance={resistance}, "
+                    f"close={close}, long_met={long_met}, short_met={short_met}, support_prox={support_prox:.6f}"
+                )
             return "LONG"
         elif short_met >= min_cond and short_met > long_met:
-            print(f"[{self.symbol}] [Support/Resistance] Signal: SHORT | support={support}, resistance={resistance}, close={close}, long_met={long_met}, short_met={short_met}, resistance_prox={resistance_prox:.4f}")
+            if debug:
+                print(
+                    f"[{self.symbol}] [Support/Resistance] Signal: SHORT | support={support}, resistance={resistance}, "
+                    f"close={close}, long_met={long_met}, short_met={short_met}, resistance_prox={resistance_prox:.6f}"
+                )
             return "SHORT"
         else:
             if debug:
-                print(f"[{self.symbol}] [Support/Resistance] No signal fired | support={support}, resistance={resistance}, close={close}, close_prev={close_prev}, volume={volume}, volume_prev={volume_prev}, long_met={long_met}, short_met={short_met}, support_prox={support_prox:.4f}, resistance_prox={resistance_prox:.4f}")
+                print(
+                    f"[{self.symbol}] [Support/Resistance] No signal | long_met={long_met}, short_met={short_met}, "
+                    f"support_prox={support_prox:.6f}, resistance_prox={resistance_prox:.6f}"
+                )
             return None
 
     def _check_fractal_zone(self, buffer_pct=0.005, window=20, min_conditions=2, debug=False):
