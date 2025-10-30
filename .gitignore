@@ -46,6 +46,7 @@ htmlcov/
 *.tmp
 *.temp
 signal_debug_temp.txt
+workflow_output/
 
 # Deprecated CSV files (replaced by log-based parsing)
 fired_signals_temp.csv
