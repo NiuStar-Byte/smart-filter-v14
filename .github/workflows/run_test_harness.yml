@@ -1,0 +1,35 @@
+# Manual workflow to run scripts/test_harness.py inside the repo using GitHub Actions
+# Usage: On GitHub, go to Actions -> "Run test harness" -> Run workflow
+on:
+  workflow_dispatch:
+
+jobs:
+  run-test-harness:
+    name: Run test_harness.py
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas numpy requests
+
+      - name: Run test harness and capture output
+        run: |
+          mkdir -p workflow_output
+          PYTHONPATH=. python scripts/test_harness.py 2>&1 | tee workflow_output/test_harness_output.txt
+        env:
+          PYTHONUNBUFFERED: "1"
+
+      - name: Upload harness output
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-harness-output
+          path: workflow_output/test_harness_output.txt
