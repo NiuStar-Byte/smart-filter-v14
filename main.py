@@ -16,8 +16,6 @@ from kucoin_orderbook import get_order_wall_delta
 from pec_engine import run_pec_check, export_pec_log
 from tp_sl_retracement import calculate_tp_sl
 from test_filters import run_all_filter_tests
-import sys
-import runpy
 
 # Run SmartFilter diagnostics before starting main signal loop
 # run_all_filter_tests()  # <-- Add this line
@@ -25,24 +23,23 @@ import runpy
 TOKENS = [
     "BTC-USDT", "ETH-USDT",
     "BNB-USDT", "XRP-USDT", "SOL-USDT", "ADA-USDT", "XLM-USDT",
-    "TON-USDT", "AVAX-USDT", "LINK-USDT", "DOT-USDT", "ARB-USDT",
+    "TON-USDT", "AVAX-USDT", "LINK-USDT", "DOT-USDT", "LQTY-USDT",
     "PUMP-USDT", "KAITO-USDT", "MAGIC-USDT", "SUI-USDT", "AERO-USDT", 
     "BERA-USDT", "UNI-USDT", "HBAR-USDT", "SAHARA-USDT", "VIRTUAL-USDT",
     "PARTI-USDT", "CFX-USDT", "DOGE-USDT", "VINE-USDT", "PENGU-USDT",
     "WIF-USDT", "EIGEN-USDT", "SPK-USDT", "HYPE-USDT", "WLFI-USDT",
     "POL-USDT", "RAY-USDT", "ZKJ-USDT", "AAVE-USDT", "DYDX-USDT",
     "ONDO-USDT", "ARKM-USDT", "ATH-USDT", "NMR-USDT", "PROMPT-USDT",
-    "TURBO-USDT", "ENA-USDT", "BIO-USDT", "ASTER-USDT", "XPL-USDT",
-    "AVNT-USDT", "ORDER-USDT", "XAUT-USDT", "ZORA-USDT"
+    "TURBO-USDT"
  ]
 
 # TOKENS = [
-#    "BMT-USDT", "X-USDT", "EPT-USDT", "ELDE-USDT",
+#    "BMT-USDT", "ZORA-USDT", "X-USDT", "EPT-USDT", "ELDE-USDT",
 #    "ACTSOL-USDT", "CROSS-USDT", "KNC-USDT", "AIN-USDT", "ARK-USDT",
-#    "PORTAL-USDT", "ICNT-USDT", "OMNI-USDT", "ARB-USDT", "FUN-USDT",
+#    "PORTAL-USDT", "ICNT-USDT", "OMNI-USDT", "ENA-USDT", "ARB-USDT", 
 #    "AUCTION-USDT", "ROAM-USDT", "ERA-USDT", "FUEL-USDT", "TUT-USDT", 
 #    "SKATE-USDT", "LA-USDT", "HIPPO-USDT", "VOXEL-USDT", "DUCK-USDT",
-#    "GALA-USDT", 
+#    "GALA-USDT", "FUN-USDT"
 # ]
 
 COOLDOWN = {"3min": 60, "5min": 60}
@@ -57,7 +54,7 @@ def get_local_wib(dt):
         dt = pd.Timestamp(dt)
     return dt.tz_localize('UTC').tz_convert('Asia/Jakarta').replace(microsecond=0).strftime('%Y-%m-%d %H:%M:%S')
 
-def get_resting_order_density(symbol, depth=100, band_pct=0.025):  # PATCHED: band_pct default is 0.025 from 0.01
+def get_resting_order_density(symbol, depth=100, band_pct=0.01):  # PATCHED: band_pct default is now 0.01
     try:
         from kucoin_orderbook import fetch_orderbook
         bids, asks = fetch_orderbook(symbol, depth)
@@ -109,10 +106,10 @@ def log_orderbook_and_density(symbol):
         result = get_order_wall_delta(symbol)
         print(
             f"[OrderBookDeltaLog] {symbol} | "
-            f"buy_wall={{result.get('buy_wall',0)}} | "
-            f"sell_wall={{result.get('sell_wall',0)}} | "
-            f"wall_delta={{result.get('wall_delta',0)}} | "
-            f"midprice={{result.get('midprice','N/A')}}",
+            f"buy_wall={result.get('buy_wall',0)} | "
+            f"sell_wall={result.get('sell_wall',0)} | "
+            f"wall_delta={result.get('wall_delta',0)} | "
+            f"midprice={result.get('midprice','N/A')}",
             flush=True
         )
     except Exception as e:
@@ -121,8 +118,8 @@ def log_orderbook_and_density(symbol):
         dens = get_resting_order_density(symbol)
         print(
             f"[RestingOrderDensityLog] {symbol} | "
-            f"bid_density={{dens.get('bid_density',0):.2f}} | ask_density={{dens.get('ask_density',0):.2f}} | "
-            f"bid_levels={{dens.get('bid_levels',0)}} | ask_levels={{dens.get('ask_levels',0)}} | midprice={{dens.get('midprice','N/A')}}",
+            f"bid_density={dens.get('bid_density',0):.2f} | ask_density={dens.get('ask_density',0):.2f} | "
+            f"bid_levels={dens.get('bid_levels',0)} | ask_levels={dens.get('ask_levels',0)} | midprice={dens.get('midprice','N/A')}",
             flush=True
         )
     except Exception as e:
@@ -150,7 +147,7 @@ def run():
             pec_candidates = []
 
             for idx, symbol in enumerate(TOKENS, start=1):
-                print(f"[INFO] Checking {{symbol}}...\n", flush=True)
+                print(f"[INFO] Checking {symbol}...\n", flush=True)
                 df3 = get_ohlcv(symbol, interval="3min", limit=OHLCV_LIMIT)
                 df5 = get_ohlcv(symbol, interval="5min", limit=OHLCV_LIMIT)
                 if df3 is None or df3.empty or df5 is None or df5.empty:
@@ -162,23 +159,23 @@ def run():
 
                 # --- 3min TF ---
                 try:
-                    key3 = f"{{symbol}}_3min"
+                    key3 = f"{symbol}_3min"
                     sf3 = SmartFilter(symbol, df3, df3m=df3, df5m=df5, tf="3min")
                     regime3 = sf3._market_regime()
                     res3 = sf3.analyze()
                     if isinstance(res3, dict) and res3.get("valid_signal") is True:
                         last3 = last_sent.get(key3, 0)
                         if now - last3 >= COOLDOWN["3min"]:
-                            numbered_signal = f"{{idx}}.A"
+                            numbered_signal = f"{idx}.A"
                             log_orderbook_and_density(symbol)
                             orderbook_result = get_order_wall_delta(symbol)
                             density_result = get_resting_order_density(symbol)
                             bias = res3.get("bias", "NEUTRAL")
                             sf3.bias = bias
                             if not super_gk_aligned(bias, orderbook_result, density_result):
-                                print(f"[BLOCKED] SuperGK not aligned: Signal={{bias}}, OrderBook={{orderbook_result}}, Density={{density_result}} — NO SIGNAL SENT", flush=True)
+                                print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
                                 continue
-                            print(f"[LOG] Sending 3min alert for {{res3.get('symbol')}}", flush=True)
+                            print(f"[LOG] Sending 3min alert for {res3.get('symbol')}", flush=True)
 
                             fired_time_utc = datetime.utcnow()
                             entry_price = get_live_entry_price(
@@ -219,7 +216,7 @@ def run():
                                 "gatekeepers": getattr(sf3, 'gatekeepers', []),
                                 "results_long": res3.get("results_long", {}),
                                 "results_short": res3.get("results_short", {}),
-                                "caption": f"Signal debug log for {{symbol_val}} {{tf_val}}",
+                                "caption": f"Signal debug log for {symbol_val} {tf_val}",
                                 "orderbook_result": orderbook_result,
                                 "density_result": density_result,
                                 "entry_price": entry_price,
@@ -272,29 +269,29 @@ def run():
                                 )
                             last_sent[key3] = now
                     else:
-                        print(f"[INFO] No valid 3min signal for {{symbol}}.", flush=True)
+                        print(f"[INFO] No valid 3min signal for {symbol}.", flush=True)
                 except Exception as e:
-                    print(f"[ERROR] Exception in processing 3min for {{symbol}}: {{e}}", flush=True)
+                    print(f"[ERROR] Exception in processing 3min for {symbol}: {e}", flush=True)
 
                 # --- 5min TF ---
                 try:
-                    key5 = f"{{symbol}}_5min"
+                    key5 = f"{symbol}_5min"
                     sf5 = SmartFilter(symbol, df5, df3m=df3, df5m=df5, tf="5min")
                     regime5 = sf5._market_regime()
                     res5 = sf5.analyze()
                     if isinstance(res5, dict) and res5.get("valid_signal") is True:
                         last5 = last_sent.get(key5, 0)
                         if now - last5 >= COOLDOWN["5min"]:
-                            numbered_signal = f"{{idx}}.B"
+                            numbered_signal = f"{idx}.B"
                             log_orderbook_and_density(symbol)
                             orderbook_result = get_order_wall_delta(symbol)
                             density_result = get_resting_order_density(symbol)
                             bias = res5.get("bias", "NEUTRAL")
                             sf5.bias = bias
                             if not super_gk_aligned(bias, orderbook_result, density_result):
-                                print(f"[BLOCKED] SuperGK not aligned: Signal={{bias}}, OrderBook={{orderbook_result}}, Density={{density_result}} — NO SIGNAL SENT", flush=True)
+                                print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
                                 continue
-                            print(f"[LOG] Sending 5min alert for {{res5.get('symbol')}}", flush=True)
+                            print(f"[LOG] Sending 5min alert for {res5.get('symbol')}", flush=True)
 
                             fired_time_utc = datetime.utcnow()
                             entry_price = get_live_entry_price(
@@ -335,7 +332,7 @@ def run():
                                 "gatekeepers": getattr(sf5, 'gatekeepers', []),
                                 "results_long": res5.get("results_long", {}),
                                 "results_short": res5.get("results_short", {}),
-                                "caption": f"Signal debug log for {{symbol_val}} {{tf_val}}",
+                                "caption": f"Signal debug log for {symbol_val} {tf_val}",
                                 "orderbook_result": orderbook_result,
                                 "density_result": density_result,
                                 "entry_price": entry_price,
@@ -388,14 +385,14 @@ def run():
                                 )
                             last_sent[key5] = now
                     else:
-                        print(f"[INFO] No valid 5min signal for {{symbol}}.", flush=True)
+                        print(f"[INFO] No valid 5min signal for {symbol}.", flush=True)
                 except Exception as e:
-                    print(f"[ERROR] Exception in processing 5min for {{symbol}}: {{e}}", flush=True)
+                    print(f"[ERROR] Exception in processing 5min for {symbol}: {e}", flush=True)
 
             # --- Send up to 2 debug files to Telegram (Signal Debug txt sampling) ---
             try:
                 if valid_debugs:
-                    print(f"[FIRED] About to send {{min(len(valid_debugs), 2)}} debug files to Telegram.", flush=True)
+                    print(f"[FIRED] About to send {min(len(valid_debugs), 2)} debug files to Telegram.", flush=True)
                     num = min(len(valid_debugs), 2)
                     for debug_info in random.sample(valid_debugs, num):
                         try:
@@ -418,22 +415,35 @@ def run():
                                 caption=debug_info["caption"]
                             )
                         except Exception as e:
-                            print(f"[ERROR] Exception in Telegram debug send: {{e}}", flush=True)
+                            print(f"[ERROR] Exception in Telegram debug send: {e}", flush=True)
+                    # --- NEW: send tracking log ONLY at 01:00, 07:00, 13:00, 19:00 UTC ---
+                    now_utc = datetime.utcnow()  # <-- FIXED LINE
+                    if now_utc.hour in [1, 7, 13, 19] and now_utc.minute == 0:
+                        try:
+                            send_telegram_file(
+                                "signal_tracking.txt",
+                                caption=f"Signal logs sent at {now_utc.strftime('%H:%M UTC')}"
+                            )
+                            print(f"[INFO] Sent signal_tracking.txt at scheduled time {now_utc.strftime('%H:%M UTC')}", flush=True)
+                        except Exception as e:
+                            print(f"[ERROR] Exception sending signal_tracking.txt: {e}", flush=True)
+                    else:
+                        print(f"[INFO] Skipped sending signal_tracking.txt (current time: {now_utc.strftime('%H:%M UTC')})", flush=True)
                 else:
                     print("[FIRED] valid_debugs is empty — no debug files to send to Telegram.", flush=True)
             except Exception as e:
-                print(f"[FATAL] Exception in debug sending block: {{e}}", flush=True)
-
+                print(f"[FATAL] Exception in debug sending block: {e}", flush=True)
+            
             if valid_debugs:
-                print(f"[FIRED] Processed {{len(valid_debugs)}} valid signals this cycle", flush=True)
+                print(f"[FIRED] Processed {len(valid_debugs)} valid signals this cycle", flush=True)
             else:
                 print("[FIRED] No valid signals processed this cycle", flush=True)
-
+            
             print("[INFO] ✅ Cycle complete. Sleeping 60 seconds...\n", flush=True)
             time.sleep(60)
 
         except Exception as e:
-            print(f"[FATAL] Exception in main loop: {{e}}", flush=True)
+            print(f"[FATAL] Exception in main loop: {e}", flush=True)
             import traceback
             traceback.print_exc()
             print("[INFO] Sleeping 10 seconds before retrying main loop...\n", flush=True)
@@ -441,27 +451,6 @@ def run():
 
 if __name__ == "__main__":
     print(">>> ENTERED main.py", flush=True)
-
-    # New: allow running the test harness from main.py via env var or CLI arg
-    # Usage:
-    #   RUN_TEST_HARNESS=true python main.py
-    # or
-    #   python main.py --run-harness
-    if os.getenv("RUN_TEST_HARNESS", "false").lower() == "true" or "--run-harness" in sys.argv:
-        print(">>> Running test harness (scripts/test_harness.py)", flush=True)
-        try:
-            # Ensure repo root is on sys.path so imports inside the harness work
-            repo_root = os.path.dirname(__file__) or "."
-            if repo_root not in sys.path:
-                sys.path.insert(0, repo_root)
-            runpy.run_path(os.path.join(repo_root, "scripts", "test_harness.py"), run_name="__main__")
-        except Exception as e:
-            print(f"[ERROR] Test harness execution failed: {{e}}", flush=True)
-            import traceback; traceback.print_exc()
-        finally:
-            print(">>> Test harness finished. Exiting main.py.", flush=True)
-            sys.exit(0)
-
     if os.getenv("PEC_BACKTEST_ONLY", "false").lower() == "true":
         print(">>> Entering PEC_BACKTEST_ONLY branch", flush=True)
         from pec_backtest import run_pec_backtest
@@ -469,7 +458,7 @@ if __name__ == "__main__":
             print(">>> Calling run_pec_backtest", flush=True)
             run_pec_backtest(TOKENS, get_ohlcv, get_local_wib, PEC_WINDOW_MINUTES, PEC_BARS, OHLCV_LIMIT)
         except Exception as e:
-            print(f"EXCEPTION in run_pec_backtest: {{e}}", flush=True)
+            print(f"EXCEPTION in run_pec_backtest: {e}", flush=True)
             import traceback; traceback.print_exc()
     else:
         print(">>> Entering normal run() branch", flush=True)
