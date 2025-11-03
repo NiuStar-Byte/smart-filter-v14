@@ -50,30 +50,33 @@ def get_local_wib(dt):
         dt = pd.Timestamp(dt)
     return dt.tz_localize('UTC').tz_convert('Asia/Jakarta').replace(microsecond=0).strftime('%Y-%m-%d %H:%M:%S')
 
-def get_resting_order_density(symbol, depth=100, band_pct=0.01):
+def get_resting_order_density(symbol, depth=100, top_n=5):
     """
-    Lightweight wrapper to compute resting order density around midprice.
-    Returns a dict with 'bid_density', 'ask_density', 'bid_levels', 'ask_levels', 'midprice'.
-    Defensive: returns zeros/defaults on errors.
+    Wrapper that uses kucoin_density.get_resting_density (network fetch) and ensures
+    returned densities are percentages (0..100). Defensive - returns zeros on error.
     """
     try:
-        from kucoin_orderbook import fetch_orderbook
-        bids, asks = fetch_orderbook(symbol, depth)
-        if bids is None or asks is None or len(bids) == 0 or len(asks) == 0:
-            return {'bid_density': 0.0, 'ask_density': 0.0, 'bid_levels': 0, 'ask_levels': 0, 'midprice': None}
-        best_bid = bids['price'].iloc[0]
-        best_ask = asks['price'].iloc[0]
-        midprice = (best_bid + best_ask) / 2
-        low, high = midprice * (1 - band_pct), midprice * (1 + band_pct)
-        bids_in_band = bids[bids['price'] >= low]
-        asks_in_band = asks[asks['price'] <= high]
-        bid_density = bids_in_band['size'].sum() / max(len(bids_in_band), 1)
-        ask_density = asks_in_band['size'].sum() / max(len(asks_in_band), 1)
-        return {'bid_density': float(bid_density), 'ask_density': float(ask_density),
-                'bid_levels': len(bids_in_band), 'ask_levels': len(asks_in_band), 'midprice': float(midprice)}
+        # import here to avoid circular import on module load
+        from kucoin_density import get_resting_density as _kd
+        res = _kd(symbol, depth=depth, levels=top_n)
+        # Ensure fields exist and are numeric
+        bid_density = float(res.get("bid_density", 0.0))
+        ask_density = float(res.get("ask_density", 0.0))
+        # Sanity clamp: density should be between 0 and 100
+        bid_density = max(0.0, min(100.0, bid_density))
+        ask_density = max(0.0, min(100.0, ask_density))
+        # Also return totals for debugging
+        return {
+            "bid_density": bid_density,
+            "ask_density": ask_density,
+            "bid_top": float(res.get("bid_top", 0.0)),
+            "ask_top": float(res.get("ask_top", 0.0)),
+            "bid_total": float(res.get("bid_total", 0.0)),
+            "ask_total": float(res.get("ask_total", 0.0))
+        }
     except Exception as e:
-        print(f"[RestingOrderDensity] Error computing density for {symbol}: {e}", flush=True)
-        return {'bid_density': 0.0, 'ask_density': 0.0, 'bid_levels': 0, 'ask_levels': 0, 'midprice': None}
+        print(f"[get_resting_order_density] Error for {symbol}: {e}", flush=True)
+        return {"bid_density": 0.0, "ask_density": 0.0, "bid_top": 0.0, "ask_top": 0.0, "bid_total": 0.0, "ask_total": 0.0}
 
 def candle_color(open, close):
     return 'green' if close > open else 'red'
