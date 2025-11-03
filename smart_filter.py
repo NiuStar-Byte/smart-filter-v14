@@ -1211,7 +1211,13 @@ class SmartFilter:
             signal = "SHORT"
     
         if debug:
-            print(f"[{self.symbol}] [Volume Spike] signal={signal} | zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, price_up={price_up}, price_down={price_down}, lon[...]
+            # cleaned-up debug print (previous version had a truncated/unterminated f-string)
+            print(
+                f"[{self.symbol}] [Volume Spike] signal={signal} | "
+                f"zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, "
+                f"spike={spike}, price_up={price_up}, price_down={price_down}, "
+                f"curr_vol={curr_vol}, avg_vol={avg}, std={std}"
+            )
     
         # 5m volume trend confirmation
         if signal and require_5m_trend:
@@ -1326,7 +1332,12 @@ class SmartFilter:
             signal = "SHORT"
     
         if debug:
-            print(f"[{self.symbol}] [Spread Filter] signal={signal} | spread={spread:.6f}, long_met={long_met}, short_met={short_met}, spread_prev={spread_prev:.6f}, spread_ma={spread_ma:.6f}, close={[...]
+            # full, non-truncated debug print
+            print(
+                f"[{self.symbol}] [Spread Filter] signal={signal} | "
+                f"spread={spread:.6f}, long_met={long_met}, short_met={short_met}, "
+                f"spread_prev={spread_prev:.6f}, spread_ma={spread_ma:.6f}, close={close}, open={open_}"
+            )
     
         return signal
 
@@ -1630,27 +1641,41 @@ class SmartFilter:
         _, fractal_high_prev = self._get_rolling_extremes('high', window, prev=True)
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
-
+    
         cond1_long = close > fractal_low * (1 + buffer_pct)
         cond2_long = close > close_prev
         cond3_long = fractal_low > fractal_low_prev
-
+    
         cond1_short = close < fractal_high * (1 - buffer_pct)
         cond2_short = close < close_prev
         cond3_short = fractal_high < fractal_high_prev
-
+    
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
-
+    
         if short_met >= min_conditions and short_met > long_met:
-            print(f"[{self.symbol}] [Fractal Zone] Signal: SHORT | short_met={short_met}, long_met={long_met}, min_conditions={min_conditions}, fractal_high={fractal_high:.2f}, fractal_high_prev={frac[...]
+            if debug:
+                print(
+                    f"[{self.symbol}] [Fractal Zone] Signal: SHORT | "
+                    f"short_met={short_met}, long_met={long_met}, min_conditions={min_conditions}, "
+                    f"fractal_high={fractal_high:.2f}, fractal_high_prev={fractal_high_prev:.2f}"
+                )
             return "SHORT"
         elif long_met >= min_conditions and long_met > short_met:
-            print(f"[{self.symbol}] [Fractal Zone] Signal: LONG | short_met={short_met}, long_met={long_met}, min_conditions={min_conditions}, fractal_low={fractal_low:.2f}, fractal_low_prev={fractal_[...]
+            if debug:
+                print(
+                    f"[{self.symbol}] [Fractal Zone] Signal: LONG | "
+                    f"long_met={long_met}, short_met={short_met}, min_conditions={min_conditions}, "
+                    f"fractal_low={fractal_low:.2f}, fractal_low_prev={fractal_low_prev:.2f}"
+                )
             return "LONG"
         else:
             if debug:
-                print(f"[{self.symbol}] [Fractal Zone] No signal fired | short_met={short_met}, long_met={long_met}, min_conditions={min_conditions}, fractal_high={fractal_high:.2f}, fractal_high_prev[...]
+                print(
+                    f"[{self.symbol}] [Fractal Zone] No signal fired | "
+                    f"short_met={short_met}, long_met={long_met}, min_conditions={min_conditions}, "
+                    f"fractal_high={fractal_high:.2f}, fractal_high_prev={fractal_high_prev:.2f}"
+                )
             return None
 
     def _check_hh_ll(self, debug=False):
@@ -1675,7 +1700,11 @@ class SmartFilter:
         cond2_short = high < high_prev
         cond3_short = close < close_prev
     
-        print(f"[{self.symbol}] [HH/LL Trend] Conditions | cond1_long={cond1_long}, cond2_long={cond2_long}, cond3_long={cond3_long}, cond1_short={cond1_short}, cond2_short={cond2_short}, cond3_short=[...]
+        print(
+            f"[{self.symbol}] [HH/LL Trend] Conditions | "
+            f"cond1_long={cond1_long}, cond2_long={cond2_long}, cond3_long={cond3_long}, "
+            f"cond1_short={cond1_short}, cond2_short={cond2_short}, cond3_short={cond3_short}"
+        )
     
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
