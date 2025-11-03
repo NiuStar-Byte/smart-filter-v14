@@ -136,20 +136,17 @@ def log_orderbook_and_density(symbol):
 
 def super_gk_aligned(bias, orderbook_result, density_result, wall_threshold=None, density_threshold=None):
     """
-    More conservative SuperGK alignment:
-    - wall_threshold: minimum absolute wall_delta to consider (in quoted units of size)
-    - density_threshold: minimum absolute % difference between bid_density and ask_density to consider
-    Returns True only if both orderbook and density (when available) align with bias sufficiently.
-
-    Uses environment variables SUPERGK_WALL_THRESHOLD and SUPERGK_DENSITY_THRESHOLD when provided,
-    otherwise falls back to defaults (wall_threshold=50.0, density_threshold=0.0).
+    SuperGK alignment:
+    - Accepts the signal if at least one liquidity metric (orderbook wall OR resting density)
+      supports the candidate bias and the other metric does not actively oppose it.
+    - Thresholds (wall_threshold, density_threshold) can be provided or read from env:
+      SUPERGK_WALL_THRESHOLD (default 50.0) and SUPERGK_DENSITY_THRESHOLD (default 0.0).
     """
     # Load defaults from env (if set) or use given defaults
     try:
         env_wall = os.getenv("SUPERGK_WALL_THRESHOLD")
         env_density = os.getenv("SUPERGK_DENSITY_THRESHOLD")
         default_wall = float(env_wall) if env_wall is not None else 50.0
-        # Set density default to 0.0 to match the "aligned if bigger" behavior in your debug output.
         default_density = float(env_density) if env_density is not None else 0.0
     except Exception:
         default_wall = 50.0
@@ -158,22 +155,21 @@ def super_gk_aligned(bias, orderbook_result, density_result, wall_threshold=None
     wall_threshold = default_wall if wall_threshold is None else wall_threshold
     density_threshold = default_density if density_threshold is None else density_threshold
 
-    # Defensive defaults
+    # Defensive defaults and safe extraction
     buy_wall = float(orderbook_result.get('buy_wall', 0.0)) if orderbook_result else 0.0
     sell_wall = float(orderbook_result.get('sell_wall', 0.0)) if orderbook_result else 0.0
     wall_delta = float(orderbook_result.get('wall_delta', buy_wall - sell_wall)) if orderbook_result else 0.0
-
-    # Interpret orderbook bias using threshold
-    if abs(wall_delta) < wall_threshold:
-        orderbook_bias = "NEUTRAL"
-    else:
-        orderbook_bias = "LONG" if wall_delta > 0 else "SHORT"
 
     bid_density = float(density_result.get('bid_density', 0.0)) if density_result else 0.0
     ask_density = float(density_result.get('ask_density', 0.0)) if density_result else 0.0
     density_diff = bid_density - ask_density
 
-    # Interpret density bias using threshold (density values are percentages, e.g. 2.85)
+    # Interpret biases using thresholds
+    if abs(wall_delta) < wall_threshold:
+        orderbook_bias = "NEUTRAL"
+    else:
+        orderbook_bias = "LONG" if wall_delta > 0 else "SHORT"
+
     if abs(density_diff) < density_threshold:
         density_bias = "NEUTRAL"
     else:
@@ -184,10 +180,24 @@ def super_gk_aligned(bias, orderbook_result, density_result, wall_threshold=None
           f"density_bias={density_bias} bid_density={bid_density:.2f}% ask_density={ask_density:.2f}% "
           f"(wall_th={wall_threshold}, dens_th={density_threshold})", flush=True)
 
-    # Require both non-neutral and consistent
-    if orderbook_bias == "NEUTRAL" or density_bias == "NEUTRAL":
-        return False
-    return (bias == orderbook_bias) and (bias == density_bias)
+    # If either metric actively OPPOSES the bias, block
+    opposite = "LONG" if bias == "SHORT" else "SHORT" if bias == "LONG" else None
+    if opposite:
+        if orderbook_bias == opposite:
+            print(f"[SuperGK] Blocked: orderbook actively opposes bias ({orderbook_bias})", flush=True)
+            return False
+        if density_bias == opposite:
+            print(f"[SuperGK] Blocked: density actively opposes bias ({density_bias})", flush=True)
+            return False
+
+    # If at least one metric supports the bias, and the other is not opposing (can be NEUTRAL), accept
+    if orderbook_bias == bias or density_bias == bias:
+        print(f"[SuperGK] Passed: at least one metric supports bias and none oppose.", flush=True)
+        return True
+
+    # Otherwise (both neutral or neither supporting), block
+    print(f"[SuperGK] Blocked: no metric sufficiently supports bias (orderbook={orderbook_bias}, density={density_bias})", flush=True)
+    return False
 
 def run_cycle():
     """
