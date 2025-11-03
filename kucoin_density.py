@@ -3,11 +3,9 @@ import requests
 
 def get_resting_density(symbol, depth=100, levels=5):
     """
-    Computes resting bid/ask density as a percentage of top N levels
-    relative to total book for the given symbol.
+    Computes resting bid/ask density as a percentage of top N levels relative to total book.
     Returns: dict with 'bid_density', 'ask_density', 'bid_top', 'ask_top', 'bid_total', 'ask_total'
     """
-    # --- Use your fetch_orderbook from earlier ---
     for sym in (symbol, symbol.replace('-', '/')):
         url = f"https://api.kucoin.com/api/v1/market/orderbook/level2_{depth}?symbol={sym}"
         try:
@@ -25,17 +23,20 @@ def get_resting_density(symbol, depth=100, levels=5):
             "bid_top": 0.0, "ask_top": 0.0,
             "bid_total": 0.0, "ask_total": 0.0
         }
+
     bid_top = bids['size'].head(levels).sum()
     ask_top = asks['size'].head(levels).sum()
     bid_total = bids['size'].sum()
     ask_total = asks['size'].sum()
-    bid_density = 100 * bid_top / bid_total if bid_total > 0 else 0.0
-    ask_density = 100 * ask_top / ask_total if ask_total > 0 else 0.0
+
+    bid_density = round(100 * bid_top / bid_total, 2) if bid_total > 0 else 0.0
+    ask_density = round(100 * ask_top / ask_total, 2) if ask_total > 0 else 0.0
+
     return {
         "bid_density": bid_density,
         "ask_density": ask_density,
-        "bid_top": bid_top,
-        "ask_top": ask_top,
-        "bid_total": bid_total,
-        "ask_total": ask_total
+        "bid_top": float(bid_top),
+        "ask_top": float(ask_top),
+        "bid_total": float(bid_total),
+        "ask_total": float(ask_total)
     }
