@@ -896,46 +896,50 @@ class SmartFilter:
             required_for_signal = required_passed_short
         else:
             required_for_signal = max(required_passed_long, required_passed_short)
-    
+
         if required_for_signal is None:
             print(f"[{self.symbol}] [ERROR] required_for_signal is None in final signal logic!")
             required_for_signal = 0
-    
-        valid_signal = (
+
+        # --- NEW: compute filters_ok (filters & gatekeepers only) ---
+        # Keep SuperGK out of this decision so main.py performs the canonical SuperGK check.
+        filters_ok = (
             direction in ["LONG", "SHORT"]
             and (score >= (self.min_score if isinstance(self.min_score, (int, float)) else 0))
             and (passes >= required_for_signal)
-            and super_gk_ok
         )
-    
+
+        # Keep valid_signal for backwards compatibility but do NOT include super_gk_ok here.
+        # main.py will compute the final valid_signal by combining filters_ok + super_gk_aligned(...)
+        valid_signal = bool(filters_ok)
+
         price = None
         try:
             price = float(self.df['close'].iat[-1]) if valid_signal else None
         except Exception:
             price = None
         price_str = f"{price:.6f}" if price is not None else "N/A"
-    
-        # Always determine the route, regardless of signal validity
-        route, reversal_side = self.explicit_route_gate()  # Ensure this function returns "REVERSAL", "TREND CONTINUATION", "NONE", or "?"
+
+        route, reversal_side = self.explicit_route_gate()
         display_route = route if route not in ["?", "NONE", None] else "NO ROUTE"
-    
+
         signal_type = direction if valid_signal else None
         score_max = len(non_gk_filters)
-    
+
         message = (
             f"{direction or 'NO-SIGNAL'} on {self.symbol} @ {price_str} "
             f"| Score: {score}/{score_max} | Passed GK: {passes}/{len(self.gatekeepers)} "
             f"| Confidence: {confidence}% (Weighted: {passed_weight:.1f}/{total_weight:.1f})"
             f" | Route: {display_route if valid_signal else 'N/A'}"
         )
-    
+
         if valid_signal:
-            print(f"[{self.symbol}] ✅ FINAL SIGNAL: {message}")
+            print(f"[{self.symbol}] ✅ FINAL SIGNAL (filters_ok): {message}")
         else:
-            print(f"[{self.symbol}] ❌ No signal.")
+            print(f"[{self.symbol}] ❌ No signal (filters failed).")
         print("DEBUG SUMS:", getattr(self, '_debug_sums', {}))
-    
-        # --- Verdict for debug file ---
+
+        # --- Verdict for debug file (unchanged) ---
         verdict = {
             "orderbook": (
                 direction == "SHORT" and orderbook_result.get("sell_wall", 0) > orderbook_result.get("buy_wall", 0)
@@ -947,8 +951,8 @@ class SmartFilter:
             ),
             "final": valid_signal
         }
-    
-        # Export debug file
+
+        # Export debug file (unchanged)
         export_signal_debug_txt(
             symbol=self.symbol,
             tf=self.tf,
@@ -961,10 +965,10 @@ class SmartFilter:
             orderbook_result=orderbook_result,
             density_result=density_result
         )
-    
-        # Market regime & return object
+
         regime = self._market_regime()
-    
+
+        # --- Add explicit results keys so main.py can use filters_ok and then do SuperGK check ---
         return {
             "symbol": self.symbol,
             "tf": self.tf,
@@ -977,7 +981,9 @@ class SmartFilter:
             "confidence": confidence,
             "bias": direction,
             "price": price,
-            "valid_signal": valid_signal,
+            "valid_signal": valid_signal,    # kept for compatibility (represents filters_ok now)
+            "filters_ok": filters_ok,        # explicit: filters + gatekeepers pass requirements
+            "super_gk_ok": locals().get("super_gk_ok", None),  # may be None if analyze didn't compute it
             "signal_type": signal_type,
             "Route": route,
             "regime": regime,
