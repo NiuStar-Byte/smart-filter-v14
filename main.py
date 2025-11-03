@@ -313,27 +313,35 @@ def run_cycle():
                         regime = sf3._market_regime() if hasattr(sf3, "_market_regime") else None
 
                         if os.getenv("DRY_RUN", "false").lower() != "true":
-                            send_telegram_alert(
-                                numbered_signal=numbered_signal,
-                                symbol=symbol_val,
-                                signal_type=signal_type,
-                                Route=Route,
-                                price=entry_price,
-                                tf=tf_val,
-                                score=score,
-                                score_max=score_max,
-                                passed=passes,
-                                gatekeepers_total=gatekeepers_total,
-                                confidence=confidence,
-                                weighted=passed_weight,
-                                total_weight=total_weight,
-                                reversal_side=res3.get("reversal_side"),
-                                regime=regime,
-                                early_breakout_3m=early_breakout_3m,
-                                tp=tp,
-                                sl=sl
-                            )
-                        last_sent[key3] = now
+                            try:
+                                sent_ok = send_telegram_alert(
+                                    numbered_signal=numbered_signal,
+                                    symbol=symbol_val,
+                                    signal_type=signal_type,
+                                    Route=Route,
+                                    price=entry_price,
+                                    tf=tf_val,
+                                    score=score,
+                                    passed=passes,
+                                    confidence=confidence,
+                                    weighted=passed_weight,
+                                    score_max=score_max,
+                                    gatekeepers_total=gatekeepers_total,
+                                    total_weight=total_weight,
+                                    reversal_side=res3.get("reversal_side"),
+                                    regime=regime,
+                                    early_breakout_3m=early_breakout_3m,
+                                    tp=tp,
+                                    sl=sl
+                                )
+                                if sent_ok:
+                                    last_sent[key3] = now
+                                else:
+                                    print(f"[ERROR] Telegram send failed for {symbol_val} (3min). Not setting cooldown.", flush=True)
+                            except Exception as e:
+                                print(f"[ERROR] Exception while sending Telegram for {symbol_val} (3min): {e}", flush=True)
+                        else:
+                            print(f"[INFO] DRY_RUN enabled - simulated send for {symbol_val} (3min). Not setting cooldown.", flush=True)
                 else:
                     print(f"[INFO] No valid 3min signal for {symbol}.", flush=True)
             except Exception as e:
@@ -457,27 +465,35 @@ def run_cycle():
                         regime = sf5._market_regime() if hasattr(sf5, "_market_regime") else None
 
                         if os.getenv("DRY_RUN", "false").lower() != "true":
-                            send_telegram_alert(
-                                numbered_signal=numbered_signal,
-                                symbol=symbol_val,
-                                signal_type=signal_type,
-                                Route=Route,
-                                price=entry_price,
-                                tf=tf_val,
-                                score=score,
-                                score_max=score_max,
-                                passed=passes,
-                                gatekeepers_total=gatekeepers_total,
-                                confidence=confidence,
-                                weighted=passed_weight,
-                                total_weight=total_weight,
-                                reversal_side=res5.get("reversal_side"),
-                                regime=regime,
-                                early_breakout_5m=early_breakout_5m,
-                                tp=tp,
-                                sl=sl
-                            )
-                        last_sent[key5] = now
+                            try:
+                                sent_ok = send_telegram_alert(
+                                    numbered_signal=numbered_signal,
+                                    symbol=symbol_val,
+                                    signal_type=signal_type,
+                                    Route=Route,
+                                    price=entry_price,
+                                    tf=tf_val,
+                                    score=score,
+                                    passed=passes,
+                                    confidence=confidence,
+                                    weighted=passed_weight,
+                                    score_max=score_max,
+                                    gatekeepers_total=gatekeepers_total,
+                                    total_weight=total_weight,
+                                    reversal_side=res5.get("reversal_side"),
+                                    regime=regime,
+                                    early_breakout_5m=early_breakout_5m,
+                                    tp=tp,
+                                    sl=sl
+                                )
+                                if sent_ok:
+                                    last_sent[key5] = now
+                                else:
+                                    print(f"[ERROR] Telegram send failed for {symbol_val} (5min). Not setting cooldown.", flush=True)
+                            except Exception as e:
+                                print(f"[ERROR] Exception while sending Telegram for {symbol_val} (5min): {e}", flush=True)
+                        else:
+                            print(f"[INFO] DRY_RUN enabled - simulated send for {symbol_val} (5min). Not setting cooldown.", flush=True)
                 else:
                     print(f"[INFO] No valid 5min signal for {symbol}.", flush=True)
             except Exception as e:
