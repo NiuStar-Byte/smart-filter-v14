@@ -119,50 +119,108 @@ def export_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weight
             f.write("\n## (Legacy results)\n")
             df_legacy.to_csv(f, sep="\t", index=False)
 
-    # ---- Automated Validation Verdict Section ----
+    # ---- Automated Validation Verdict Section (updated to mirror runtime composite logic) ----
     verdict_lines = []
     verdict_lines.append(f"\n==== VALIDATION VERDICT ({timestamp}) ====")
     verdict_lines.append(f"Signal: {bias} on {symbol} @ {tf}")
 
-    # OrderBook logic
-    orderbook_verdict = ""
-    if orderbook_result is not None:
-        wall_delta = orderbook_result.get('wall_delta', 0)
-        wall_bias = "LONG" if wall_delta > 0 else "SHORT" if wall_delta < 0 else "NEUTRAL"
-        signal_conflict = (bias != wall_bias and wall_bias != "NEUTRAL")
-        orderbook_verdict = (
-            f"OrderBook Wall:     {'Conflict' if signal_conflict else 'Aligned'}  "
-            f"(wall_delta={wall_delta:.4f}, favors {wall_bias})"
-        )
-    else:
-        orderbook_verdict = "OrderBook Wall:     N/A"
+    # Helper to safely extract float values
+    def _safe_float(d, k, default=0.0):
+        try:
+            return float(d.get(k, default)) if d is not None else float(default)
+        except Exception:
+            return float(default)
 
-    # Density logic
-    density_verdict = ""
-    if density_result is not None:
-        bid_density = density_result.get("bid_density", 0)
-        ask_density = density_result.get("ask_density", 0)
-        density_bias = "LONG" if bid_density > ask_density else "SHORT" if ask_density > bid_density else "NEUTRAL"
-        density_conflict = (bias != density_bias and density_bias != "NEUTRAL")
-        density_verdict = (
-            f"Resting Density:    {'Conflict' if density_conflict else 'Aligned'}  "
-            f"(bid_density={bid_density:.2f}, ask_density={ask_density:.2f}, favors {density_bias})"
-        )
-    else:
-        density_verdict = "Resting Density:    N/A"
+    # Extract raw values (safe)
+    buy_wall = _safe_float(orderbook_result, "buy_wall", 0.0)
+    sell_wall = _safe_float(orderbook_result, "sell_wall", 0.0)
+    wall_delta = _safe_float(orderbook_result, "wall_delta", buy_wall - sell_wall)
 
-    # Final overall verdict
-    final_verdict = "ALIGNED ✅"
-    if (
-        (orderbook_result is not None and bias != ("LONG" if orderbook_result.get('wall_delta', 0) > 0 else "SHORT"))
-        or
-        (density_result is not None and bias != ("LONG" if density_result.get("bid_density", 0) > density_result.get("ask_density", 0) else "SHORT"))
-    ):
+    bid_density = _safe_float(density_result, "bid_density", 0.0)
+    ask_density = _safe_float(density_result, "ask_density", 0.0)
+
+    # Normalize wall to percent of top liquidity (avoid divide-by-zero)
+    total_wall = max(buy_wall + sell_wall, 1e-9)
+    wall_pct = (abs(wall_delta) / total_wall) * 100.0
+    wall_sign = "LONG" if wall_delta > 0 else "SHORT" if wall_delta < 0 else "NEUTRAL"
+
+    # Density diff and percent
+    density_diff = bid_density - ask_density
+    density_pct = abs(density_diff)
+    density_sign = "LONG" if density_diff > 0 else "SHORT" if density_diff < 0 else "NEUTRAL"
+
+    # Load SuperGK env/defaults (mirror main.py)
+    try:
+        default_wpct = float(os.getenv("SUPERGK_WALL_PCT_THRESHOLD")) if os.getenv("SUPERGK_WALL_PCT_THRESHOLD") else 1.0
+    except Exception:
+        default_wpct = 1.0
+    try:
+        default_dpct = float(os.getenv("SUPERGK_DENSITY_THRESHOLD")) if os.getenv("SUPERGK_DENSITY_THRESHOLD") else 0.5
+    except Exception:
+        default_dpct = 0.5
+    try:
+        wall_weight = float(os.getenv("SUPERGK_WALL_WEIGHT")) if os.getenv("SUPERGK_WALL_WEIGHT") else 0.6
+    except Exception:
+        wall_weight = 0.6
+    try:
+        density_weight = float(os.getenv("SUPERGK_DENSITY_WEIGHT")) if os.getenv("SUPERGK_DENSITY_WEIGHT") else 0.4
+    except Exception:
+        density_weight = 0.4
+    try:
+        composite_threshold = float(os.getenv("SUPERGK_COMPOSITE_THRESHOLD")) if os.getenv("SUPERGK_COMPOSITE_THRESHOLD") else 0.05
+    except Exception:
+        composite_threshold = 0.05
+
+    # Interpret non-neutral using thresholds
+    orderbook_bias = wall_sign if wall_pct >= default_wpct else "NEUTRAL"
+    density_bias = density_sign if density_pct >= default_dpct else "NEUTRAL"
+
+    # Build human-readable verdict lines including normalized percentages
+    orderbook_verdict = (
+        f"OrderBook Wall:     "
+        f"{'Conflict' if (orderbook_bias != bias and orderbook_bias != 'NEUTRAL') else 'Aligned' if (orderbook_bias == bias) else 'Neutral'}  "
+        f"(wall_delta={wall_delta:.4f}, wall_pct={wall_pct:.3f}%, favors {orderbook_bias})"
+    )
+
+    density_verdict = (
+        f"Resting Density:    "
+        f"{'Conflict' if (density_bias != bias and density_bias != 'NEUTRAL') else 'Aligned' if (density_bias == bias) else 'Neutral'}  "
+        f"(bid_density={bid_density:.2f}, ask_density={ask_density:.2f}, density_pct={density_pct:.3f}%, favors {density_bias})"
+    )
+
+    # Composite calculation (same math as main.super_gk_aligned)
+    def _sign_to_factor(sign, desired):
+        if sign == desired:
+            return 1.0
+        elif sign == "NEUTRAL":
+            return 0.0
+        else:
+            return -1.0
+
+    wall_score = wall_pct / 100.0
+    density_score = density_pct / 100.0
+    wall_factor = _sign_to_factor(orderbook_bias, bias)
+    density_factor = _sign_to_factor(density_bias, bias)
+    composite = wall_weight * wall_factor * wall_score + density_weight * density_factor * density_score
+
+    # Decide final verdict using composite and same precedence rules as main
+    if orderbook_bias == bias and density_bias == bias:
+        final_verdict = "ALIGNED ✅"
+    elif orderbook_bias == "NEUTRAL" and density_bias == "NEUTRAL":
         final_verdict = "CONTRADICTORY ❌"
+    elif composite >= composite_threshold:
+        final_verdict = "ALIGNED ✅"
+    else:
+        final_verdict = "CONTRADICTORY ❌"
+
+    # Append composite diagnostics for transparency
+    wall_component = wall_weight * wall_factor * wall_score
+    density_component = density_weight * density_factor * density_score
+    composite_info = f"(composite={composite:.6f}, wall_component={wall_component:.6f}, density_component={density_component:.6f}, comp_th={composite_threshold})"
 
     verdict_lines.append(orderbook_verdict)
     verdict_lines.append(density_verdict)
-    verdict_lines.append(f"FINAL VERDICT:      {final_verdict}")
+    verdict_lines.append(f"FINAL VERDICT:      {final_verdict} {composite_info}")
     verdict_lines.append("==== END ====")
 
     # Append verdict section to file
