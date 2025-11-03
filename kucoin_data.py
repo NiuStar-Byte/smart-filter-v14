@@ -152,8 +152,8 @@ def get_live_entry_price(
     signal_type: str,
     tf: str = "5min",  # Accepts any timeframe, "5min" is just default
     slippage: float = DEFAULT_SLIPPAGE,    # Use the global default
-    long_adjust: float = 0.9950,
-    short_adjust: float = 1.0050,
+    long_adjust: float = 0.9900,
+    short_adjust: float = 1.0100,
     debug: bool = False
 ) -> float | None:
     """
