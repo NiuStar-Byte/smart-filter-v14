@@ -875,12 +875,15 @@ class SmartFilter:
             print(f"[{self.symbol}] Warning: density_result invalid - normalizing to defaults")
             density_result = {"bid_density": 0, "ask_density": 0}
     
-        # Call SuperGK check (safe)
+        # --- Do not perform an authoritative SuperGK check inside analyze() ---
+        # The final SuperGK decision is made in main.py using the freshest orderbook/density.
         try:
-            super_gk_ok = self.superGK_check(direction, orderbook_result, density_result)
+            print(f"[{self.symbol}] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.", flush=True)
+            # Keep orderbook_result and density_result available in the returned dict for main.py
+            super_gk_ok = None
         except Exception as e:
-            print(f"[{self.symbol}] Error running superGK_check(): {e}")
-            super_gk_ok = False
+            print(f"[{self.symbol}] Error while skipping superGK in analyze(): {e}", flush=True)
+            super_gk_ok = None
     
         # --- Final logging & decision ---
         print("[DEBUG] direction:", direction)
