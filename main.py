@@ -1,4 +1,7 @@
 # main.py
+# Revised: refactored single-cycle run into `run_cycle()` and a persistent outer loop,
+# added safer SuperGK fetch normalization, environment-driven cycle sleep, and more defensive logging.
+# Copy-paste this file over your existing main.py
 
 print("[INFO] main.py script started.", flush=True)
 from signal_debug_log import export_signal_debug_txt, log_fired_signal
@@ -17,14 +20,12 @@ from pec_engine import run_pec_check, export_pec_log
 from tp_sl_retracement import calculate_tp_sl
 from test_filters import run_all_filter_tests
 
-# Run SmartFilter diagnostics before starting main signal loop
-# run_all_filter_tests()  # <-- Add this line
-
+# --- Configuration ---
 TOKENS = [
     "BTC-USDT", "ETH-USDT",
     "BNB-USDT", "XRP-USDT", "SOL-USDT", "ADA-USDT", "XLM-USDT",
     "TON-USDT", "AVAX-USDT", "LINK-USDT", "DOT-USDT", "ARB-USDT",
-    "PUMP-USDT", "KAITO-USDT", "MAGIC-USDT", "SUI-USDT", "AERO-USDT", 
+    "PUMP-USDT", "KAITO-USDT", "MAGIC-USDT", "SUI-USDT", "AERO-USDT",
     "BERA-USDT", "UNI-USDT", "HBAR-USDT", "SAHARA-USDT", "VIRTUAL-USDT",
     "PARTI-USDT", "CFX-USDT", "DOGE-USDT", "VINE-USDT", "PENGU-USDT",
     "WIF-USDT", "EIGEN-USDT", "SPK-USDT", "HYPE-USDT", "WLFI-USDT",
@@ -32,16 +33,7 @@ TOKENS = [
     "ONDO-USDT", "ARKM-USDT", "ATH-USDT", "NMR-USDT", "PROMPT-USDT",
     "TURBO-USDT", "ENA-USDT", "BIO-USDT", "ASTER-USDT", "XPL-USDT",
     "AVNT-USDT", "ORDER-USDT", "XAUT-USDT", "ZORA-USDT"
- ]
-
-# TOKENS = [
-#    "BMT-USDT", "X-USDT", "EPT-USDT", "ELDE-USDT",
-#    "ACTSOL-USDT", "CROSS-USDT", "KNC-USDT", "AIN-USDT", "ARK-USDT",
-#    "PORTAL-USDT", "ICNT-USDT", "OMNI-USDT", "ARB-USDT", "FUN-USDT",
-#    "AUCTION-USDT", "ROAM-USDT", "ERA-USDT", "FUEL-USDT", "TUT-USDT", 
-#    "SKATE-USDT", "LA-USDT", "HIPPO-USDT", "VOXEL-USDT", "DUCK-USDT",
-#    "GALA-USDT", 
-# ]
+]
 
 COOLDOWN = {"3min": 60, "5min": 60}
 last_sent = {}
@@ -50,12 +42,20 @@ PEC_BARS = 5
 PEC_WINDOW_MINUTES = 720
 OHLCV_LIMIT = 1000
 
+# cycle sleep can be controlled via environment variable (seconds)
+CYCLE_SLEEP = int(os.getenv("CYCLE_SLEEP", "60"))
+
 def get_local_wib(dt):
     if not isinstance(dt, pd.Timestamp):
         dt = pd.Timestamp(dt)
     return dt.tz_localize('UTC').tz_convert('Asia/Jakarta').replace(microsecond=0).strftime('%Y-%m-%d %H:%M:%S')
 
-def get_resting_order_density(symbol, depth=100, band_pct=0.01):  # PATCHED: band_pct default is now 0.01
+def get_resting_order_density(symbol, depth=100, band_pct=0.01):
+    """
+    Lightweight wrapper to compute resting order density around midprice.
+    Returns a dict with 'bid_density', 'ask_density', 'bid_levels', 'ask_levels', 'midprice'.
+    Defensive: returns zeros/defaults on errors.
+    """
     try:
         from kucoin_orderbook import fetch_orderbook
         bids, asks = fetch_orderbook(symbol, depth)
@@ -71,7 +71,8 @@ def get_resting_order_density(symbol, depth=100, band_pct=0.01):  # PATCHED: ban
         ask_density = asks_in_band['size'].sum() / max(len(asks_in_band), 1)
         return {'bid_density': float(bid_density), 'ask_density': float(ask_density),
                 'bid_levels': len(bids_in_band), 'ask_levels': len(asks_in_band), 'midprice': float(midprice)}
-    except Exception:
+    except Exception as e:
+        print(f"[RestingOrderDensity] Error computing density for {symbol}: {e}", flush=True)
         return {'bid_density': 0.0, 'ask_density': 0.0, 'bid_levels': 0, 'ask_levels': 0, 'midprice': None}
 
 def candle_color(open, close):
@@ -80,8 +81,7 @@ def candle_color(open, close):
 def early_breakout(df, lookback=3):
     if len(df) < lookback:
         return {'valid_signal': False, 'bias': None, 'price': None}
-    
-    # Check if last 'lookback' candles are all the same color
+
     candles = df.iloc[-lookback:]
     colors = [candle_color(row['open'], row['close']) for _, row in candles.iterrows()]
     if all(c == 'green' for c in colors):
@@ -103,292 +103,382 @@ def early_breakout(df, lookback=3):
     return {'valid_signal': False, 'bias': None, 'price': close}
 
 def log_orderbook_and_density(symbol):
+    """
+    Helper to log orderbook and density to stdout for debugging.
+    Always returns normalized dicts for orderbook_result and density_result.
+    """
+    orderbook_result = {"buy_wall": 0, "sell_wall": 0, "wall_delta": 0, "midprice": None}
+    density_result = {"bid_density": 0.0, "ask_density": 0.0, "bid_levels": 0, "ask_levels": 0, "midprice": None}
     try:
-        result = get_order_wall_delta(symbol)
+        ob = get_order_wall_delta(symbol)
+        if isinstance(ob, dict):
+            orderbook_result.update(ob)
         print(
             f"[OrderBookDeltaLog] {symbol} | "
-            f"buy_wall={result.get('buy_wall',0)} | "
-            f"sell_wall={result.get('sell_wall',0)} | "
-            f"wall_delta={result.get('wall_delta',0)} | "
-            f"midprice={result.get('midprice','N/A')}",
+            f"buy_wall={orderbook_result.get('buy_wall',0)} | "
+            f"sell_wall={orderbook_result.get('sell_wall',0)} | "
+            f"wall_delta={orderbook_result.get('wall_delta',0)} | "
+            f"midprice={orderbook_result.get('midprice','N/A')}",
             flush=True
         )
     except Exception as e:
         print(f"[OrderBookDeltaLog] {symbol} ERROR: {e}", flush=True)
+
     try:
         dens = get_resting_order_density(symbol)
+        if isinstance(dens, dict):
+            density_result.update(dens)
         print(
             f"[RestingOrderDensityLog] {symbol} | "
-            f"bid_density={dens.get('bid_density',0):.2f} | ask_density={dens.get('ask_density',0):.2f} | "
-            f"bid_levels={dens.get('bid_levels',0)} | ask_levels={dens.get('ask_levels',0)} | midprice={dens.get('midprice','N/A')}",
+            f"bid_density={density_result.get('bid_density',0):.2f} | ask_density={density_result.get('ask_density',0):.2f} | "
+            f"bid_levels={density_result.get('bid_levels',0)} | ask_levels={density_result.get('ask_levels',0)} | midprice={density_result.get('midprice','N/A')}",
             flush=True
         )
     except Exception as e:
         print(f"[RestingOrderDensityLog] {symbol} ERROR: {e}", flush=True)
 
+    return orderbook_result, density_result
+
 def super_gk_aligned(bias, orderbook_result, density_result):
-    wall_delta = orderbook_result.get('wall_delta', 0) if orderbook_result else 0
+    """
+    Original alignment logic preserved but defensive about missing keys and zeros.
+    """
+    wall_delta = (orderbook_result.get('wall_delta', 0) if orderbook_result else 0)
     orderbook_bias = "LONG" if wall_delta > 0 else "SHORT" if wall_delta < 0 else "NEUTRAL"
-    bid_density = density_result.get('bid_density', 0) if density_result else 0
-    ask_density = density_result.get('ask_density', 0) if density_result else 0
+    bid_density = (density_result.get('bid_density', 0) if density_result else 0)
+    ask_density = (density_result.get('ask_density', 0) if density_result else 0)
     density_bias = "LONG" if bid_density > ask_density else "SHORT" if ask_density > bid_density else "NEUTRAL"
     if (orderbook_bias != "NEUTRAL" and bias != orderbook_bias): return False
     if (density_bias != "NEUTRAL" and bias != density_bias): return False
     if orderbook_bias == "NEUTRAL" or density_bias == "NEUTRAL": return False
     return True
 
-def run():
-    print("[INFO] Starting Smart Filter engine (LIVE MODE)...\n", flush=True)
-    while True:
+def run_cycle():
+    """
+    Single pass over all TOKENS. Returns list of valid_debug dicts collected during this cycle.
+    This function does not sleep; outer loop controls sleep duration.
+    """
+    print("[INFO] Starting Smart Filter cycle (single pass)...", flush=True)
+    valid_debugs = []
+    now = time.time()
+
+    for idx, symbol in enumerate(TOKENS, start=1):
+        print(f"[INFO] Checking {symbol}...", flush=True)
         try:
-            # Run filter diagnostics every cycle (VWAP Divergence debug will appear each time)
-            # run_all_filter_tests()
-            now = time.time()
-            valid_debugs = []
-            pec_candidates = []
+            # Fetch OHLCV data for 3m and 5m - defensive about failures
+            df3 = get_ohlcv(symbol, interval="3min", limit=OHLCV_LIMIT)
+            df5 = get_ohlcv(symbol, interval="5min", limit=OHLCV_LIMIT)
+            if df3 is None or df3.empty or df5 is None or df5.empty:
+                print(f"[WARN] Not enough data for {symbol} (df3 or df5 empty). Skipping.", flush=True)
+                continue
 
-            for idx, symbol in enumerate(TOKENS, start=1):
-                print(f"[INFO] Checking {symbol}...\n", flush=True)
-                df3 = get_ohlcv(symbol, interval="3min", limit=OHLCV_LIMIT)
-                df5 = get_ohlcv(symbol, interval="5min", limit=OHLCV_LIMIT)
-                if df3 is None or df3.empty or df5 is None or df5.empty:
-                    continue
+            # Early breakout checks
+            early_breakout_3m = early_breakout(df3, lookback=3)
+            early_breakout_5m = early_breakout(df5, lookback=3)
 
-                # --- Early Breakout Checks ---
-                early_breakout_3m = early_breakout(df3, lookback=3)
-                early_breakout_5m = early_breakout(df5, lookback=3)
+            # --- 3min TF ---
+            try:
+                key3 = f"{symbol}_3min"
+                sf3 = SmartFilter(symbol, df3, df3m=df3, df5m=df5, tf="3min")
+                regime3 = sf3._market_regime()
+                res3 = sf3.analyze()
+                if isinstance(res3, dict) and res3.get("valid_signal") is True:
+                    last3 = last_sent.get(key3, 0)
+                    if now - last3 >= COOLDOWN["3min"]:
+                        numbered_signal = f"{idx}.A"
 
-                # --- 3min TF ---
-                try:
-                    key3 = f"{symbol}_3min"
-                    sf3 = SmartFilter(symbol, df3, df3m=df3, df5m=df5, tf="3min")
-                    regime3 = sf3._market_regime()
-                    res3 = sf3.analyze()
-                    if isinstance(res3, dict) and res3.get("valid_signal") is True:
-                        last3 = last_sent.get(key3, 0)
-                        if now - last3 >= COOLDOWN["3min"]:
-                            numbered_signal = f"{idx}.A"
-                            log_orderbook_and_density(symbol)
-                            orderbook_result = get_order_wall_delta(symbol)
-                            density_result = get_resting_order_density(symbol)
-                            bias = res3.get("bias", "NEUTRAL")
-                            sf3.bias = bias
-                            if not super_gk_aligned(bias, orderbook_result, density_result):
-                                print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
-                                continue
-                            print(f"[LOG] Sending 3min alert for {res3.get('symbol')}", flush=True)
+                        # Get SuperGK inputs and log them (defensive)
+                        log_orderbook_and_density(symbol)
+                        try:
+                            orderbook_result = get_order_wall_delta(symbol) or {}
+                        except Exception as e:
+                            print(f"[ERROR] get_order_wall_delta failed for {symbol}: {e}", flush=True)
+                            orderbook_result = {"buy_wall": 0, "sell_wall": 0, "wall_delta": 0, "midprice": None}
+                        try:
+                            density_result = get_resting_order_density(symbol) or {}
+                        except Exception as e:
+                            print(f"[ERROR] get_resting_order_density failed for {symbol}: {e}", flush=True)
+                            density_result = {"bid_density": 0.0, "ask_density": 0.0, "bid_levels": 0, "ask_levels": 0, "midprice": None}
 
-                            fired_time_utc = datetime.utcnow()
-                            entry_price = get_live_entry_price(
-                                res3.get("symbol"),
-                                bias,
-                                tf=res3.get("tf"),
-                                slippage=DEFAULT_SLIPPAGE
-                            ) or res3.get("price", 0.0)
+                        bias = res3.get("bias", "NEUTRAL")
+                        sf3.bias = bias
 
-                            score = res3.get("score", 0)
-                            score_max = res3.get("score_max", 0)
-                            passes = res3.get("passes", 0)
-                            gatekeepers_total = res3.get("gatekeepers_total", 0)
-                            passed_weight = res3.get("passed_weight", 0.0)
-                            total_weight = res3.get("total_weight", 0.0)
-                            Route = res3.get("Route", None)
-                            signal_type = bias
-                            tf_val = res3.get("tf", "3min")
-                            symbol_val = res3.get("symbol", symbol)
-                            try:
-                                confidence = round((passed_weight / total_weight) * 100, 1) if total_weight else 0.0
-                            except Exception:
-                                confidence = 0.0
-                            entry_idx = df3.index.get_loc(df3.index[-1])
-
-                            # --- NEW: Calculate TP/SL ---
-                            tp_sl = calculate_tp_sl(df3, entry_price, signal_type)
-                            tp = tp_sl.get('tp')
-                            sl = tp_sl.get('sl')
-                            fib_levels = tp_sl.get('fib_levels')  # optional, for debug/log
-                            
+                        if not super_gk_aligned(bias, orderbook_result, density_result):
+                            print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
+                            # still add debug info (so you can inspect later)
                             valid_debugs.append({
-                                "symbol": symbol_val,
-                                "tf": tf_val,
+                                "symbol": symbol,
+                                "tf": "3min",
                                 "bias": bias,
                                 "filter_weights_long": getattr(sf3, 'filter_weights_long', []),
                                 "filter_weights_short": getattr(sf3, 'filter_weights_short', []),
                                 "gatekeepers": getattr(sf3, 'gatekeepers', []),
                                 "results_long": res3.get("results_long", {}),
                                 "results_short": res3.get("results_short", {}),
-                                "caption": f"Signal debug log for {symbol_val} {tf_val}",
+                                "caption": f"Blocked signal debug for {symbol} 3min",
                                 "orderbook_result": orderbook_result,
                                 "density_result": density_result,
-                                "entry_price": entry_price,
-                                "fired_time_utc": fired_time_utc,
-                                "early_breakout_3m": early_breakout_3m,  # <-- Add this line
-                                "tp": tp,
-                                "sl": sl,
-                                "fib_levels": fib_levels
+                                "entry_price": res3.get("price"),
+                                "fired_time_utc": datetime.utcnow(),
+                                "early_breakout_3m": early_breakout_3m
                             })
+                            continue
 
-                            log_fired_signal(
+                        print(f"[LOG] Sending 3min alert for {res3.get('symbol')}", flush=True)
+                        fired_time_utc = datetime.utcnow()
+                        entry_price = get_live_entry_price(
+                            res3.get("symbol"),
+                            bias,
+                            tf=res3.get("tf"),
+                            slippage=DEFAULT_SLIPPAGE
+                        ) or res3.get("price", 0.0)
+
+                        # collect signal metadata
+                        score = res3.get("score", 0)
+                        score_max = res3.get("score_max", 0)
+                        passes = res3.get("passes", 0)
+                        gatekeepers_total = res3.get("gatekeepers_total", 0)
+                        passed_weight = res3.get("passed_weight", 0.0)
+                        total_weight = res3.get("total_weight", 0.0)
+                        Route = res3.get("Route", None)
+                        signal_type = bias
+                        tf_val = res3.get("tf", "3min")
+                        symbol_val = res3.get("symbol", symbol)
+                        try:
+                            confidence = round((passed_weight / total_weight) * 100, 1) if total_weight else 0.0
+                        except Exception:
+                            confidence = 0.0
+                        entry_idx = df3.index.get_loc(df3.index[-1])
+
+                        # Calculate TP/SL
+                        tp_sl = calculate_tp_sl(df3, entry_price, signal_type)
+                        tp = tp_sl.get('tp')
+                        sl = tp_sl.get('sl')
+                        fib_levels = tp_sl.get('fib_levels')
+
+                        valid_debugs.append({
+                            "symbol": symbol_val,
+                            "tf": tf_val,
+                            "bias": bias,
+                            "filter_weights_long": getattr(sf3, 'filter_weights_long', []),
+                            "filter_weights_short": getattr(sf3, 'filter_weights_short', []),
+                            "gatekeepers": getattr(sf3, 'gatekeepers', []),
+                            "results_long": res3.get("results_long", {}),
+                            "results_short": res3.get("results_short", {}),
+                            "caption": f"Signal debug log for {symbol_val} {tf_val}",
+                            "orderbook_result": orderbook_result,
+                            "density_result": density_result,
+                            "entry_price": entry_price,
+                            "fired_time_utc": fired_time_utc,
+                            "early_breakout_3m": early_breakout_3m,
+                            "tp": tp,
+                            "sl": sl,
+                            "fib_levels": fib_levels
+                        })
+
+                        log_fired_signal(
+                            symbol=symbol_val,
+                            tf=tf_val,
+                            signal_type=signal_type,
+                            entry_idx=entry_idx,
+                            fired_time=fired_time_utc,
+                            score=score,
+                            max_score=score_max,
+                            passed=passes,
+                            max_passed=gatekeepers_total,
+                            weights=passed_weight,
+                            max_weights=total_weight,
+                            confidence_rate=confidence,
+                            entry_price=entry_price
+                        )
+
+                        regime = sf3._market_regime() if hasattr(sf3, "_market_regime") else None
+
+                        if os.getenv("DRY_RUN", "false").lower() != "true":
+                            send_telegram_alert(
+                                numbered_signal=numbered_signal,
                                 symbol=symbol_val,
-                                tf=tf_val,
                                 signal_type=signal_type,
-                                entry_idx=entry_idx,
-                                fired_time=fired_time_utc,
+                                Route=Route,
+                                price=entry_price,
+                                tf=tf_val,
                                 score=score,
-                                max_score=score_max,
+                                score_max=score_max,
                                 passed=passes,
-                                max_passed=gatekeepers_total,
-                                weights=passed_weight,
-                                max_weights=total_weight,
-                                confidence_rate=confidence,
-                                entry_price=entry_price
+                                gatekeepers_total=gatekeepers_total,
+                                confidence=confidence,
+                                weighted=passed_weight,
+                                total_weight=total_weight,
+                                reversal_side=res3.get("reversal_side"),
+                                regime=regime,
+                                early_breakout_3m=early_breakout_3m,
+                                tp=tp,
+                                sl=sl
                             )
+                        last_sent[key3] = now
+                else:
+                    print(f"[INFO] No valid 3min signal for {symbol}.", flush=True)
+            except Exception as e:
+                print(f"[ERROR] Exception in processing 3min for {symbol}: {e}", flush=True)
 
-                            # --- Regime is defined here using sf3 ---
-                            regime = sf3._market_regime() if hasattr(sf3, "_market_regime") else None
-        
-                            if os.getenv("DRY_RUN", "false").lower() != "true":
-                                send_telegram_alert(
-                                    numbered_signal=numbered_signal,
-                                    symbol=symbol_val,
-                                    signal_type=signal_type,
-                                    Route=Route,
-                                    price=entry_price,
-                                    tf=tf_val,
-                                    score=score,
-                                    score_max=score_max,
-                                    passed=passes,
-                                    gatekeepers_total=gatekeepers_total,
-                                    confidence=confidence,
-                                    weighted=passed_weight,
-                                    total_weight=total_weight,
-                                    reversal_side=res3.get("reversal_side"),
-                                    regime=regime,
-                                    early_breakout_3m=early_breakout_3m,  # <-- Pass to alert (if supported)
-                                    tp=tp,       # NEW ARGUMENT
-                                    sl=sl        # NEW ARGUMENT
-                                )
-                            last_sent[key3] = now
-                    else:
-                        print(f"[INFO] No valid 3min signal for {symbol}.", flush=True)
-                except Exception as e:
-                    print(f"[ERROR] Exception in processing 3min for {symbol}: {e}", flush=True)
+            # --- 5min TF ---
+            try:
+                key5 = f"{symbol}_5min"
+                sf5 = SmartFilter(symbol, df5, df3m=df3, df5m=df5, tf="5min")
+                regime5 = sf5._market_regime()
+                res5 = sf5.analyze()
+                if isinstance(res5, dict) and res5.get("valid_signal") is True:
+                    last5 = last_sent.get(key5, 0)
+                    if now - last5 >= COOLDOWN["5min"]:
+                        numbered_signal = f"{idx}.B"
 
-                # --- 5min TF ---
-                try:
-                    key5 = f"{symbol}_5min"
-                    sf5 = SmartFilter(symbol, df5, df3m=df3, df5m=df5, tf="5min")
-                    regime5 = sf5._market_regime()
-                    res5 = sf5.analyze()
-                    if isinstance(res5, dict) and res5.get("valid_signal") is True:
-                        last5 = last_sent.get(key5, 0)
-                        if now - last5 >= COOLDOWN["5min"]:
-                            numbered_signal = f"{idx}.B"
-                            log_orderbook_and_density(symbol)
-                            orderbook_result = get_order_wall_delta(symbol)
-                            density_result = get_resting_order_density(symbol)
-                            bias = res5.get("bias", "NEUTRAL")
-                            sf5.bias = bias
-                            if not super_gk_aligned(bias, orderbook_result, density_result):
-                                print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
-                                continue
-                            print(f"[LOG] Sending 5min alert for {res5.get('symbol')}", flush=True)
+                        # SuperGK inputs and logging
+                        log_orderbook_and_density(symbol)
+                        try:
+                            orderbook_result = get_order_wall_delta(symbol) or {}
+                        except Exception as e:
+                            print(f"[ERROR] get_order_wall_delta failed for {symbol}: {e}", flush=True)
+                            orderbook_result = {"buy_wall": 0, "sell_wall": 0, "wall_delta": 0, "midprice": None}
+                        try:
+                            density_result = get_resting_order_density(symbol) or {}
+                        except Exception as e:
+                            print(f"[ERROR] get_resting_order_density failed for {symbol}: {e}", flush=True)
+                            density_result = {"bid_density": 0.0, "ask_density": 0.0, "bid_levels": 0, "ask_levels": 0, "midprice": None}
 
-                            fired_time_utc = datetime.utcnow()
-                            entry_price = get_live_entry_price(
-                                res5.get("symbol"),
-                                bias,
-                                tf=res5.get("tf"),
-                                slippage=DEFAULT_SLIPPAGE
-                            ) or res5.get("price", 0.0)
+                        bias = res5.get("bias", "NEUTRAL")
+                        sf5.bias = bias
 
-                            score = res5.get("score", 0)
-                            score_max = res5.get("score_max", 0)
-                            passes = res5.get("passes", 0)
-                            gatekeepers_total = res5.get("gatekeepers_total", 0)
-                            passed_weight = res5.get("passed_weight", 0.0)
-                            total_weight = res5.get("total_weight", 0.0)
-                            Route = res5.get("Route", None)
-                            signal_type = bias
-                            tf_val = res5.get("tf", "5min")
-                            symbol_val = res5.get("symbol", symbol)
-                            try:
-                                confidence = round((passed_weight / total_weight) * 100, 1) if total_weight else 0.0
-                            except Exception:
-                                confidence = 0.0
-                            entry_idx = df5.index.get_loc(df5.index[-1])
-
-                            # --- NEW: Calculate TP/SL ---
-                            tp_sl = calculate_tp_sl(df5, entry_price, signal_type)
-                            tp = tp_sl.get('tp')
-                            sl = tp_sl.get('sl')
-                            fib_levels = tp_sl.get('fib_levels')
-                            
+                        if not super_gk_aligned(bias, orderbook_result, density_result):
+                            print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
                             valid_debugs.append({
-                                "symbol": symbol_val,
-                                "tf": tf_val,
+                                "symbol": symbol,
+                                "tf": "5min",
                                 "bias": bias,
                                 "filter_weights_long": getattr(sf5, 'filter_weights_long', []),
                                 "filter_weights_short": getattr(sf5, 'filter_weights_short', []),
                                 "gatekeepers": getattr(sf5, 'gatekeepers', []),
                                 "results_long": res5.get("results_long", {}),
                                 "results_short": res5.get("results_short", {}),
-                                "caption": f"Signal debug log for {symbol_val} {tf_val}",
+                                "caption": f"Blocked signal debug for {symbol} 5min",
                                 "orderbook_result": orderbook_result,
                                 "density_result": density_result,
-                                "entry_price": entry_price,
-                                "fired_time_utc": fired_time_utc,
-                                "early_breakout_5m": early_breakout_5m,  # <-- Add this line
-                                "tp": tp,
-                                "sl": sl,
-                                "fib_levels": fib_levels
+                                "entry_price": res5.get("price"),
+                                "fired_time_utc": datetime.utcnow(),
+                                "early_breakout_5m": early_breakout_5m
                             })
+                            continue
 
-                            log_fired_signal(
+                        print(f"[LOG] Sending 5min alert for {res5.get('symbol')}", flush=True)
+                        fired_time_utc = datetime.utcnow()
+                        entry_price = get_live_entry_price(
+                            res5.get("symbol"),
+                            bias,
+                            tf=res5.get("tf"),
+                            slippage=DEFAULT_SLIPPAGE
+                        ) or res5.get("price", 0.0)
+
+                        score = res5.get("score", 0)
+                        score_max = res5.get("score_max", 0)
+                        passes = res5.get("passes", 0)
+                        gatekeepers_total = res5.get("gatekeepers_total", 0)
+                        passed_weight = res5.get("passed_weight", 0.0)
+                        total_weight = res5.get("total_weight", 0.0)
+                        Route = res5.get("Route", None)
+                        signal_type = bias
+                        tf_val = res5.get("tf", "5min")
+                        symbol_val = res5.get("symbol", symbol)
+                        try:
+                            confidence = round((passed_weight / total_weight) * 100, 1) if total_weight else 0.0
+                        except Exception:
+                            confidence = 0.0
+                        entry_idx = df5.index.get_loc(df5.index[-1])
+
+                        # Calculate TP/SL
+                        tp_sl = calculate_tp_sl(df5, entry_price, signal_type)
+                        tp = tp_sl.get('tp')
+                        sl = tp_sl.get('sl')
+                        fib_levels = tp_sl.get('fib_levels')
+
+                        valid_debugs.append({
+                            "symbol": symbol_val,
+                            "tf": tf_val,
+                            "bias": bias,
+                            "filter_weights_long": getattr(sf5, 'filter_weights_long', []),
+                            "filter_weights_short": getattr(sf5, 'filter_weights_short', []),
+                            "gatekeepers": getattr(sf5, 'gatekeepers', []),
+                            "results_long": res5.get("results_long", {}),
+                            "results_short": res5.get("results_short", {}),
+                            "caption": f"Signal debug log for {symbol_val} {tf_val}",
+                            "orderbook_result": orderbook_result,
+                            "density_result": density_result,
+                            "entry_price": entry_price,
+                            "fired_time_utc": fired_time_utc,
+                            "early_breakout_5m": early_breakout_5m,
+                            "tp": tp,
+                            "sl": sl,
+                            "fib_levels": fib_levels
+                        })
+
+                        log_fired_signal(
+                            symbol=symbol_val,
+                            tf=tf_val,
+                            signal_type=signal_type,
+                            entry_idx=entry_idx,
+                            fired_time=fired_time_utc,
+                            score=score,
+                            max_score=score_max,
+                            passed=passes,
+                            max_passed=gatekeepers_total,
+                            weights=passed_weight,
+                            max_weights=total_weight,
+                            confidence_rate=confidence,
+                            entry_price=entry_price
+                        )
+
+                        regime = sf5._market_regime() if hasattr(sf5, "_market_regime") else None
+
+                        if os.getenv("DRY_RUN", "false").lower() != "true":
+                            send_telegram_alert(
+                                numbered_signal=numbered_signal,
                                 symbol=symbol_val,
-                                tf=tf_val,
                                 signal_type=signal_type,
-                                entry_idx=entry_idx,
-                                fired_time=fired_time_utc,
+                                Route=Route,
+                                price=entry_price,
+                                tf=tf_val,
                                 score=score,
-                                max_score=score_max,
+                                score_max=score_max,
                                 passed=passes,
-                                max_passed=gatekeepers_total,
-                                weights=passed_weight,
-                                max_weights=total_weight,
-                                confidence_rate=confidence,
-                                entry_price=entry_price
+                                gatekeepers_total=gatekeepers_total,
+                                confidence=confidence,
+                                weighted=passed_weight,
+                                total_weight=total_weight,
+                                reversal_side=res5.get("reversal_side"),
+                                regime=regime,
+                                early_breakout_5m=early_breakout_5m,
+                                tp=tp,
+                                sl=sl
                             )
+                        last_sent[key5] = now
+                else:
+                    print(f"[INFO] No valid 5min signal for {symbol}.", flush=True)
+            except Exception as e:
+                print(f"[ERROR] Exception in processing 5min for {symbol}: {e}", flush=True)
 
-                            # --- Regime is defined here using sf5 ---
-                            regime = sf5._market_regime() if hasattr(sf5, "_market_regime") else None
+        except Exception as e:
+            print(f"[FATAL] Exception processing {symbol}: {e}", flush=True)
 
-                            if os.getenv("DRY_RUN", "false").lower() != "true":
-                                send_telegram_alert(
-                                    numbered_signal=numbered_signal,
-                                    symbol=symbol_val,
-                                    signal_type=signal_type,
-                                    Route=Route,
-                                    price=entry_price,
-                                    tf=tf_val,
-                                    score=score,
-                                    score_max=score_max,
-                                    passed=passes,
-                                    gatekeepers_total=gatekeepers_total,
-                                    confidence=confidence,
-                                    weighted=passed_weight,
-                                    total_weight=total_weight,
-                                    reversal_side=res5.get("reversal_side"),
-                                    regime=regime,
-                                    early_breakout_5m=early_breakout_5m,  # <-- Pass to alert (if supported)
-                                    tp=tp,       # NEW ARGUMENT
-                                    sl=sl        # NEW ARGUMENT
-                                )
-                            last_sent[key5] = now
-                    else:
-                        print(f"[INFO] No valid 5min signal for {symbol}.", flush=True)
-                except Exception as e:
-                    print(f"[ERROR] Exception in processing 5min for {symbol}: {e}", flush=True)
+    # End of per-symbol loop
+    return valid_debugs
+
+def run():
+    """
+    Continuous loop that calls run_cycle() then sleeps.
+    Kept as wrapper to preserve earlier `run()` entry semantics.
+    """
+    print("[INFO] Starting Smart Filter engine (LIVE MODE)...\n", flush=True)
+    while True:
+        try:
+            valid_debugs = run_cycle()
 
             # --- Send up to 2 debug files to Telegram (Signal Debug txt sampling) ---
             try:
@@ -417,8 +507,8 @@ def run():
                             )
                         except Exception as e:
                             print(f"[ERROR] Exception in Telegram debug send: {e}", flush=True)
-                    # --- NEW: send tracking log ONLY at 01:00, 07:00, 13:00, 19:00 UTC ---
-                    now_utc = datetime.utcnow()  # <-- FIXED LINE
+                    # send tracking log at scheduled hours only
+                    now_utc = datetime.utcnow()
                     if now_utc.hour in [1, 7, 13, 19] and now_utc.minute == 0:
                         try:
                             send_telegram_file(
@@ -434,14 +524,14 @@ def run():
                     print("[FIRED] valid_debugs is empty — no debug files to send to Telegram.", flush=True)
             except Exception as e:
                 print(f"[FATAL] Exception in debug sending block: {e}", flush=True)
-            
+
             if valid_debugs:
                 print(f"[FIRED] Processed {len(valid_debugs)} valid signals this cycle", flush=True)
             else:
                 print("[FIRED] No valid signals processed this cycle", flush=True)
-            
-            print("[INFO] ✅ Cycle complete. Sleeping 60 seconds...\n", flush=True)
-            time.sleep(60)
+
+            print(f"[INFO] ✅ Cycle complete. Sleeping {CYCLE_SLEEP} seconds...\n", flush=True)
+            time.sleep(CYCLE_SLEEP)
 
         except Exception as e:
             print(f"[FATAL] Exception in main loop: {e}", flush=True)
