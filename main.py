@@ -134,19 +134,36 @@ def log_orderbook_and_density(symbol):
     except Exception as e:
         print(f"[RestingOrderDensityLog] {symbol} ERROR: {e}", flush=True)
 
-def super_gk_aligned(bias, orderbook_result, density_result, wall_threshold=50.0, density_threshold=5.0):
+def super_gk_aligned(bias, orderbook_result, density_result, wall_threshold=None, density_threshold=None):
     """
     More conservative SuperGK alignment:
     - wall_threshold: minimum absolute wall_delta to consider (in quoted units of size)
     - density_threshold: minimum absolute % difference between bid_density and ask_density to consider
     Returns True only if both orderbook and density (when available) align with bias sufficiently.
+
+    Uses environment variables SUPERGK_WALL_THRESHOLD and SUPERGK_DENSITY_THRESHOLD when provided,
+    otherwise falls back to defaults (wall_threshold=50.0, density_threshold=0.0).
     """
+    # Load defaults from env (if set) or use given defaults
+    try:
+        env_wall = os.getenv("SUPERGK_WALL_THRESHOLD")
+        env_density = os.getenv("SUPERGK_DENSITY_THRESHOLD")
+        default_wall = float(env_wall) if env_wall is not None else 50.0
+        # Set density default to 0.0 to match the "aligned if bigger" behavior in your debug output.
+        default_density = float(env_density) if env_density is not None else 0.0
+    except Exception:
+        default_wall = 50.0
+        default_density = 0.0
+
+    wall_threshold = default_wall if wall_threshold is None else wall_threshold
+    density_threshold = default_density if density_threshold is None else density_threshold
+
     # Defensive defaults
     buy_wall = float(orderbook_result.get('buy_wall', 0.0)) if orderbook_result else 0.0
     sell_wall = float(orderbook_result.get('sell_wall', 0.0)) if orderbook_result else 0.0
     wall_delta = float(orderbook_result.get('wall_delta', buy_wall - sell_wall)) if orderbook_result else 0.0
 
-    # Interpret orderbook bias
+    # Interpret orderbook bias using threshold
     if abs(wall_delta) < wall_threshold:
         orderbook_bias = "NEUTRAL"
     else:
@@ -156,6 +173,7 @@ def super_gk_aligned(bias, orderbook_result, density_result, wall_threshold=50.0
     ask_density = float(density_result.get('ask_density', 0.0)) if density_result else 0.0
     density_diff = bid_density - ask_density
 
+    # Interpret density bias using threshold (density values are percentages, e.g. 2.85)
     if abs(density_diff) < density_threshold:
         density_bias = "NEUTRAL"
     else:
@@ -163,7 +181,8 @@ def super_gk_aligned(bias, orderbook_result, density_result, wall_threshold=50.0
 
     # Logging for debugging
     print(f"[SuperGK] bias={bias} orderbook_bias={orderbook_bias} wall_delta={wall_delta:.2f} "
-          f"density_bias={density_bias} bid_density={bid_density:.2f}% ask_density={ask_density:.2f}%", flush=True)
+          f"density_bias={density_bias} bid_density={bid_density:.2f}% ask_density={ask_density:.2f}% "
+          f"(wall_th={wall_threshold}, dens_th={density_threshold})", flush=True)
 
     # Require both non-neutral and consistent
     if orderbook_bias == "NEUTRAL" or density_bias == "NEUTRAL":
