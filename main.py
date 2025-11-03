@@ -138,15 +138,24 @@ def super_gk_aligned(bias, orderbook_result, density_result,
                      wall_pct_threshold=None, density_threshold=None,
                      wall_weight=None, density_weight=None, composite_threshold=None):
     """
-    Composite-first SuperGK:
-    - Do NOT immediately block just because one metric's sign is opposite.
-    - Compute weighted composite and accept if composite >= threshold.
-    - Thresholds and weights are configurable via env vars:
-      SUPERGK_WALL_PCT_THRESHOLD (default 1.0),
-      SUPERGK_DENSITY_THRESHOLD (default 0.5),
-      SUPERGK_WALL_WEIGHT (default 0.6),
-      SUPERGK_DENSITY_WEIGHT (default 0.4),
-      SUPERGK_COMPOSITE_THRESHOLD (default 0.05)
+    Composite-first SuperGK (patched defaults to favor density so SHORTs can pass).
+
+    Behavior:
+    - Compute normalized wall_pct and density_pct (percent units).
+    - Use weights and composite threshold (configurable via env vars).
+    - Accept when:
+        * both metrics support bias, or
+        * one supports and the other is neutral, or
+        * weighted composite >= composite_threshold
+    - Defaults tuned for Option-1: density more influential and low composite threshold
+      so SHORT signals with strong density advantage will fire.
+
+    Environment variables (optional):
+    - SUPERGK_WALL_PCT_THRESHOLD (default 1.0)
+    - SUPERGK_DENSITY_THRESHOLD (default 0.5)
+    - SUPERGK_WALL_WEIGHT (default 0.25)        <- patched default
+    - SUPERGK_DENSITY_WEIGHT (default 0.75)     <- patched default
+    - SUPERGK_COMPOSITE_THRESHOLD (default 0.01)<- patched default
     """
     try:
         env_wpct = os.getenv("SUPERGK_WALL_PCT_THRESHOLD")
@@ -154,13 +163,14 @@ def super_gk_aligned(bias, orderbook_result, density_result,
         env_ww = os.getenv("SUPERGK_WALL_WEIGHT")
         env_dw = os.getenv("SUPERGK_DENSITY_WEIGHT")
         env_comp = os.getenv("SUPERGK_COMPOSITE_THRESHOLD")
+        # Use env values when present, otherwise use patched defaults (density-favoring)
         default_wpct = float(env_wpct) if env_wpct is not None else 1.0
         default_dpct = float(env_dpct) if env_dpct is not None else 0.5
-        default_ww = float(env_ww) if env_ww is not None else 0.6
-        default_dw = float(env_dw) if env_dw is not None else 0.4
-        default_comp = float(env_comp) if env_comp is not None else 0.05
+        default_ww = float(env_ww) if env_ww is not None else 0.25
+        default_dw = float(env_dw) if env_dw is not None else 0.75
+        default_comp = float(env_comp) if env_comp is not None else 0.01
     except Exception:
-        default_wpct, default_dpct, default_ww, default_dw, default_comp = 1.0, 0.5, 0.6, 0.4, 0.05
+        default_wpct, default_dpct, default_ww, default_dw, default_comp = 1.0, 0.5, 0.25, 0.75, 0.01
 
     wall_pct_threshold = default_wpct if wall_pct_threshold is None else wall_pct_threshold
     density_threshold = default_dpct if density_threshold is None else density_threshold
@@ -168,7 +178,7 @@ def super_gk_aligned(bias, orderbook_result, density_result,
     density_weight = default_dw if density_weight is None else density_weight
     composite_threshold = default_comp if composite_threshold is None else composite_threshold
 
-    # Defensive extraction
+    # Defensive extraction from input dicts
     buy_wall = float(orderbook_result.get('buy_wall', 0.0)) if orderbook_result else 0.0
     sell_wall = float(orderbook_result.get('sell_wall', 0.0)) if orderbook_result else 0.0
     wall_delta = float(orderbook_result.get('wall_delta', buy_wall - sell_wall)) if orderbook_result else 0.0
@@ -181,7 +191,7 @@ def super_gk_aligned(bias, orderbook_result, density_result,
     wall_pct = (abs(wall_delta) / total_wall) * 100.0
     wall_sign = "LONG" if wall_delta > 0 else "SHORT" if wall_delta < 0 else "NEUTRAL"
 
-    # density_diff and sign
+    # density diff and sign
     density_diff = bid_density - ask_density
     density_pct = abs(density_diff)
     density_sign = "LONG" if density_diff > 0 else "SHORT" if density_diff < 0 else "NEUTRAL"
@@ -190,14 +200,14 @@ def super_gk_aligned(bias, orderbook_result, density_result,
     orderbook_bias = wall_sign if wall_pct >= wall_pct_threshold else "NEUTRAL"
     density_bias = density_sign if density_pct >= density_threshold else "NEUTRAL"
 
-    # Logging for diagnostics
+    # Logging for diagnostics (kept concise)
     print(f"[SuperGK] bias={bias} | wall_delta={wall_delta:.6f} buy_wall={buy_wall:.6f} sell_wall={sell_wall:.6f} "
           f"wall_pct={wall_pct:.3f}% (th={wall_pct_threshold}) wall_bias={orderbook_bias} | "
           f"bid_density={bid_density:.3f}% ask_density={ask_density:.3f}% density_pct={density_pct:.3f}% (th={density_threshold}) "
           f"density_bias={density_bias} | weights (wall={wall_weight}, density={density_weight}) comp_th={composite_threshold}",
           flush=True)
 
-    # If both support the bias -> accept
+    # If both metrics support the bias -> accept
     if orderbook_bias == bias and density_bias == bias:
         print("[SuperGK] Passed: both metrics support bias.", flush=True)
         return True
