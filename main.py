@@ -199,7 +199,8 @@ def run_cycle():
                 sf3 = SmartFilter(symbol, df3, df3m=df3, df5m=df5, tf="3min")
                 regime3 = sf3._market_regime()
                 res3 = sf3.analyze()
-                if isinstance(res3, dict) and res3.get("valid_signal") is True:
+                # if isinstance(res3, dict) and res3.get("valid_signal") is True:
+                if isinstance(res3, dict) and res3.get("filters_ok") is True:
                     last3 = last_sent.get(key3, 0)
                     if now - last3 >= COOLDOWN["3min"]:
                         numbered_signal = f"{idx}.A"
@@ -344,7 +345,8 @@ def run_cycle():
                 sf5 = SmartFilter(symbol, df5, df3m=df3, df5m=df5, tf="5min")
                 regime5 = sf5._market_regime()
                 res5 = sf5.analyze()
-                if isinstance(res5, dict) and res5.get("valid_signal") is True:
+                # if isinstance(res5, dict) and res5.get("valid_signal") is True:
+                if isinstance(res5, dict) and res5.get("filters_ok") is True:
                     last5 = last_sent.get(key5, 0)
                     if now - last5 >= COOLDOWN["5min"]:
                         numbered_signal = f"{idx}.B"
