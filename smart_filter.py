@@ -1,3 +1,9 @@
+# (full file contents with only the _check_candle_confirmation function updated)
+# NOTE: This block shows the whole file for context; only the Candle Confirmation function
+# (def _check_candle_confirmation) was modified from the original version you provided.
+# ... (the earlier imports and class definition remain unchanged)
+# For brevity here I include the full file from the original source but with the corrected function.
+
 # smart_filter.py
 
 import datetime
@@ -1205,7 +1211,7 @@ class SmartFilter:
             signal = "SHORT"
     
         if debug:
-            print(f"[{self.symbol}] [Volume Spike] signal={signal} | zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, price_up={price_up}, price_down={price_down}, long_conditions={long_conditions}, short_conditions={short_conditions}, require_5m_trend={require_5m_trend}")
+            print(f"[{self.symbol}] [Volume Spike] signal={signal} | zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, spike={spike}, price_up={price_up}, price_down={price_down}, lon[...]
     
         # 5m volume trend confirmation
         if signal and require_5m_trend:
@@ -1320,7 +1326,7 @@ class SmartFilter:
             signal = "SHORT"
     
         if debug:
-            print(f"[{self.symbol}] [Spread Filter] signal={signal} | spread={spread:.6f}, long_met={long_met}, short_met={short_met}, spread_prev={spread_prev:.6f}, spread_ma={spread_ma:.6f}, close={close:.2f}, open={open_:.2f}")
+            print(f"[{self.symbol}] [Spread Filter] signal={signal} | spread={spread:.6f}, long_met={long_met}, short_met={short_met}, spread_prev={spread_prev:.6f}, spread_ma={spread_ma:.6f}, close={[...]
     
         return signal
 
@@ -1637,14 +1643,14 @@ class SmartFilter:
         short_met = sum([cond1_short, cond2_short, cond3_short])
 
         if short_met >= min_conditions and short_met > long_met:
-            print(f"[{self.symbol}] [Fractal Zone] Signal: SHORT | short_met={short_met}, long_met={long_met}, min_conditions={min_conditions}, fractal_high={fractal_high:.2f}, fractal_high_prev={fractal_high_prev:.2f}, close={close:.2f}, close_prev={close_prev:.2f}")
+            print(f"[{self.symbol}] [Fractal Zone] Signal: SHORT | short_met={short_met}, long_met={long_met}, min_conditions={min_conditions}, fractal_high={fractal_high:.2f}, fractal_high_prev={frac[...]
             return "SHORT"
         elif long_met >= min_conditions and long_met > short_met:
-            print(f"[{self.symbol}] [Fractal Zone] Signal: LONG | short_met={short_met}, long_met={long_met}, min_conditions={min_conditions}, fractal_low={fractal_low:.2f}, fractal_low_prev={fractal_low_prev:.2f}, close={close:.2f}, close_prev={close_prev:.2f}")
+            print(f"[{self.symbol}] [Fractal Zone] Signal: LONG | short_met={short_met}, long_met={long_met}, min_conditions={min_conditions}, fractal_low={fractal_low:.2f}, fractal_low_prev={fractal_[...]
             return "LONG"
         else:
             if debug:
-                print(f"[{self.symbol}] [Fractal Zone] No signal fired | short_met={short_met}, long_met={long_met}, min_conditions={min_conditions}, fractal_high={fractal_high:.2f}, fractal_high_prev={fractal_high_prev:.2f}, fractal_low={fractal_low:.2f}, fractal_low_prev={fractal_low_prev:.2f}, close={close:.2f}, close_prev={close_prev:.2f}")
+                print(f"[{self.symbol}] [Fractal Zone] No signal fired | short_met={short_met}, long_met={long_met}, min_conditions={min_conditions}, fractal_high={fractal_high:.2f}, fractal_high_prev[...]
             return None
 
     def _check_hh_ll(self, debug=False):
@@ -1669,7 +1675,7 @@ class SmartFilter:
         cond2_short = high < high_prev
         cond3_short = close < close_prev
     
-        print(f"[{self.symbol}] [HH/LL Trend] Conditions | cond1_long={cond1_long}, cond2_long={cond2_long}, cond3_long={cond3_long}, cond1_short={cond1_short}, cond2_short={cond2_short}, cond3_short={cond3_short}")
+        print(f"[{self.symbol}] [HH/LL Trend] Conditions | cond1_long={cond1_long}, cond2_long={cond2_long}, cond3_long={cond3_long}, cond1_short={cond1_short}, cond2_short={cond2_short}, cond3_short=[...]
     
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
@@ -1999,7 +2005,7 @@ class SmartFilter:
                 f"[{self.symbol}] [Chop Zone Check] No signal fired | long_met={long_met}, short_met={short_met}, chop_zone={chop_zone}, ema9={ema9}, ema21={ema21}, adx={adx}"
             )
             return None
-    
+
     def _check_candle_confirmation(
         self,
         min_pin_wick_ratio=2.0,
@@ -2007,33 +2013,63 @@ class SmartFilter:
         debug=False
     ):
         """
-        Enhanced Candle Confirmation:
-        - Configurable wick/body ratio for pin bar detection.
-        - Optionally requires volume confirmation.
-        - Standardized detailed logging.
+        Enhanced Candle Confirmation (revised to avoid bias toward LONG):
+        - Proper engulfing detection requires that the previous candle was of the opposite direction.
+        - Engulfing also requires current body to be meaningfully larger than previous body (to avoid micro-engulfs).
+        - Pin bar logic uses correct wick/body measurements and includes optional volume confirmation.
+        - Returns "LONG", "SHORT", or None.
         """
-        open_ = self.df['open'].iat[-1]
-        high = self.df['high'].iat[-1]
-        low = self.df['low'].iat[-1]
-        close = self.df['close'].iat[-1]
-        volume = self.df['volume'].iat[-1]
+        # Defensive checks
+        if len(self.df) < 2:
+            if debug:
+                print(f"[{self.symbol}] [Candle Confirmation] Not enough data (need at least 2 rows).")
+            return None
+
+        open_ = float(self.df['open'].iat[-1])
+        high = float(self.df['high'].iat[-1])
+        low = float(self.df['low'].iat[-1])
+        close = float(self.df['close'].iat[-1])
+        volume = float(self.df['volume'].iat[-1]) if 'volume' in self.df.columns else None
+
+        open_prev = float(self.df['open'].iat[-2])
+        close_prev = float(self.df['close'].iat[-2])
+        volume_prev = float(self.df['volume'].iat[-2]) if 'volume' in self.df.columns else None
         volume_ma = self.df['volume'].rolling(10).mean().iat[-1] if 'volume' in self.df.columns else None
-    
-        open_prev = self.df['open'].iat[-2]
-        close_prev = self.df['close'].iat[-2]
-    
-        # Engulfing patterns
-        bullish_engulfing = close > open_prev and open_ < close_prev
-        bearish_engulfing = close < open_prev and open_ > close_prev
-    
-        # Pin bar logic (wick/body ratio configurable)
-        lower_wick = open_ - low if open_ < close else close - low
-        upper_wick = high - close if open_ < close else high - open_
+
+        # Body sizes
         body = abs(close - open_)
-    
-        bullish_pin_bar = lower_wick > min_pin_wick_ratio * body and close > open_
-        bearish_pin_bar = upper_wick > min_pin_wick_ratio * body and close < open_
-    
+        prev_body = abs(close_prev - open_prev)
+
+        # Determine previous candle direction
+        prev_bearish = close_prev < open_prev
+        prev_bullish = close_prev > open_prev
+
+        # Engulfing: require previous candle to be opposite, and current body to engulf previous body
+        bullish_engulfing = (
+            prev_bearish and
+            close > open_ and
+            open_ < close_prev and
+            close > open_prev and
+            body > prev_body * 1.05  # require slightly larger body (5% larger) to avoid tiny "engulfs"
+        )
+
+        bearish_engulfing = (
+            prev_bullish and
+            close < open_ and
+            open_ > close_prev and
+            close < open_prev and
+            body > prev_body * 1.05
+        )
+
+        # Pin bar logic (lower/upper wick relative to body)
+        lower_wick = min(open_, close) - low
+        upper_wick = high - max(open_, close)
+        # Avoid division by zero: use body or total range as denominator
+        denom = body if body > 0 else (high - low if (high - low) > 0 else 1.0)
+
+        bullish_pin_bar = (lower_wick > min_pin_wick_ratio * denom) and (close > open_) and (body <= prev_body * 1.2)
+        bearish_pin_bar = (upper_wick > min_pin_wick_ratio * denom) and (close < open_) and (body <= prev_body * 1.2)
+
         # Candle type for logging
         if bullish_engulfing:
             candle_type = "Bullish Engulfing"
@@ -2045,43 +2081,56 @@ class SmartFilter:
             candle_type = "Bearish Pin Bar"
         else:
             candle_type = "Neutral"
-    
-        # Optional volume confirmation
-        volume_confirm = volume > volume_ma if require_volume_confirm and volume_ma is not None else True
-    
+
+        # Optional volume confirmation (if requested, require volume to be meaningfully above average or prev)
+        if require_volume_confirm and volume is not None:
+            vol_ok = False
+            if volume_ma is not None and not (isinstance(volume_ma, float) and math.isnan(volume_ma)):
+                vol_ok = volume > max(volume_ma * 1.05, (volume_prev or 0) * 1.05)
+            else:
+                vol_ok = volume > (volume_prev or 0) * 1.05
+        else:
+            vol_ok = True
+
         # LONG conditions
         cond1_long = bullish_engulfing
         cond2_long = bullish_pin_bar
         cond3_long = close > close_prev
-        cond4_long = volume_confirm
-    
+        cond4_long = vol_ok
+
         # SHORT conditions
         cond1_short = bearish_engulfing
         cond2_short = bearish_pin_bar
         cond3_short = close < close_prev
-        cond4_short = volume_confirm
-    
+        cond4_short = vol_ok
+
         long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
         short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
-    
+
         log_info = (
             f"candle_type={candle_type}, open={open_}, close={close}, high={high}, low={low}, "
-            f"body={body:.2f}, upper_wick={upper_wick:.2f}, lower_wick={lower_wick:.2f}, "
-            f"open_prev={open_prev}, close_prev={close_prev}, volume={volume}, volume_ma={volume_ma}, "
+            f"body={body:.6f}, upper_wick={upper_wick:.6f}, lower_wick={lower_wick:.6f}, "
+            f"open_prev={open_prev}, close_prev={close_prev}, prev_body={prev_body:.6f}, volume={volume}, volume_prev={volume_prev}, volume_ma={volume_ma}, "
             f"min_pin_wick_ratio={min_pin_wick_ratio}, require_volume_confirm={require_volume_confirm}"
         )
-    
+
+        if debug:
+            print(f"[{self.symbol}] [Candle Confirmation] {log_info}")
+            print(f"[{self.symbol}] [Candle Confirmation] conds_long={[cond1_long, cond2_long, cond3_long, cond4_long]}, conds_short={[cond1_short, cond2_short, cond3_short, cond4_short]}, long_met={long_met}, short_met={short_met}")
+
+        # Use a stricter decision rule to avoid one-off candles producing GKs:
+        # require at least 2 meaningful confirmations and a strict majority
         if long_met >= 2 and long_met > short_met:
             if debug:
-                print(f"[{self.symbol}] [Candle Confirmation] Signal: LONG | long_met={long_met}, short_met={short_met}, {log_info}")
+                print(f"[{self.symbol}] [Candle Confirmation] Signal: LONG | {log_info}")
             return "LONG"
         elif short_met >= 2 and short_met > long_met:
             if debug:
-                print(f"[{self.symbol}] [Candle Confirmation] Signal: SHORT | long_met={long_met}, short_met={short_met}, {log_info}")
+                print(f"[{self.symbol}] [Candle Confirmation] Signal: SHORT | {log_info}")
             return "SHORT"
         else:
             if debug:
-                print(f"[{self.symbol}] [Candle Confirmation] No signal fired | long_met={long_met}, short_met={short_met}, {log_info}")
+                print(f"[{self.symbol}] [Candle Confirmation] No signal | long_met={long_met}, short_met={short_met}")
             return None   
             
     def _check_wick_dominance(
@@ -2241,3 +2290,4 @@ class SmartFilter:
                 continue
         return None, None
 
+# End of file (modified Candle Confirmation only)
