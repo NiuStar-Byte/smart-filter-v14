@@ -93,7 +93,7 @@ class SmartFilter:
             "Support/Resistance"
         ]
 
-        self.soft_gatekeepers = ["Candle Confirmation", "Support/Resistance"]
+        self.soft_gatekeepers = ["Candle Confirmation"]
 
     # ==== SHARED HELPERS ====
     @staticmethod
@@ -466,6 +466,12 @@ class SmartFilter:
         long_gk_passed = all(results_long.get(gk, False) for gk in hard_gatekeepers) if hard_gatekeepers else True
         short_gk_passed = all(results_short.get(gk, False) for gk in hard_gatekeepers) if hard_gatekeepers else True
     
+        # Also expose which gatekeepers passed per side for debugging
+        passed_hard_gks_long = [gk for gk in hard_gatekeepers if results_long.get(gk, False)]
+        passed_hard_gks_short = [gk for gk in hard_gatekeepers if results_short.get(gk, False)]
+        passed_soft_gks_long = [gk for gk in soft_gatekeepers if results_long.get(gk, False)]
+        passed_soft_gks_short = [gk for gk in soft_gatekeepers if results_short.get(gk, False)]
+    
         # Weighted sum for non-GK filters
         scoring_filters = [f for f in getattr(self, "filter_names", []) if f not in getattr(self, "gatekeepers", [])]
     
@@ -502,6 +508,10 @@ class SmartFilter:
         self._debug_sums = {
             "long_gk_passed": long_gk_passed,
             "short_gk_passed": short_gk_passed,
+            "passed_hard_gks_long": passed_hard_gks_long,
+            "passed_hard_gks_short": passed_hard_gks_short,
+            "passed_soft_gks_long": passed_soft_gks_long,
+            "passed_soft_gks_short": passed_soft_gks_short,
             "long_score": long_score,
             "short_score": short_score,
             "long_count": long_count,
@@ -509,8 +519,18 @@ class SmartFilter:
             "weighted_min_score": weighted_min_score,
             "fallback_margin": fallback_margin,
             "hard_gatekeepers": hard_gatekeepers,
-            "soft_gatekeepers": getattr(self, "soft_gatekeepers", []),
+            "soft_gatekeepers": soft_gatekeepers,
         }
+    
+        # Extra debug print to make GK status explicit in logs
+        if debug:
+            print(
+                f"[{self.symbol}] get_signal_direction GK status | "
+                f"hard_gatekeepers={hard_gatekeepers} soft_gatekeepers={soft_gatekeepers} | "
+                f"long_gk_passed={long_gk_passed} passed_hard_gks_long={passed_hard_gks_long} passed_soft_gks_long={passed_soft_gks_long} | "
+                f"short_gk_passed={short_gk_passed} passed_hard_gks_short={passed_hard_gks_short} passed_soft_gks_short={passed_soft_gks_short} | "
+                f"long_score={long_score:.2f} short_score={short_score:.2f} weighted_min_score={weighted_min_score:.2f} fallback_margin={fallback_margin:.2f}"
+            )
     
         # Decision logic with clear precedence and conservative fallback
         # 1) If one side passes hard GKs and the other does not -> pick that side
