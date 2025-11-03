@@ -106,22 +106,16 @@ def early_breakout(df, lookback=3):
     return {'valid_signal': False, 'bias': None, 'price': close}
 
 def log_orderbook_and_density(symbol):
-    """
-    Helper to log orderbook and density to stdout for debugging.
-    Always returns normalized dicts for orderbook_result and density_result.
-    """
-    orderbook_result = {"buy_wall": 0, "sell_wall": 0, "wall_delta": 0, "midprice": None}
-    density_result = {"bid_density": 0.0, "ask_density": 0.0, "bid_levels": 0, "ask_levels": 0, "midprice": None}
     try:
         ob = get_order_wall_delta(symbol)
-        if isinstance(ob, dict):
-            orderbook_result.update(ob)
+        # Normalize missing keys
+        buy_wall = float(ob.get('buy_wall', 0.0))
+        sell_wall = float(ob.get('sell_wall', 0.0))
+        wall_delta = float(ob.get('wall_delta', 0.0))
+        midprice = ob.get('midprice', 'N/A')
         print(
             f"[OrderBookDeltaLog] {symbol} | "
-            f"buy_wall={orderbook_result.get('buy_wall',0)} | "
-            f"sell_wall={orderbook_result.get('sell_wall',0)} | "
-            f"wall_delta={orderbook_result.get('wall_delta',0)} | "
-            f"midprice={orderbook_result.get('midprice','N/A')}",
+            f"buy_wall={buy_wall} | sell_wall={sell_wall} | wall_delta={wall_delta} | midprice={midprice}",
             flush=True
         )
     except Exception as e:
@@ -129,32 +123,52 @@ def log_orderbook_and_density(symbol):
 
     try:
         dens = get_resting_order_density(symbol)
-        if isinstance(dens, dict):
-            density_result.update(dens)
+        # dens now guaranteed to be percentages (0..100) by wrapper above
         print(
             f"[RestingOrderDensityLog] {symbol} | "
-            f"bid_density={density_result.get('bid_density',0):.2f} | ask_density={density_result.get('ask_density',0):.2f} | "
-            f"bid_levels={density_result.get('bid_levels',0)} | ask_levels={density_result.get('ask_levels',0)} | midprice={density_result.get('midprice','N/A')}",
+            f"bid_density={dens.get('bid_density',0.0):.2f}% | ask_density={dens.get('ask_density',0.0):.2f}% | "
+            f"bid_top={dens.get('bid_top',0.0)} | ask_top={dens.get('ask_top',0.0)} | "
+            f"bid_total={dens.get('bid_total',0.0)} | ask_total={dens.get('ask_total',0.0)}",
             flush=True
         )
     except Exception as e:
         print(f"[RestingOrderDensityLog] {symbol} ERROR: {e}", flush=True)
 
-    return orderbook_result, density_result
+def super_gk_aligned(bias, orderbook_result, density_result, wall_threshold=50.0, density_threshold=5.0):
+    """
+    More conservative SuperGK alignment:
+    - wall_threshold: minimum absolute wall_delta to consider (in quoted units of size)
+    - density_threshold: minimum absolute % difference between bid_density and ask_density to consider
+    Returns True only if both orderbook and density (when available) align with bias sufficiently.
+    """
+    # Defensive defaults
+    buy_wall = float(orderbook_result.get('buy_wall', 0.0)) if orderbook_result else 0.0
+    sell_wall = float(orderbook_result.get('sell_wall', 0.0)) if orderbook_result else 0.0
+    wall_delta = float(orderbook_result.get('wall_delta', buy_wall - sell_wall)) if orderbook_result else 0.0
 
-def super_gk_aligned(bias, orderbook_result, density_result):
-    """
-    Original alignment logic preserved but defensive about missing keys and zeros.
-    """
-    wall_delta = (orderbook_result.get('wall_delta', 0) if orderbook_result else 0)
-    orderbook_bias = "LONG" if wall_delta > 0 else "SHORT" if wall_delta < 0 else "NEUTRAL"
-    bid_density = (density_result.get('bid_density', 0) if density_result else 0)
-    ask_density = (density_result.get('ask_density', 0) if density_result else 0)
-    density_bias = "LONG" if bid_density > ask_density else "SHORT" if ask_density > bid_density else "NEUTRAL"
-    if (orderbook_bias != "NEUTRAL" and bias != orderbook_bias): return False
-    if (density_bias != "NEUTRAL" and bias != density_bias): return False
-    if orderbook_bias == "NEUTRAL" or density_bias == "NEUTRAL": return False
-    return True
+    # Interpret orderbook bias
+    if abs(wall_delta) < wall_threshold:
+        orderbook_bias = "NEUTRAL"
+    else:
+        orderbook_bias = "LONG" if wall_delta > 0 else "SHORT"
+
+    bid_density = float(density_result.get('bid_density', 0.0)) if density_result else 0.0
+    ask_density = float(density_result.get('ask_density', 0.0)) if density_result else 0.0
+    density_diff = bid_density - ask_density
+
+    if abs(density_diff) < density_threshold:
+        density_bias = "NEUTRAL"
+    else:
+        density_bias = "LONG" if density_diff > 0 else "SHORT"
+
+    # Logging for debugging
+    print(f"[SuperGK] bias={bias} orderbook_bias={orderbook_bias} wall_delta={wall_delta:.2f} "
+          f"density_bias={density_bias} bid_density={bid_density:.2f}% ask_density={ask_density:.2f}%", flush=True)
+
+    # Require both non-neutral and consistent
+    if orderbook_bias == "NEUTRAL" or density_bias == "NEUTRAL":
+        return False
+    return (bias == orderbook_bias) and (bias == density_bias)
 
 def run_cycle():
     """
