@@ -26,10 +26,11 @@ def send_telegram_alert(
     early_breakout_5m=None,    # <-- NEW PARAM
     tp=None,               # <-- NEW ARG
     sl=None                # <-- NEW ARG
-) -> None:
-    print(f"📨 Telegram alert sent: {symbol} {signal_type} {Route} @ {price}")
-    confirmed_tag = " [Confirmed]" if tf == "3min" else ""
-
+) -> bool:
+    """
+    Send Telegram alert. Returns True on success, False on failure.
+    """
+    # Defensive normalization for list/tuple inputs
     if isinstance(score, (tuple, list)): score = score[0]
     if isinstance(passed, (tuple, list)): passed = passed[0]
     if isinstance(score_max, (tuple, list)): score_max = score_max[0]
@@ -130,7 +131,6 @@ def send_telegram_alert(
         eb_price = early_breakout_5m.get("price", "N/A")
         early_breakout_msg += f"\n⚡ <b>5min Early Breakout</b>: {eb_bias} @ {eb_price}"
 
-    print(f"[DEBUG] price={price}, tp={tp}, sl={sl}, signal_type={signal_type}")
     tp_sl_msg = ""
     tp_pct_str = ""
     sl_pct_str = ""
@@ -165,13 +165,10 @@ def send_telegram_alert(
         tp_pct_str = f" ({tp_pct:+.2f}%)" if tp_pct is not None else ""
         sl_pct_str = f" ({sl_pct:+.2f}%)" if sl_pct is not None else ""
     
-        print(f"[DEBUG] Calculated TP_pct={tp_pct_str}, SL_pct={sl_pct_str}")
-    
     else:
         tp_str = str(tp) if tp is not None else "-"
         sl_str = str(sl) if sl is not None else "-"
-        print(f"[DEBUG] TP/SL not valid numbers, using raw strings")
-    
+
     tp_sl_msg = (
         f"🏁 <b>TP:</b> <code>{tp_str}</code>{tp_pct_str}\n"
         f"⛔ <b>SL:</b> <code>{sl_str}</code>{sl_pct_str}\n"
@@ -184,7 +181,7 @@ def send_telegram_alert(
         consensus_str = "\n🔗 Consensus: <b>Unknown</b>"
         
     message = (
-        f"{numbered_signal}. {symbol} ({tf}){confirmed_tag}\n"
+        f"{numbered_signal}. {symbol} ({tf})\n"
         f"{regime_str}"
         f"{signal_icon} {signal_str} Signal\n"
         f"{route_icon} <b>{route_str}</b>\n"
@@ -198,8 +195,6 @@ def send_telegram_alert(
         f"{consensus_str}"
     )
     
-    print("Signal type:", signal_type, "Route:", Route, "reversal_side:", reversal_side)
-    
     payload = {
         "chat_id": CHAT_ID,
         "text": message,
@@ -209,17 +204,20 @@ def send_telegram_alert(
     try:
         resp = requests.post(SEND_URL, json=payload, timeout=10)
         resp.raise_for_status()
+        print(f"📨 Telegram alert sent: {symbol} {signal_type} {Route}", flush=True)
+        return True
     except requests.RequestException as e:
         resp_text = resp.text if resp is not None else ''
-        print(f"❗ Telegram send error: {e} — response: {resp_text}")
+        print(f"❗ Telegram send error: {e} — response: {resp_text}", flush=True)
+        return False
 
-def send_telegram_file(filepath, caption=None):
+def send_telegram_file(filepath, caption=None) -> bool:
     """
-    Send a local file to the Telegram group as a document.
+    Send a local file to the Telegram group as a document. Returns True on success.
     """
     if not os.path.exists(filepath):
-        print(f"[ERROR] File not found: {filepath}")
-        return
+        print(f"[ERROR] File not found: {filepath}", flush=True)
+        return False
     with open(filepath, 'rb') as f:
         files = {'document': f}
         data = {
@@ -230,7 +228,9 @@ def send_telegram_file(filepath, caption=None):
         try:
             resp = requests.post(SEND_FILE_URL, data=data, files=files, timeout=20)
             resp.raise_for_status()
-            print(f"📄 File sent to Telegram: {filepath}")
+            print(f"📄 File sent to Telegram: {filepath}", flush=True)
+            return True
         except requests.RequestException as e:
             resp_text = resp.text if resp is not None else ''
-            print(f"❗ Telegram file send error: {e} — response: {resp_text}")
+            print(f"❗ Telegram file send error: {e} — response: {resp_text}", flush=True)
+            return False
