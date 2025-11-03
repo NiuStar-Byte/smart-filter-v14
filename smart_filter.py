@@ -619,19 +619,16 @@ class SmartFilter:
 
     def analyze(self):
         """
-        Main analysis routine that evaluates filters, gatekeepers and SuperGK (orderbook + density),
-        decides LONG/SHORT/NEUTRAL and returns a summary dict.
-    
-        Revisions:
+        Main analysis routine (inlined SuperGK fetch & robust logging).
+        - Evaluates all filters with debug=True.
         - Calls get_signal_direction(..., debug=True) so GK status is logged.
-        - Robust orderbook/density fetch with two quick attempts and normalization to safe defaults.
-        - More defensive guards around missing data and divisions.
-        - Clear logging at key steps to help diagnose persistent LONG/SHORT bias.
+        - Performs two quick attempts to fetch orderbook and density inline (no new function def).
+        - Normalizes invalid results to safe defaults and calls self.superGK_check.
         """
         import datetime
         import time
     
-        # Start: defensive checks
+        # Defensive checks
         if getattr(self, "df", None) is None or self.df.empty:
             print(f"[{getattr(self, 'symbol', 'UNKNOWN')}] Error: DataFrame empty or not provided.")
             return None
@@ -693,6 +690,7 @@ class SmartFilter:
                 results_status[name] = "ERROR"
                 continue
             try:
+                # Always call with debug=True so all filters log every run
                 result = fn(debug=True)
                 if result == "LONG":
                     results_long[name] = True
@@ -721,7 +719,7 @@ class SmartFilter:
                 results_short[name] = False
                 results_status[name] = "ERROR"
     
-        # --- Non-GK filter list and scores (count-based) ---
+        # --- Non-GK filter list and simple count score ---
         non_gk_filters = [f for f in filter_names if f not in self.gatekeepers]
         long_score = sum(1 for f in non_gk_filters if results_long.get(f, False))
         short_score = sum(1 for f in non_gk_filters if results_short.get(f, False))
@@ -756,7 +754,7 @@ class SmartFilter:
         passes_long = len(passed_hard_gk_long) if passed_hard_gk_long is not None else 0
         passes_short = len(passed_hard_gk_short) if passed_hard_gk_short is not None else 0
     
-        # --- Non-GK weights (for confidence) ---
+        # --- Passed/failed Non-GK filters and their weights (for confidence) ---
         passed_non_gk_long = [f for f in non_gk_filters if results_long.get(f, False)]
         passed_non_gk_short = [f for f in non_gk_filters if results_short.get(f, False)]
     
@@ -765,7 +763,7 @@ class SmartFilter:
         passed_non_gk_weight_long = sum(self.filter_weights_long.get(f, 0) for f in passed_non_gk_long)
         passed_non_gk_weight_short = sum(self.filter_weights_short.get(f, 0) for f in passed_non_gk_short)
     
-        # --- Logging gatekeeper overview ---
+        # --- Print/logging ---
         print(f"[{self.symbol}] Passed GK LONG: {passed_gk_long}")
         print(f"[{self.symbol}] Failed GK LONG: {failed_gk_long}")
         print(f"[{self.symbol}] Passed GK SHORT: {passed_gk_short}")
@@ -776,7 +774,7 @@ class SmartFilter:
         if not failed_hard_gk_short and failed_soft_gk_short:
             print(f"[{self.symbol}] All hard GKs PASSED for SHORT, but SOFT GKs FAILED: {failed_soft_gk_short}")
     
-        # --- Required passed calculation (defensive) ---
+        # --- Signal logic: Only hard GKs required to pass ---
         if self.required_passed is not None:
             required_passed_long = self.required_passed
             required_passed_short = self.required_passed
@@ -801,7 +799,7 @@ class SmartFilter:
         if not signal_short_ok:
             print(f"[{self.symbol}] Signal BLOCKED for SHORT: Failed hard GKs: {failed_hard_gk_short}")
     
-        # --- Determine which 'results' dict to use for GK counting below ---
+        # --- Use selected direction's stats ---
         if direction == "LONG":
             score = long_score
             passes = passes_long
@@ -827,7 +825,7 @@ class SmartFilter:
             total_weight = max(total_non_gk_weight_long, total_non_gk_weight_short)
             results = results_long
     
-        # --- Recompute GK pass counts based on the chosen 'results' view ---
+        # Recompute GK-based passes using the chosen 'results' dictionary
         all_gks = self.gatekeepers
         hard_gks = [gk for gk in all_gks if gk not in self.soft_gatekeepers]
         soft_gks = [gk for gk in all_gks if gk in self.soft_gatekeepers]
@@ -891,7 +889,7 @@ class SmartFilter:
         print("[DEBUG] super_gk_ok:", super_gk_ok)
         print("DEBUG SUMS:", getattr(self, '_debug_sums', {}))
     
-        # Determine required_for_signal based on chosen direction
+        # Always use the correctly-calculated required_passed for the current direction
         if direction == "LONG":
             required_for_signal = required_passed_long
         elif direction == "SHORT":
@@ -917,7 +915,8 @@ class SmartFilter:
             price = None
         price_str = f"{price:.6f}" if price is not None else "N/A"
     
-        route, reversal_side = self.explicit_route_gate()
+        # Always determine the route, regardless of signal validity
+        route, reversal_side = self.explicit_route_gate()  # Ensure this function returns "REVERSAL", "TREND CONTINUATION", "NONE", or "?"
         display_route = route if route not in ["?", "NONE", None] else "NO ROUTE"
     
         signal_type = direction if valid_signal else None
@@ -934,7 +933,22 @@ class SmartFilter:
             print(f"[{self.symbol}] ✅ FINAL SIGNAL: {message}")
         else:
             print(f"[{self.symbol}] ❌ No signal.")
-        # keep debug file export for external debugging
+        print("DEBUG SUMS:", getattr(self, '_debug_sums', {}))
+    
+        # --- Verdict for debug file ---
+        verdict = {
+            "orderbook": (
+                direction == "SHORT" and orderbook_result.get("sell_wall", 0) > orderbook_result.get("buy_wall", 0)
+                or direction == "LONG" and orderbook_result.get("buy_wall", 0) > orderbook_result.get("sell_wall", 0)
+            ),
+            "density": (
+                direction == "SHORT" and density_result.get("ask_density", 0) > density_result.get("bid_density", 0)
+                or direction == "LONG" and density_result.get("bid_density", 0) > density_result.get("ask_density", 0)
+            ),
+            "final": valid_signal
+        }
+    
+        # Export debug file
         export_signal_debug_txt(
             symbol=self.symbol,
             tf=self.tf,
