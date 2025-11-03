@@ -1,5 +1,6 @@
 import requests
 import pandas as pd
+from typing import Tuple, Optional
 
 def fetch_orderbook(symbol: str, depth: int = 100) -> Tuple[Optional[pd.DataFrame], Optional[pd.DataFrame]]:
     """
