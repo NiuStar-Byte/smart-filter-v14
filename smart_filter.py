@@ -574,48 +574,22 @@ class SmartFilter:
             print(f"[{self.symbol}] get_signal_direction -> NEUTRAL (no decisive condition met)")
         return "NEUTRAL"
 
-    # PARTIAL New Super-GK ONLY Liquidity (Density) & OrderBookWall
     def superGK_check(self, signal_direction, orderbook_result, density_result):
         """
-        Super Gatekeeper check using order book walls and resting liquidity density.
-        Only Liquidity (Density) & OrderBookWall are considered for blocking/passing signals.
+        Super Gatekeeper has been DISABLED inside SmartFilter.
+    
+        Behavior:
+        - This function now always returns True (does not block any signal).
+        - Prints a clear diagnostic line so logs show that SuperGK was intentionally bypassed in SmartFilter.
+        - main.py remains the authoritative place for final decisions, but this ensures SmartFilter's internal
+          SuperGK logic will not block or influence signals.
         """
-
-        if orderbook_result is None or density_result is None:
-            print(f"Signal blocked due to missing order book or density for {self.symbol}")
-            return False
-
-        bid_wall = orderbook_result.get('buy_wall', 0)
-        ask_wall = orderbook_result.get('sell_wall', 0)
-
-        bid_density = density_result.get('bid_density', 0)
-        ask_density = density_result.get('ask_density', 0)
-
-        # Liquidity threshold check
-        if bid_density < self.liquidity_threshold or ask_density < self.liquidity_threshold:
-            print(f"Signal blocked due to low liquidity for {self.symbol}")
-            return False
-
-        # Directional checks
-        if signal_direction == "LONG":
-            if bid_wall > ask_wall and bid_density > ask_density:
-                print(f"Signal passed for LONG: bid_wall & bid_density stronger.")
-                return True
-            else:
-                print(f"Signal blocked for LONG: SuperGK criteria not met for {self.symbol}")
-                return False
-
-        elif signal_direction == "SHORT":
-            if ask_wall > bid_wall and ask_density > bid_density:
-                print(f"Signal passed for SHORT: ask_wall & ask_density stronger.")
-                return True
-            else:
-                print(f"Signal blocked for SHORT: SuperGK criteria not met for {self.symbol}")
-                return False
-
-        else:
-            print(f"Signal blocked: SuperGK not aligned for {self.symbol} (direction NEUTRAL or undefined)")
-            return False
+        try:
+            print(f"[{self.symbol}] [SuperGK] DISABLED in SmartFilter - allowing signal ({signal_direction})", flush=True)
+        except Exception:
+            # Best-effort logging; do not raise
+            pass
+        return True
 
     def analyze(self):
         """
