@@ -228,7 +228,14 @@ def super_gk_aligned(bias, orderbook_result, density_result,
 def run_cycle():
     """
     Single pass over all TOKENS. Returns list of valid_debug dicts collected during this cycle.
+    Robustified send logic:
+    - Forces SuperGK bypass (mainized elsewhere) by treating super_gk_ok=True.
+    - Coerces entry_price to float and falls back safely.
+    - Wraps send block in full try/except and prints tracebacks.
+    - Emits debug lines showing the precise entry_price and send_telegram_alert return value.
     """
+    import traceback
+
     print("[INFO] Starting Smart Filter cycle (single pass)...", flush=True)
     valid_debugs = []
     now = time.time()
@@ -278,8 +285,7 @@ def run_cycle():
                         print(f"[SuperGK][MAIN] Result -> bias={bias} super_gk_ok={super_gk_ok}", flush=True)
 
                         if not super_gk_ok:
-                            # This branch will never execute because we force super_gk_ok=True above,
-                            # kept for compatibility in case logic changes later.
+                            # kept for compatibility but should never execute
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
                             valid_debugs.append({
                                 "symbol": symbol,
@@ -299,14 +305,33 @@ def run_cycle():
                             })
                             continue
 
+                        # --- Sending block (robust) ---
                         print(f"[LOG] Sending 3min alert for {res3.get('symbol')}", flush=True)
                         fired_time_utc = datetime.utcnow()
-                        entry_price = get_live_entry_price(
-                            res3.get("symbol"),
-                            bias,
-                            tf=res3.get("tf"),
-                            slippage=DEFAULT_SLIPPAGE
-                        ) or res3.get("price", 0.0)
+
+                        # Try to fetch live entry price but fall back safely
+                        entry_price_raw = None
+                        try:
+                            entry_price_raw = get_live_entry_price(
+                                res3.get("symbol"),
+                                bias,
+                                tf=res3.get("tf"),
+                                slippage=DEFAULT_SLIPPAGE
+                            ) or res3.get("price", 0.0)
+                        except Exception as e:
+                            print(f"[WARN] get_live_entry_price raised: {e} -- falling back to analyzer price", flush=True)
+                            entry_price_raw = res3.get("price", 0.0)
+
+                        # Coerce to float defensively
+                        try:
+                            entry_price = float(entry_price_raw)
+                        except Exception:
+                            try:
+                                entry_price = float(str(entry_price_raw))
+                                print(f"[WARN] Coerced entry_price from {entry_price_raw} to {entry_price}", flush=True)
+                            except Exception:
+                                print(f"[WARN] Failed to coerce entry_price ({entry_price_raw}); defaulting to 0.0", flush=True)
+                                entry_price = 0.0
 
                         # collect signal metadata
                         score = res3.get("score", 0)
@@ -325,12 +350,17 @@ def run_cycle():
                             confidence = 0.0
                         entry_idx = df3.index.get_loc(df3.index[-1])
 
-                        # Calculate TP/SL
-                        tp_sl = calculate_tp_sl(df3, entry_price, signal_type)
-                        tp = tp_sl.get('tp')
-                        sl = tp_sl.get('sl')
-                        fib_levels = tp_sl.get('fib_levels')
+                        # Calculate TP/SL safely
+                        try:
+                            tp_sl = calculate_tp_sl(df3, entry_price, signal_type)
+                            tp = tp_sl.get('tp')
+                            sl = tp_sl.get('sl')
+                            fib_levels = tp_sl.get('fib_levels')
+                        except Exception as e:
+                            print(f"[WARN] calculate_tp_sl failed: {e}", flush=True)
+                            tp = sl = fib_levels = None
 
+                        # Append debug object
                         valid_debugs.append({
                             "symbol": symbol_val,
                             "tf": tf_val,
@@ -351,26 +381,32 @@ def run_cycle():
                             "fib_levels": fib_levels
                         })
 
-                        log_fired_signal(
-                            symbol=symbol_val,
-                            tf=tf_val,
-                            signal_type=signal_type,
-                            entry_idx=entry_idx,
-                            fired_time=fired_time_utc,
-                            score=score,
-                            max_score=score_max,
-                            passed=passes,
-                            max_passed=gatekeepers_total,
-                            weights=passed_weight,
-                            max_weights=total_weight,
-                            confidence_rate=confidence,
-                            entry_price=entry_price
-                        )
+                        # Log fired signal and attempt send wrapped in try/except to capture traceback
+                        try:
+                            log_fired_signal(
+                                symbol=symbol_val,
+                                tf=tf_val,
+                                signal_type=signal_type,
+                                entry_idx=entry_idx,
+                                fired_time=fired_time_utc,
+                                score=score,
+                                max_score=score_max,
+                                passed=passes,
+                                max_passed=gatekeepers_total,
+                                weights=passed_weight,
+                                max_weights=total_weight,
+                                confidence_rate=confidence,
+                                entry_price=entry_price
+                            )
+                        except Exception as e:
+                            print(f"[WARN] log_fired_signal raised: {e}", flush=True)
+                            traceback.print_exc()
 
                         regime = sf3._market_regime() if hasattr(sf3, "_market_regime") else None
 
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
+                                print(f"[DEBUG] send_telegram_alert about to send: symbol={symbol_val} price={entry_price} (type={type(entry_price)})", flush=True)
                                 sent_ok = send_telegram_alert(
                                     numbered_signal=numbered_signal,
                                     symbol=symbol_val,
@@ -391,18 +427,21 @@ def run_cycle():
                                     tp=tp,
                                     sl=sl
                                 )
+                                print(f"[DEBUG] send_telegram_alert returned: {sent_ok}", flush=True)
                                 if sent_ok:
                                     last_sent[key3] = now
                                 else:
                                     print(f"[ERROR] Telegram send failed for {symbol_val} (3min). Not setting cooldown.", flush=True)
                             except Exception as e:
-                                print(f"[ERROR] Exception while sending Telegram for {symbol_val} (3min): {e}", flush=True)
+                                print(f"[ERROR] Exception during Telegram send for {symbol_val} (3min): {e}", flush=True)
+                                traceback.print_exc()
                         else:
                             print(f"[INFO] DRY_RUN enabled - simulated send for {symbol_val} (3min). Not setting cooldown.", flush=True)
                 else:
                     print(f"[INFO] No valid 3min signal for {symbol}.", flush=True)
             except Exception as e:
                 print(f"[ERROR] Exception in processing 3min for {symbol}: {e}", flush=True)
+                traceback.print_exc()
 
             # --- 5min TF ---
             try:
@@ -437,8 +476,7 @@ def run_cycle():
                         print(f"[SuperGK][MAIN] Result -> bias={bias} super_gk_ok={super_gk_ok}", flush=True)
 
                         if not super_gk_ok:
-                            # This branch will never execute because we force super_gk_ok=True above,
-                            # kept for compatibility in case logic changes later.
+                            # kept for compatibility but should never execute
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
                             valid_debugs.append({
                                 "symbol": symbol,
@@ -458,14 +496,31 @@ def run_cycle():
                             })
                             continue
 
+                        # --- Sending block (robust) ---
                         print(f"[LOG] Sending 5min alert for {res5.get('symbol')}", flush=True)
                         fired_time_utc = datetime.utcnow()
-                        entry_price = get_live_entry_price(
-                            res5.get("symbol"),
-                            bias,
-                            tf=res5.get("tf"),
-                            slippage=DEFAULT_SLIPPAGE
-                        ) or res5.get("price", 0.0)
+
+                        entry_price_raw = None
+                        try:
+                            entry_price_raw = get_live_entry_price(
+                                res5.get("symbol"),
+                                bias,
+                                tf=res5.get("tf"),
+                                slippage=DEFAULT_SLIPPAGE
+                            ) or res5.get("price", 0.0)
+                        except Exception as e:
+                            print(f"[WARN] get_live_entry_price raised: {e} -- falling back to analyzer price", flush=True)
+                            entry_price_raw = res5.get("price", 0.0)
+
+                        try:
+                            entry_price = float(entry_price_raw)
+                        except Exception:
+                            try:
+                                entry_price = float(str(entry_price_raw))
+                                print(f"[WARN] Coerced entry_price from {entry_price_raw} to {entry_price}", flush=True)
+                            except Exception:
+                                print(f"[WARN] Failed to coerce entry_price ({entry_price_raw}); defaulting to 0.0", flush=True)
+                                entry_price = 0.0
 
                         score = res5.get("score", 0)
                         score_max = res5.get("score_max", 0)
@@ -483,10 +538,14 @@ def run_cycle():
                             confidence = 0.0
                         entry_idx = df5.index.get_loc(df5.index[-1])
 
-                        tp_sl = calculate_tp_sl(df5, entry_price, signal_type)
-                        tp = tp_sl.get('tp')
-                        sl = tp_sl.get('sl')
-                        fib_levels = tp_sl.get('fib_levels')
+                        try:
+                            tp_sl = calculate_tp_sl(df5, entry_price, signal_type)
+                            tp = tp_sl.get('tp')
+                            sl = tp_sl.get('sl')
+                            fib_levels = tp_sl.get('fib_levels')
+                        except Exception as e:
+                            print(f"[WARN] calculate_tp_sl failed: {e}", flush=True)
+                            tp = sl = fib_levels = None
 
                         valid_debugs.append({
                             "symbol": symbol_val,
@@ -508,26 +567,31 @@ def run_cycle():
                             "fib_levels": fib_levels
                         })
 
-                        log_fired_signal(
-                            symbol=symbol_val,
-                            tf=tf_val,
-                            signal_type=signal_type,
-                            entry_idx=entry_idx,
-                            fired_time=fired_time_utc,
-                            score=score,
-                            max_score=score_max,
-                            passed=passes,
-                            max_passed=gatekeepers_total,
-                            weights=passed_weight,
-                            max_weights=total_weight,
-                            confidence_rate=confidence,
-                            entry_price=entry_price
-                        )
+                        try:
+                            log_fired_signal(
+                                symbol=symbol_val,
+                                tf=tf_val,
+                                signal_type=signal_type,
+                                entry_idx=entry_idx,
+                                fired_time=fired_time_utc,
+                                score=score,
+                                max_score=score_max,
+                                passed=passes,
+                                max_passed=gatekeepers_total,
+                                weights=passed_weight,
+                                max_weights=total_weight,
+                                confidence_rate=confidence,
+                                entry_price=entry_price
+                            )
+                        except Exception as e:
+                            print(f"[WARN] log_fired_signal raised: {e}", flush=True)
+                            traceback.print_exc()
 
                         regime = sf5._market_regime() if hasattr(sf5, "_market_regime") else None
 
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
+                                print(f"[DEBUG] send_telegram_alert about to send: symbol={symbol_val} price={entry_price} (type={type(entry_price)})", flush=True)
                                 sent_ok = send_telegram_alert(
                                     numbered_signal=numbered_signal,
                                     symbol=symbol_val,
@@ -548,21 +612,25 @@ def run_cycle():
                                     tp=tp,
                                     sl=sl
                                 )
+                                print(f"[DEBUG] send_telegram_alert returned: {sent_ok}", flush=True)
                                 if sent_ok:
                                     last_sent[key5] = now
                                 else:
                                     print(f"[ERROR] Telegram send failed for {symbol_val} (5min). Not setting cooldown.", flush=True)
                             except Exception as e:
-                                print(f"[ERROR] Exception while sending Telegram for {symbol_val} (5min): {e}", flush=True)
+                                print(f"[ERROR] Exception during Telegram send for {symbol_val} (5min): {e}", flush=True)
+                                traceback.print_exc()
                         else:
                             print(f"[INFO] DRY_RUN enabled - simulated send for {symbol_val} (5min). Not setting cooldown.", flush=True)
                 else:
                     print(f"[INFO] No valid 5min signal for {symbol}.", flush=True)
             except Exception as e:
                 print(f"[ERROR] Exception in processing 5min for {symbol}: {e}", flush=True)
+                traceback.print_exc()
 
         except Exception as e:
             print(f"[FATAL] Exception processing {symbol}: {e}", flush=True)
+            traceback.print_exc()
 
     # End of per-symbol loop
     return valid_debugs
