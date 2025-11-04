@@ -4,10 +4,10 @@ import numpy as np
 
 # Environment-driven defaults (can be overridden by env vars)
 DEFAULT_LOOKBACK = int(os.getenv("TP_SL_LOOKBACK", "100"))         # bars to search for swing high/low
-DEFAULT_ATR_MULT = float(os.getenv("TP_SL_ATR_MULT", "1.8"))      # ATR multiplier for SL buffer
+DEFAULT_ATR_MULT = float(os.getenv("TP_SL_ATR_MULT", "1.4"))      # ATR multiplier for SL buffer (tightened default)
 DEFAULT_FALLBACK_TP_PCT = float(os.getenv("FALLBACK_TP_PCT", "0.03"))   # 3% TP fallback
 DEFAULT_FALLBACK_SL_PCT = float(os.getenv("FALLBACK_SL_PCT", "0.015"))  # 1.5% SL fallback
-DEFAULT_DESIRED_RR = float(os.getenv("TP_SL_DESIRED_RR", "1.0"))   # preferred RR (TP/SL)
+DEFAULT_DESIRED_RR = float(os.getenv("TP_SL_DESIRED_RR", "1.0"))   # preferred RR (TP/SL) (aggressive TP default)
 DEFAULT_MIN_RR = float(os.getenv("TP_SL_MIN_RR", "0.5"))          # minimum acceptable RR
 
 
@@ -29,11 +29,12 @@ def calculate_tp_sl(df, entry_price, direction, atr_multiplier=None, lookback=No
       - Uses lookback bars (default TP_SL_LOOKBACK) to find recent_high and recent_low.
       - Builds fib levels and prefers intermediate ratios in order:
           [0.382, 0.5, 0.618, 0.236, 0.786]
-      - SL buffer is entry +/- (atr_multiplier * ATR). Default ATR multiplier comes from TP_SL_ATR_MULT.
+      - SL buffer is entry +/- (atr_multiplier * ATR). Default ATR multiplier comes from TP_SL_ATR_MULT (default 1.4).
       - Chooses TP to satisfy desired R:R (TP distance / SL distance) when possible.
       - Falls back to percent-based TP/SL (FALLBACK_TP_PCT / FALLBACK_SL_PCT) if swings or candidates are invalid.
     Returns:
-      {'tp': float, 'sl': float, 'fib_levels': dict_or_None, 'chosen_ratio': float_or_None, 'source': str, 'achieved_rr': float_or_None}
+      {'tp': float, 'sl': float, 'fib_levels': dict_or_None, 'chosen_ratio': float_or_None,
+       'source': str, 'achieved_rr': float_or_None}
     """
     # Resolve env-driven defaults
     if lookback is None:
@@ -164,7 +165,7 @@ def calculate_tp_sl(df, entry_price, direction, atr_multiplier=None, lookback=No
     achieved_rr = None
 
     # Helper: select candidate by R:R preferences
-    def _select_tp_by_rr(entry_f, sl_val, candidates, desired_rr_local=desired_rr, min_rr_local=min_rr):
+    def _select_tp_by_rr(entry_f_local, sl_val, candidates, desired_rr_local=desired_rr, min_rr_local=min_rr):
         """
         candidates: list of tuples (ratio, level)
         Returns (chosen_ratio, chosen_tp, achieved_rr) or (None, None, 0.0)
@@ -179,11 +180,11 @@ def calculate_tp_sl(df, entry_price, direction, atr_multiplier=None, lookback=No
         if not candidates:
             return None, None, 0.0
         rr_list = []
-        sl_dist = abs(sl_val - entry_f)
+        sl_dist = abs(sl_val - entry_f_local)
         if sl_dist == 0:
             sl_dist = 1e-9
         for r, lvl in candidates:
-            tp_dist = abs(entry_f - lvl)
+            tp_dist = abs(entry_f_local - lvl)
             rr = tp_dist / sl_dist if sl_dist else 0.0
             rr_list.append((r, float(lvl), rr, tp_dist))
         # 1) candidate with rr >= desired_rr (choose smallest tp_dist among them)
@@ -268,25 +269,35 @@ def calculate_tp_sl(df, entry_price, direction, atr_multiplier=None, lookback=No
         fib_levels = fib_levels if fib_levels is not None else None
         achieved_rr = None
 
-    # compute achieved_rr if not set
-    if achieved_rr is None:
-        try:
-            sl_dist = abs(sl_f - entry_f) if sl_f is not None else 0.0
-            if sl_dist == 0:
-                achieved_rr = None
-            else:
-                achieved_rr = abs(entry_f - tp_f) / sl_dist
-        except Exception:
+    # Recompute achieved_rr exactly and consistently for logs
+    try:
+        tp_val = float(tp_f)
+        sl_val = float(sl_f)
+        entry_val = float(entry_f)
+        if str(direction).strip().upper() == "SHORT":
+            tp_dist = entry_val - tp_val
+            sl_dist = sl_val - entry_val
+        elif str(direction).strip().upper() == "LONG":
+            tp_dist = tp_val - entry_val
+            sl_dist = entry_val - sl_val
+        else:
+            tp_dist = abs(entry_val - tp_val)
+            sl_dist = abs(sl_val - entry_val)
+        if sl_dist and sl_dist > 0:
+            achieved_rr = float(tp_dist / sl_dist)
+        else:
             achieved_rr = None
+    except Exception:
+        achieved_rr = None
 
     # Round for readability
-    tp_rounded = round(float(tp_f), 8)
-    sl_rounded = round(float(sl_f), 8)
+    tp_rounded = round(float(tp_val), 8)
+    sl_rounded = round(float(sl_val), 8)
 
     # Debug line
     try:
         print(
-            f"[tp_sl_retracement] direction={direction} entry={entry_f:.8f} recent_high={recent_high:.8f} recent_low={recent_low:.8f} "
+            f"[tp_sl_retracement] direction={direction} entry={entry_val:.8f} recent_high={recent_high:.8f} recent_low={recent_low:.8f} "
             f"atr={atr:.8f} lookback={lb} chosen_ratio={chosen_ratio} source={source} tp={tp_rounded:.8f} sl={sl_rounded:.8f} achieved_rr={achieved_rr}",
             flush=True
         )
