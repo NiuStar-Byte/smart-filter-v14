@@ -46,12 +46,9 @@ CYCLE_SLEEP = int(os.getenv("CYCLE_SLEEP", "60"))
 
 # --- SuperGK helper: authoritative check used by main at send-time ---
 def main_supergk_ok(bias, orderbook_result, density_result, analyzer_result):
-    """Authoritative SuperGK decision performed in main (respects bypass env vars).
-
-    analyzer_result: the dict returned by SmartFilter.analyze() (res3 or res5)
-    Returns: True to allow send, False to block
-    """
-    # Read bypass flags from env
+    """Authoritative SuperGK decision performed in main (respects bypass env vars unless forced by main)."""
+    # This function remains available for LONG checks; SHORT bypassing is enforced in main.
+    # Read bypass flags from env (kept for compatibility if needed elsewhere)
     BYPASS_GLOBAL = os.getenv("SUPERGK_BYPASS", "false").lower() in ("1", "true", "yes", "on")
     BYPASS_SHORT = os.getenv("SUPERGK_BYPASS_SHORT", "false").lower() in ("1", "true", "yes", "on")
     BYPASS_MIN_SCORE_ENABLED = os.getenv("SUPERGK_BYPASS_MIN_SCORE_ENABLE", "false").lower() in ("1", "true", "yes", "on")
@@ -67,21 +64,15 @@ def main_supergk_ok(bias, orderbook_result, density_result, analyzer_result):
     else:
         signal_score = float(analyzer_result.get("score", 0.0)) if isinstance(analyzer_result, dict) else 0.0
 
-    # Bypass logic
+    # Bypass logic (used if main calls this; main enforces unconditional SHORT bypass separately)
     if BYPASS_GLOBAL:
         if BYPASS_MIN_SCORE_ENABLED:
-            allowed = signal_score >= BYPASS_MIN_SCORE
-            print(f"[SuperGK][MAIN] GLOBAL BYPASS active. MIN_SCORE gating -> signal_score={signal_score}, min={BYPASS_MIN_SCORE}, allow={allowed}", flush=True)
-            return allowed
-        print("[SuperGK][MAIN] GLOBAL BYPASS active -> allowing send", flush=True)
+            return signal_score >= BYPASS_MIN_SCORE
         return True
 
     if bias == "SHORT" and BYPASS_SHORT:
         if BYPASS_MIN_SCORE_ENABLED:
-            allowed = signal_score >= BYPASS_MIN_SCORE
-            print(f"[SuperGK][MAIN] SHORT BYPASS active. MIN_SCORE gating -> signal_score={signal_score}, min={BYPASS_MIN_SCORE}, allow={allowed}", flush=True)
-            return allowed
-        print("[SuperGK][MAIN] SHORT BYPASS active -> allowing SHORT send", flush=True)
+            return signal_score >= BYPASS_MIN_SCORE
         return True
 
     # Otherwise call canonical super_gk_aligned (defined below in this file)
@@ -367,8 +358,13 @@ def run_cycle():
                         bias = res3.get("bias", "NEUTRAL")
                         sf3.bias = bias
 
-                        # Authoritative SuperGK check (main-level)
-                        super_gk_ok = main_supergk_ok(bias, orderbook_result, density_result, res3)
+                        # AUTHORITATIVE: Force unconditional SHORT bypass here
+                        if bias == "SHORT":
+                            print("[SuperGK][MAIN] SHORT UNCONDITIONAL BYPASS active — forcing SuperGK PASSED for SHORT signals", flush=True)
+                            super_gk_ok = True
+                        else:
+                            super_gk_ok = main_supergk_ok(bias, orderbook_result, density_result, res3)
+
                         print(f"[SuperGK][MAIN] Result -> bias={bias} super_gk_ok={super_gk_ok}", flush=True)
 
                         if not super_gk_ok:
@@ -522,7 +518,13 @@ def run_cycle():
                         bias = res5.get("bias", "NEUTRAL")
                         sf5.bias = bias
 
-                        super_gk_ok = main_supergk_ok(bias, orderbook_result, density_result, res5)
+                        # AUTHORITATIVE: Force unconditional SHORT bypass here
+                        if bias == "SHORT":
+                            print("[SuperGK][MAIN] SHORT UNCONDITIONAL BYPASS active — forcing SuperGK PASSED for SHORT signals", flush=True)
+                            super_gk_ok = True
+                        else:
+                            super_gk_ok = main_supergk_ok(bias, orderbook_result, density_result, res5)
+
                         print(f"[SuperGK][MAIN] Result -> bias={bias} super_gk_ok={super_gk_ok}", flush=True)
 
                         if not super_gk_ok:
