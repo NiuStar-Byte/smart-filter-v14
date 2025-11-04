@@ -175,18 +175,29 @@ def export_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weight
     orderbook_bias = wall_sign if wall_pct >= default_wpct else "NEUTRAL"
     density_bias = density_sign if density_pct >= default_dpct else "NEUTRAL"
 
-    # Build human-readable verdict lines including normalized percentages
-    orderbook_verdict = (
-        f"OrderBook Wall:     "
-        f"{'Conflict' if (orderbook_bias != bias and orderbook_bias != 'NEUTRAL') else 'Aligned' if (orderbook_bias == bias) else 'Neutral'}  "
-        f"(wall_delta={wall_delta:.4f}, wall_pct={wall_pct:.3f}%, favors {orderbook_bias})"
-    )
+    # If SHORT signals should always be bypassed in runtime, reflect that in diagnostics:
+    if bias == "SHORT":
+        orderbook_verdict = (
+            f"OrderBook Wall:     (bypassed)  "
+            f"(wall_delta={wall_delta:.4f}, wall_pct={wall_pct:.3f}%, favors {orderbook_bias})"
+        )
 
-    density_verdict = (
-        f"Resting Density:    "
-        f"{'Conflict' if (density_bias != bias and density_bias != 'NEUTRAL') else 'Aligned' if (density_bias == bias) else 'Neutral'}  "
-        f"(bid_density={bid_density:.2f}, ask_density={ask_density:.2f}, density_pct={density_pct:.3f}%, favors {density_bias})"
-    )
+        density_verdict = (
+            f"Resting Density:    (bypassed)  "
+            f"(bid_density={bid_density:.2f}, ask_density={ask_density:.2f}, density_pct={density_pct:.3f}%, favors {density_bias})"
+        )
+    else:
+        orderbook_verdict = (
+            f"OrderBook Wall:     "
+            f"{'Conflict' if (orderbook_bias != bias and orderbook_bias != 'NEUTRAL') else 'Aligned' if (orderbook_bias == bias) else 'Neutral'}  "
+            f"(wall_delta={wall_delta:.4f}, wall_pct={wall_pct:.3f}%, favors {orderbook_bias})"
+        )
+
+        density_verdict = (
+            f"Resting Density:    "
+            f"{'Conflict' if (density_bias != bias and density_bias != 'NEUTRAL') else 'Aligned' if (density_bias == bias) else 'Neutral'}  "
+            f"(bid_density={bid_density:.2f}, ask_density={ask_density:.2f}, density_pct={density_pct:.3f}%, favors {density_bias})"
+        )
 
     # Composite calculation (same math as main.super_gk_aligned)
     def _sign_to_factor(sign, desired):
@@ -203,20 +214,25 @@ def export_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weight
     density_factor = _sign_to_factor(density_bias, bias)
     composite = wall_weight * wall_factor * wall_score + density_weight * density_factor * density_score
 
-    # Decide final verdict using composite and same precedence rules as main
-    if orderbook_bias == bias and density_bias == bias:
-        final_verdict = "ALIGNED ✅"
-    elif orderbook_bias == "NEUTRAL" and density_bias == "NEUTRAL":
-        final_verdict = "CONTRADICTORY ❌"
-    elif composite >= composite_threshold:
-        final_verdict = "ALIGNED ✅"
-    else:
-        final_verdict = "CONTRADICTORY ❌"
-
-    # Append composite diagnostics for transparency
+    # Append composite diagnostics for transparency (components)
     wall_component = wall_weight * wall_factor * wall_score
     density_component = density_weight * density_factor * density_score
-    composite_info = f"(composite={composite:.6f}, wall_component={wall_component:.6f}, density_component={density_component:.6f}, comp_th={composite_threshold})"
+
+    # Decide final verdict — unconditional bypass for SHORT is reflected here
+    if bias == "SHORT":
+        final_verdict = "BYPASSED (SHORT) ✅"
+        composite_info = f"(bypassed in main.py — SuperGK not enforced for SHORT) (composite={composite:.6f}, wall_component={wall_component:.6f}, density_component={density_component:.6f}, comp_th={composite_threshold})"
+    else:
+        if orderbook_bias == bias and density_bias == bias:
+            final_verdict = "ALIGNED ✅"
+        elif orderbook_bias == "NEUTRAL" and density_bias == "NEUTRAL":
+            final_verdict = "CONTRADICTORY ❌"
+        elif composite >= composite_threshold:
+            final_verdict = "ALIGNED ✅"
+        else:
+            final_verdict = "CONTRADICTORY ❌"
+
+        composite_info = f"(composite={composite:.6f}, wall_component={wall_component:.6f}, density_component={density_component:.6f}, comp_th={composite_threshold})"
 
     verdict_lines.append(orderbook_verdict)
     verdict_lines.append(density_verdict)
