@@ -138,21 +138,20 @@ def super_gk_aligned(bias, orderbook_result, density_result,
                      wall_pct_threshold=None, density_threshold=None,
                      wall_weight=None, density_weight=None, composite_threshold=None):
     """
-    Composite-first SuperGK with per-direction tuning and density-dominance override.
+    Composite-first SuperGK with optional SHORT-only bypass.
+
+    Enable SHORT bypass by setting env var:
+      SUPERGK_BYPASS_SHORT=true
 
     Behavior:
-    - Normalize wall_pct and density_pct to percent units.
-    - Use per-direction defaults that favor density for SHORTs.
-    - Optional env overrides:
-      - SUPERGK_WALL_PCT_THRESHOLD (default 1.0)
-      - SUPERGK_DENSITY_THRESHOLD (default 0.5)
-      - SUPERGK_WALL_WEIGHT / SUPERGK_DENSITY_WEIGHT (global defaults)
-      - SUPERGK_SHORT_WALL_WEIGHT / SUPERGK_SHORT_DENSITY_WEIGHT (SHORT-specific)
-      - SUPERGK_LONG_WALL_WEIGHT / SUPERGK_LONG_DENSITY_WEIGHT (LONG-specific)
-      - SUPERGK_COMPOSITE_THRESHOLD (global default)
-      - SUPERGK_SHORT_COMPOSITE_THRESHOLD / SUPERGK_LONG_COMPOSITE_THRESHOLD (per-direction)
-      - SUPERGK_DENSITY_DOMINANCE_FACTOR (K, default 1.6) -> if density_pct >= K*wall_pct and density supports bias, accept immediately
+    - If SUPERGK_BYPASS_SHORT is enabled and bias == "SHORT", return True immediately (bypass).
+    - Otherwise run the standard composite-first logic (per-direction weights, density-dominance override, etc.)
     """
+    # SHORT-only bypass for testing: set SUPERGK_BYPASS_SHORT=true to let SHORTs pass regardless of liquidity
+    if bias == "SHORT" and os.getenv("SUPERGK_BYPASS_SHORT", "false").lower() in ("1", "true", "yes", "on"):
+        print("[SuperGK] SHORT-BYPASS enabled via SUPERGK_BYPASS_SHORT env var — treating SHORT as PASSED", flush=True)
+        return True
+
     # Safe env reads for numeric values
     def _env_float(name, default):
         v = os.getenv(name)
@@ -250,7 +249,6 @@ def super_gk_aligned(bias, orderbook_result, density_result,
             print(f"[SuperGK] Passed by density dominance (density_pct {density_pct:.3f}% >= {density_dom_factor} * wall_pct {wall_pct:.3f}%).", flush=True)
             return True
     except Exception:
-        # be defensive; if anything fails continue to composite calc
         pass
 
     # Compute composite to resolve conflicts or opposing signs
