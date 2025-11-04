@@ -134,25 +134,45 @@ def log_orderbook_and_density(symbol):
     except Exception as e:
         print(f"[RestingOrderDensityLog] {symbol} ERROR: {e}", flush=True)
 
+import os
 def super_gk_aligned(bias, orderbook_result, density_result,
                      wall_pct_threshold=None, density_threshold=None,
                      wall_weight=None, density_weight=None, composite_threshold=None):
     """
-    Composite-first SuperGK with optional SHORT-only bypass.
-
-    Enable SHORT bypass by setting env var:
-      SUPERGK_BYPASS_SHORT=true
+    Composite-first SuperGK with optional bypasses.
 
     Behavior:
-    - If SUPERGK_BYPASS_SHORT is enabled and bias == "SHORT", return True immediately (bypass).
-    - Otherwise run the standard composite-first logic (per-direction weights, density-dominance override, etc.)
+    - If SUPERGK_BYPASS is enabled -> always pass (global bypass).
+    - If SUPERGK_BYPASS_SHORT is enabled and bias == "SHORT" -> pass (SHORT-only bypass).
+    - Otherwise compute normalized wall_pct and density_pct, apply per-direction weights/thresholds,
+      allow when both metrics agree, when one supports and the other is neutral, when density dominates,
+      or when weighted composite >= composite_threshold.
+
+    Environment variables supported (all optional):
+      - SUPERGK_BYPASS (true/1/on)               : global bypass (all signals)
+      - SUPERGK_BYPASS_SHORT (true/1/on)         : SHORT-only bypass
+      - SUPERGK_WALL_PCT_THRESHOLD               : wall pct threshold (default 1.0)
+      - SUPERGK_DENSITY_THRESHOLD                : density threshold (default 0.5)
+      - SUPERGK_WALL_WEIGHT                      : global wall weight (fallback)
+      - SUPERGK_DENSITY_WEIGHT                   : global density weight (fallback)
+      - SUPERGK_COMPOSITE_THRESHOLD              : global composite threshold (fallback)
+      - SUPERGK_SHORT_WALL_WEIGHT                : SHORT-specific wall weight (optional)
+      - SUPERGK_SHORT_DENSITY_WEIGHT             : SHORT-specific density weight (optional)
+      - SUPERGK_SHORT_COMPOSITE_THRESHOLD        : SHORT-specific composite threshold (optional)
+      - SUPERGK_LONG_WALL_WEIGHT                 : LONG-specific wall weight (optional)
+      - SUPERGK_LONG_DENSITY_WEIGHT              : LONG-specific density weight (optional)
+      - SUPERGK_LONG_COMPOSITE_THRESHOLD         : LONG-specific composite threshold (optional)
+      - SUPERGK_DENSITY_DOMINANCE_FACTOR        : K factor for density-dominance override (default 1.6)
     """
-    # SHORT-only bypass for testing: set SUPERGK_BYPASS_SHORT=true to let SHORTs pass regardless of liquidity
+    # Quick global and SHORT-only bypass
+    if os.getenv("SUPERGK_BYPASS", "false").lower() in ("1", "true", "yes", "on"):
+        print("[SuperGK] GLOBAL BYPASS enabled via SUPERGK_BYPASS env var — treating as PASSED", flush=True)
+        return True
     if bias == "SHORT" and os.getenv("SUPERGK_BYPASS_SHORT", "false").lower() in ("1", "true", "yes", "on"):
         print("[SuperGK] SHORT-BYPASS enabled via SUPERGK_BYPASS_SHORT env var — treating SHORT as PASSED", flush=True)
         return True
 
-    # Safe env reads for numeric values
+    # Helper to read floats from env with defaults
     def _env_float(name, default):
         v = os.getenv(name)
         try:
@@ -164,12 +184,12 @@ def super_gk_aligned(bias, orderbook_result, density_result,
     default_wpct = _env_float("SUPERGK_WALL_PCT_THRESHOLD", 1.0)
     default_dpct = _env_float("SUPERGK_DENSITY_THRESHOLD", 0.5)
 
-    # Global weights and threshold (fallback)
+    # Global weights and composite threshold (fallback)
     global_wall_w = _env_float("SUPERGK_WALL_WEIGHT", 0.25)
     global_density_w = _env_float("SUPERGK_DENSITY_WEIGHT", 0.75)
     global_comp_th = _env_float("SUPERGK_COMPOSITE_THRESHOLD", 0.01)
 
-    # Per-direction overrides (if present)
+    # Per-direction overrides (if provided)
     short_wall_w = _env_float("SUPERGK_SHORT_WALL_WEIGHT", os.getenv("SUPERGK_SHORT_WALL_WEIGHT") or global_wall_w)
     short_density_w = _env_float("SUPERGK_SHORT_DENSITY_WEIGHT", os.getenv("SUPERGK_SHORT_DENSITY_WEIGHT") or global_density_w)
     short_comp_th = _env_float("SUPERGK_SHORT_COMPOSITE_THRESHOLD", os.getenv("SUPERGK_SHORT_COMPOSITE_THRESHOLD") or global_comp_th)
@@ -178,7 +198,7 @@ def super_gk_aligned(bias, orderbook_result, density_result,
     long_density_w = _env_float("SUPERGK_LONG_DENSITY_WEIGHT", os.getenv("SUPERGK_LONG_DENSITY_WEIGHT") or global_density_w)
     long_comp_th = _env_float("SUPERGK_LONG_COMPOSITE_THRESHOLD", os.getenv("SUPERGK_LONG_COMPOSITE_THRESHOLD") or global_comp_th)
 
-    # Density-domination factor
+    # Density-dominance factor
     density_dom_factor = _env_float("SUPERGK_DENSITY_DOMINANCE_FACTOR", 1.6)
 
     # Apply function-args or chosen defaults
@@ -191,7 +211,6 @@ def super_gk_aligned(bias, orderbook_result, density_result,
         density_weight = short_density_w if density_weight is None else density_weight
         composite_threshold = short_comp_th if composite_threshold is None else composite_threshold
     else:
-        # LONG or other -> use LONG defaults
         wall_weight = long_wall_w if wall_weight is None else wall_weight
         density_weight = long_density_w if density_weight is None else density_weight
         composite_threshold = long_comp_th if composite_threshold is None else composite_threshold
@@ -209,7 +228,7 @@ def super_gk_aligned(bias, orderbook_result, density_result,
     wall_pct = (abs(wall_delta) / total_wall) * 100.0
     wall_sign = "LONG" if wall_delta > 0 else "SHORT" if wall_delta < 0 else "NEUTRAL"
 
-    # density diff and sign
+    # density diff and sign (density_pct kept in same units used elsewhere)
     density_diff = bid_density - ask_density
     density_pct = abs(density_diff)
     density_sign = "LONG" if density_diff > 0 else "SHORT" if density_diff < 0 else "NEUTRAL"
@@ -221,7 +240,7 @@ def super_gk_aligned(bias, orderbook_result, density_result,
     # Diagnostics
     print(f"[SuperGK] bias={bias} | wall_delta={wall_delta:.6f} buy_wall={buy_wall:.6f} sell_wall={sell_wall:.6f} "
           f"wall_pct={wall_pct:.3f}% (th={wall_pct_threshold}) wall_bias={orderbook_bias} | "
-          f"bid_density={bid_density:.3f}% ask_density={ask_density:.3f}% density_pct={density_pct:.3f}% (th={density_threshold}) "
+          f"bid_density={bid_density:.3f} ask_density={ask_density:.3f} density_pct={density_pct:.3f} (th={density_threshold}) "
           f"density_bias={density_bias} | weights (wall={wall_weight}, density={density_weight}) comp_th={composite_threshold} dom_factor={density_dom_factor}",
           flush=True)
 
@@ -246,7 +265,7 @@ def super_gk_aligned(bias, orderbook_result, density_result,
     # Density-dominance override: accept when density strongly outweighs wall in favor of bias
     try:
         if density_sign == bias and (wall_pct == 0 or density_pct >= density_dom_factor * wall_pct):
-            print(f"[SuperGK] Passed by density dominance (density_pct {density_pct:.3f}% >= {density_dom_factor} * wall_pct {wall_pct:.3f}%).", flush=True)
+            print(f"[SuperGK] Passed by density dominance (density_pct {density_pct:.3f} >= {density_dom_factor} * wall_pct {wall_pct:.3f}).", flush=True)
             return True
     except Exception:
         pass
