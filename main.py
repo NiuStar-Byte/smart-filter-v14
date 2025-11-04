@@ -134,7 +134,6 @@ def log_orderbook_and_density(symbol):
     except Exception as e:
         print(f"[RestingOrderDensityLog] {symbol} ERROR: {e}", flush=True)
 
-import os
 def super_gk_aligned(bias, orderbook_result, density_result,
                      wall_pct_threshold=None, density_threshold=None,
                      wall_weight=None, density_weight=None, composite_threshold=None):
