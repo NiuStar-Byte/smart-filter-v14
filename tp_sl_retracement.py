@@ -1,18 +1,19 @@
 import os
 import pandas as pd
 import numpy as np
+from typing import Any, Dict, Optional
 
-# Environment-driven defaults (can be overridden by env vars)
-DEFAULT_LOOKBACK = int(os.getenv("TP_SL_LOOKBACK", "100"))         # bars to search for swing high/low
-DEFAULT_ATR_MULT = float(os.getenv("TP_SL_ATR_MULT", "1.4"))      # ATR multiplier for SL buffer (tightened default)
-DEFAULT_FALLBACK_TP_PCT = float(os.getenv("FALLBACK_TP_PCT", "0.03"))   # 3% TP fallback
-DEFAULT_FALLBACK_SL_PCT = float(os.getenv("FALLBACK_SL_PCT", "0.015"))  # 1.5% SL fallback
-DEFAULT_DESIRED_RR = float(os.getenv("TP_SL_DESIRED_RR", "1.0"))   # preferred RR (TP/SL) (aggressive TP default)
-DEFAULT_MIN_RR = float(os.getenv("TP_SL_MIN_RR", "0.5"))          # minimum acceptable RR
+# Aggressive defaults (override with env vars)
+DEFAULT_LOOKBACK = int(os.getenv("TP_SL_LOOKBACK", "100"))      # bars to search for swing high/low
+DEFAULT_ATR_MULT = float(os.getenv("TP_SL_ATR_MULT", "1.0"))   # tightened SL buffer (default tightened)
+DEFAULT_FALLBACK_TP_PCT = float(os.getenv("FALLBACK_TP_PCT", "0.05"))  # 5% TP fallback (more aggressive TP)
+DEFAULT_FALLBACK_SL_PCT = float(os.getenv("FALLBACK_SL_PCT", "0.02"))  # 2% SL fallback (tighter SL)
+DEFAULT_MAX_SL_PCT = float(os.getenv("TP_SL_MAX_SL_PCT", "0.03"))      # absolute cap on SL distance (3% of entry)
 
-
-def _safe_float(v, default=None):
+def _safe_float(v: Any, default: Optional[float] = None) -> Optional[float]:
     try:
+        if v is None:
+            return default
         return float(v)
     except Exception:
         try:
@@ -20,23 +21,17 @@ def _safe_float(v, default=None):
         except Exception:
             return default
 
-
-def calculate_tp_sl(df, entry_price, direction, atr_multiplier=None, lookback=None):
+def calculate_tp_sl(df: pd.DataFrame, entry_price: float, direction: str,
+                    atr_multiplier: Optional[float] = None, lookback: Optional[int] = None) -> Dict[str, Any]:
     """
-    Robust TP/SL (fib-based) calculation for LONG and SHORT with R:R-aware TP selection.
-
-    Behavior:
-      - Uses lookback bars (default TP_SL_LOOKBACK) to find recent_high and recent_low.
-      - Builds fib levels and prefers intermediate ratios in order:
-          [0.382, 0.5, 0.618, 0.236, 0.786]
-      - SL buffer is entry +/- (atr_multiplier * ATR). Default ATR multiplier comes from TP_SL_ATR_MULT (default 1.4).
-      - Chooses TP to satisfy desired R:R (TP distance / SL distance) when possible.
-      - Falls back to percent-based TP/SL (FALLBACK_TP_PCT / FALLBACK_SL_PCT) if swings or candidates are invalid.
-    Returns:
-      {'tp': float, 'sl': float, 'fib_levels': dict_or_None, 'chosen_ratio': float_or_None,
-       'source': str, 'achieved_rr': float_or_None}
+    Aggressive TP / Tight SL calculation:
+      - Prefers 'deeper' fib targets (furthest fib on profitable side) to increase TP distance.
+      - Uses a tighter ATR multiplier by default (TP_SL_ATR_MULT, default 1.0).
+      - Caps SL distance to TP_SL_MAX_SL_PCT of entry to avoid very large SLs.
+      - Fallback TP/SL use larger TP pct and tighter SL pct by default.
+    Returns dict: {'tp', 'sl', 'fib_levels', 'chosen_ratio', 'source', 'achieved_rr', 'sl_capped'}
     """
-    # Resolve env-driven defaults
+    # Resolve env defaults
     if lookback is None:
         try:
             lookback = int(os.getenv("TP_SL_LOOKBACK", str(DEFAULT_LOOKBACK)))
@@ -49,15 +44,6 @@ def calculate_tp_sl(df, entry_price, direction, atr_multiplier=None, lookback=No
             atr_multiplier = DEFAULT_ATR_MULT
 
     try:
-        desired_rr = float(os.getenv("TP_SL_DESIRED_RR", str(DEFAULT_DESIRED_RR)))
-    except Exception:
-        desired_rr = DEFAULT_DESIRED_RR
-    try:
-        min_rr = float(os.getenv("TP_SL_MIN_RR", str(DEFAULT_MIN_RR)))
-    except Exception:
-        min_rr = DEFAULT_MIN_RR
-
-    try:
         fallback_tp_pct = float(os.getenv("FALLBACK_TP_PCT", str(DEFAULT_FALLBACK_TP_PCT)))
     except Exception:
         fallback_tp_pct = DEFAULT_FALLBACK_TP_PCT
@@ -65,25 +51,28 @@ def calculate_tp_sl(df, entry_price, direction, atr_multiplier=None, lookback=No
         fallback_sl_pct = float(os.getenv("FALLBACK_SL_PCT", str(DEFAULT_FALLBACK_SL_PCT)))
     except Exception:
         fallback_sl_pct = DEFAULT_FALLBACK_SL_PCT
+    try:
+        max_sl_pct = float(os.getenv("TP_SL_MAX_SL_PCT", str(DEFAULT_MAX_SL_PCT)))
+    except Exception:
+        max_sl_pct = DEFAULT_MAX_SL_PCT
 
-    # Validate entry
+    # Normalize entry
     entry_f = _safe_float(entry_price, None)
     if entry_f is None:
         raise ValueError("entry_price must be numeric")
 
-    # Coerce df into DataFrame if needed
-    if df is None:
-        raise ValueError("df is None")
+    # Coerce df
+    if df is None or len(df) == 0:
+        raise ValueError("df must be a non-empty DataFrame")
     if not isinstance(df, pd.DataFrame):
         try:
             df = pd.DataFrame(df)
         except Exception:
             raise ValueError("Unable to coerce df to DataFrame")
 
-    # Ensure or map columns
+    # Map columns if necessary
     cols = set(df.columns)
     if not {'high', 'low', 'close'}.issubset(cols):
-        # Try to map positional columns if present (open, high, low, close)
         if df.shape[1] >= 4:
             df = df.copy()
             col_names = list(df.columns[:4])
@@ -91,12 +80,11 @@ def calculate_tp_sl(df, entry_price, direction, atr_multiplier=None, lookback=No
         else:
             raise ValueError("DataFrame must contain 'high','low','close' columns or provide OHLC positions")
 
-    # Convert series to numeric floats (coerce non-numeric to NaN)
     high = pd.to_numeric(df['high'], errors='coerce').astype(float)
     low = pd.to_numeric(df['low'], errors='coerce').astype(float)
     close = pd.to_numeric(df['close'], errors='coerce').astype(float)
 
-    # Compute True Range as pandas Series (avoid ndarray .iloc issues)
+    # Compute True Range as pandas Series
     try:
         tr_values = np.maximum.reduce([
             (high - low).values,
@@ -112,7 +100,6 @@ def calculate_tp_sl(df, entry_price, direction, atr_multiplier=None, lookback=No
         ], axis=1).max(axis=1)
         tr = tr.fillna((high - low)).astype(float)
 
-    # Ensure first TR is present
     if len(tr) > 0:
         try:
             if pd.isna(tr.iloc[0]) or tr.iloc[0] == 0:
@@ -123,13 +110,10 @@ def calculate_tp_sl(df, entry_price, direction, atr_multiplier=None, lookback=No
             except Exception:
                 pass
 
-    # ATR (rolling mean)
     atr = tr.rolling(14, min_periods=1).mean().iat[-1] if len(tr) > 0 else 0.0
-    if pd.isna(atr):
-        atr = float(tr.mean()) if len(tr) else 0.0
     atr = float(0.0 if np.isnan(atr) else atr)
 
-    # Determine lookback bounded by available history
+    # Determine lookback window
     lb = int(min(max(3, lookback), len(df)))
     use_df = df.iloc[-lb:].copy()
 
@@ -137,22 +121,20 @@ def calculate_tp_sl(df, entry_price, direction, atr_multiplier=None, lookback=No
     recent_low = _safe_float(pd.to_numeric(use_df['low'], errors='coerce').min(), None)
 
     if recent_high is None or recent_low is None or np.isnan(recent_high) or np.isnan(recent_low):
-        # If no valid swings, fall back to percent-based targets around entry
-        tp = round(entry_f * (1 + fallback_tp_pct), 8)
-        sl = round(entry_f * (1 - fallback_sl_pct), 8)
-        source = "percent_fallback_missing_swings"
-        fib_levels = None
-        chosen_ratio = None
-        print(f"[tp_sl_retracement] missing swings -> fallback tp={tp} sl={sl} source={source}", flush=True)
-        return {'tp': tp, 'sl': sl, 'fib_levels': fib_levels, 'chosen_ratio': chosen_ratio, 'source': source, 'achieved_rr': None}
+        # Percent fallbacks
+        tp_fb = round(entry_f * (1 + fallback_tp_pct), 8)
+        sl_fb = round(entry_f * (1 - fallback_sl_pct), 8)
+        return {'tp': tp_fb, 'sl': sl_fb, 'fib_levels': None, 'chosen_ratio': None, 'source': 'percent_fallback_missing_swings', 'achieved_rr': None, 'sl_capped': False}
 
     recent_high = float(recent_high)
     recent_low = float(recent_low)
     price_range = recent_high - recent_low
 
-    # Build fib ratios and levels
-    fib_ratios_preferred = [0.382, 0.5, 0.618, 0.236, 0.786]
+    # Build fib levels (all ratios)
     fib_ratios_all = [0.0, 0.236, 0.382, 0.5, 0.618, 0.786, 1.0]
+    # Aggressive preference: prefer deeper fibs first (increase TP magnitude)
+    fib_ratios_preferred_deep = [0.786, 0.618, 0.5, 0.382, 0.236]
+
     fib_levels = {f"{r:.3f}": (recent_low + r * price_range) for r in fib_ratios_all} if price_range > 0 else None
 
     dir_up = str(direction).strip().upper() == "LONG"
@@ -162,89 +144,57 @@ def calculate_tp_sl(df, entry_price, direction, atr_multiplier=None, lookback=No
     sl = None
     chosen_ratio = None
     source = None
+    sl_capped = False
     achieved_rr = None
-
-    # Helper: select candidate by R:R preferences
-    def _select_tp_by_rr(entry_f_local, sl_val, candidates, desired_rr_local=desired_rr, min_rr_local=min_rr):
-        """
-        candidates: list of tuples (ratio, level)
-        Returns (chosen_ratio, chosen_tp, achieved_rr) or (None, None, 0.0)
-        Preference:
-          1) first candidate with rr >= desired_rr (closest to entry)
-          2) first candidate with rr >= min_rr (closest to entry)
-          3) candidate with max rr
-        RR:
-          SHORT: rr = (entry - tp) / (sl - entry)
-          LONG:  rr = (tp - entry) / (entry - sl)
-        """
-        if not candidates:
-            return None, None, 0.0
-        rr_list = []
-        sl_dist = abs(sl_val - entry_f_local)
-        if sl_dist == 0:
-            sl_dist = 1e-9
-        for r, lvl in candidates:
-            tp_dist = abs(entry_f_local - lvl)
-            rr = tp_dist / sl_dist if sl_dist else 0.0
-            rr_list.append((r, float(lvl), rr, tp_dist))
-        # 1) candidate with rr >= desired_rr (choose smallest tp_dist among them)
-        ge_desired = [c for c in rr_list if c[2] >= desired_rr_local]
-        if ge_desired:
-            chosen = min(ge_desired, key=lambda x: x[3])
-            return chosen[0], chosen[1], chosen[2]
-        # 2) candidate with rr >= min_rr
-        ge_min = [c for c in rr_list if c[2] >= min_rr_local]
-        if ge_min:
-            chosen = min(ge_min, key=lambda x: x[3])
-            return chosen[0], chosen[1], chosen[2]
-        # 3) choose candidate with max rr
-        best = max(rr_list, key=lambda x: x[2])
-        return best[0], best[1], best[2]
 
     try:
         if price_range > 0 and fib_levels is not None:
             if dir_up:
-                # SL candidate before selection
+                # LONG: prefer the highest fib > entry (deepest TP)
+                candidates = [(r, fib_levels[f"{r:.3f}"]) for r in fib_ratios_preferred_deep if fib_levels.get(f"{r:.3f}", float('nan')) > entry_f]
+                if not candidates:
+                    candidates = [(r, fib_levels[f"{r:.3f}"]) for r in fib_ratios_all if fib_levels.get(f"{r:.3f}", float('nan')) > entry_f]
+                if candidates:
+                    # pick the deepest (max level -> biggest profit)
+                    chosen_ratio, chosen_val = max(candidates, key=lambda x: x[1])
+                    tp = float(chosen_val)
+                    source = "fib_deep"
+                else:
+                    tp = recent_high
+                    source = "fib_fallback"
+                # SL candidate (tight): entry - atr*mult
                 sl_candidate = entry_f - atr_multiplier * atr if atr > 0 else recent_low
-                # preferred candidates above entry
-                preferred_above = [(r, fib_levels[f"{r:.3f}"]) for r in fib_ratios_preferred if fib_levels.get(f"{r:.3f}", float('nan')) > entry_f]
-                any_above = [(r, fib_levels[f"{r:.3f}"]) for r in fib_ratios_all if fib_levels.get(f"{r:.3f}", float('nan')) > entry_f]
-                # Try preferred with RR logic
-                chosen_ratio, chosen_val, achieved_rr = _select_tp_by_rr(entry_f, sl_candidate, preferred_above)
-                if chosen_val is None and any_above:
-                    chosen_ratio, chosen_val, achieved_rr = _select_tp_by_rr(entry_f, sl_candidate, any_above)
-                if chosen_val is not None:
-                    tp = float(chosen_val)
-                    source = "fib"
-                else:
-                    if any_above:
-                        chosen_ratio, chosen_val = min(any_above, key=lambda x: x[1])
-                        tp = float(chosen_val)
-                        source = "fib"
-                    else:
-                        tp = entry_f * (1 + fallback_tp_pct)
-                        source = "percent_fallback_no_profitable_fib"
-                sl = float(min(recent_low, sl_candidate))
+                # SL cannot be below recent_low; pick the higher (more conservative) of the two
+                sl = float(max(recent_low, sl_candidate))
+                # Cap SL distance to max_sl_pct
+                max_sl_price = entry_f * (1 - max_sl_pct)  # for LONG, SL is below entry; we ensure sl >= max_sl_price
+                if sl < max_sl_price:
+                    sl = float(max_sl_price)
+                    sl_capped = True
             elif dir_down:
-                sl_candidate = entry_f + atr_multiplier * atr if atr > 0 else recent_high
-                preferred_below = [(r, fib_levels[f"{r:.3f}"]) for r in fib_ratios_preferred if fib_levels.get(f"{r:.3f}", float('nan')) < entry_f]
-                any_below = [(r, fib_levels[f"{r:.3f}"]) for r in fib_ratios_all if fib_levels.get(f"{r:.3f}", float('nan')) < entry_f]
-                chosen_ratio, chosen_val, achieved_rr = _select_tp_by_rr(entry_f, sl_candidate, preferred_below)
-                if chosen_val is None and any_below:
-                    chosen_ratio, chosen_val, achieved_rr = _select_tp_by_rr(entry_f, sl_candidate, any_below)
-                if chosen_val is not None:
+                # SHORT: prefer the lowest fib < entry (deepest TP downwards)
+                candidates = [(r, fib_levels[f"{r:.3f}"]) for r in fib_ratios_preferred_deep if fib_levels.get(f"{r:.3f}", float('nan')) < entry_f]
+                if not candidates:
+                    candidates = [(r, fib_levels[f"{r:.3f}"]) for r in fib_ratios_all if fib_levels.get(f"{r:.3f}", float('nan')) < entry_f]
+                if candidates:
+                    # pick the deepest (min level -> biggest profit distance)
+                    chosen_ratio, chosen_val = min(candidates, key=lambda x: x[1])
                     tp = float(chosen_val)
-                    source = "fib"
+                    source = "fib_deep"
                 else:
-                    if any_below:
-                        chosen_ratio, chosen_val = max(any_below, key=lambda x: x[1])
-                        tp = float(chosen_val)
-                        source = "fib"
-                    else:
-                        tp = entry_f * (1 - fallback_tp_pct)
-                        source = "percent_fallback_no_profitable_fib"
+                    tp = recent_low
+                    source = "fib_fallback"
+                # SL candidate (tight): entry + atr*mult
+                sl_candidate = entry_f + atr_multiplier * atr if atr > 0 else recent_high
+                # SL must be at least recent_high (conservative)
                 sl = float(max(recent_high, sl_candidate))
+                # Cap SL distance to max_sl_pct above entry
+                max_sl_price = entry_f * (1 + max_sl_pct)
+                if sl > max_sl_price:
+                    sl = float(max_sl_price)
+                    sl_capped = True
             else:
+                # unknown direction: percent fallback
                 tp = entry_f * (1 + fallback_tp_pct)
                 sl = entry_f * (1 - fallback_sl_pct)
                 source = "percent_fallback_unknown_direction"
@@ -258,7 +208,7 @@ def calculate_tp_sl(df, entry_price, direction, atr_multiplier=None, lookback=No
         source = "percent_fallback_exception"
         print(f"[tp_sl_retracement] Exception during TP/SL compute: {e}", flush=True)
 
-    # Final numeric sanitization
+    # Final sanitization
     tp_f = _safe_float(tp, None)
     sl_f = _safe_float(sl, None)
     if tp_f is None or sl_f is None:
@@ -267,41 +217,43 @@ def calculate_tp_sl(df, entry_price, direction, atr_multiplier=None, lookback=No
         source = "percent_fallback_final_sanitize"
         chosen_ratio = None
         fib_levels = fib_levels if fib_levels is not None else None
-        achieved_rr = None
+        sl_capped = False
 
-    # Recompute achieved_rr exactly and consistently for logs
+    # compute achieved_rr consistently (direction-aware)
     try:
         tp_val = float(tp_f)
         sl_val = float(sl_f)
-        entry_val = float(entry_f)
-        if str(direction).strip().upper() == "SHORT":
-            tp_dist = entry_val - tp_val
-            sl_dist = sl_val - entry_val
-        elif str(direction).strip().upper() == "LONG":
-            tp_dist = tp_val - entry_val
-            sl_dist = entry_val - sl_val
+        if dir_down:
+            tp_dist = entry_f - tp_val
+            sl_dist = sl_val - entry_f
+        elif dir_up:
+            tp_dist = tp_val - entry_f
+            sl_dist = entry_f - sl_val
         else:
-            tp_dist = abs(entry_val - tp_val)
-            sl_dist = abs(sl_val - entry_val)
-        if sl_dist and sl_dist > 0:
-            achieved_rr = float(tp_dist / sl_dist)
-        else:
-            achieved_rr = None
+            tp_dist = abs(entry_f - tp_val)
+            sl_dist = abs(sl_val - entry_f)
+        achieved_rr = float(tp_dist / sl_dist) if sl_dist and sl_dist > 0 else None
     except Exception:
         achieved_rr = None
 
-    # Round for readability
-    tp_rounded = round(float(tp_val), 8)
-    sl_rounded = round(float(sl_val), 8)
+    tp_rounded = round(float(tp_f), 8)
+    sl_rounded = round(float(sl_f), 8)
 
-    # Debug line
     try:
         print(
-            f"[tp_sl_retracement] direction={direction} entry={entry_val:.8f} recent_high={recent_high:.8f} recent_low={recent_low:.8f} "
-            f"atr={atr:.8f} lookback={lb} chosen_ratio={chosen_ratio} source={source} tp={tp_rounded:.8f} sl={sl_rounded:.8f} achieved_rr={achieved_rr}",
+            f"[tp_sl_retracement] direction={direction} entry={entry_f:.8f} recent_high={recent_high:.8f} recent_low={recent_low:.8f} "
+            f"atr={atr:.8f} lookback={lb} chosen_ratio={chosen_ratio} source={source} tp={tp_rounded:.8f} sl={sl_rounded:.8f} achieved_rr={achieved_rr} sl_capped={sl_capped}",
             flush=True
         )
     except Exception:
         print(f"[tp_sl_retracement] computed TP/SL (source={source})", flush=True)
 
-    return {'tp': tp_rounded, 'sl': sl_rounded, 'fib_levels': fib_levels, 'chosen_ratio': chosen_ratio, 'source': source, 'achieved_rr': achieved_rr}
+    return {
+        'tp': tp_rounded,
+        'sl': sl_rounded,
+        'fib_levels': fib_levels,
+        'chosen_ratio': chosen_ratio,
+        'source': source,
+        'achieved_rr': achieved_rr,
+        'sl_capped': sl_capped
+    }
