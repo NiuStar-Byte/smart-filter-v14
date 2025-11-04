@@ -1,6 +1,7 @@
 # main.py
 # Revised: refactored single-cycle run into `run_cycle()` and a persistent outer loop,
 # added safer SuperGK fetch normalization, environment-driven cycle sleep, and more defensive logging.
+# NOTE: This variant FORCE-BYPASSES SuperGK for ALL signals (LONG and SHORT).
 print("[INFO] main.py script started.", flush=True)
 from signal_debug_log import export_signal_debug_txt, log_fired_signal
 import os
@@ -44,38 +45,10 @@ OHLCV_LIMIT = 1000
 # cycle sleep can be controlled via environment variable (seconds)
 CYCLE_SLEEP = int(os.getenv("CYCLE_SLEEP", "60"))
 
-# --- SuperGK helper: authoritative check used by main at send-time ---
+# --- SuperGK helper: main_supergk_ok left for compatibility but main will bypass ---
 def main_supergk_ok(bias, orderbook_result, density_result, analyzer_result):
-    """Authoritative SuperGK decision performed in main (respects bypass env vars unless forced by main)."""
-    # This function remains available for LONG checks; SHORT bypassing is enforced in main.
-    # Read bypass flags from env (kept for compatibility if needed elsewhere)
-    BYPASS_GLOBAL = os.getenv("SUPERGK_BYPASS", "false").lower() in ("1", "true", "yes", "on")
-    BYPASS_SHORT = os.getenv("SUPERGK_BYPASS_SHORT", "false").lower() in ("1", "true", "yes", "on")
-    BYPASS_MIN_SCORE_ENABLED = os.getenv("SUPERGK_BYPASS_MIN_SCORE_ENABLE", "false").lower() in ("1", "true", "yes", "on")
-    try:
-        BYPASS_MIN_SCORE = float(os.getenv("SUPERGK_BYPASS_MIN_SCORE") or 0.0)
-    except Exception:
-        BYPASS_MIN_SCORE = 0.0
-
-    # Extract signal_score safely from analyzer_result
-    debug_sums = analyzer_result.get("debug_sums") if isinstance(analyzer_result, dict) else None
-    if debug_sums and isinstance(debug_sums, dict):
-        signal_score = float(debug_sums.get("short_score" if bias == "SHORT" else "long_score", 0.0))
-    else:
-        signal_score = float(analyzer_result.get("score", 0.0)) if isinstance(analyzer_result, dict) else 0.0
-
-    # Bypass logic (used if main calls this; main enforces unconditional SHORT bypass separately)
-    if BYPASS_GLOBAL:
-        if BYPASS_MIN_SCORE_ENABLED:
-            return signal_score >= BYPASS_MIN_SCORE
-        return True
-
-    if bias == "SHORT" and BYPASS_SHORT:
-        if BYPASS_MIN_SCORE_ENABLED:
-            return signal_score >= BYPASS_MIN_SCORE
-        return True
-
-    # Otherwise call canonical super_gk_aligned (defined below in this file)
+    """Legacy helper retained for compatibility. Not used when global bypass is enforced in main."""
+    # Keep behavior predictable if called elsewhere: call canonical function if available
     try:
         return super_gk_aligned(bias, orderbook_result, density_result)
     except Exception as e:
@@ -169,21 +142,13 @@ def log_orderbook_and_density(symbol):
     except Exception as e:
         print(f"[RestingOrderDensityLog] {symbol} ERROR: {e}", flush=True)
 
-# --- SuperGK canonical function (kept inside main for single-file simplicity) ---
+# --- SuperGK canonical function retained for reference but not used by main (global bypass enforced below) ---
 def super_gk_aligned(bias, orderbook_result, density_result,
                      wall_pct_threshold=None, density_threshold=None,
                      wall_weight=None, density_weight=None, composite_threshold=None):
     """
     Composite-first SuperGK with optional bypasses.
     """
-    # Quick global and SHORT-only bypass
-    if os.getenv("SUPERGK_BYPASS", "false").lower() in ("1", "true", "yes", "on"):
-        print("[SuperGK] GLOBAL BYPASS enabled via SUPERGK_BYPASS env var — treating as PASSED", flush=True)
-        return True
-    if bias == "SHORT" and os.getenv("SUPERGK_BYPASS_SHORT", "false").lower() in ("1", "true", "yes", "on"):
-        print("[SuperGK] SHORT-BYPASS enabled via SUPERGK_BYPASS_SHORT env var — treating SHORT as PASSED", flush=True)
-        return True
-
     # Helper to read floats from env with defaults
     def _env_float(name, default):
         v = os.getenv(name)
@@ -192,16 +157,12 @@ def super_gk_aligned(bias, orderbook_result, density_result,
         except Exception:
             return float(default)
 
-    # Global thresholds/defaults
     default_wpct = _env_float("SUPERGK_WALL_PCT_THRESHOLD", 1.0)
     default_dpct = _env_float("SUPERGK_DENSITY_THRESHOLD", 0.5)
-
-    # Global weights and composite threshold (fallback)
     global_wall_w = _env_float("SUPERGK_WALL_WEIGHT", 0.25)
     global_density_w = _env_float("SUPERGK_DENSITY_WEIGHT", 0.75)
     global_comp_th = _env_float("SUPERGK_COMPOSITE_THRESHOLD", 0.01)
 
-    # Per-direction overrides (if provided)
     short_wall_w = _env_float("SUPERGK_SHORT_WALL_WEIGHT", os.getenv("SUPERGK_SHORT_WALL_WEIGHT") or global_wall_w)
     short_density_w = _env_float("SUPERGK_SHORT_DENSITY_WEIGHT", os.getenv("SUPERGK_SHORT_DENSITY_WEIGHT") or global_density_w)
     short_comp_th = _env_float("SUPERGK_SHORT_COMPOSITE_THRESHOLD", os.getenv("SUPERGK_SHORT_COMPOSITE_THRESHOLD") or global_comp_th)
@@ -210,14 +171,11 @@ def super_gk_aligned(bias, orderbook_result, density_result,
     long_density_w = _env_float("SUPERGK_LONG_DENSITY_WEIGHT", os.getenv("SUPERGK_LONG_DENSITY_WEIGHT") or global_density_w)
     long_comp_th = _env_float("SUPERGK_LONG_COMPOSITE_THRESHOLD", os.getenv("SUPERGK_LONG_COMPOSITE_THRESHOLD") or global_comp_th)
 
-    # Density-dominance factor
     density_dom_factor = _env_float("SUPERGK_DENSITY_DOMINANCE_FACTOR", 1.6)
 
-    # Apply function-args or chosen defaults
     wall_pct_threshold = default_wpct if wall_pct_threshold is None else wall_pct_threshold
     density_threshold = default_dpct if density_threshold is None else density_threshold
 
-    # Choose per-direction weights/thresholds
     if bias == "SHORT":
         wall_weight = short_wall_w if wall_weight is None else wall_weight
         density_weight = short_density_w if density_weight is None else density_weight
@@ -227,7 +185,6 @@ def super_gk_aligned(bias, orderbook_result, density_result,
         density_weight = long_density_w if density_weight is None else density_weight
         composite_threshold = long_comp_th if composite_threshold is None else composite_threshold
 
-    # Defensive extraction from input dicts
     buy_wall = float(orderbook_result.get('buy_wall', 0.0)) if orderbook_result else 0.0
     sell_wall = float(orderbook_result.get('sell_wall', 0.0)) if orderbook_result else 0.0
     wall_delta = float(orderbook_result.get('wall_delta', buy_wall - sell_wall)) if orderbook_result else 0.0
@@ -235,54 +192,17 @@ def super_gk_aligned(bias, orderbook_result, density_result,
     bid_density = float(density_result.get('bid_density', 0.0)) if density_result else 0.0
     ask_density = float(density_result.get('ask_density', 0.0)) if density_result else 0.0
 
-    # Normalize wall_delta to percent of total top-wall liquidity (safe denom)
     total_wall = max(buy_wall + sell_wall, 1e-9)
     wall_pct = (abs(wall_delta) / total_wall) * 100.0
     wall_sign = "LONG" if wall_delta > 0 else "SHORT" if wall_delta < 0 else "NEUTRAL"
 
-    # density diff and sign (density_pct kept in same units used elsewhere)
     density_diff = bid_density - ask_density
     density_pct = abs(density_diff)
     density_sign = "LONG" if density_diff > 0 else "SHORT" if density_diff < 0 else "NEUTRAL"
 
-    # Interpret non-neutral using thresholds
     orderbook_bias = wall_sign if wall_pct >= wall_pct_threshold else "NEUTRAL"
     density_bias = density_sign if density_pct >= density_threshold else "NEUTRAL"
 
-    # Diagnostics
-    print(f"[SuperGK] bias={bias} | wall_delta={wall_delta:.6f} buy_wall={buy_wall:.6f} sell_wall={sell_wall:.6f} "
-          f"wall_pct={wall_pct:.3f}% (th={wall_pct_threshold}) wall_bias={orderbook_bias} | "
-          f"bid_density={bid_density:.3f} ask_density={ask_density:.3f} density_pct={density_pct:.3f} (th={density_threshold}) "
-          f"density_bias={density_bias} | weights (wall={wall_weight}, density={density_weight}) comp_th={composite_threshold} dom_factor={density_dom_factor}",
-          flush=True)
-
-    # If both metrics support the bias -> accept
-    if orderbook_bias == bias and density_bias == bias:
-        print("[SuperGK] Passed: both metrics support bias.", flush=True)
-        return True
-
-    # If both neutral -> block
-    if orderbook_bias == "NEUTRAL" and density_bias == "NEUTRAL":
-        print("[SuperGK] Blocked: both metrics neutral.", flush=True)
-        return False
-
-    # If one supports and the other is neutral -> accept
-    if orderbook_bias == bias and density_bias == "NEUTRAL":
-        print("[SuperGK] Passed: orderbook supports bias and density is neutral.", flush=True)
-        return True
-    if density_bias == bias and orderbook_bias == "NEUTRAL":
-        print("[SuperGK] Passed: density supports bias and orderbook is neutral.", flush=True)
-        return True
-
-    # Density-dominance override: accept when density strongly outweighs wall in favor of bias
-    try:
-        if density_sign == bias and (wall_pct == 0 or density_pct >= density_dom_factor * wall_pct):
-            print(f"[SuperGK] Passed by density dominance (density_pct {density_pct:.3f} >= {density_dom_factor} * wall_pct {wall_pct:.3f}%).", flush=True)
-            return True
-    except Exception:
-        pass
-
-    # Compute composite to resolve conflicts or opposing signs
     wall_score = (wall_pct / 100.0)
     density_score = (density_pct / 100.0)
 
@@ -299,19 +219,12 @@ def super_gk_aligned(bias, orderbook_result, density_result,
 
     composite = wall_weight * wall_factor * wall_score + density_weight * density_factor * density_score
 
-    # Composite diagnostics
     wall_comp = wall_weight * wall_factor * wall_score
     density_comp = density_weight * density_factor * density_score
-    print(f"[SuperGK] composite -> wall: {wall_comp:.6f}, density: {density_comp:.6f}, composite={composite:.6f}", flush=True)
 
-    if composite >= composite_threshold:
-        print("[SuperGK] Passed: composite meets threshold.", flush=True)
-        return True
+    return composite >= composite_threshold
 
-    print("[SuperGK] Blocked: composite insufficient.", flush=True)
-    return False
-
-# --- run_cycle / main logic (uses main_supergk_ok at decision point) ---
+# --- run_cycle / main logic (UNCONDITIONAL SUPERGK BYPASS FOR ALL SIGNALS) ---
 def run_cycle():
     """
     Single pass over all TOKENS. Returns list of valid_debug dicts collected during this cycle.
@@ -358,16 +271,15 @@ def run_cycle():
                         bias = res3.get("bias", "NEUTRAL")
                         sf3.bias = bias
 
-                        # AUTHORITATIVE: Force unconditional SHORT bypass here
-                        if bias == "SHORT":
-                            print("[SuperGK][MAIN] SHORT UNCONDITIONAL BYPASS active — forcing SuperGK PASSED for SHORT signals", flush=True)
-                            super_gk_ok = True
-                        else:
-                            super_gk_ok = main_supergk_ok(bias, orderbook_result, density_result, res3)
+                        # GLOBAL BYPASS: SuperGK is fully disabled for ALL signals (LONG & SHORT)
+                        print("[SuperGK][MAIN] GLOBAL DISABLED - bypassing SuperGK for ALL signals (LONG and SHORT)", flush=True)
+                        super_gk_ok = True
 
                         print(f"[SuperGK][MAIN] Result -> bias={bias} super_gk_ok={super_gk_ok}", flush=True)
 
                         if not super_gk_ok:
+                            # This branch will never execute because we force super_gk_ok=True above,
+                            # kept for compatibility in case logic changes later.
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
                             valid_debugs.append({
                                 "symbol": symbol,
@@ -518,16 +430,15 @@ def run_cycle():
                         bias = res5.get("bias", "NEUTRAL")
                         sf5.bias = bias
 
-                        # AUTHORITATIVE: Force unconditional SHORT bypass here
-                        if bias == "SHORT":
-                            print("[SuperGK][MAIN] SHORT UNCONDITIONAL BYPASS active — forcing SuperGK PASSED for SHORT signals", flush=True)
-                            super_gk_ok = True
-                        else:
-                            super_gk_ok = main_supergk_ok(bias, orderbook_result, density_result, res5)
+                        # GLOBAL BYPASS: SuperGK is fully disabled for ALL signals (LONG & SHORT)
+                        print("[SuperGK][MAIN] GLOBAL DISABLED - bypassing SuperGK for ALL signals (LONG and SHORT)", flush=True)
+                        super_gk_ok = True
 
                         print(f"[SuperGK][MAIN] Result -> bias={bias} super_gk_ok={super_gk_ok}", flush=True)
 
                         if not super_gk_ok:
+                            # This branch will never execute because we force super_gk_ok=True above,
+                            # kept for compatibility in case logic changes later.
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
                             valid_debugs.append({
                                 "symbol": symbol,
