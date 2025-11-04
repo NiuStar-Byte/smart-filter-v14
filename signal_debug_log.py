@@ -159,17 +159,17 @@ def export_signal_debug_txt(symbol, tf, bias, filter_weights_long, filter_weight
     except Exception:
         default_dpct = 0.5
     try:
-        wall_weight = float(os.getenv("SUPERGK_WALL_WEIGHT")) if os.getenv("SUPERGK_WALL_WEIGHT") else 0.6
+        wall_weight = float(os.getenv("SUPERGK_WALL_WEIGHT")) if os.getenv("SUPERGK_WALL_WEIGHT") else 0.25
     except Exception:
-        wall_weight = 0.6
+        wall_weight = 0.25
     try:
-        density_weight = float(os.getenv("SUPERGK_DENSITY_WEIGHT")) if os.getenv("SUPERGK_DENSITY_WEIGHT") else 0.4
+        density_weight = float(os.getenv("SUPERGK_DENSITY_WEIGHT")) if os.getenv("SUPERGK_DENSITY_WEIGHT") else 0.75
     except Exception:
-        density_weight = 0.4
+        density_weight = 0.75
     try:
-        composite_threshold = float(os.getenv("SUPERGK_COMPOSITE_THRESHOLD")) if os.getenv("SUPERGK_COMPOSITE_THRESHOLD") else 0.05
+        composite_threshold = float(os.getenv("SUPERGK_COMPOSITE_THRESHOLD")) if os.getenv("SUPERGK_COMPOSITE_THRESHOLD") else 0.01
     except Exception:
-        composite_threshold = 0.05
+        composite_threshold = 0.01
 
     # Interpret non-neutral using thresholds
     orderbook_bias = wall_sign if wall_pct >= default_wpct else "NEUTRAL"
