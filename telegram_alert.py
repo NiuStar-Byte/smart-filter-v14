@@ -254,8 +254,7 @@ def send_telegram_alert(
         lines.append(early_breakout_msg)
     lines.append(consensus_str)
     if fallback_used:
-        lines.append(f"\n⚠️ Note: TP/SL fallback used (FALLBACK_TP_PCT/FALLBACK_SL_PCT)")
-
+        lines.append(f"\n⚠️ Note: TP/SL fallback used")
     message = "\n".join(lines)
 
     payload = {
