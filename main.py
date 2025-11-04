@@ -1,8 +1,6 @@
 # main.py
 # Revised: refactored single-cycle run into `run_cycle()` and a persistent outer loop,
 # added safer SuperGK fetch normalization, environment-driven cycle sleep, and more defensive logging.
-# Copy-paste this file over your existing main.py
-
 print("[INFO] main.py script started.", flush=True)
 from signal_debug_log import export_signal_debug_txt, log_fired_signal
 import os
@@ -19,6 +17,7 @@ from kucoin_orderbook import get_order_wall_delta
 from pec_engine import run_pec_check, export_pec_log
 from tp_sl_retracement import calculate_tp_sl
 from test_filters import run_all_filter_tests
+import math
 
 # --- Configuration ---
 TOKENS = [
@@ -44,6 +43,53 @@ OHLCV_LIMIT = 1000
 
 # cycle sleep can be controlled via environment variable (seconds)
 CYCLE_SLEEP = int(os.getenv("CYCLE_SLEEP", "60"))
+
+# --- SuperGK helper: authoritative check used by main at send-time ---
+def main_supergk_ok(bias, orderbook_result, density_result, analyzer_result):
+    """Authoritative SuperGK decision performed in main (respects bypass env vars).
+
+    analyzer_result: the dict returned by SmartFilter.analyze() (res3 or res5)
+    Returns: True to allow send, False to block
+    """
+    # Read bypass flags from env
+    BYPASS_GLOBAL = os.getenv("SUPERGK_BYPASS", "false").lower() in ("1", "true", "yes", "on")
+    BYPASS_SHORT = os.getenv("SUPERGK_BYPASS_SHORT", "false").lower() in ("1", "true", "yes", "on")
+    BYPASS_MIN_SCORE_ENABLED = os.getenv("SUPERGK_BYPASS_MIN_SCORE_ENABLE", "false").lower() in ("1", "true", "yes", "on")
+    try:
+        BYPASS_MIN_SCORE = float(os.getenv("SUPERGK_BYPASS_MIN_SCORE") or 0.0)
+    except Exception:
+        BYPASS_MIN_SCORE = 0.0
+
+    # Extract signal_score safely from analyzer_result
+    debug_sums = analyzer_result.get("debug_sums") if isinstance(analyzer_result, dict) else None
+    if debug_sums and isinstance(debug_sums, dict):
+        signal_score = float(debug_sums.get("short_score" if bias == "SHORT" else "long_score", 0.0))
+    else:
+        signal_score = float(analyzer_result.get("score", 0.0)) if isinstance(analyzer_result, dict) else 0.0
+
+    # Bypass logic
+    if BYPASS_GLOBAL:
+        if BYPASS_MIN_SCORE_ENABLED:
+            allowed = signal_score >= BYPASS_MIN_SCORE
+            print(f"[SuperGK][MAIN] GLOBAL BYPASS active. MIN_SCORE gating -> signal_score={signal_score}, min={BYPASS_MIN_SCORE}, allow={allowed}", flush=True)
+            return allowed
+        print("[SuperGK][MAIN] GLOBAL BYPASS active -> allowing send", flush=True)
+        return True
+
+    if bias == "SHORT" and BYPASS_SHORT:
+        if BYPASS_MIN_SCORE_ENABLED:
+            allowed = signal_score >= BYPASS_MIN_SCORE
+            print(f"[SuperGK][MAIN] SHORT BYPASS active. MIN_SCORE gating -> signal_score={signal_score}, min={BYPASS_MIN_SCORE}, allow={allowed}", flush=True)
+            return allowed
+        print("[SuperGK][MAIN] SHORT BYPASS active -> allowing SHORT send", flush=True)
+        return True
+
+    # Otherwise call canonical super_gk_aligned (defined below in this file)
+    try:
+        return super_gk_aligned(bias, orderbook_result, density_result)
+    except Exception as e:
+        print(f"[SuperGK][MAIN] Error calling super_gk_aligned(): {e}", flush=True)
+        return False
 
 def get_local_wib(dt):
     if not isinstance(dt, pd.Timestamp):
@@ -114,8 +160,7 @@ def log_orderbook_and_density(symbol):
         wall_delta = float(ob.get('wall_delta', 0.0))
         midprice = ob.get('midprice', 'N/A')
         print(
-            f"[OrderBookDeltaLog] {symbol} | "
-            f"buy_wall={buy_wall} | sell_wall={sell_wall} | wall_delta={wall_delta} | midprice={midprice}",
+            f"[OrderBookDeltaLog] {symbol} | buy_wall={buy_wall} | sell_wall={sell_wall} | wall_delta={wall_delta} | midprice={midprice}",
             flush=True
         )
     except Exception as e:
@@ -125,8 +170,7 @@ def log_orderbook_and_density(symbol):
         dens = get_resting_order_density(symbol)
         # dens now guaranteed to be percentages (0..100) by wrapper above
         print(
-            f"[RestingOrderDensityLog] {symbol} | "
-            f"bid_density={dens.get('bid_density',0.0):.2f}% | ask_density={dens.get('ask_density',0.0):.2f}% | "
+            f"[RestingOrderDensityLog] {symbol} | bid_density={dens.get('bid_density',0.0):.2f}% | ask_density={dens.get('ask_density',0.0):.2f}% | "
             f"bid_top={dens.get('bid_top',0.0)} | ask_top={dens.get('ask_top',0.0)} | "
             f"bid_total={dens.get('bid_total',0.0)} | ask_total={dens.get('ask_total',0.0)}",
             flush=True
@@ -134,34 +178,12 @@ def log_orderbook_and_density(symbol):
     except Exception as e:
         print(f"[RestingOrderDensityLog] {symbol} ERROR: {e}", flush=True)
 
+# --- SuperGK canonical function (kept inside main for single-file simplicity) ---
 def super_gk_aligned(bias, orderbook_result, density_result,
                      wall_pct_threshold=None, density_threshold=None,
                      wall_weight=None, density_weight=None, composite_threshold=None):
     """
     Composite-first SuperGK with optional bypasses.
-
-    Behavior:
-    - If SUPERGK_BYPASS is enabled -> always pass (global bypass).
-    - If SUPERGK_BYPASS_SHORT is enabled and bias == "SHORT" -> pass (SHORT-only bypass).
-    - Otherwise compute normalized wall_pct and density_pct, apply per-direction weights/thresholds,
-      allow when both metrics agree, when one supports and the other is neutral, when density dominates,
-      or when weighted composite >= composite_threshold.
-
-    Environment variables supported (all optional):
-      - SUPERGK_BYPASS (true/1/on)               : global bypass (all signals)
-      - SUPERGK_BYPASS_SHORT (true/1/on)         : SHORT-only bypass
-      - SUPERGK_WALL_PCT_THRESHOLD               : wall pct threshold (default 1.0)
-      - SUPERGK_DENSITY_THRESHOLD                : density threshold (default 0.5)
-      - SUPERGK_WALL_WEIGHT                      : global wall weight (fallback)
-      - SUPERGK_DENSITY_WEIGHT                   : global density weight (fallback)
-      - SUPERGK_COMPOSITE_THRESHOLD              : global composite threshold (fallback)
-      - SUPERGK_SHORT_WALL_WEIGHT                : SHORT-specific wall weight (optional)
-      - SUPERGK_SHORT_DENSITY_WEIGHT             : SHORT-specific density weight (optional)
-      - SUPERGK_SHORT_COMPOSITE_THRESHOLD        : SHORT-specific composite threshold (optional)
-      - SUPERGK_LONG_WALL_WEIGHT                 : LONG-specific wall weight (optional)
-      - SUPERGK_LONG_DENSITY_WEIGHT              : LONG-specific density weight (optional)
-      - SUPERGK_LONG_COMPOSITE_THRESHOLD         : LONG-specific composite threshold (optional)
-      - SUPERGK_DENSITY_DOMINANCE_FACTOR        : K factor for density-dominance override (default 1.6)
     """
     # Quick global and SHORT-only bypass
     if os.getenv("SUPERGK_BYPASS", "false").lower() in ("1", "true", "yes", "on"):
@@ -264,7 +286,7 @@ def super_gk_aligned(bias, orderbook_result, density_result,
     # Density-dominance override: accept when density strongly outweighs wall in favor of bias
     try:
         if density_sign == bias and (wall_pct == 0 or density_pct >= density_dom_factor * wall_pct):
-            print(f"[SuperGK] Passed by density dominance (density_pct {density_pct:.3f} >= {density_dom_factor} * wall_pct {wall_pct:.3f}).", flush=True)
+            print(f"[SuperGK] Passed by density dominance (density_pct {density_pct:.3f} >= {density_dom_factor} * wall_pct {wall_pct:.3f}%).", flush=True)
             return True
     except Exception:
         pass
@@ -298,10 +320,10 @@ def super_gk_aligned(bias, orderbook_result, density_result,
     print("[SuperGK] Blocked: composite insufficient.", flush=True)
     return False
 
+# --- run_cycle / main logic (uses main_supergk_ok at decision point) ---
 def run_cycle():
     """
     Single pass over all TOKENS. Returns list of valid_debug dicts collected during this cycle.
-    This function does not sleep; outer loop controls sleep duration.
     """
     print("[INFO] Starting Smart Filter cycle (single pass)...", flush=True)
     valid_debugs = []
@@ -310,14 +332,12 @@ def run_cycle():
     for idx, symbol in enumerate(TOKENS, start=1):
         print(f"[INFO] Checking {symbol}...", flush=True)
         try:
-            # Fetch OHLCV data for 3m and 5m - defensive about failures
             df3 = get_ohlcv(symbol, interval="3min", limit=OHLCV_LIMIT)
             df5 = get_ohlcv(symbol, interval="5min", limit=OHLCV_LIMIT)
             if df3 is None or df3.empty or df5 is None or df5.empty:
                 print(f"[WARN] Not enough data for {symbol} (df3 or df5 empty). Skipping.", flush=True)
                 continue
 
-            # Early breakout checks
             early_breakout_3m = early_breakout(df3, lookback=3)
             early_breakout_5m = early_breakout(df5, lookback=3)
 
@@ -327,13 +347,11 @@ def run_cycle():
                 sf3 = SmartFilter(symbol, df3, df3m=df3, df5m=df5, tf="3min")
                 regime3 = sf3._market_regime()
                 res3 = sf3.analyze()
-                # if isinstance(res3, dict) and res3.get("valid_signal") is True:
                 if isinstance(res3, dict) and res3.get("filters_ok") is True:
                     last3 = last_sent.get(key3, 0)
                     if now - last3 >= COOLDOWN["3min"]:
                         numbered_signal = f"{idx}.A"
 
-                        # Get SuperGK inputs and log them (defensive)
                         log_orderbook_and_density(symbol)
                         try:
                             orderbook_result = get_order_wall_delta(symbol) or {}
@@ -349,9 +367,12 @@ def run_cycle():
                         bias = res3.get("bias", "NEUTRAL")
                         sf3.bias = bias
 
-                        if not super_gk_aligned(bias, orderbook_result, density_result):
+                        # Authoritative SuperGK check (main-level)
+                        super_gk_ok = main_supergk_ok(bias, orderbook_result, density_result, res3)
+                        print(f"[SuperGK][MAIN] Result -> bias={bias} super_gk_ok={super_gk_ok}", flush=True)
+
+                        if not super_gk_ok:
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
-                            # still add debug info (so you can inspect later)
                             valid_debugs.append({
                                 "symbol": symbol,
                                 "tf": "3min",
@@ -481,13 +502,11 @@ def run_cycle():
                 sf5 = SmartFilter(symbol, df5, df3m=df3, df5m=df5, tf="5min")
                 regime5 = sf5._market_regime()
                 res5 = sf5.analyze()
-                # if isinstance(res5, dict) and res5.get("valid_signal") is True:
                 if isinstance(res5, dict) and res5.get("filters_ok") is True:
                     last5 = last_sent.get(key5, 0)
                     if now - last5 >= COOLDOWN["5min"]:
                         numbered_signal = f"{idx}.B"
 
-                        # SuperGK inputs and logging
                         log_orderbook_and_density(symbol)
                         try:
                             orderbook_result = get_order_wall_delta(symbol) or {}
@@ -503,7 +522,10 @@ def run_cycle():
                         bias = res5.get("bias", "NEUTRAL")
                         sf5.bias = bias
 
-                        if not super_gk_aligned(bias, orderbook_result, density_result):
+                        super_gk_ok = main_supergk_ok(bias, orderbook_result, density_result, res5)
+                        print(f"[SuperGK][MAIN] Result -> bias={bias} super_gk_ok={super_gk_ok}", flush=True)
+
+                        if not super_gk_ok:
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
                             valid_debugs.append({
                                 "symbol": symbol,
@@ -548,7 +570,6 @@ def run_cycle():
                             confidence = 0.0
                         entry_idx = df5.index.get_loc(df5.index[-1])
 
-                        # Calculate TP/SL
                         tp_sl = calculate_tp_sl(df5, entry_price, signal_type)
                         tp = tp_sl.get('tp')
                         sl = tp_sl.get('sl')
@@ -636,7 +657,6 @@ def run_cycle():
 def run():
     """
     Continuous loop that calls run_cycle() then sleeps.
-    Kept as wrapper to preserve earlier `run()` entry semantics.
     """
     print("[INFO] Starting Smart Filter engine (LIVE MODE)...\n", flush=True)
     while True:
@@ -716,5 +736,4 @@ if __name__ == "__main__":
             import traceback; traceback.print_exc()
     else:
         print(">>> Entering normal run() branch", flush=True)
-        # run_all_filter_tests()  # <--- THIS RUNS DIAGNOSTICS ONCE BEFORE LIVE LOOP
         run()
