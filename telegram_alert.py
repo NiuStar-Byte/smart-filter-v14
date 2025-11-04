@@ -2,12 +2,13 @@ import os
 import requests
 from tg_config import BOT_TOKEN, CHAT_ID
 from check_symbols import get_token_blockchain_info
+from typing import Any, Optional
 
 SEND_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 SEND_FILE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendDocument"
 
 
-def _safe_float(v, default=None):
+def _safe_float(v: Any, default: Optional[float] = None) -> Optional[float]:
     try:
         if v is None:
             return default
@@ -19,71 +20,65 @@ def _safe_float(v, default=None):
             return default
 
 
-def _is_number(v):
-    return _safe_float(v, None) is not None
-
-
-def _compute_fallback_tp_sl(entry_price, signal_type):
-    """
-    Compute conservative fallback TP/SL percentages when TP/SL are missing.
-    Environment variables:
-      - FALLBACK_TP_PCT (default 0.02 -> 2%)
-      - FALLBACK_SL_PCT (default 0.01 -> 1%)
-    Returns: (tp, sl, tp_pct, sl_pct)
-    """
+def _fmt_price(v: Any, precision: int = 6) -> str:
     try:
-        tp_pct = float(os.getenv("FALLBACK_TP_PCT", "0.02"))
+        f = float(v)
+        if f >= 100:
+            return f"{f:,.2f}"
+        if f >= 1:
+            return f"{f:,.4f}"
+        return f"{f:.{precision}f}"
     except Exception:
-        tp_pct = 0.02
-    try:
-        sl_pct = float(os.getenv("FALLBACK_SL_PCT", "0.01"))
-    except Exception:
-        sl_pct = 0.01
-
-    entry = _safe_float(entry_price, 0.0)
-    if signal_type and str(signal_type).strip().upper() == "SHORT":
-        tp = entry * (1.0 - tp_pct)
-        sl = entry * (1.0 + sl_pct)
-    else:
-        tp = entry * (1.0 + tp_pct)
-        sl = entry * (1.0 - sl_pct)
-
-    return tp, sl, tp_pct, sl_pct
+        return str(v)
 
 
-def _format_price_pct(target, base, signal_type):
+def _pct_for_tp(entry: float, tp: float, signal_type: str) -> str:
     """
-    Format price and percent relative to base as in the existing style.
-    For LONG:
-      pct = (target - base)/base * 100
-    For SHORT:
-      tp_pct = (base - tp)/base * 100  (positive indicates favorable move)
-      sl_pct = (base - sl)/base * 100  (negative/sl above entry => negative)
-    The function returns string: "<price> (±X.XX%)"
+    Percent shown for TP:
+      - SHORT: (entry - tp) / entry * 100 => positive if profitable
+      - LONG:  (tp - entry) / entry * 100 => positive if profitable
+    Returns formatted string like "+1.23%"
     """
     try:
-        base_f = _safe_float(base, None)
-        tgt_f = _safe_float(target, None)
-        if base_f is None or tgt_f is None or base_f == 0:
-            return f"{tgt_f if tgt_f is not None else target} (0.00%)"
-        stype = str(signal_type).strip().upper() if signal_type is not None else ""
-        if stype == "SHORT":
-            # Profit for SHORT when target (tp) is below entry: compute (entry - tp)/entry
-            pct = (base_f - tgt_f) / base_f * 100.0
-            # For SL (which is > entry), pct will be negative
+        if entry == 0:
+            return "0.00%"
+        st = str(signal_type).strip().upper()
+        if st == "SHORT":
+            pct = (entry - tp) / entry * 100.0
         else:
-            pct = (tgt_f - base_f) / base_f * 100.0
+            pct = (tp - entry) / entry * 100.0
         sign = "+" if pct >= 0 else ""
-        return f"{tgt_f:.6f} ({sign}{pct:.2f}%)"
+        return f"{sign}{pct:.2f}%"
     except Exception:
-        return f"{target} (0.00%)"
+        return "N/A"
+
+
+def _pct_for_sl(entry: float, sl: float, signal_type: str) -> str:
+    """
+    Percent shown for SL:
+      - SHORT: (entry - sl) / entry * 100 -> negative when SL is above entry (since entry - sl < 0)
+      - LONG:  (sl - entry) / entry * 100 -> negative when SL is below entry
+    Returns formatted string with sign, e.g. "-1.23%"
+    """
+    try:
+        if entry == 0:
+            return "0.00%"
+        st = str(signal_type).strip().upper()
+        if st == "SHORT":
+            pct = (entry - sl) / entry * 100.0
+        else:
+            pct = (sl - entry) / entry * 100.0
+        sign = "+" if pct >= 0 else ""
+        return f"{sign}{pct:.2f}%"
+    except Exception:
+        return "N/A"
 
 
 def send_telegram_alert(
     numbered_signal: str,
     symbol: str,
     signal_type: str,      # 'LONG' or 'SHORT'
-    Route: str,        # route description
+    Route: str,            # route description
     price: float,
     tf: str,
     score: int,
@@ -98,41 +93,40 @@ def send_telegram_alert(
     early_breakout_3m=None,
     early_breakout_5m=None,
     tp=None,
-    sl=None
+    sl=None,
+    # optional rich data: either pass a dict via tp_sl or pass chosen_ratio/achieved_rr directly
+    tp_sl: Optional[dict] = None,
+    chosen_ratio: Optional[float] = None,
+    achieved_rr: Optional[float] = None,
 ) -> bool:
     """
-    Send Telegram alert. Returns True on success, False on failure.
-
-    Ensures TP/SL are always displayed for both LONG and SHORT:
-     - If tp or sl missing, compute fallback from FALLBACK_TP_PCT / FALLBACK_SL_PCT env vars.
+    Send a Telegram formatted alert message without extra blank lines.
+    Accepts optional tp_sl dict (as returned from calculate_tp_sl) or chosen_ratio/achieved_rr params.
     """
+
     if not BOT_TOKEN or not CHAT_ID:
         print("[Telegram] BOT_TOKEN or CHAT_ID not configured (tg_config).", flush=True)
         return False
 
-    # Defensive: normalize numeric-like inputs
+    # Normalize numeric-like inputs
     try:
-        confidence = float(confidence)
+        confidence_val = float(confidence)
     except Exception:
-        confidence = 0.0
+        confidence_val = 0.0
 
     try:
         weighted_val = float(weighted)
     except Exception:
-        weighted_val = _safe_float(weighted, 0.0)
+        weighted_val = _safe_float(weighted, 0.0) or 0.0
 
     try:
         total_weight_val = float(total_weight)
     except Exception:
-        total_weight_val = _safe_float(total_weight, 0.0)
+        total_weight_val = _safe_float(total_weight, 0.0) or 0.0
 
     weighted_str = f"{weighted_val:.1f}/{total_weight_val:.1f}" if total_weight_val else f"{weighted_val:.1f}/0.0"
 
-    confidence_icon = (
-        "🟢" if confidence >= 76 else
-        "🟡" if confidence >= 51 else
-        "🔴"
-    )
+    confidence_icon = "🟢" if confidence_val >= 76 else ("🟡" if confidence_val >= 51 else "🔴")
 
     stype = str(signal_type).upper() if signal_type is not None else "UNKNOWN"
     if stype == "LONG":
@@ -145,7 +139,7 @@ def send_telegram_alert(
         signal_icon = "❓"
         signal_str = stype
 
-    # Route / reversal formatting (preserve existing semantics)
+    # Route / reversal formatting (preserve semantics)
     route_upper = str(Route).upper() if Route is not None else "NO ROUTE"
     route_icon = "❓"
     route_str = "NO ROUTE"
@@ -166,7 +160,7 @@ def send_telegram_alert(
     elif route_upper == "AMBIGUOUS":
         route_icon = "🔃🔄"
         route_str = "Ambiguous Reversal Trend"
-    elif route_upper == "TREND CONTINUATION" or route_upper == "CONTINUATION":
+    elif route_upper in ["TREND CONTINUATION", "CONTINUATION"]:
         if isinstance(reversal_side, str) and "BULLISH" in reversal_side:
             route_icon = "↗️➡️"
             route_str = "Bullish Continuation"
@@ -183,80 +177,116 @@ def send_telegram_alert(
         route_icon = "❓"
         route_str = f"{Route if Route else 'NO ROUTE'}"
 
-    # Regime string
-    if regime == "BULL":
-        regime_str = "📈 Regime: <b>BULL</b>\n"
-    elif regime == "BEAR":
-        regime_str = "📉 Regime: <b>BEAR</b>\n"
-    elif regime == "RANGE":
-        regime_str = "🚧 Regime: <b>RANGING/SIDEWAYS</b>\n"
-    else:
-        regime_str = "💢 Regime: <b>NO REGIME</b>\n"
+    # Regime line (no trailing newline)
+    regime_display = regime if regime else "N/A"
 
     # Price formatting
     price_float = _safe_float(price, None)
-    price_str = f"{price_float:.6f}" if price_float is not None else str(price)
+    price_display = _fmt_price(price_float) if price_float is not None else str(price)
 
-    # Early breakout info
-    early_breakout_msg = ""
+    # Early breakout info (single-line entries)
+    early_break_lines = []
     if early_breakout_3m and isinstance(early_breakout_3m, dict) and early_breakout_3m.get("valid_signal"):
         eb_bias = early_breakout_3m.get("bias", "N/A")
         eb_price = early_breakout_3m.get("price", "N/A")
-        early_breakout_msg += f"\n⚡ <b>3min Early Breakout</b>: {eb_bias} @ {eb_price}"
+        early_break_lines.append(f"⚡ {tf} Early Breakout: {eb_bias} @ {eb_price}")
     if early_breakout_5m and isinstance(early_breakout_5m, dict) and early_breakout_5m.get("valid_signal"):
         eb_bias = early_breakout_5m.get("bias", "N/A")
         eb_price = early_breakout_5m.get("price", "N/A")
-        early_breakout_msg += f"\n⚡ <b>5min Early Breakout</b>: {eb_bias} @ {eb_price}"
+        early_break_lines.append(f"⚡ 5min Early Breakout: {eb_bias} @ {eb_price}")
 
-    # Ensure TP/SL present; compute fallback if missing or non-numeric
+    # Ensure TP/SL present and numeric; compute fallback if missing
     tp_val = _safe_float(tp, None)
     sl_val = _safe_float(sl, None)
     fallback_used = False
+    if tp_sl and isinstance(tp_sl, dict):
+        # Prefer structured tp_sl if provided
+        tp_val = _safe_float(tp_sl.get("tp"), tp_val)
+        sl_val = _safe_float(tp_sl.get("sl"), sl_val)
+        if chosen_ratio is None:
+            chosen_ratio = tp_sl.get("chosen_ratio")
+        if achieved_rr is None:
+            achieved_rr = tp_sl.get("achieved_rr")
+
     if tp_val is None or sl_val is None:
-        fb_tp, fb_sl, fb_tp_pct, fb_sl_pct = _compute_fallback_tp_sl(price_float if price_float is not None else 0.0, stype)
-        if tp_val is None:
-            tp_val = fb_tp
-        if sl_val is None:
-            sl_val = fb_sl
+        # compute conservative fallback; read env vars
+        try:
+            tp_pct = float(os.getenv("FALLBACK_TP_PCT", "0.02"))
+        except Exception:
+            tp_pct = 0.02
+        try:
+            sl_pct = float(os.getenv("FALLBACK_SL_PCT", "0.01"))
+        except Exception:
+            sl_pct = 0.01
+
+        entry = price_float if price_float is not None else 0.0
+        if stype == "SHORT":
+            if tp_val is None:
+                tp_val = entry * (1.0 - tp_pct)
+            if sl_val is None:
+                sl_val = entry * (1.0 + sl_pct)
+        else:
+            if tp_val is None:
+                tp_val = entry * (1.0 + tp_pct)
+            if sl_val is None:
+                sl_val = entry * (1.0 - sl_pct)
         fallback_used = True
-        print(f"[Telegram] TP/SL missing or invalid for {symbol}. Using fallback TP/SL (tp_pct={fb_tp_pct}, sl_pct={fb_sl_pct}).", flush=True)
+        print(f"[Telegram] TP/SL missing or invalid for {symbol}. Using fallback TP/SL (tp_pct={tp_pct}, sl_pct={sl_pct}).", flush=True)
 
-    # Format TP/SL displays with percent relative to entry and sign conventions
-    tp_display = _format_price_pct(tp_val, price_float if price_float is not None else 0.0, stype)
-    sl_display = _format_price_pct(sl_val, price_float if price_float is not None else 0.0, stype)
+    # Format TP/SL displays
+    tp_pct_display = _pct_for_tp(price_float if price_float is not None else 0.0, tp_val, stype)
+    sl_pct_display = _pct_for_sl(price_float if price_float is not None else 0.0, sl_val, stype)
+    tp_display = f"{_fmt_price(tp_val)} ({tp_pct_display})"
+    sl_display = f"{_fmt_price(sl_val)} ({sl_pct_display})"
 
-    # Token consensus info
+    # Token consensus info (single-line)
     token_info = None
     try:
         token_info = get_token_blockchain_info(symbol)
     except Exception:
         token_info = None
-
     if token_info:
-        consensus_str = f"\n🔗 Consensus: <b>{token_info.get('consensus', 'Unknown')}</b> ({token_info.get('blockchain', 'Unknown')})"
+        consensus_display = f"🔗 Consensus: {token_info.get('consensus', 'Unknown')} ({token_info.get('blockchain', 'Unknown')})"
     else:
-        consensus_str = "\n🔗 Consensus: <b>Unknown</b>"
+        consensus_display = "🔗 Consensus: Unknown"
 
-    # Build message (keeps previous HTML formatting style)
+    # Fib ratio and achieved_rr line (if provided)
+    fib_rr_line = ""
+    if chosen_ratio is not None or achieved_rr is not None:
+        ratio_str = f"{chosen_ratio}" if chosen_ratio is not None else "N/A"
+        rr_str = f"{achieved_rr:.2f}" if (achieved_rr is not None and isinstance(achieved_rr, (int, float))) else "N/A"
+        fib_rr_line = f"🎯 Fib: {ratio_str} | R:R: {rr_str}"
+
+    # Build message lines WITHOUT any blank empty lines
     lines = []
     lines.append(f"{numbered_signal}. {symbol} ({tf})")
-    lines.append(f"{regime_str}")
+    lines.append(f"{'📉' if regime_display == 'BEAR' else ('📈' if regime_display == 'BULL' else '🔎')} Regime: {regime_display}")
     lines.append(f"{signal_icon} {signal_str} Signal")
-    lines.append(f"{route_icon} <b>{route_str}</b>")
-    lines.append(f"💰 <b>{price_str}</b>")
-    lines.append(f"🏁 <b>TP:</b> <code>{tp_display}</code>")
-    lines.append(f"⛔ <b>SL:</b> <code>{sl_display}</code>")
+    lines.append(f"{route_icon} {route_str}")
+    lines.append(f"💰 {price_display}")
+    lines.append(f"🏁 TP: {tp_display}")
+    lines.append(f"⛔ SL: {sl_display}")
     lines.append(f"📊 Score: {score}/{score_max}")
     lines.append(f"🎯 Passed: {passed}/{gatekeepers_total}")
-    lines.append(f"{confidence_icon} Confidence: {confidence:.1f}%")
+    lines.append(f"{confidence_icon} Confidence: {confidence_val:.1f}%")
     lines.append(f"🏋️‍♀️ Weighted: {weighted_str}")
-    if early_breakout_msg:
-        lines.append(early_breakout_msg)
-    lines.append(consensus_str)
+    # append early breakout lines (each on its own single line)
+    for eb in early_break_lines:
+        lines.append(eb)
+    # consensus & fib/rr & fallback note
+    lines.append(consensus_display)
+    if fib_rr_line:
+        lines.append(fib_rr_line)
     if fallback_used:
-        lines.append(f"\n⚠️ Note: TP/SL fallback used")
+        lines.append("⚠️ Note: TP/SL fallback used")
+
+    # Join with single newline (no extra blank lines)
     message = "\n".join(lines)
 
+    # Print the message locally for debugging
+    print(f"[Telegram][MSG] {numbered_signal}. {symbol}\n{message}", flush=True)
+
+    # Send to Telegram
     payload = {
         "chat_id": CHAT_ID,
         "text": message,
@@ -264,11 +294,9 @@ def send_telegram_alert(
         "disable_web_page_preview": True
     }
 
-    resp = None
     try:
         resp = requests.post(SEND_URL, json=payload, timeout=10)
         resp.raise_for_status()
-        # Try to show some response detail if available
         try:
             rj = resp.json()
             if rj.get("ok"):
@@ -282,14 +310,14 @@ def send_telegram_alert(
     except requests.RequestException as e:
         resp_text = ""
         try:
-            resp_text = resp.text if resp is not None else ""
+            resp_text = resp.text if resp is not None else str(e)
         except Exception:
             resp_text = str(e)
         print(f"❗ Telegram send error: {e} — response: {resp_text}", flush=True)
         return False
 
 
-def send_telegram_file(filepath, caption=None) -> bool:
+def send_telegram_file(filepath: str, caption: Optional[str] = None) -> bool:
     """
     Send a local file to the Telegram group as a document. Returns True on success.
     """
