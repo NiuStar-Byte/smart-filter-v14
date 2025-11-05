@@ -246,16 +246,16 @@ def send_telegram_alert(
     except Exception:
         token_info = None
     if token_info:
-        consensus_display = f"🔗 Consensus: {token_info.get('consensus', 'Unknown')} ({token_info.get('blockchain', 'Unknown')})"
+        consensus_display = f"⛓️ Consensus: {token_info.get('consensus', 'Unknown')} ({token_info.get('blockchain', 'Unknown')})"
     else:
-        consensus_display = "🔗 Consensus: Unknown"
+        consensus_display = "⛓️ Consensus: Unknown"
 
     # Fib ratio and achieved_rr line (if provided)
     fib_rr_line = ""
     if chosen_ratio is not None or achieved_rr is not None:
         ratio_str = f"{chosen_ratio}" if chosen_ratio is not None else "N/A"
         rr_str = f"{achieved_rr:.2f}" if (achieved_rr is not None and isinstance(achieved_rr, (int, float))) else "N/A"
-        fib_rr_line = f"🎯 Fib: {ratio_str} | R:R: {rr_str}"
+        fib_rr_line = f"💈 Fib: {ratio_str} | R:R: {rr_str}"
 
     # Build message lines WITHOUT any blank empty lines
     lines = []
