@@ -1,7 +1,29 @@
+"""
+tp_sl_retracement.py
+
+TP/SL calculation utilities for Smart Filter.
+
+This file implements calculate_tp_sl(...) which:
+ - prefers deeper Fibonacci targets for aggressive TP selection,
+ - uses a tightened ATR multiplier by default for tighter SL,
+ - enforces SL to be on the correct side of the entry and a minimal SL distance,
+ - caps SL distance when configured,
+ - returns a dict including tp, sl, fib_levels, chosen_ratio, source, achieved_rr, sl_capped.
+
+Environment variables (optional):
+ - TP_SL_LOOKBACK (int)
+ - TP_SL_ATR_MULT (float)
+ - FALLBACK_TP_PCT (float)
+ - FALLBACK_SL_PCT (float)
+ - TP_SL_MAX_SL_PCT (float)
+ - TP_SL_MIN_SL_PCT (float)  # minimal SL as fraction of entry (default 0.0005 -> 0.05%)
+"""
+
 import os
-import pandas as pd
-import numpy as np
 from typing import Any, Dict, Optional
+
+import numpy as np
+import pandas as pd
 
 # Aggressive defaults (override with env vars)
 DEFAULT_LOOKBACK = int(os.getenv("TP_SL_LOOKBACK", "100"))      # bars to search for swing high/low
@@ -9,6 +31,7 @@ DEFAULT_ATR_MULT = float(os.getenv("TP_SL_ATR_MULT", "1.0"))   # tightened SL bu
 DEFAULT_FALLBACK_TP_PCT = float(os.getenv("FALLBACK_TP_PCT", "0.05"))  # 5% TP fallback (more aggressive TP)
 DEFAULT_FALLBACK_SL_PCT = float(os.getenv("FALLBACK_SL_PCT", "0.02"))  # 2% SL fallback (tighter SL)
 DEFAULT_MAX_SL_PCT = float(os.getenv("TP_SL_MAX_SL_PCT", "0.03"))      # absolute cap on SL distance (3% of entry)
+
 
 def _safe_float(v: Any, default: Optional[float] = None) -> Optional[float]:
     try:
@@ -21,15 +44,29 @@ def _safe_float(v: Any, default: Optional[float] = None) -> Optional[float]:
         except Exception:
             return default
 
+
 def calculate_tp_sl(df: pd.DataFrame, entry_price: float, direction: str,
                     atr_multiplier: Optional[float] = None, lookback: Optional[int] = None) -> Dict[str, Any]:
     """
-    Aggressive TP / Tight SL calculation:
-      - Prefers 'deeper' fib targets (furthest fib on profitable side) to increase TP distance.
-      - Uses a tighter ATR multiplier by default (TP_SL_ATR_MULT, default 1.0).
-      - Caps SL distance to TP_SL_MAX_SL_PCT of entry to avoid very large SLs.
-      - Fallback TP/SL use larger TP pct and tighter SL pct by default.
-    Returns dict: {'tp', 'sl', 'fib_levels', 'chosen_ratio', 'source', 'achieved_rr', 'sl_capped'}
+    Aggressive TP / Tight SL calculation with SL-side enforcement and robust R:R computation.
+
+    Returns dict:
+      {
+        'tp': float,
+        'sl': float,
+        'fib_levels': dict | None,
+        'chosen_ratio': float | None,
+        'source': str,
+        'achieved_rr': float | None,
+        'sl_capped': bool
+      }
+
+    Parameters:
+      - df: DataFrame containing at least 'high','low','close' columns (or mappable to them)
+      - entry_price: numeric entry price
+      - direction: "LONG" or "SHORT" (case-insensitive)
+      - atr_multiplier: optional override for ATR multiplier
+      - lookback: optional override for lookback bars
     """
     # Resolve env defaults
     if lookback is None:
@@ -44,7 +81,7 @@ def calculate_tp_sl(df: pd.DataFrame, entry_price: float, direction: str,
             atr_multiplier = DEFAULT_ATR_MULT
 
     try:
-        fallback_tp_pct = float(os.getenv("FALLBACK_TP_PCT", str(DEFAULT_FALLBACK_TP_PCT)))
+        fallback_tp_pct = float(os.getenv("FALLBACK_TP_PCT", str(DEFAULT_FALLBACK_TPCT := DEFAULT_FALLBACK_TP_PCT)))
     except Exception:
         fallback_tp_pct = DEFAULT_FALLBACK_TP_PCT
     try:
@@ -55,6 +92,12 @@ def calculate_tp_sl(df: pd.DataFrame, entry_price: float, direction: str,
         max_sl_pct = float(os.getenv("TP_SL_MAX_SL_PCT", str(DEFAULT_MAX_SL_PCT)))
     except Exception:
         max_sl_pct = DEFAULT_MAX_SL_PCT
+
+    # Minimal SL fraction to enforce (protects against zero/near-zero sl distances)
+    try:
+        min_sl_pct = float(os.getenv("TP_SL_MIN_SL_PCT", "0.0005"))  # default 0.05%
+    except Exception:
+        min_sl_pct = 0.0005
 
     # Normalize entry
     entry_f = _safe_float(entry_price, None)
@@ -84,7 +127,7 @@ def calculate_tp_sl(df: pd.DataFrame, entry_price: float, direction: str,
     low = pd.to_numeric(df['low'], errors='coerce').astype(float)
     close = pd.to_numeric(df['close'], errors='coerce').astype(float)
 
-    # Compute True Range as pandas Series
+    # Compute True Range / ATR
     try:
         tr_values = np.maximum.reduce([
             (high - low).values,
@@ -130,9 +173,8 @@ def calculate_tp_sl(df: pd.DataFrame, entry_price: float, direction: str,
     recent_low = float(recent_low)
     price_range = recent_high - recent_low
 
-    # Build fib levels (all ratios)
+    # Build fib levels
     fib_ratios_all = [0.0, 0.236, 0.382, 0.5, 0.618, 0.786, 1.0]
-    # Aggressive preference: prefer deeper fibs first (increase TP magnitude)
     fib_ratios_preferred_deep = [0.786, 0.618, 0.5, 0.382, 0.236]
 
     fib_levels = {f"{r:.3f}": (recent_low + r * price_range) for r in fib_ratios_all} if price_range > 0 else None
@@ -155,7 +197,6 @@ def calculate_tp_sl(df: pd.DataFrame, entry_price: float, direction: str,
                 if not candidates:
                     candidates = [(r, fib_levels[f"{r:.3f}"]) for r in fib_ratios_all if fib_levels.get(f"{r:.3f}", float('nan')) > entry_f]
                 if candidates:
-                    # pick the deepest (max level -> biggest profit)
                     chosen_ratio, chosen_val = max(candidates, key=lambda x: x[1])
                     tp = float(chosen_val)
                     source = "fib_deep"
@@ -167,7 +208,7 @@ def calculate_tp_sl(df: pd.DataFrame, entry_price: float, direction: str,
                 # SL cannot be below recent_low; pick the higher (more conservative) of the two
                 sl = float(max(recent_low, sl_candidate))
                 # Cap SL distance to max_sl_pct
-                max_sl_price = entry_f * (1 - max_sl_pct)  # for LONG, SL is below entry; we ensure sl >= max_sl_price
+                max_sl_price = entry_f * (1 - max_sl_pct)  # for LONG, SL is below entry; ensure sl >= max_sl_price
                 if sl < max_sl_price:
                     sl = float(max_sl_price)
                     sl_capped = True
@@ -177,7 +218,6 @@ def calculate_tp_sl(df: pd.DataFrame, entry_price: float, direction: str,
                 if not candidates:
                     candidates = [(r, fib_levels[f"{r:.3f}"]) for r in fib_ratios_all if fib_levels.get(f"{r:.3f}", float('nan')) < entry_f]
                 if candidates:
-                    # pick the deepest (min level -> biggest profit distance)
                     chosen_ratio, chosen_val = min(candidates, key=lambda x: x[1])
                     tp = float(chosen_val)
                     source = "fib_deep"
@@ -208,7 +248,7 @@ def calculate_tp_sl(df: pd.DataFrame, entry_price: float, direction: str,
         source = "percent_fallback_exception"
         print(f"[tp_sl_retracement] Exception during TP/SL compute: {e}", flush=True)
 
-    # Final sanitization
+    # Final sanitization & enforce SL side + minimal SL distance
     tp_f = _safe_float(tp, None)
     sl_f = _safe_float(sl, None)
     if tp_f is None or sl_f is None:
@@ -219,7 +259,25 @@ def calculate_tp_sl(df: pd.DataFrame, entry_price: float, direction: str,
         fib_levels = fib_levels if fib_levels is not None else None
         sl_capped = False
 
-    # compute achieved_rr consistently (direction-aware)
+    # Ensure SL is on the correct side and has a minimal distance
+    min_sl_distance = max(entry_f * min_sl_pct, abs((atr_multiplier or 0.0) * atr), 1e-12)
+
+    # For LONG: sl must be < entry_f
+    if dir_up:
+        if sl_f >= entry_f or (entry_f - sl_f) < min_sl_distance:
+            old_sl = sl_f
+            sl_f = float(round(entry_f - min_sl_distance, 8))
+            # Keep sl_capped flag as-is; log adjustment
+            print(f"[tp_sl_retracement] Adjusted SL for LONG because it was invalid/wrong-side: old_sl={old_sl} -> new_sl={sl_f} (entry={entry_f})", flush=True)
+
+    # For SHORT: sl must be > entry_f
+    if dir_down:
+        if sl_f <= entry_f or (sl_f - entry_f) < min_sl_distance:
+            old_sl = sl_f
+            sl_f = float(round(entry_f + min_sl_distance, 8))
+            print(f"[tp_sl_retracement] Adjusted SL for SHORT because it was invalid/wrong-side: old_sl={old_sl} -> new_sl={sl_f} (entry={entry_f})", flush=True)
+
+    # compute achieved_rr consistently (direction-aware). Use absolute distances once SL side enforced.
     try:
         tp_val = float(tp_f)
         sl_val = float(sl_f)
@@ -232,7 +290,10 @@ def calculate_tp_sl(df: pd.DataFrame, entry_price: float, direction: str,
         else:
             tp_dist = abs(entry_f - tp_val)
             sl_dist = abs(sl_val - entry_f)
-        achieved_rr = float(tp_dist / sl_dist) if sl_dist and sl_dist > 0 else None
+        if sl_dist and sl_dist > 0:
+            achieved_rr = float(tp_dist / sl_dist) if (tp_dist is not None) else None
+        else:
+            achieved_rr = None
     except Exception:
         achieved_rr = None
 
