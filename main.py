@@ -117,15 +117,22 @@ def early_breakout(df, lookback=3):
     return {'valid_signal': False, 'bias': None, 'price': close}
 
 def log_orderbook_and_density(symbol):
+    """
+    Fetch fresh orderbook and resting density and print timestamped logs.
+    Adds ts (UTC) and source=main_log so you can confirm these logs were fetched
+    immediately prior to sending a signal (not a startup/import dump).
+    """
+    from datetime import datetime
+    ts = datetime.utcnow().isoformat()
     try:
         ob = get_order_wall_delta(symbol)
-        # Normalize missing keys
         buy_wall = float(ob.get('buy_wall', 0.0))
         sell_wall = float(ob.get('sell_wall', 0.0))
         wall_delta = float(ob.get('wall_delta', 0.0))
         midprice = ob.get('midprice', 'N/A')
         print(
-            f"[OrderBookDeltaLog] {symbol} | buy_wall={buy_wall} | sell_wall={sell_wall} | wall_delta={wall_delta} | midprice={midprice}",
+            f"[OrderBookDeltaLog] {symbol} | ts={ts} | source=main_log | "
+            f"buy_wall={buy_wall} | sell_wall={sell_wall} | wall_delta={wall_delta} | midprice={midprice}",
             flush=True
         )
     except Exception as e:
@@ -133,9 +140,9 @@ def log_orderbook_and_density(symbol):
 
     try:
         dens = get_resting_order_density(symbol)
-        # dens now guaranteed to be percentages (0..100) by wrapper above
         print(
-            f"[RestingOrderDensityLog] {symbol} | bid_density={dens.get('bid_density',0.0):.2f}% | ask_density={dens.get('ask_density',0.0):.2f}% | "
+            f"[RestingOrderDensityLog] {symbol} | ts={ts} | source=main_log | "
+            f"bid_density={dens.get('bid_density',0.0):.2f}% | ask_density={dens.get('ask_density',0.0):.2f}% | "
             f"bid_top={dens.get('bid_top',0.0)} | ask_top={dens.get('ask_top',0.0)} | "
             f"bid_total={dens.get('bid_total',0.0)} | ask_total={dens.get('ask_total',0.0)}",
             flush=True
