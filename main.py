@@ -233,17 +233,19 @@ def super_gk_aligned(bias, orderbook_result, density_result,
     return composite >= composite_threshold
 
 # --- run_cycle / main logic (UNCONDITIONAL SUPERGK BYPASS FOR ALL SIGNALS) ---
+# NOTE: this module expects these symbols to be available in the import environment:
+# TOKENS, OHLCV_LIMIT, COOLDOWN, last_sent, DEFAULT_SLIPPAGE
+# get_ohlcv, SmartFilter, early_breakout, get_live_entry_price,
+# get_order_wall_delta, get_resting_order_density, calculate_tp_sl,
+# log_fired_signal, send_telegram_alert
+# These are kept external so the function can be copy-pasted into your existing module.
+
+import traceback
+from datetime import datetime
 def run_cycle():
     """
     Single pass over all TOKENS. Returns list of valid_debug dicts collected during this cycle.
-    Robustified send logic:
-    - Forces SuperGK bypass (mainized elsewhere) by treating super_gk_ok=True.
-    - Coerces entry_price to float and falls back safely.
-    - Wraps send block in full try/except and prints tracebacks.
-    - Emits debug lines showing the precise entry_price and send_telegram_alert return value.
     """
-    import traceback
-
     print("[INFO] Starting Smart Filter cycle (single pass)...", flush=True)
     valid_debugs = []
     now = time.time()
@@ -251,6 +253,7 @@ def run_cycle():
     for idx, symbol in enumerate(TOKENS, start=1):
         print(f"[INFO] Checking {symbol}...", flush=True)
         try:
+            # Fetch raw OHLCV for both 3m and 5m timeframes
             df3 = get_ohlcv(symbol, interval="3min", limit=OHLCV_LIMIT)
             df5 = get_ohlcv(symbol, interval="5min", limit=OHLCV_LIMIT)
             if df3 is None or df3.empty or df5 is None or df5.empty:
@@ -260,17 +263,19 @@ def run_cycle():
             early_breakout_3m = early_breakout(df3, lookback=3)
             early_breakout_5m = early_breakout(df5, lookback=3)
 
-            # --- 3min TF ---
+            # --- 3min TF block ---
             try:
                 key3 = f"{symbol}_3min"
                 sf3 = SmartFilter(symbol, df3, df3m=df3, df5m=df5, tf="3min")
                 regime3 = sf3._market_regime()
                 res3 = sf3.analyze()
+
                 if isinstance(res3, dict) and res3.get("filters_ok") is True:
                     last3 = last_sent.get(key3, 0)
                     if now - last3 >= COOLDOWN["3min"]:
                         numbered_signal = f"{idx}.A"
 
+                        # Fresh orderbook/density logs (main_log)
                         log_orderbook_and_density(symbol)
                         try:
                             orderbook_result = get_order_wall_delta(symbol) or {}
@@ -286,14 +291,13 @@ def run_cycle():
                         bias = res3.get("bias", "NEUTRAL")
                         sf3.bias = bias
 
-                        # GLOBAL BYPASS: SuperGK is fully disabled for ALL signals (LONG & SHORT)
+                        # GLOBAL BYPASS: SuperGK disabled in main run (explicit)
                         print("[SuperGK][MAIN] GLOBAL DISABLED - bypassing SuperGK for ALL signals (LONG and SHORT)", flush=True)
                         super_gk_ok = True
-
                         print(f"[SuperGK][MAIN] Result -> bias={bias} super_gk_ok={super_gk_ok}", flush=True)
 
                         if not super_gk_ok:
-                            # kept for compatibility but should never execute
+                            # legacy compatibility block (should not execute with global bypass)
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
                             valid_debugs.append({
                                 "symbol": symbol,
@@ -313,11 +317,11 @@ def run_cycle():
                             })
                             continue
 
-                        # --- Sending block (robust) ---
+                        # --- Prepare to send ---
                         print(f"[LOG] Sending 3min alert for {res3.get('symbol')}", flush=True)
                         fired_time_utc = datetime.utcnow()
 
-                        # Try to fetch live entry price but fall back safely
+                        # Live entry price preferred, fall back to analyzer price
                         entry_price_raw = None
                         try:
                             entry_price_raw = get_live_entry_price(
@@ -330,7 +334,7 @@ def run_cycle():
                             print(f"[WARN] get_live_entry_price raised: {e} -- falling back to analyzer price", flush=True)
                             entry_price_raw = res3.get("price", 0.0)
 
-                        # Coerce to float defensively
+                        # Coerce defensively
                         try:
                             entry_price = float(entry_price_raw)
                         except Exception:
@@ -341,7 +345,10 @@ def run_cycle():
                                 print(f"[WARN] Failed to coerce entry_price ({entry_price_raw}); defaulting to 0.0", flush=True)
                                 entry_price = 0.0
 
-                        # collect signal metadata
+                        # Debug: final entry price vs analyzer price
+                        print(f"[DEBUG] entry_price_final={entry_price:.8f} analyzer_price={res3.get('price')}", flush=True)
+
+                        # Collect signal metadata
                         score = res3.get("score", 0)
                         score_max = res3.get("score_max", 0)
                         passes = res3.get("passes", 0)
@@ -358,17 +365,25 @@ def run_cycle():
                             confidence = 0.0
                         entry_idx = df3.index.get_loc(df3.index[-1])
 
-                        # Calculate TP/SL safely
+                        # Recompute TP/SL against the final live entry_price so TP/SL match execution price
+                        tp_sl = None
+                        tp = None
+                        sl = None
+                        fib_levels = None
                         try:
                             tp_sl = calculate_tp_sl(df3, entry_price, signal_type)
                             tp = tp_sl.get('tp')
                             sl = tp_sl.get('sl')
                             fib_levels = tp_sl.get('fib_levels')
+                            # Debug: show tp_sl summary
+                            print(f"[DEBUG] calculate_tp_sl -> tp={tp} sl={sl} chosen_ratio={tp_sl.get('chosen_ratio')} achieved_rr={tp_sl.get('achieved_rr')}", flush=True)
+                            print(f"[DEBUG] tp_sl full dict for {symbol_val}: {tp_sl}", flush=True)
                         except Exception as e:
                             print(f"[WARN] calculate_tp_sl failed: {e}", flush=True)
                             tp = sl = fib_levels = None
+                            tp_sl = None
 
-                        # Append debug object
+                        # Append debug object used for exporting debug files
                         valid_debugs.append({
                             "symbol": symbol_val,
                             "tf": tf_val,
@@ -389,7 +404,7 @@ def run_cycle():
                             "fib_levels": fib_levels
                         })
 
-                        # Log fired signal and attempt send wrapped in try/except to capture traceback
+                        # Log fired signal (tracking) and then send telegram
                         try:
                             log_fired_signal(
                                 symbol=symbol_val,
@@ -414,7 +429,7 @@ def run_cycle():
 
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
-                                print(f"[DEBUG] send_telegram_alert about to send: symbol={symbol_val} price={entry_price} (type={type(entry_price)})", flush=True)
+                                print(f"[DEBUG] send_telegram_alert about to send: symbol={symbol_val} price={entry_price} (type={type(entry_price)}) tp={tp} sl={sl} tp_source={(tp_sl.get('source') if isinstance(tp_sl, dict) else None)} chosen_ratio={(tp_sl.get('chosen_ratio') if isinstance(tp_sl, dict) else None)} achieved_rr={(tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None)}", flush=True)
                                 sent_ok = send_telegram_alert(
                                     numbered_signal=numbered_signal,
                                     symbol=symbol_val,
@@ -433,7 +448,10 @@ def run_cycle():
                                     regime=regime,
                                     early_breakout_3m=early_breakout_3m,
                                     tp=tp,
-                                    sl=sl
+                                    sl=sl,
+                                    tp_sl=tp_sl,
+                                    chosen_ratio=(tp_sl.get('chosen_ratio') if isinstance(tp_sl, dict) else None),
+                                    achieved_rr=(tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None)
                                 )
                                 print(f"[DEBUG] send_telegram_alert returned: {sent_ok}", flush=True)
                                 if sent_ok:
@@ -451,12 +469,13 @@ def run_cycle():
                 print(f"[ERROR] Exception in processing 3min for {symbol}: {e}", flush=True)
                 traceback.print_exc()
 
-            # --- 5min TF ---
+            # --- 5min TF block (mirror of 3min with identical safe flow) ---
             try:
                 key5 = f"{symbol}_5min"
                 sf5 = SmartFilter(symbol, df5, df3m=df3, df5m=df5, tf="5min")
                 regime5 = sf5._market_regime()
                 res5 = sf5.analyze()
+
                 if isinstance(res5, dict) and res5.get("filters_ok") is True:
                     last5 = last_sent.get(key5, 0)
                     if now - last5 >= COOLDOWN["5min"]:
@@ -477,14 +496,11 @@ def run_cycle():
                         bias = res5.get("bias", "NEUTRAL")
                         sf5.bias = bias
 
-                        # GLOBAL BYPASS: SuperGK is fully disabled for ALL signals (LONG & SHORT)
                         print("[SuperGK][MAIN] GLOBAL DISABLED - bypassing SuperGK for ALL signals (LONG and SHORT)", flush=True)
                         super_gk_ok = True
-
                         print(f"[SuperGK][MAIN] Result -> bias={bias} super_gk_ok={super_gk_ok}", flush=True)
 
                         if not super_gk_ok:
-                            # kept for compatibility but should never execute
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
                             valid_debugs.append({
                                 "symbol": symbol,
@@ -504,7 +520,6 @@ def run_cycle():
                             })
                             continue
 
-                        # --- Sending block (robust) ---
                         print(f"[LOG] Sending 5min alert for {res5.get('symbol')}", flush=True)
                         fired_time_utc = datetime.utcnow()
 
@@ -530,6 +545,8 @@ def run_cycle():
                                 print(f"[WARN] Failed to coerce entry_price ({entry_price_raw}); defaulting to 0.0", flush=True)
                                 entry_price = 0.0
 
+                        print(f"[DEBUG] entry_price_final={entry_price:.8f} analyzer_price={res5.get('price')}", flush=True)
+
                         score = res5.get("score", 0)
                         score_max = res5.get("score_max", 0)
                         passes = res5.get("passes", 0)
@@ -546,14 +563,21 @@ def run_cycle():
                             confidence = 0.0
                         entry_idx = df5.index.get_loc(df5.index[-1])
 
+                        tp_sl = None
+                        tp = None
+                        sl = None
+                        fib_levels = None
                         try:
                             tp_sl = calculate_tp_sl(df5, entry_price, signal_type)
                             tp = tp_sl.get('tp')
                             sl = tp_sl.get('sl')
                             fib_levels = tp_sl.get('fib_levels')
+                            print(f"[DEBUG] calculate_tp_sl -> tp={tp} sl={sl} chosen_ratio={tp_sl.get('chosen_ratio')} achieved_rr={tp_sl.get('achieved_rr')}", flush=True)
+                            print(f"[DEBUG] tp_sl full dict for {symbol_val}: {tp_sl}", flush=True)
                         except Exception as e:
                             print(f"[WARN] calculate_tp_sl failed: {e}", flush=True)
                             tp = sl = fib_levels = None
+                            tp_sl = None
 
                         valid_debugs.append({
                             "symbol": symbol_val,
@@ -599,7 +623,7 @@ def run_cycle():
 
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
-                                print(f"[DEBUG] send_telegram_alert about to send: symbol={symbol_val} price={entry_price} (type={type(entry_price)})", flush=True)
+                                print(f"[DEBUG] send_telegram_alert about to send: symbol={symbol_val} price={entry_price} (type={type(entry_price)}) tp={tp} sl={sl} tp_source={(tp_sl.get('source') if isinstance(tp_sl, dict) else None)} chosen_ratio={(tp_sl.get('chosen_ratio') if isinstance(tp_sl, dict) else None)} achieved_rr={(tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None)}", flush=True)
                                 sent_ok = send_telegram_alert(
                                     numbered_signal=numbered_signal,
                                     symbol=symbol_val,
@@ -618,7 +642,10 @@ def run_cycle():
                                     regime=regime,
                                     early_breakout_5m=early_breakout_5m,
                                     tp=tp,
-                                    sl=sl
+                                    sl=sl,
+                                    tp_sl=tp_sl,
+                                    chosen_ratio=(tp_sl.get('chosen_ratio') if isinstance(tp_sl, dict) else None),
+                                    achieved_rr=(tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None)
                                 )
                                 print(f"[DEBUG] send_telegram_alert returned: {sent_ok}", flush=True)
                                 if sent_ok:
