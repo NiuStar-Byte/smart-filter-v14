@@ -22,11 +22,21 @@ from test_filters import run_all_filter_tests
 import math
 
 # --- Configuration ---
-# Full liquid pairs - expanded after system stability confirmed
+# Full liquid pairs - comprehensive coverage (40+ symbols)
 TOKENS = [
-    "BTC-USDT", "ETH-USDT", "BNB-USDT", "XRP-USDT", "SOL-USDT", "ADA-USDT",
-    "AVAX-USDT", "LINK-USDT", "DOT-USDT", "ARB-USDT", "DOGE-USDT", "UNI-USDT",
-    "AAVE-USDT", "MATIC-USDT", "OP-USDT", "DYDX-USDT"
+    # Tier 1 (Mega cap)
+    "BTC-USDT", "ETH-USDT", "BNB-USDT", "XRP-USDT", "SOL-USDT",
+    # Tier 2 (Large cap)
+    "ADA-USDT", "AVAX-USDT", "DOGE-USDT", "LINK-USDT", "DOT-USDT",
+    # Tier 3 (Mid cap + L2)
+    "ARB-USDT", "UNI-USDT", "MATIC-USDT", "OP-USDT", "AAVE-USDT",
+    "DYDX-USDT", "APE-USDT", "NEAR-USDT", "ATOM-USDT", "LUNC-USDT",
+    # Tier 4 (Alt coins + DeFi)
+    "FTT-USDT", "CRO-USDT", "SAND-USDT", "GALA-USDT", "MANA-USDT",
+    "ENS-USDT", "LDO-USDT", "MKR-USDT", "COMP-USDT", "SNX-USDT",
+    "SUSHI-USDT", "CURVE-USDT", "GMX-USDT", "BLUR-USDT", "LIQ-USDT",
+    "PEPE-USDT", "SHIB-USDT", "FLR-USDT", "FLOKI-USDT", "ORDI-USDT",
+    "STX-USDT", "SEI-USDT", "BONK-USDT", "JTO-USDT", "W-USDT"
 ]
 
 COOLDOWN = {"15min": 120, "30min": 240, "1h": 600}
