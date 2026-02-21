@@ -22,20 +22,12 @@ from test_filters import run_all_filter_tests
 import math
 
 # --- Configuration ---
-# Core liquid pairs - start minimal, proven to work
+# Full liquid pairs - expanded after system stability confirmed
 TOKENS = [
-    "BTC-USDT", "ETH-USDT", "BNB-USDT", "XRP-USDT", "SOL-USDT",
-    "DOGE-USDT", "LINK-USDT", "AAVE-USDT"
+    "BTC-USDT", "ETH-USDT", "BNB-USDT", "XRP-USDT", "SOL-USDT", "ADA-USDT",
+    "AVAX-USDT", "LINK-USDT", "DOT-USDT", "ARB-USDT", "DOGE-USDT", "UNI-USDT",
+    "AAVE-USDT", "MATIC-USDT", "OP-USDT", "DYDX-USDT"
 ]
-# Once system stable 24h, gradually add more:
-# "ADA-USDT", "AVAX-USDT", "UNI-USDT", "ARB-USDT", "DYDX-USDT", "OP-USDT", "MATIC-USDT"
-
-# Full token list (commented, can be enabled gradually):
-# TOKENS_FULL = [
-#     "BTC-USDT", "ETH-USDT", "BNB-USDT", "XRP-USDT", "SOL-USDT", "ADA-USDT",
-#     "AVAX-USDT", "LINK-USDT", "DOT-USDT", "ARB-USDT", "DOGE-USDT", "UNI-USDT",
-#     ... (add more as performance allows)
-# ]
 
 COOLDOWN = {"15min": 120, "30min": 240, "1h": 600}
 last_sent = {}
