@@ -37,7 +37,7 @@ TOKENS = [
 #     ... (add more as performance allows)
 # ]
 
-COOLDOWN = {"130min": 120, "30min": 240, "1h": 600}
+COOLDOWN = {"15min": 120, "30min": 240, "1h": 600}
 last_sent = {}
 
 # NOTE: Updated to use 15m, 30m, 1h (removed 3m, 5m - too noisy)
@@ -306,14 +306,14 @@ def run_cycle():
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
                             valid_debugs.append({
                                 "symbol": symbol,
-                                "tf": "130min",
+                                "tf": "15min",
                                 "bias": bias,
                                 "filter_weights_long": getattr(sf15, 'filter_weights_long', []),
                                 "filter_weights_short": getattr(sf15, 'filter_weights_short', []),
                                 "gatekeepers": getattr(sf15, 'gatekeepers', []),
                                 "results_long": res15.get("results_long", {}),
                                 "results_short": res15.get("results_short", {}),
-                                "caption": f"Blocked signal debug for {symbol} 130min",
+                                "caption": f"Blocked signal debug for {symbol} 15min",
                                 "orderbook_result": orderbook_result,
                                 "density_result": density_result,
                                 "entry_price": res15.get("price"),
@@ -323,7 +323,7 @@ def run_cycle():
                             continue
 
                         # --- Prepare to send ---
-                        print(f"[LOG] Sending 130min alert for {res15.get('symbol')}", flush=True)
+                        print(f"[LOG] Sending 15min alert for {res15.get('symbol')}", flush=True)
                         fired_time_utc = datetime.utcnow()
 
                         # Live entry price preferred, fall back to analyzer price
@@ -362,7 +362,7 @@ def run_cycle():
                         total_weight = res15.get("total_weight", 0.0)
                         Route = res15.get("Route", None)
                         signal_type = bias
-                        tf_val = res15.get("tf", "130min")
+                        tf_val = res15.get("tf", "15min")
                         symbol_val = res15.get("symbol", symbol)
                         try:
                             confidence = round((passed_weight / total_weight) * 100, 1) if total_weight else 0.0
@@ -462,19 +462,19 @@ def run_cycle():
                                 if sent_ok:
                                     last_sent[key15] = now
                                 else:
-                                    print(f"[ERROR] Telegram send failed for {symbol_val} (130min). Not setting cooldown.", flush=True)
+                                    print(f"[ERROR] Telegram send failed for {symbol_val} (15min). Not setting cooldown.", flush=True)
                             except Exception as e:
-                                print(f"[ERROR] Exception during Telegram send for {symbol_val} (130min): {e}", flush=True)
+                                print(f"[ERROR] Exception during Telegram send for {symbol_val} (15min): {e}", flush=True)
                                 traceback.print_exc()
                         else:
-                            print(f"[INFO] DRY_RUN enabled - simulated send for {symbol_val} (130min). Not setting cooldown.", flush=True)
+                            print(f"[INFO] DRY_RUN enabled - simulated send for {symbol_val} (15min). Not setting cooldown.", flush=True)
                 else:
-                    print(f"[INFO] No valid 130min signal for {symbol}.", flush=True)
+                    print(f"[INFO] No valid 15min signal for {symbol}.", flush=True)
             except Exception as e:
-                print(f"[ERROR] Exception in processing 130min for {symbol}: {e}", flush=True)
+                print(f"[ERROR] Exception in processing 15min for {symbol}: {e}", flush=True)
                 traceback.print_exc()
 
-            # --- 30min TF block (mirror of 130min with identical safe flow) ---
+            # --- 30min TF block (mirror of 15min with identical safe flow) ---
             try:
                 key30 = f"{symbol}_30min"
                 sf30 = SmartFilter(symbol, df30, df3m=df15, df5m=df1h, tf="30min")
