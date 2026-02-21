@@ -4,18 +4,19 @@ import time
 from typing import Optional, Tuple
 
 # Supported spot timeframes mapping to KuCoin spot API 'type'
+# IMPORTANT: KuCoin uses specific naming: 1h→1hour, etc.
 TF_MAP = {
     "1min": "1min",
     "3min": "3min",
     "5min": "5min",
     "15min": "15min",
     "30min": "30min",
-    "1h": "1h",
-    "2h": "2h",
-    "4h": "4h",
-    "12h": "12h",
-    "1d": "1d",
-    "1w": "1w"
+    "1h": "1hour",    # KuCoin requires "1hour" not "1h"
+    "2h": "2hour",
+    "4h": "4hour",
+    "12h": "12hour",
+    "1d": "1day",
+    "1w": "1week"
 }
 
 # Futures timeframes mapping to granularity (in minutes)
@@ -65,8 +66,8 @@ def fetch_ohlcv(symbol: str, tf: str, limit: int = 250, retries: int = 2) -> Opt
                     r = requests.get(url, timeout=15)
                     r.raise_for_status()
                     bars = r.json().get("data") or []
-                    if not bars:
-                        continue
+                    if bars and len(bars) > 0:
+                        print(f"[API_OK] {symbol} {tf} via KuCoin Spot → {len(bars)} bars", flush=True)
                     
                     df = pd.DataFrame(bars, columns=[
                         "timestamp","open","close","high","low","volume","turnover"
