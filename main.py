@@ -257,7 +257,7 @@ def run_cycle():
         print(f"[INFO] Checking {symbol}...", flush=True)
         try:
             # Fetch raw OHLCV for 15m, 30m, and 1h timeframes (removed 3m & 5m - too noisy)
-            df15 = get_ohlcv(symbol, interval="130min", limit=OHLCV_LIMIT)
+            df15 = get_ohlcv(symbol, interval="15min", limit=OHLCV_LIMIT)
             df30 = get_ohlcv(symbol, interval="30min", limit=OHLCV_LIMIT)
             df1h = get_ohlcv(symbol, interval="1h", limit=OHLCV_LIMIT)
             if df15 is None or df15.empty or df30 is None or df30.empty or df1h is None or df1h.empty:
