@@ -271,7 +271,7 @@ def run_cycle():
             # --- 130min TF block ---
             try:
                 key15 = f"{symbol}_130min"
-                sf15 = SmartFilter(symbol, df15, df15m=df30, df30m=df1h, tf="130min")
+                sf15 = SmartFilter(symbol, df15, df3m=df15, df5m=df30, tf="15min")
                 regime15 = sf15._market_regime()
                 res15 = sf15.analyze()
 
@@ -477,7 +477,7 @@ def run_cycle():
             # --- 30min TF block (mirror of 130min with identical safe flow) ---
             try:
                 key30 = f"{symbol}_30min"
-                sf30 = SmartFilter(symbol, df30, df15m=df15, df30m=df30, tf="30min")
+                sf30 = SmartFilter(symbol, df30, df3m=df15, df5m=df1h, tf="30min")
                 regime30 = sf30._market_regime()
                 res30 = sf30.analyze()
 
@@ -671,7 +671,7 @@ def run_cycle():
             # --- 1h TF block (mirror of 15min with identical safe flow) ---
             try:
                 key1h = f"{symbol}_1h"
-                sf1h = SmartFilter(symbol, df1h, df3m=None, df5m=None, tf="1h")
+                sf1h = SmartFilter(symbol, df1h, df3m=df30, df5m=None, tf="1h")
                 regime1h = sf1h._market_regime()
                 res1h = sf1h.analyze()
 
