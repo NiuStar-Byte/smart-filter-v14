@@ -1,6 +1,7 @@
 import requests
 import pandas as pd
 import time
+from typing import Optional, Tuple
 
 # Supported spot timeframes mapping to KuCoin spot API 'type'
 TF_MAP = {
@@ -47,7 +48,7 @@ BINANCE_INTERVAL = {
     "1w": "1w"
 }
 
-def fetch_ohlcv(symbol: str, tf: str, limit: int = 250, retries: int = 2) -> pd.DataFrame | None:
+def fetch_ohlcv(symbol: str, tf: str, limit: int = 250, retries: int = 2) -> Optional[pd.DataFrame]:
     """
     Internal: Fetch OHLCV data with retry logic.
     Tries (in order):
@@ -132,13 +133,13 @@ def fetch_ohlcv(symbol: str, tf: str, limit: int = 250, retries: int = 2) -> pd.
 
     return None
 
-def get_ohlcv(symbol: str, interval: str, limit: int = 250) -> pd.DataFrame | None:
+def get_ohlcv(symbol: str, interval: str, limit: int = 250) -> Optional[pd.DataFrame]:
     """Public alias matching main.py signature."""
     return fetch_ohlcv(symbol, tf=interval, limit=limit)
 
 # ====== ORDERBOOK & TICK DATA ======
 
-def fetch_orderbook_l2(symbol: str, depth: int = 20) -> tuple[pd.DataFrame, pd.DataFrame]:
+def fetch_orderbook_l2(symbol: str, depth: int = 20) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Fetch the L2 order book (top N levels) from KuCoin. Returns (bids_df, asks_df)."""
     for sym in (symbol, symbol.replace('-', '/')):
         try:
@@ -185,7 +186,7 @@ def get_live_entry_price(
     long_adjust: float = 0.9900,
     short_adjust: float = 1.0100,
     debug: bool = False
-) -> float | None:
+) -> Optional[float]:
     """
     Fetch best bid/ask price from KuCoin orderbook for entry.
     Falls back to OHLCV close if orderbook unavailable.
