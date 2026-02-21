@@ -15,8 +15,8 @@ from datetime import datetime, timedelta
 from kucoin_data import get_ohlcv, DEFAULT_SLIPPAGE
 from smart_filter import SmartFilter
 from telegram_alert import send_telegram_alert, send_telegram_file
-from pec_backtest import load_fired_signals_from_log, find_closest_ohlcv_bar
-from pec_engine import run_pec_check, export_pec_log
+from pec_backtest import load_fired_signals_from_log
+from pec_engine import run_pec_check, export_pec_log, find_closest_ohlcv_bar
 from tp_sl_retracement import calculate_tp_sl
 import math
 
@@ -105,6 +105,9 @@ def run_pec_backtest():
             passed_gk = signal.get("passed_gk", 0)
             max_gk = signal.get("max_gk", 0)
             
+            # Find entry time (when signal matches to OHLCV bar)
+            entry_idx, entry_bar_time, time_diff = find_closest_ohlcv_bar(fired_time_utc, df, tf)
+            
             pec_result = run_pec_check(
                 symbol=symbol,
                 fired_time_utc=fired_time_utc,
@@ -129,7 +132,16 @@ def run_pec_backtest():
                 
                 print(f"[PEC_BACKTEST]     {outcome} | MFE: {mfe:+.2f}% | MAE: {mae:+.2f}% | Return: {final_ret:+.2f}%", flush=True)
                 
+                # Calculate exit time (entry + N bars)
+                if entry_idx is not None and entry_idx + PEC_BARS < len(df):
+                    exit_bar_time = df.index[entry_idx + PEC_BARS]
+                else:
+                    exit_bar_time = df.index[-1]
+                
                 pec_results.append({
+                    "signal_fired_utc": str(fired_time_utc),  # When signal generated (sent to Telegram)
+                    "entry_time_utc": str(entry_bar_time) if entry_bar_time else str(fired_time_utc),  # Actual entry (matched bar)
+                    "exit_time_utc": str(exit_bar_time),  # When position closed
                     "symbol": symbol,
                     "tf": tf,
                     "signal_type": signal_type,
@@ -139,8 +151,7 @@ def run_pec_backtest():
                     "mfe": mfe,
                     "mae": mae,
                     "final_return": final_ret,
-                    "outcome": outcome,
-                    "pec_summary": pec_result.get("summary", "")
+                    "outcome": outcome
                 })
                 
                 # Export PEC log for this signal
