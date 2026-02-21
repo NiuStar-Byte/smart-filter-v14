@@ -3,22 +3,47 @@ import pandas as pd
 
 # Supported spot timeframes mapping to KuCoin spot API 'type'
 TF_MAP = {
-    "2min": "2min",
+    "1min": "1min",
     "3min": "3min",
-    "5min": "5min"
+    "5min": "5min",
+    "15min": "15min",
+    "30min": "30min",
+    "1h": "1h",
+    "2h": "2h",
+    "4h": "4h",
+    "12h": "12h",
+    "1d": "1d",
+    "1w": "1w"
 }
 
 # Futures timeframes mapping to granularity (in minutes)
 FUTURES_GRAN = {
-    "2min": 2,
+    "1min": 1,
     "3min": 3,
-    "5min": 5
+    "5min": 5,
+    "15min": 15,
+    "30min": 30,
+    "1h": 60,
+    "2h": 120,
+    "4h": 240,
+    "12h": 720,
+    "1d": 1440,
+    "1w": 10080
 }
 
 # Binance interval mapping (fallback)
 BINANCE_INTERVAL = {
+    "1min": "1m",
     "3min": "3m",
-    "5min": "5m"
+    "5min": "5m",
+    "15min": "15m",
+    "30min": "30m",
+    "1h": "1h",
+    "2h": "2h",
+    "4h": "4h",
+    "12h": "12h",
+    "1d": "1d",
+    "1w": "1w"
 }
 
 def fetch_ohlcv(symbol: str, tf: str, limit: int = 100) -> pd.DataFrame | None:
