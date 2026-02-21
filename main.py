@@ -22,13 +22,13 @@ from test_filters import run_all_filter_tests
 import math
 
 # --- Configuration ---
-# Start with core liquid pairs (avoiding API overload)
-# Gradually add more symbols as system stabilizes
+# Core liquid pairs - start minimal, proven to work
 TOKENS = [
     "BTC-USDT", "ETH-USDT", "BNB-USDT", "XRP-USDT", "SOL-USDT",
-    "ADA-USDT", "AVAX-USDT", "DOGE-USDT", "LINK-USDT", "UNI-USDT",
-    "ARB-USDT", "AAVE-USDT", "DYDX-USDT", "OP-USDT", "MATIC-USDT"
+    "DOGE-USDT", "LINK-USDT", "AAVE-USDT"
 ]
+# Once system stable 24h, gradually add more:
+# "ADA-USDT", "AVAX-USDT", "UNI-USDT", "ARB-USDT", "DYDX-USDT", "OP-USDT", "MATIC-USDT"
 
 # Full token list (commented, can be enabled gradually):
 # TOKENS_FULL = [

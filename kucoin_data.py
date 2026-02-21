@@ -49,7 +49,7 @@ BINANCE_INTERVAL = {
     "1w": "1w"
 }
 
-def fetch_ohlcv(symbol: str, tf: str, limit: int = 250, retries: int = 2) -> Optional[pd.DataFrame]:
+def fetch_ohlcv(symbol: str, tf: str, limit: int = 250, retries: int = 2, debug: bool = False) -> Optional[pd.DataFrame]:
     """
     Internal: Fetch OHLCV data with retry logic.
     Tries (in order):
@@ -62,12 +62,16 @@ def fetch_ohlcv(symbol: str, tf: str, limit: int = 250, retries: int = 2) -> Opt
         for sym in (symbol, symbol.replace('-', '/')):
             for attempt in range(retries):
                 try:
-                    url = f"https://api.kucoin.com/api/v1/market/candles?type={TF_MAP[tf]}&symbol={sym}&limit={min(limit, 1500)}"
+                    kc_type = TF_MAP.get(tf, tf)
+                    url = f"https://api.kucoin.com/api/v1/market/candles?type={kc_type}&symbol={sym}&limit={min(limit, 1500)}"
+                    if debug:
+                        print(f"[API_DEBUG] Attempt {attempt+1}/{retries}: {sym} {tf} ({kc_type})", flush=True)
                     r = requests.get(url, timeout=15)
                     r.raise_for_status()
                     bars = r.json().get("data") or []
                     if bars and len(bars) > 0:
-                        print(f"[API_OK] {symbol} {tf} via KuCoin Spot → {len(bars)} bars", flush=True)
+                        if debug:
+                            print(f"[API_OK] {symbol} {tf} via KuCoin Spot → {len(bars)} bars", flush=True)
                     
                     df = pd.DataFrame(bars, columns=[
                         "timestamp","open","close","high","low","volume","turnover"
