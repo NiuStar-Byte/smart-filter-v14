@@ -90,8 +90,9 @@ def send_telegram_alert(
     total_weight: float,
     reversal_side=None,
     regime=None,
-    early_breakout_3m=None,
-    early_breakout_5m=None,
+    early_breakout_15m=None,
+    early_breakout_30m=None,
+    early_breakout_1h=None,
     tp=None,
     sl=None,
     # optional rich data: either pass a dict via tp_sl or pass chosen_ratio/achieved_rr directly
@@ -186,14 +187,18 @@ def send_telegram_alert(
 
     # Early breakout info (single-line entries)
     early_break_lines = []
-    if early_breakout_3m and isinstance(early_breakout_3m, dict) and early_breakout_3m.get("valid_signal"):
-        eb_bias = early_breakout_3m.get("bias", "N/A")
-        eb_price = early_breakout_3m.get("price", "N/A")
-        early_break_lines.append(f"⚡ {tf} Early Breakout: {eb_bias} @ {eb_price}")
-    if early_breakout_5m and isinstance(early_breakout_5m, dict) and early_breakout_5m.get("valid_signal"):
-        eb_bias = early_breakout_5m.get("bias", "N/A")
-        eb_price = early_breakout_5m.get("price", "N/A")
-        early_break_lines.append(f"⚡ 5min Early Breakout: {eb_bias} @ {eb_price}")
+    if early_breakout_15m and isinstance(early_breakout_15m, dict) and early_breakout_15m.get("valid_signal"):
+        eb_bias = early_breakout_15m.get("bias", "N/A")
+        eb_price = early_breakout_15m.get("price", "N/A")
+        early_break_lines.append(f"⚡ 15min Early Breakout: {eb_bias} @ {eb_price}")
+    if early_breakout_30m and isinstance(early_breakout_30m, dict) and early_breakout_30m.get("valid_signal"):
+        eb_bias = early_breakout_30m.get("bias", "N/A")
+        eb_price = early_breakout_30m.get("price", "N/A")
+        early_break_lines.append(f"⚡ 30min Early Breakout: {eb_bias} @ {eb_price}")
+    if early_breakout_1h and isinstance(early_breakout_1h, dict) and early_breakout_1h.get("valid_signal"):
+        eb_bias = early_breakout_1h.get("bias", "N/A")
+        eb_price = early_breakout_1h.get("price", "N/A")
+        early_break_lines.append(f"⚡ 1h Early Breakout: {eb_bias} @ {eb_price}")
 
     # Ensure TP/SL present and numeric; compute fallback if missing
     tp_val = _safe_float(tp, None)
