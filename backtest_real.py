@@ -234,7 +234,47 @@ def run_multi_backtest(symbols, timeframes, days=100):
         with open(filename, 'w') as f:
             json.dump(export_data, f, indent=2, default=str)
         
-        print(f"\n✅ Results exported to: {filename}")
+        print(f"✅ JSON exported to: {filename}")
+        
+        # Export summary to Excel
+        try:
+            xlsx_filename = f"backtest_summary_{timestamp}.xlsx"
+            
+            with pd.ExcelWriter(xlsx_filename, engine='openpyxl') as writer:
+                df_summary.to_excel(writer, sheet_name='Summary', index=False)
+                
+                # Get workbook and worksheet for formatting
+                workbook = writer.book
+                worksheet = writer.sheets['Summary']
+                
+                from openpyxl.styles import Font, PatternFill, Alignment
+                
+                # Header formatting
+                header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+                header_font = Font(bold=True, color="FFFFFF")
+                
+                for cell in worksheet[1]:
+                    cell.fill = header_fill
+                    cell.font = header_font
+                    cell.alignment = Alignment(horizontal="center", vertical="center")
+                
+                # Auto-width columns
+                for column in worksheet.columns:
+                    max_length = 0
+                    column_letter = column[0].column_letter
+                    for cell in column:
+                        try:
+                            if len(str(cell.value)) > max_length:
+                                max_length = len(str(cell.value))
+                        except:
+                            pass
+                    worksheet.column_dimensions[column_letter].width = min(max_length + 2, 50)
+            
+            print(f"✅ Excel exported to: {xlsx_filename}")
+        except ImportError:
+            print(f"⚠️ openpyxl not installed. Install with: pip install openpyxl")
+        except Exception as e:
+            print(f"⚠️ Error saving Excel: {e}")
         
         return all_results, df_summary
     else:

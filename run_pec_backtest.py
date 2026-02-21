@@ -208,13 +208,84 @@ def run_pec_backtest():
         
         print(by_tf.to_string())
         
-        # Save full results to CSV
+        # Save results to both CSV and XLSX
+        timestamp = datetime.now(WIB).strftime('%Y%m%d_%H%M%S')
+        
+        # CSV export
         try:
-            csv_path = f"pec_backtest_results_{datetime.now(WIB).strftime('%Y%m%d_%H%M%S')}.csv"
+            csv_path = f"pec_backtest_results_{timestamp}.csv"
             df_results.to_csv(csv_path, index=False)
-            print(f"\n✅ Full results saved to: {csv_path}", flush=True)
+            print(f"\n✅ CSV saved to: {csv_path}", flush=True)
         except Exception as e:
             print(f"⚠️ Error saving CSV: {e}", flush=True)
+        
+        # XLSX export with formatting
+        try:
+            xlsx_path = f"pec_backtest_results_{timestamp}.xlsx"
+            
+            # Create Excel writer
+            with pd.ExcelWriter(xlsx_path, engine='openpyxl') as writer:
+                df_results.to_excel(writer, sheet_name='PEC Results', index=False)
+                
+                # Get the workbook and worksheet
+                workbook = writer.book
+                worksheet = writer.sheets['PEC Results']
+                
+                # Add formatting
+                from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+                
+                # Header formatting
+                header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+                header_font = Font(bold=True, color="FFFFFF")
+                
+                for cell in worksheet[1]:
+                    cell.fill = header_fill
+                    cell.font = header_font
+                    cell.alignment = Alignment(horizontal="center", vertical="center")
+                
+                # Auto-width columns
+                for column in worksheet.columns:
+                    max_length = 0
+                    column_letter = column[0].column_letter
+                    for cell in column:
+                        try:
+                            if len(str(cell.value)) > max_length:
+                                max_length = len(str(cell.value))
+                        except:
+                            pass
+                    adjusted_width = min(max_length + 2, 50)
+                    worksheet.column_dimensions[column_letter].width = adjusted_width
+                
+                # Color rows by outcome
+                win_fill = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")  # Green
+                loss_fill = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")  # Red
+                breakeven_fill = PatternFill(start_color="FFEB9C", end_color="FFEB9C", fill_type="solid")  # Yellow
+                
+                # Find outcome column
+                outcome_col = None
+                for idx, cell in enumerate(worksheet[1], 1):
+                    if cell.value == "outcome":
+                        outcome_col = idx
+                        break
+                
+                if outcome_col:
+                    for row in worksheet.iter_rows(min_row=2, max_row=len(df_results) + 1):
+                        outcome = row[outcome_col - 1].value
+                        if "WIN" in str(outcome):
+                            for cell in row:
+                                cell.fill = win_fill
+                        elif "LOSS" in str(outcome):
+                            for cell in row:
+                                cell.fill = loss_fill
+                        elif "BREAK" in str(outcome):
+                            for cell in row:
+                                cell.fill = breakeven_fill
+            
+            print(f"✅ Excel saved to: {xlsx_path}", flush=True)
+        except ImportError:
+            print(f"⚠️ openpyxl not installed. Install with: pip install openpyxl", flush=True)
+        except Exception as e:
+            print(f"⚠️ Error saving XLSX: {e}", flush=True)
     else:
         print("[PEC_BACKTEST] No valid PEC results generated.", flush=True)
     
