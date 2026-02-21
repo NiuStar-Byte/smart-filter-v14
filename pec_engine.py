@@ -51,49 +51,156 @@ def find_closest_ohlcv_bar(fired_time_utc, ohlcv_df, tf):
         print(f"[TIMESTAMP_MATCH_ERROR] Failed to match timestamp: {e}")
         return None, None, None
 
-def process_signal_in_pec(signal, df):
+def find_realistic_exit(df, entry_idx, entry_price, signal_type, max_bars=20, tp_pct=1.5, sl_pct=1.0, maker_fee=0.001):
     """
-    Process a single fired signal for backtesting.
+    Find realistic exit price with Take Profit, Stop Loss, and fee modeling.
+    
+    Args:
+        df: DataFrame with OHLCV data
+        entry_idx: Index where signal was fired
+        entry_price: Entry price (close at signal time)
+        signal_type: "LONG" or "SHORT"
+        max_bars: Maximum bars to hold (default 20)
+        tp_pct: Take Profit percentage (default 1.5%)
+        sl_pct: Stop Loss percentage (default 1.0%)
+        maker_fee: Maker fee as decimal (KuCoin default 0.001 = 0.1%)
+    
+    Returns:
+        dict: {
+            'exit_price': float,
+            'exit_reason': str ('TP' | 'SL' | 'TIMEOUT'),
+            'exit_idx': int,
+            'mfe': float (Max Favorable Excursion %),
+            'mae': float (Max Adverse Excursion %)
+        }
+    """
+    if entry_idx + max_bars >= len(df):
+        max_bars = len(df) - entry_idx - 1
+    
+    df_future = df.iloc[entry_idx+1:entry_idx+max_bars+1].copy()
+    
+    if len(df_future) == 0:
+        return None
+    
+    # Calculate TP and SL levels
+    if signal_type == "LONG":
+        tp_level = entry_price * (1 + tp_pct / 100)
+        sl_level = entry_price * (1 - sl_pct / 100)
+        
+        # Track MFE and MAE
+        mfe = ((df_future['high'].max() - entry_price) / entry_price) * 100
+        mae = ((df_future['low'].min() - entry_price) / entry_price) * 100
+        
+        # Find first bar that hits TP or SL
+        for idx, (i, row) in enumerate(df_future.iterrows()):
+            if row['high'] >= tp_level:
+                return {
+                    'exit_price': tp_level,
+                    'exit_reason': 'TP',
+                    'exit_idx': entry_idx + idx + 1,
+                    'mfe': mfe,
+                    'mae': mae
+                }
+            elif row['low'] <= sl_level:
+                return {
+                    'exit_price': sl_level,
+                    'exit_reason': 'SL',
+                    'exit_idx': entry_idx + idx + 1,
+                    'mfe': mfe,
+                    'mae': mae
+                }
+    else:  # SHORT
+        tp_level = entry_price * (1 - tp_pct / 100)
+        sl_level = entry_price * (1 + sl_pct / 100)
+        
+        # Track MFE and MAE
+        mfe = ((entry_price - df_future['low'].min()) / entry_price) * 100
+        mae = ((entry_price - df_future['high'].max()) / entry_price) * 100
+        
+        # Find first bar that hits TP or SL
+        for idx, (i, row) in enumerate(df_future.iterrows()):
+            if row['low'] <= tp_level:
+                return {
+                    'exit_price': tp_level,
+                    'exit_reason': 'TP',
+                    'exit_idx': entry_idx + idx + 1,
+                    'mfe': mfe,
+                    'mae': mae
+                }
+            elif row['high'] >= sl_level:
+                return {
+                    'exit_price': sl_level,
+                    'exit_reason': 'SL',
+                    'exit_idx': entry_idx + idx + 1,
+                    'mfe': mfe,
+                    'mae': mae
+                }
+    
+    # No TP/SL hit: exit at last bar close (TIMEOUT)
+    final_close = df.iloc[entry_idx + len(df_future)]['close']
+    mfe = ((df_future['high'].max() - entry_price) / entry_price) * 100 if signal_type == "LONG" else ((entry_price - df_future['low'].min()) / entry_price) * 100
+    mae = ((df_future['low'].min() - entry_price) / entry_price) * 100 if signal_type == "LONG" else ((entry_price - df_future['high'].max()) / entry_price) * 100
+    
+    return {
+        'exit_price': final_close,
+        'exit_reason': 'TIMEOUT',
+        'exit_idx': entry_idx + len(df_future),
+        'mfe': mfe,
+        'mae': mae
+    }
+
+def process_signal_in_pec(signal, df, maker_fee=0.001):
+    """
+    Process a single fired signal for realistic backtesting with TP/SL.
 
     Args:
         signal (dict): A dictionary containing the signal details.
         df (DataFrame): The OHLCV data frame for the specific symbol and timeframe.
+        maker_fee (float): Maker fee as decimal (default 0.001 = 0.1% for KuCoin)
 
     Returns:
-        dict: The result of the processed signal, including PnL calculations and additional data.
+        dict: The result of the processed signal, including realistic PnL calculations.
     """
     symbol = signal["symbol"]
     tf = signal["tf"]
     signal_type = signal["signal_type"]
     fired_time = signal["fired_time"]
     entry_idx = signal["entry_idx"]
-
-    # Retrieve the entry price and calculate the PnL based on the next 5 bars
     entry_price = df.iloc[entry_idx]["close"]
-    exit_idx = entry_idx + PEC_BARS  # Look ahead 5 bars
-    if exit_idx < len(df):  # Ensure we don't go out of bounds
-        exit_price = df.iloc[exit_idx]["close"]
-
-        # Calculate PnL
-        pnl = (exit_price - entry_price) if signal_type == "LONG" else (entry_price - exit_price)
-        pnl_percent = (pnl / entry_price) * 100  # Calculate PnL percentage
-
-        # Return the results for this signal
-        return {
-            "symbol": symbol,
-            "tf": tf,
-            "signal_type": signal_type,
-            "entry_price": entry_price,
-            "exit_price": exit_price,
-            "pnl": pnl,
-            "pnl_percent": pnl_percent,
-            "fired_time": fired_time,
-            "entry_idx": entry_idx,
-            "exit_idx": exit_idx
-        }
-    else:
-        # If not enough data for 5 bars, return None or an empty result
+    
+    # Find realistic exit with TP/SL
+    exit_result = find_realistic_exit(df, entry_idx, entry_price, signal_type, max_bars=20)
+    
+    if exit_result is None:
         return None
+    
+    exit_price = exit_result['exit_price']
+    exit_reason = exit_result['exit_reason']
+    exit_idx = exit_result['exit_idx']
+    
+    # Calculate PnL with fee modeling
+    if signal_type == "LONG":
+        pnl = (exit_price - entry_price) - (entry_price * maker_fee) - (exit_price * maker_fee)
+    else:  # SHORT
+        pnl = (entry_price - exit_price) - (entry_price * maker_fee) - (exit_price * maker_fee)
+    
+    pnl_percent = (pnl / entry_price) * 100
+    
+    return {
+        "symbol": symbol,
+        "tf": tf,
+        "signal_type": signal_type,
+        "entry_price": entry_price,
+        "exit_price": exit_price,
+        "exit_reason": exit_reason,
+        "pnl": pnl,
+        "pnl_percent": pnl_percent,
+        "mfe": exit_result['mfe'],
+        "mae": exit_result['mae'],
+        "fired_time": fired_time,
+        "entry_idx": entry_idx,
+        "exit_idx": exit_idx
+    }
 
 def run_pec_check(
     symbol,

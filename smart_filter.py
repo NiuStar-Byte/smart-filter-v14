@@ -83,16 +83,21 @@ class SmartFilter:
 
         self.filter_names = list(set(self.filter_weights_long.keys()) | set(self.filter_weights_short.keys()))
         
-        self.gatekeepers = [
-            # "MACD",
-            # "Volume Spike",
-            # "MTF Volume Agreement",
-            # "Liquidity Awareness",
-            # "Spread Filter",
+        # Separate gatekeepers for LONG and SHORT to avoid asymmetry
+        # LONG: Candle Confirmation + Support/Resistance (tight entry logic)
+        # SHORT: Candle Confirmation only (looser, Support/Resistance blocks SHORT)
+        self.gatekeepers_long = [
             "Candle Confirmation",
             "Support/Resistance"
         ]
-
+        
+        self.gatekeepers_short = [
+            "Candle Confirmation"  # SHORT doesn't need Support/Resistance gatekeeper
+        ]
+        
+        # Legacy gatekeepers (for backward compatibility in other methods)
+        self.gatekeepers = self.gatekeepers_long
+        
         self.soft_gatekeepers = ["Candle Confirmation"]
 
     # ==== SHARED HELPERS ====
@@ -706,19 +711,20 @@ class SmartFilter:
             direction = "NEUTRAL"
         self.bias = direction
     
-        # --- Gatekeeper breakdown ---
-        hard_gatekeepers = [gk for gk in self.gatekeepers if gk not in self.soft_gatekeepers]
+        # --- Gatekeeper breakdown (using bias-specific gatekeepers) ---
+        hard_gatekeepers_long = [gk for gk in self.gatekeepers_long if gk not in self.soft_gatekeepers]
+        hard_gatekeepers_short = [gk for gk in self.gatekeepers_short if gk not in self.soft_gatekeepers]
         soft_gatekeepers = [gk for gk in self.gatekeepers if gk in self.soft_gatekeepers]
     
-        passed_gk_long = [gk for gk in self.gatekeepers if results_long.get(gk, False)]
-        failed_gk_long = [gk for gk in self.gatekeepers if not results_long.get(gk, False)]
-        passed_gk_short = [gk for gk in self.gatekeepers if results_short.get(gk, False)]
-        failed_gk_short = [gk for gk in self.gatekeepers if not results_short.get(gk, False)]
+        passed_gk_long = [gk for gk in self.gatekeepers_long if results_long.get(gk, False)]
+        failed_gk_long = [gk for gk in self.gatekeepers_long if not results_long.get(gk, False)]
+        passed_gk_short = [gk for gk in self.gatekeepers_short if results_short.get(gk, False)]
+        failed_gk_short = [gk for gk in self.gatekeepers_short if not results_short.get(gk, False)]
     
-        passed_hard_gk_long = [gk for gk in hard_gatekeepers if results_long.get(gk, False)]
-        failed_hard_gk_long = [gk for gk in hard_gatekeepers if not results_long.get(gk, False)]
-        passed_hard_gk_short = [gk for gk in hard_gatekeepers if results_short.get(gk, False)]
-        failed_hard_gk_short = [gk for gk in hard_gatekeepers if not results_short.get(gk, False)]
+        passed_hard_gk_long = [gk for gk in hard_gatekeepers_long if results_long.get(gk, False)]
+        failed_hard_gk_long = [gk for gk in hard_gatekeepers_long if not results_long.get(gk, False)]
+        passed_hard_gk_short = [gk for gk in hard_gatekeepers_short if results_short.get(gk, False)]
+        failed_hard_gk_short = [gk for gk in hard_gatekeepers_short if not results_short.get(gk, False)]
     
         passed_soft_gk_long = [gk for gk in soft_gatekeepers if results_long.get(gk, False)]
         failed_soft_gk_long = [gk for gk in soft_gatekeepers if not results_long.get(gk, False)]
@@ -748,13 +754,13 @@ class SmartFilter:
         if not failed_hard_gk_short and failed_soft_gk_short:
             print(f"[{self.symbol}] All hard GKs PASSED for SHORT, but SOFT GKs FAILED: {failed_soft_gk_short}")
     
-        # --- Signal logic: Only hard GKs required to pass ---
+        # --- Signal logic: Only hard GKs required to pass (bias-specific) ---
         if self.required_passed is not None:
             required_passed_long = self.required_passed
             required_passed_short = self.required_passed
         else:
-            required_passed_long = len(hard_gatekeepers)
-            required_passed_short = len(hard_gatekeepers)
+            required_passed_long = len(hard_gatekeepers_long)
+            required_passed_short = len(hard_gatekeepers_short)
         print(f"[DEBUG] required_passed_long: {required_passed_long}, passes_long: {passes_long}")
         print(f"[DEBUG] required_passed_short: {required_passed_short}, passes_short: {passes_short}")
     
