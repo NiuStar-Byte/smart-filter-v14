@@ -22,19 +22,20 @@ from test_filters import run_all_filter_tests
 import math
 
 # --- Configuration ---
+# Start with core liquid pairs (avoiding API overload)
+# Gradually add more symbols as system stabilizes
 TOKENS = [
-    "BTC-USDT", "ETH-USDT",
-    "BNB-USDT", "XRP-USDT", "SOL-USDT", "ADA-USDT", "XLM-USDT",
-    "TON-USDT", "AVAX-USDT", "LINK-USDT", "DOT-USDT", "ARB-USDT",
-    "PUMP-USDT", "KAITO-USDT", "MAGIC-USDT", "SUI-USDT", "AERO-USDT",
-    "BERA-USDT", "UNI-USDT", "HBAR-USDT", "SAHARA-USDT", "VIRTUAL-USDT",
-    "PARTI-USDT", "CFX-USDT", "DOGE-USDT", "VINE-USDT", "PENGU-USDT",
-    "WIF-USDT", "EIGEN-USDT", "SPK-USDT", "HYPE-USDT", "WLFI-USDT",
-    "POL-USDT", "RAY-USDT", "ZKJ-USDT", "AAVE-USDT", "DYDX-USDT",
-    "ONDO-USDT", "ARKM-USDT", "ATH-USDT", "NMR-USDT", "PROMPT-USDT",
-    "TURBO-USDT", "ENA-USDT", "BIO-USDT", "ASTER-USDT", "XPL-USDT",
-    "AVNT-USDT", "ORDER-USDT", "XAUT-USDT", "ZORA-USDT"
+    "BTC-USDT", "ETH-USDT", "BNB-USDT", "XRP-USDT", "SOL-USDT",
+    "ADA-USDT", "AVAX-USDT", "DOGE-USDT", "LINK-USDT", "UNI-USDT",
+    "ARB-USDT", "AAVE-USDT", "DYDX-USDT", "OP-USDT", "MATIC-USDT"
 ]
+
+# Full token list (commented, can be enabled gradually):
+# TOKENS_FULL = [
+#     "BTC-USDT", "ETH-USDT", "BNB-USDT", "XRP-USDT", "SOL-USDT", "ADA-USDT",
+#     "AVAX-USDT", "LINK-USDT", "DOT-USDT", "ARB-USDT", "DOGE-USDT", "UNI-USDT",
+#     ... (add more as performance allows)
+# ]
 
 COOLDOWN = {"130min": 120, "30min": 240, "1h": 600}
 last_sent = {}
