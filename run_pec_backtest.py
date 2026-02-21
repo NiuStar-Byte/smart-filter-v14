@@ -15,8 +15,8 @@ from datetime import datetime, timedelta
 from kucoin_data import get_ohlcv, DEFAULT_SLIPPAGE
 from smart_filter import SmartFilter
 from telegram_alert import send_telegram_alert, send_telegram_file
-from pec_backtest import load_fired_signals_from_log, find_closest_ohlcv_bar
-from pec_engine import run_pec_check, export_pec_log
+from pec_backtest import load_fired_signals_from_log
+from pec_engine import run_pec_check, export_pec_log, find_closest_ohlcv_bar
 from tp_sl_retracement import calculate_tp_sl
 import math
 
@@ -105,6 +105,9 @@ def run_pec_backtest():
             passed_gk = signal.get("passed_gk", 0)
             max_gk = signal.get("max_gk", 0)
             
+            # Find entry time (when signal matches to OHLCV bar)
+            entry_idx, entry_bar_time, time_diff = find_closest_ohlcv_bar(fired_time_utc, df, tf)
+            
             pec_result = run_pec_check(
                 symbol=symbol,
                 fired_time_utc=fired_time_utc,
@@ -129,7 +132,16 @@ def run_pec_backtest():
                 
                 print(f"[PEC_BACKTEST]     {outcome} | MFE: {mfe:+.2f}% | MAE: {mae:+.2f}% | Return: {final_ret:+.2f}%", flush=True)
                 
+                # Calculate exit time (entry + N bars)
+                if entry_idx is not None and entry_idx + PEC_BARS < len(df):
+                    exit_bar_time = df.index[entry_idx + PEC_BARS]
+                else:
+                    exit_bar_time = df.index[-1]
+                
                 pec_results.append({
+                    "signal_fired_utc": str(fired_time_utc),  # When signal generated (sent to Telegram)
+                    "entry_time_utc": str(entry_bar_time) if entry_bar_time else str(fired_time_utc),  # Actual entry (matched bar)
+                    "exit_time_utc": str(exit_bar_time),  # When position closed
                     "symbol": symbol,
                     "tf": tf,
                     "signal_type": signal_type,
@@ -139,8 +151,7 @@ def run_pec_backtest():
                     "mfe": mfe,
                     "mae": mae,
                     "final_return": final_ret,
-                    "outcome": outcome,
-                    "pec_summary": pec_result.get("summary", "")
+                    "outcome": outcome
                 })
                 
                 # Export PEC log for this signal
@@ -208,13 +219,84 @@ def run_pec_backtest():
         
         print(by_tf.to_string())
         
-        # Save full results to CSV
+        # Save results to both CSV and XLSX
+        timestamp = datetime.now(WIB).strftime('%Y%m%d_%H%M%S')
+        
+        # CSV export
         try:
-            csv_path = f"pec_backtest_results_{datetime.now(WIB).strftime('%Y%m%d_%H%M%S')}.csv"
+            csv_path = f"pec_backtest_results_{timestamp}.csv"
             df_results.to_csv(csv_path, index=False)
-            print(f"\n✅ Full results saved to: {csv_path}", flush=True)
+            print(f"\n✅ CSV saved to: {csv_path}", flush=True)
         except Exception as e:
             print(f"⚠️ Error saving CSV: {e}", flush=True)
+        
+        # XLSX export with formatting
+        try:
+            xlsx_path = f"pec_backtest_results_{timestamp}.xlsx"
+            
+            # Create Excel writer
+            with pd.ExcelWriter(xlsx_path, engine='openpyxl') as writer:
+                df_results.to_excel(writer, sheet_name='PEC Results', index=False)
+                
+                # Get the workbook and worksheet
+                workbook = writer.book
+                worksheet = writer.sheets['PEC Results']
+                
+                # Add formatting
+                from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+                
+                # Header formatting
+                header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+                header_font = Font(bold=True, color="FFFFFF")
+                
+                for cell in worksheet[1]:
+                    cell.fill = header_fill
+                    cell.font = header_font
+                    cell.alignment = Alignment(horizontal="center", vertical="center")
+                
+                # Auto-width columns
+                for column in worksheet.columns:
+                    max_length = 0
+                    column_letter = column[0].column_letter
+                    for cell in column:
+                        try:
+                            if len(str(cell.value)) > max_length:
+                                max_length = len(str(cell.value))
+                        except:
+                            pass
+                    adjusted_width = min(max_length + 2, 50)
+                    worksheet.column_dimensions[column_letter].width = adjusted_width
+                
+                # Color rows by outcome
+                win_fill = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")  # Green
+                loss_fill = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")  # Red
+                breakeven_fill = PatternFill(start_color="FFEB9C", end_color="FFEB9C", fill_type="solid")  # Yellow
+                
+                # Find outcome column
+                outcome_col = None
+                for idx, cell in enumerate(worksheet[1], 1):
+                    if cell.value == "outcome":
+                        outcome_col = idx
+                        break
+                
+                if outcome_col:
+                    for row in worksheet.iter_rows(min_row=2, max_row=len(df_results) + 1):
+                        outcome = row[outcome_col - 1].value
+                        if "WIN" in str(outcome):
+                            for cell in row:
+                                cell.fill = win_fill
+                        elif "LOSS" in str(outcome):
+                            for cell in row:
+                                cell.fill = loss_fill
+                        elif "BREAK" in str(outcome):
+                            for cell in row:
+                                cell.fill = breakeven_fill
+            
+            print(f"✅ Excel saved to: {xlsx_path}", flush=True)
+        except ImportError:
+            print(f"⚠️ openpyxl not installed. Install with: pip install openpyxl", flush=True)
+        except Exception as e:
+            print(f"⚠️ Error saving XLSX: {e}", flush=True)
     else:
         print("[PEC_BACKTEST] No valid PEC results generated.", flush=True)
     
