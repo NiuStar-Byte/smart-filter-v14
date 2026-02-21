@@ -268,16 +268,16 @@ def run_cycle():
             early_breakout_30m = early_breakout(df30, lookback=3)
             early_breakout_1h = early_breakout(df1h, lookback=3)
 
-            # --- 130min TF block ---
+            # --- 15min TF block ---
             try:
-                key15 = f"{symbol}_130min"
+                key15 = f"{symbol}_15min"
                 sf15 = SmartFilter(symbol, df15, df3m=df15, df5m=df30, tf="15min")
                 regime15 = sf15._market_regime()
                 res15 = sf15.analyze()
 
                 if isinstance(res15, dict) and res15.get("filters_ok") is True:
                     last15 = last_sent.get(key15, 0)
-                    if now - last15 >= COOLDOWN["130min"]:
+                    if now - last15 >= COOLDOWN["15min"]:
                         numbered_signal = f"{idx}.A"
 
                         # Fresh orderbook/density logs (main_log)
