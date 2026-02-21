@@ -9,6 +9,7 @@
 import datetime
 import logging
 import math
+import os
 import requests
 import pandas as pd
 import numpy as np
@@ -17,6 +18,9 @@ from kucoin_density import get_resting_density
 from signal_debug_log import export_signal_debug_txt
 from calculations import add_indicators, compute_rsi, calculate_cci, calculate_stochrsi, compute_williams_r
 from typing import Optional
+
+# Control verbosity (default: quiet mode to avoid Railway logging limits)
+DEBUG_FILTERS = os.getenv("DEBUG_FILTERS", "false").lower() == "true"
 
 class SmartFilter:
     """
@@ -669,8 +673,8 @@ class SmartFilter:
                 results_status[name] = "ERROR"
                 continue
             try:
-                # Always call with debug=True so all filters log every run
-                result = fn(debug=True)
+                # Call with debug flag controlled by DEBUG_FILTERS env var (default: quiet mode)
+                result = fn(debug=DEBUG_FILTERS)
                 if result == "LONG":
                     results_long[name] = True
                     results_short[name] = False
@@ -703,9 +707,9 @@ class SmartFilter:
         long_score = sum(1 for f in non_gk_filters if results_long.get(f, False))
         short_score = sum(1 for f in non_gk_filters if results_short.get(f, False))
     
-        # --- Get signal direction (enable debug so GK-status logs appear) ---
+        # --- Get signal direction (only debug if DEBUG_FILTERS enabled) ---
         try:
-            direction = self.get_signal_direction(results_long, results_short, debug=True)
+            direction = self.get_signal_direction(results_long, results_short, debug=DEBUG_FILTERS)
         except Exception as e:
             print(f"[{self.symbol}] Error in get_signal_direction(): {e}")
             direction = "NEUTRAL"
@@ -743,16 +747,17 @@ class SmartFilter:
         passed_non_gk_weight_long = sum(self.filter_weights_long.get(f, 0) for f in passed_non_gk_long)
         passed_non_gk_weight_short = sum(self.filter_weights_short.get(f, 0) for f in passed_non_gk_short)
     
-        # --- Print/logging ---
-        print(f"[{self.symbol}] Passed GK LONG: {passed_gk_long}")
-        print(f"[{self.symbol}] Failed GK LONG: {failed_gk_long}")
-        print(f"[{self.symbol}] Passed GK SHORT: {passed_gk_short}")
-        print(f"[{self.symbol}] Failed GK SHORT: {failed_gk_short}")
-    
-        if not failed_hard_gk_long and failed_soft_gk_long:
-            print(f"[{self.symbol}] All hard GKs PASSED for LONG, but SOFT GKs FAILED: {failed_soft_gk_long}")
-        if not failed_hard_gk_short and failed_soft_gk_short:
-            print(f"[{self.symbol}] All hard GKs PASSED for SHORT, but SOFT GKs FAILED: {failed_soft_gk_short}")
+        # --- Print/logging (only if debug enabled) ---
+        if DEBUG_FILTERS:
+            print(f"[{self.symbol}] Passed GK LONG: {passed_gk_long}")
+            print(f"[{self.symbol}] Failed GK LONG: {failed_gk_long}")
+            print(f"[{self.symbol}] Passed GK SHORT: {passed_gk_short}")
+            print(f"[{self.symbol}] Failed GK SHORT: {failed_gk_short}")
+        
+            if not failed_hard_gk_long and failed_soft_gk_long:
+                print(f"[{self.symbol}] All hard GKs PASSED for LONG, but SOFT GKs FAILED: {failed_soft_gk_long}")
+            if not failed_hard_gk_short and failed_soft_gk_short:
+                print(f"[{self.symbol}] All hard GKs PASSED for SHORT, but SOFT GKs FAILED: {failed_soft_gk_short}")
     
         # --- Signal logic: Only hard GKs required to pass (bias-specific) ---
         if self.required_passed is not None:
@@ -761,8 +766,9 @@ class SmartFilter:
         else:
             required_passed_long = len(hard_gatekeepers_long)
             required_passed_short = len(hard_gatekeepers_short)
-        print(f"[DEBUG] required_passed_long: {required_passed_long}, passes_long: {passes_long}")
-        print(f"[DEBUG] required_passed_short: {required_passed_short}, passes_short: {passes_short}")
+        if DEBUG_FILTERS:
+            print(f"[DEBUG] required_passed_long: {required_passed_long}, passes_long: {passes_long}")
+            print(f"[DEBUG] required_passed_short: {required_passed_short}, passes_short: {passes_short}")
     
         if required_passed_long is None or passes_long is None:
             print("[ERROR] required_passed_long or passes_long is None!")
@@ -865,12 +871,13 @@ class SmartFilter:
             print(f"[{self.symbol}] Error while skipping superGK in analyze(): {e}", flush=True)
             super_gk_ok = None
     
-        # --- Final logging & decision ---
-        print("[DEBUG] direction:", direction)
-        print("[DEBUG] score:", score, "min_score:", self.min_score)
-        print("[DEBUG] passes:", passes, "required_passed:", self.required_passed)
-        print("[DEBUG] super_gk_ok:", super_gk_ok)
-        print("DEBUG SUMS:", getattr(self, '_debug_sums', {}))
+        # --- Final logging & decision (only if debug enabled) ---
+        if DEBUG_FILTERS:
+            print("[DEBUG] direction:", direction)
+            print("[DEBUG] score:", score, "min_score:", self.min_score)
+            print("[DEBUG] passes:", passes, "required_passed:", self.required_passed)
+            print("[DEBUG] super_gk_ok:", super_gk_ok)
+            print("DEBUG SUMS:", getattr(self, '_debug_sums', {}))
     
         # Always use the correctly-calculated required_passed for the current direction
         if direction == "LONG":
@@ -920,8 +927,10 @@ class SmartFilter:
         if valid_signal:
             print(f"[{self.symbol}] ✅ FINAL SIGNAL (filters_ok): {message}")
         else:
-            print(f"[{self.symbol}] ❌ No signal (filters failed).")
-        print("DEBUG SUMS:", getattr(self, '_debug_sums', {}))
+            if DEBUG_FILTERS:
+                print(f"[{self.symbol}] ❌ No signal (filters failed).")
+        if DEBUG_FILTERS:
+            print("DEBUG SUMS:", getattr(self, '_debug_sums', {}))
 
         # --- Verdict for debug file (unchanged) ---
         verdict = {
