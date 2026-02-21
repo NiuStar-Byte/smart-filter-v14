@@ -939,16 +939,7 @@ def run():
             time.sleep(10)
 
 if __name__ == "__main__":
-    print(">>> ENTERED main.py", flush=True)
-    if os.getenv("PEC_BACKTEST_ONLY", "false").lower() == "true":
-        print(">>> Entering PEC_BACKTEST_ONLY branch", flush=True)
-        from pec_backtest import run_pec_backtest
-        try:
-            print(">>> Calling run_pec_backtest", flush=True)
-            run_pec_backtest(TOKENS, get_ohlcv, get_local_wib, PEC_WINDOW_MINUTES, PEC_BARS, OHLCV_LIMIT)
-        except Exception as e:
-            print(f"EXCEPTION in run_pec_backtest: {e}", flush=True)
-            import traceback; traceback.print_exc()
-    else:
-        print(">>> Entering normal run() branch", flush=True)
-        run()
+    print(">>> ENTERED main.py - LIVE SIGNAL MODE", flush=True)
+    print(">>> For PEC backtesting, run: python3 run_pec_backtest.py", flush=True)
+    print(">>> For historical backtest, run: python3 backtest_real.py", flush=True)
+    run()
