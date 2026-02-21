@@ -242,9 +242,9 @@ def run_multi_backtest(symbols, timeframes, days=100):
         return None, None
 
 if __name__ == "__main__":
-    # Example: Backtest BTC, ETH, SOL, XRP on 5-min and 15-min
+    # Example: Backtest BTC, ETH, SOL, XRP on 15-min, 30-min, and 1-hour
     symbols = ["BTC-USDT", "ETH-USDT", "SOL-USDT", "XRP-USDT"]
-    timeframes = ["5min", "15min"]
+    timeframes = ["15min", "30min", "1h"]
     
     all_results, df_summary = run_multi_backtest(symbols, timeframes, days=100)
     
