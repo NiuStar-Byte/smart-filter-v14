@@ -22,21 +22,22 @@ from test_filters import run_all_filter_tests
 import math
 
 # --- Configuration ---
-# Full liquid pairs - comprehensive coverage (40+ symbols)
+# Full liquid pairs from kucoin_orderbook.py - 90+ symbols
 TOKENS = [
-    # Tier 1 (Mega cap)
-    "BTC-USDT", "ETH-USDT", "BNB-USDT", "XRP-USDT", "SOL-USDT",
-    # Tier 2 (Large cap)
-    "ADA-USDT", "AVAX-USDT", "DOGE-USDT", "LINK-USDT", "DOT-USDT",
-    # Tier 3 (Mid cap + L2)
-    "ARB-USDT", "UNI-USDT", "MATIC-USDT", "OP-USDT", "AAVE-USDT",
-    "DYDX-USDT", "APE-USDT", "NEAR-USDT", "ATOM-USDT", "LUNC-USDT",
-    # Tier 4 (Alt coins + DeFi)
-    "FTT-USDT", "CRO-USDT", "SAND-USDT", "GALA-USDT", "MANA-USDT",
-    "ENS-USDT", "LDO-USDT", "MKR-USDT", "COMP-USDT", "SNX-USDT",
-    "SUSHI-USDT", "CURVE-USDT", "GMX-USDT", "BLUR-USDT", "LIQ-USDT",
-    "PEPE-USDT", "SHIB-USDT", "FLR-USDT", "FLOKI-USDT", "ORDI-USDT",
-    "STX-USDT", "SEI-USDT", "BONK-USDT", "JTO-USDT", "W-USDT"
+    "BTC-USDT", "ETH-USDT", "SOL-USDT", "XRP-USDT", "ADA-USDT", "AVAX-USDT", 
+    "XLM-USDT", "LINK-USDT", "POL-USDT", "BNB-USDT", "SKATE-USDT", "LA-USDT", 
+    "SPK-USDT", "ZKJ-USDT", "IP-USDT", "AERO-USDT", "BMT-USDT", "LQTY-USDT", 
+    "X-USDT", "RAY-USDT", "EPT-USDT", "ELDE-USDT", "MAGIC-USDT", "ACTSOL-USDT", 
+    "FUN-USDT", "CROSS-USDT", "KNC-USDT", "AIN-USDT", "ARK-USDT", "PORTAL-USDT", 
+    "ICNT-USDT", "OMNI-USDT", "PARTI-USDT", "VINE-USDT", "ZORA-USDT", "DUCK-USDT", 
+    "AUCTION-USDT", "ROAM-USDT", "FUEL-USDT", "TUT-USDT", "VOXEL-USDT", "ALU-USDT", 
+    "TURBO-USDT", "PROMPT-USDT", "HIPPO-USDT", "DOGE-USDT", "ALGO-USDT", "DOT-USDT", 
+    "NEWT-USDT", "SAHARA-USDT", "PEPE-USDT", "ERA-USDT", "PENGU-USDT", "CFX-USDT", 
+    "ENA-USDT", "SUI-USDT", "EIGEN-USDT", "UNI-USDT", "HYPE-USDT", "TON-USDT", 
+    "KAS-USDT", "HBAR-USDT", "ONDO-USDT", "VIRTUAL-USDT", "AAVE-USDT", "GALA-USDT", 
+    "PUMP-USDT", "WIF-USDT", "BERA-USDT", "DYDX-USDT", "KAITO-USDT", "ARKM-USDT", 
+    "ATH-USDT", "NMR-USDT", "ARB-USDT", "WLFI-USDT", "BIO-USDT", "ASTER-USDT", 
+    "XPL-USDT", "AVNT-USDT", "ORDER-USDT", "XAUT-USDT"
 ]
 
 COOLDOWN = {"15min": 120, "30min": 240, "1h": 600}
