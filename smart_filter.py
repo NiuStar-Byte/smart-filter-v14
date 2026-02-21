@@ -890,6 +890,7 @@ class SmartFilter:
             direction in ["LONG", "SHORT"]
             and (score >= (self.min_score if isinstance(self.min_score, (int, float)) else 0))
             and (passes >= required_for_signal)
+            and soft_passed  # Soft gatekeepers MUST pass too (e.g., Candle Confirmation)
         )
 
         # Keep valid_signal for backwards compatibility but do NOT include super_gk_ok here.
