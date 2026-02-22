@@ -97,6 +97,15 @@ class SignalStore:
             print(f"[SignalStore] ERROR appending signal: {e}", flush=True)
             return None
     
+    def load_all_signals(self) -> List[Dict]:
+        """
+        Load all signals from JSONL file.
+        
+        Returns:
+            List of all signal dicts
+        """
+        return self.load_signals()
+    
     def load_signals(self, start_date: Optional[str] = None, end_date: Optional[str] = None,
                     symbols: Optional[List[str]] = None, timeframes: Optional[List[str]] = None) -> List[Dict]:
         """
