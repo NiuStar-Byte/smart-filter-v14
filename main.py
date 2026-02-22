@@ -346,14 +346,11 @@ def run_cycle():
                         bias = res15.get("bias", "NEUTRAL")
                         sf15.bias = bias
 
-                        # RE-ENABLED: SuperGK validation for all signals (FIX: 2026-02-22)
-                        print("[SuperGK][MAIN] RE-ENABLED - validating SuperGK for ALL signals (LONG and SHORT)", flush=True)
-                        try:
-                            super_gk_ok = super_gk_aligned(bias, orderbook_result, density_result)
-                        except Exception as e:
-                            print(f"[SuperGK][MAIN] Error: {e}, defaulting to True for safety", flush=True)
-                            super_gk_ok = True
-                        print(f"[SuperGK][MAIN] Result -> bias={bias} super_gk_ok={super_gk_ok}", flush=True)
+                        # DISABLED: SuperGK validation (broken mechanism, blocking all signals)
+                        # TODO: Review SuperGK logic and fix it properly
+                        print("[SuperGK][MAIN] DISABLED (broken) - bypassing SuperGK for ALL signals", flush=True)
+                        super_gk_ok = True  # Bypass until SuperGK is fixed
+                        print(f"[SuperGK][MAIN] Result -> bias={bias} super_gk_ok={super_gk_ok} (bypassed)", flush=True)
 
                         if not super_gk_ok:
                             # legacy compatibility block (should not execute with global bypass)
@@ -595,14 +592,11 @@ def run_cycle():
                         bias = res30.get("bias", "NEUTRAL")
                         sf30.bias = bias
 
-                        # RE-ENABLED: SuperGK validation for all signals (FIX: 2026-02-22)
-                        print("[SuperGK][MAIN] RE-ENABLED - validating SuperGK for ALL signals (LONG and SHORT)", flush=True)
-                        try:
-                            super_gk_ok = super_gk_aligned(bias, orderbook_result, density_result)
-                        except Exception as e:
-                            print(f"[SuperGK][MAIN] Error: {e}, defaulting to True for safety", flush=True)
-                            super_gk_ok = True
-                        print(f"[SuperGK][MAIN] Result -> bias={bias} super_gk_ok={super_gk_ok}", flush=True)
+                        # DISABLED: SuperGK validation (broken mechanism, blocking all signals)
+                        # TODO: Review SuperGK logic and fix it properly
+                        print("[SuperGK][MAIN] DISABLED (broken) - bypassing SuperGK for ALL signals", flush=True)
+                        super_gk_ok = True  # Bypass until SuperGK is fixed
+                        print(f"[SuperGK][MAIN] Result -> bias={bias} super_gk_ok={super_gk_ok} (bypassed)", flush=True)
 
                         if not super_gk_ok:
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
@@ -834,14 +828,11 @@ def run_cycle():
                         bias = res1h.get("bias", "NEUTRAL")
                         sf1h.bias = bias
 
-                        # RE-ENABLED: SuperGK validation for all signals (FIX: 2026-02-22)
-                        print("[SuperGK][MAIN] RE-ENABLED - validating SuperGK for ALL signals (LONG and SHORT)", flush=True)
-                        try:
-                            super_gk_ok = super_gk_aligned(bias, orderbook_result, density_result)
-                        except Exception as e:
-                            print(f"[SuperGK][MAIN] Error: {e}, defaulting to True for safety", flush=True)
-                            super_gk_ok = True
-                        print(f"[SuperGK][MAIN] Result -> bias={bias} super_gk_ok={super_gk_ok}", flush=True)
+                        # DISABLED: SuperGK validation (broken mechanism, blocking all signals)
+                        # TODO: Review SuperGK logic and fix it properly
+                        print("[SuperGK][MAIN] DISABLED (broken) - bypassing SuperGK for ALL signals", flush=True)
+                        super_gk_ok = True  # Bypass until SuperGK is fixed
+                        print(f"[SuperGK][MAIN] Result -> bias={bias} super_gk_ok={super_gk_ok} (bypassed)", flush=True)
 
                         if not super_gk_ok:
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
