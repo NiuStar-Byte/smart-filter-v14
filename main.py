@@ -378,7 +378,8 @@ def run_cycle():
                         if not super_gk_ok:
                             # legacy compatibility block (should not execute with global bypass)
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
-                            valid_debugs.append({
+                            if len(valid_debugs) < 2:
+                                valid_debugs.append({
                                 "symbol": symbol,
                                 "tf": "15min",
                                 "bias": bias,
@@ -393,7 +394,7 @@ def run_cycle():
                                 "entry_price": res15.get("price"),
                                 "fired_time_utc": datetime.utcnow(),
                                 "early_breakout_15m": early_breakout_15m
-                            })
+                                })
                             continue
 
                         # --- Prepare to send ---
@@ -463,7 +464,8 @@ def run_cycle():
                             tp_sl = None
 
                         # Append debug object used for exporting debug files
-                        valid_debugs.append({
+                        if len(valid_debugs) < 2:
+                            valid_debugs.append({
                             "symbol": symbol_val,
                             "tf": tf_val,
                             "bias": bias,
@@ -481,7 +483,7 @@ def run_cycle():
                             "tp": tp,
                             "sl": sl,
                             "fib_levels": fib_levels
-                        })
+                            })
 
                         # Log fired signal (tracking) and then send telegram
                         try:
@@ -623,7 +625,8 @@ def run_cycle():
 
                         if not super_gk_ok:
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
-                            valid_debugs.append({
+                            if len(valid_debugs) < 2:
+                                valid_debugs.append({
                                 "symbol": symbol,
                                 "tf": "30min",
                                 "bias": bias,
@@ -638,7 +641,7 @@ def run_cycle():
                                 "entry_price": res30.get("price"),
                                 "fired_time_utc": datetime.utcnow(),
                                 "early_breakout_30m": early_breakout_30m
-                            })
+                                })
                             continue
 
                         print(f"[LOG] Sending 30min alert for {res30.get('symbol')}", flush=True)
@@ -700,7 +703,8 @@ def run_cycle():
                             tp = sl = fib_levels = None
                             tp_sl = None
 
-                        valid_debugs.append({
+                        if len(valid_debugs) < 2:
+                            valid_debugs.append({
                             "symbol": symbol_val,
                             "tf": tf_val,
                             "bias": bias,
@@ -718,7 +722,7 @@ def run_cycle():
                             "tp": tp,
                             "sl": sl,
                             "fib_levels": fib_levels
-                        })
+                            })
 
                         try:
                             log_fired_signal(
@@ -859,7 +863,8 @@ def run_cycle():
 
                         if not super_gk_ok:
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
-                            valid_debugs.append({
+                            if len(valid_debugs) < 2:
+                                valid_debugs.append({
                                 "symbol": symbol,
                                 "tf": "1h",
                                 "bias": bias,
@@ -874,7 +879,7 @@ def run_cycle():
                                 "entry_price": res1h.get("price"),
                                 "fired_time_utc": datetime.utcnow(),
                                 "early_breakout_1h": early_breakout_1h
-                            })
+                                })
                             continue
 
                         print(f"[LOG] Sending 1h alert for {res1h.get('symbol')}", flush=True)
@@ -936,7 +941,8 @@ def run_cycle():
                             tp = sl = fib_levels = None
                             tp_sl = None
 
-                        valid_debugs.append({
+                        if len(valid_debugs) < 2:
+                            valid_debugs.append({
                             "symbol": symbol_val,
                             "tf": tf_val,
                             "bias": bias,
@@ -954,7 +960,7 @@ def run_cycle():
                             "tp": tp,
                             "sl": sl,
                             "fib_levels": fib_levels
-                        })
+                            })
 
                         try:
                             log_fired_signal(
