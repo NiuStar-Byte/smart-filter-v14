@@ -51,7 +51,7 @@ def find_closest_ohlcv_bar(fired_time_utc, ohlcv_df, tf):
         print(f"[TIMESTAMP_MATCH_ERROR] Failed to match timestamp: {e}")
         return None, None, None
 
-def find_realistic_exit(df, entry_idx, entry_price, signal_type, max_bars=20, tp_pct=1.5, sl_pct=1.0, maker_fee=0.001):
+def find_realistic_exit(df, entry_idx, entry_price, signal_type, max_bars=20, tp_price=None, sl_price=None, tp_pct=None, sl_pct=None, maker_fee=0.001):
     """
     Find realistic exit price with Take Profit, Stop Loss, and fee modeling.
     
@@ -60,9 +60,11 @@ def find_realistic_exit(df, entry_idx, entry_price, signal_type, max_bars=20, tp
         entry_idx: Index where signal was fired
         entry_price: Entry price (close at signal time)
         signal_type: "LONG" or "SHORT"
-        max_bars: Maximum bars to hold (default 20)
-        tp_pct: Take Profit percentage (default 1.5%)
-        sl_pct: Stop Loss percentage (default 1.0%)
+        max_bars: Maximum bars to hold (configurable, NOT hardcoded to 20)
+        tp_price: Actual TP price from signal (takes precedence over tp_pct)
+        sl_price: Actual SL price from signal (takes precedence over sl_pct)
+        tp_pct: Take Profit percentage (fallback, default 1.5%)
+        sl_pct: Stop Loss percentage (fallback, default 1.0%)
         maker_fee: Maker fee as decimal (KuCoin default 0.001 = 0.1%)
     
     Returns:
@@ -82,11 +84,27 @@ def find_realistic_exit(df, entry_idx, entry_price, signal_type, max_bars=20, tp
     if len(df_future) == 0:
         return None
     
+    # Use actual prices from signal if provided, otherwise fall back to percentages
+    if tp_price is None:
+        tp_pct = tp_pct if tp_pct is not None else 1.5
+        if signal_type == "LONG":
+            tp_level = entry_price * (1 + tp_pct / 100)
+        else:
+            tp_level = entry_price * (1 - tp_pct / 100)
+    else:
+        tp_level = tp_price
+    
+    if sl_price is None:
+        sl_pct = sl_pct if sl_pct is not None else 1.0
+        if signal_type == "LONG":
+            sl_level = entry_price * (1 - sl_pct / 100)
+        else:
+            sl_level = entry_price * (1 + sl_pct / 100)
+    else:
+        sl_level = sl_price
+    
     # Calculate TP and SL levels
     if signal_type == "LONG":
-        tp_level = entry_price * (1 + tp_pct / 100)
-        sl_level = entry_price * (1 - sl_pct / 100)
-        
         # Track MFE and MAE
         mfe = ((df_future['high'].max() - entry_price) / entry_price) * 100
         mae = ((df_future['low'].min() - entry_price) / entry_price) * 100
@@ -110,9 +128,6 @@ def find_realistic_exit(df, entry_idx, entry_price, signal_type, max_bars=20, tp
                     'mae': mae
                 }
     else:  # SHORT
-        tp_level = entry_price * (1 - tp_pct / 100)
-        sl_level = entry_price * (1 + sl_pct / 100)
-        
         # Track MFE and MAE
         mfe = ((entry_price - df_future['low'].min()) / entry_price) * 100
         mae = ((entry_price - df_future['high'].max()) / entry_price) * 100
@@ -149,7 +164,7 @@ def find_realistic_exit(df, entry_idx, entry_price, signal_type, max_bars=20, tp
         'mae': mae
     }
 
-def process_signal_in_pec(signal, df, maker_fee=0.001):
+def process_signal_in_pec(signal, df, maker_fee=0.001, max_bars=None, tp_price=None, sl_price=None):
     """
     Process a single fired signal for realistic backtesting with TP/SL.
 
@@ -157,6 +172,9 @@ def process_signal_in_pec(signal, df, maker_fee=0.001):
         signal (dict): A dictionary containing the signal details.
         df (DataFrame): The OHLCV data frame for the specific symbol and timeframe.
         maker_fee (float): Maker fee as decimal (default 0.001 = 0.1% for KuCoin)
+        max_bars (int): Maximum bars to hold (overrides default 20)
+        tp_price (float): Actual TP price from signal (from JSONL storage)
+        sl_price (float): Actual SL price from signal (from JSONL storage)
 
     Returns:
         dict: The result of the processed signal, including realistic PnL calculations.
@@ -168,8 +186,17 @@ def process_signal_in_pec(signal, df, maker_fee=0.001):
     entry_idx = signal["entry_idx"]
     entry_price = df.iloc[entry_idx]["close"]
     
-    # Find realistic exit with TP/SL
-    exit_result = find_realistic_exit(df, entry_idx, entry_price, signal_type, max_bars=20)
+    # Use provided max_bars or fall back to default 20
+    if max_bars is None:
+        max_bars = 20
+    
+    # Use signal's stored TP/SL if provided, otherwise let find_realistic_exit calculate from percentages
+    exit_result = find_realistic_exit(
+        df, entry_idx, entry_price, signal_type, 
+        max_bars=max_bars,
+        tp_price=tp_price or signal.get("tp_target"),
+        sl_price=sl_price or signal.get("sl_target")
+    )
     
     if exit_result is None:
         return None
