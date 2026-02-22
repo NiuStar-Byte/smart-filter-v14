@@ -21,8 +21,17 @@ from pec_engine import run_pec_check, export_pec_log
 from tp_sl_retracement import calculate_tp_sl
 from test_filters import run_all_filter_tests
 from signal_store import get_signal_store
-from pec_config import MIN_ACCEPTED_RR
+from pec_config import MIN_ACCEPTED_RR, SIGNALS_JSONL_PATH
 import math
+
+# === INITIALIZE SIGNAL STORAGE (EARLY & ROBUST) ===
+try:
+    _signal_store = get_signal_store(SIGNALS_JSONL_PATH)
+    _signal_store_ready = True
+    print(f"[INIT] Signal store ready: {os.path.abspath(SIGNALS_JSONL_PATH)}", flush=True)
+except Exception as e:
+    _signal_store_ready = False
+    print(f"[ERROR] Signal store init failed: {e}. Signals will fire to Telegram only.", flush=True)
 
 # --- Configuration ---
 # Full liquid pairs from kucoin_orderbook.py - 90+ symbols
@@ -107,9 +116,16 @@ def create_and_store_signal(symbol, timeframe, signal_type, fired_time_utc, entr
                            passed_gatekeepers, max_gatekeepers):
     """
     Create signal dict and store to JSONL.
+    Uses global _signal_store initialized at module load time.
     
     Returns: signal_uuid if successful, None if failed
     """
+    global _signal_store_ready
+    
+    if not _signal_store_ready:
+        print(f"[WARN] Signal store not ready, skipping JSONL storage for {symbol} {timeframe}", flush=True)
+        return None
+    
     try:
         signal_uuid = str(uuid_lib.uuid4())
         
@@ -136,13 +152,20 @@ def create_and_store_signal(symbol, timeframe, signal_type, fired_time_utc, entr
             "max_gatekeepers": int(max_gatekeepers),
         }
         
-        store = get_signal_store()
-        stored_uuid = store.append_signal(signal_data)
+        # Use global store (pre-initialized)
+        stored_uuid = _signal_store.append_signal(signal_data)
+        
+        if stored_uuid:
+            print(f"[STORED] Signal captured: {symbol} {timeframe} {signal_type} UUID={stored_uuid[:8]}...", flush=True)
+        else:
+            print(f"[WARN] Signal store returned None for {symbol} {timeframe}", flush=True)
         
         return stored_uuid
     
     except Exception as e:
-        print(f"[ERROR] create_and_store_signal failed: {e}", flush=True)
+        print(f"[ERROR] create_and_store_signal failed for {symbol} {timeframe}: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
         return None
 
 def early_breakout(df, lookback=3):
