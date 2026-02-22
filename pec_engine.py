@@ -152,14 +152,18 @@ def find_realistic_exit(df, entry_idx, entry_price, signal_type, max_bars=20, tp
                 }
     
     # No TP/SL hit: exit at last bar close (TIMEOUT)
-    final_close = df.iloc[entry_idx + len(df_future)]['close']
+    # Use the close price of the last bar in the window
+    timeout_idx = min(entry_idx + len(df_future), len(df) - 1)
+    timeout_price = float(df.iloc[timeout_idx]['close'])
+    
     mfe = ((df_future['high'].max() - entry_price) / entry_price) * 100 if signal_type == "LONG" else ((entry_price - df_future['low'].min()) / entry_price) * 100
     mae = ((df_future['low'].min() - entry_price) / entry_price) * 100 if signal_type == "LONG" else ((entry_price - df_future['high'].max()) / entry_price) * 100
     
     return {
-        'exit_price': final_close,
+        'exit_price': timeout_price,  # ← EXPLICIT: this is the timeout exit price
+        'timeout_price': timeout_price,  # ← NEW: added for clarity
         'exit_reason': 'TIMEOUT',
-        'exit_idx': entry_idx + len(df_future),
+        'exit_idx': timeout_idx,
         'mfe': mfe,
         'mae': mae
     }
