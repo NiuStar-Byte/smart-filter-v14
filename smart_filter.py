@@ -1199,7 +1199,7 @@ class SmartFilter:
         zscore_threshold: float = 1.1,
         require_5m_trend: bool = True,
         debug: bool = False
-    ) -> str | None:
+    ) -> Optional[str]:
         """
         Detects volume spikes with price move and optional 5m trend confirmation.
         Returns "LONG", "SHORT", or None.
@@ -1262,7 +1262,7 @@ class SmartFilter:
     
         return signal
 
-    def _check_mtf_volume_agreement(self, debug: bool = False) -> str | None:
+    def _check_mtf_volume_agreement(self, debug: bool = False) -> Optional[str]:
         """
         Multi-timeframe volume agreement filter.
         Returns "LONG", "SHORT", or None.
@@ -1289,7 +1289,7 @@ class SmartFilter:
     
         return signal
         
-    def _check_liquidity_awareness(self, debug: bool = False) -> str | None:
+    def _check_liquidity_awareness(self, debug: bool = False) -> Optional[str]:
         """
         Liquidity awareness filter based on spread, volume, and close price.
         Returns "LONG", "SHORT", or None.
@@ -1333,7 +1333,7 @@ class SmartFilter:
     
         return signal
 
-    def _check_spread_filter(self, window: int = 20, debug: bool = False) -> str | None:
+    def _check_spread_filter(self, window: int = 20, debug: bool = False) -> Optional[str]:
         """
         Spread filter based on current/historical spreads and price action.
         Returns "LONG", "SHORT", or None.
@@ -1369,7 +1369,7 @@ class SmartFilter:
     
         return signal
 
-    def _check_smart_money_bias(self, volume_window: int = 20, min_cond: int = 1, debug: bool = False) -> str | None:
+    def _check_smart_money_bias(self, volume_window: int = 20, min_cond: int = 1, debug: bool = False) -> Optional[str]:
         """
         Smart money bias filter combining volume and VWAP.
         Returns "LONG", "SHORT", or None.
@@ -1399,7 +1399,7 @@ class SmartFilter:
     
         return signal
 
-    def _check_absorption(self, window: int = 20, buffer_pct: float = 0.005, min_cond: int = 1, debug: bool = False) -> str | None:
+    def _check_absorption(self, window: int = 20, buffer_pct: float = 0.005, min_cond: int = 1, debug: bool = False) -> Optional[str]:
         """
         Absorption filter for detecting price action near highs/lows with volume confirmation.
         Returns "LONG", "SHORT", or None.
@@ -1551,7 +1551,7 @@ class SmartFilter:
         min_cond: int = 2,
         require_volume_confirm: bool = False,
         debug: bool = False
-    ) -> str | None:
+    ) -> Optional[str]:
         """
         Support / Resistance proximity filter.
     
