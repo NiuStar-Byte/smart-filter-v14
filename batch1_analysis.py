@@ -91,6 +91,17 @@ def analyze_batch1(csv_file='batch1_results.csv'):
             
             print(f"  {reason:8s}: {count:3d} trades ({pct:5.1f}%) {status}")
             print(f"             Win Rate: {reason_wr:5.1f}% | Avg PnL: {reason_avg:+.2f}%")
+            
+            # Additional detail for TIMEOUT: show win/loss breakdown
+            if reason == 'TIMEOUT' and count > 0:
+                timeout_wins = (reason_trades['result'] == 'WIN').sum()
+                timeout_losses = (reason_trades['result'] == 'LOSS').sum()
+                print(f"             Detail: {timeout_wins} wins, {timeout_losses} losses (even TP/SL not met)")
+                
+                # Show average prices for timeout trades
+                avg_exit_price = reason_trades['exit_price'].mean()
+                avg_entry = reason_trades['entry_price'].mean()
+                print(f"             Avg Entry: {avg_entry:.6f} | Avg Timeout Exit: {avg_exit_price:.6f}")
     
     # Target validation
     if exit_stats:

@@ -159,10 +159,11 @@ def run_pec_backtest_v2(
                 
                 exit_price = exit_result['exit_price']
                 exit_reason = exit_result['exit_reason']
+                timeout_price = exit_result.get('timeout_price', None)  # NEW: explicit timeout exit price
                 mfe = exit_result.get('mfe', 0)
                 mae = exit_result.get('mae', 0)
                 
-                # Calculate PnL
+                # Calculate PnL explicitly
                 if signal_type == "LONG":
                     pnl_pct = ((exit_price - entry_price) / entry_price) * 100
                 else:
@@ -173,7 +174,12 @@ def run_pec_backtest_v2(
                 # Calculate hold time
                 hold_bars = exit_result.get('exit_idx', entry_idx) - entry_idx
                 
-                # Record result (with exit_reason and MFE/MAE for analysis)
+                # For TIMEOUT exits, track the actual exit price clearly
+                timeout_result = None
+                if exit_reason == 'TIMEOUT' and timeout_price is not None:
+                    timeout_result = 'TIMEOUT_WIN' if is_win else 'TIMEOUT_LOSS'
+                
+                # Record result (with explicit exit_reason, timeout_price, and PnL)
                 result = {
                     'symbol': symbol,
                     'timeframe': tf,
@@ -183,8 +189,10 @@ def run_pec_backtest_v2(
                     'sl_target': sl_price,
                     'exit_price': exit_price,
                     'exit_reason': exit_reason,  # KEY: TP | SL | TIMEOUT
+                    'timeout_price': timeout_price,  # NEW: explicit price for TIMEOUT exits
                     'pnl_pct': pnl_pct,
                     'result': 'WIN' if is_win else 'LOSS',
+                    'timeout_result': timeout_result,  # NEW: TIMEOUT_WIN | TIMEOUT_LOSS | None
                     'hold_bars': hold_bars,
                     'mfe': mfe,  # Max Favorable Excursion %
                     'mae': mae,  # Max Adverse Excursion %
