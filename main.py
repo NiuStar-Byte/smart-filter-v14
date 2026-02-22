@@ -11,6 +11,7 @@ import pandas as pd
 import random
 import pytz
 from datetime import datetime
+import uuid as uuid_lib
 from kucoin_data import get_live_entry_price, DEFAULT_SLIPPAGE
 from kucoin_data import get_ohlcv
 from smart_filter import SmartFilter
@@ -19,6 +20,8 @@ from kucoin_orderbook import get_order_wall_delta
 from pec_engine import run_pec_check, export_pec_log
 from tp_sl_retracement import calculate_tp_sl
 from test_filters import run_all_filter_tests
+from signal_store import get_signal_store
+from pec_config import MIN_ACCEPTED_RR
 import math
 
 # --- Configuration ---
@@ -97,6 +100,50 @@ def get_resting_order_density(symbol, depth=100, top_n=5):
 
 def candle_color(open, close):
     return 'green' if close > open else 'red'
+
+def create_and_store_signal(symbol, timeframe, signal_type, fired_time_utc, entry_price,
+                           tp_target, sl_target, tp_pct, sl_pct, achieved_rr, fib_ratio,
+                           atr_value, score, max_score, confidence, route, regime,
+                           passed_gatekeepers, max_gatekeepers):
+    """
+    Create signal dict and store to JSONL.
+    
+    Returns: signal_uuid if successful, None if failed
+    """
+    try:
+        signal_uuid = str(uuid_lib.uuid4())
+        
+        signal_data = {
+            "uuid": signal_uuid,
+            "symbol": symbol,
+            "timeframe": timeframe,
+            "signal_type": signal_type,
+            "fired_time_utc": fired_time_utc.isoformat() if hasattr(fired_time_utc, 'isoformat') else str(fired_time_utc),
+            "entry_price": float(entry_price),
+            "tp_target": float(tp_target),
+            "sl_target": float(sl_target),
+            "tp_pct": float(tp_pct) if tp_pct is not None else 0.0,
+            "sl_pct": float(sl_pct) if sl_pct is not None else 0.0,
+            "achieved_rr": float(achieved_rr) if achieved_rr is not None else 0.0,
+            "fib_ratio": float(fib_ratio) if fib_ratio is not None else None,
+            "atr_value": float(atr_value) if atr_value is not None else 0.0,
+            "score": int(score),
+            "max_score": int(max_score),
+            "confidence": float(confidence),
+            "route": str(route) if route else "NONE",
+            "regime": str(regime) if regime else "UNKNOWN",
+            "passed_gatekeepers": int(passed_gatekeepers),
+            "max_gatekeepers": int(max_gatekeepers),
+        }
+        
+        store = get_signal_store()
+        stored_uuid = store.append_signal(signal_data)
+        
+        return stored_uuid
+    
+    except Exception as e:
+        print(f"[ERROR] create_and_store_signal failed: {e}", flush=True)
+        return None
 
 def early_breakout(df, lookback=3):
     if len(df) < lookback:
@@ -439,6 +486,46 @@ def run_cycle():
 
                         regime = sf15._market_regime() if hasattr(sf15, "_market_regime") else None
 
+                        # ===== RR FILTERING (Enhanced PEC) =====
+                        achieved_rr_value = tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None
+                        
+                        if achieved_rr_value is None or achieved_rr_value < MIN_ACCEPTED_RR:
+                            # Filter out: RR too low
+                            print(f"[RR_FILTER] 15min signal REJECTED: {symbol_val} - RR {achieved_rr_value} < MIN {MIN_ACCEPTED_RR}", flush=True)
+                            continue
+                        
+                        # RR acceptable: Store signal + Fire
+                        print(f"[RR_FILTER] 15min signal ACCEPTED: {symbol_val} - RR {achieved_rr_value} >= MIN {MIN_ACCEPTED_RR}", flush=True)
+                        
+                        # Store signal to JSONL
+                        tp_pct_val = ((tp - entry_price) / entry_price * 100) if tp and entry_price else 0
+                        sl_pct_val = ((sl - entry_price) / entry_price * 100) if sl and entry_price else 0
+                        
+                        signal_uuid = create_and_store_signal(
+                            symbol=symbol_val,
+                            timeframe=tf_val,
+                            signal_type=signal_type,
+                            fired_time_utc=fired_time_utc,
+                            entry_price=entry_price,
+                            tp_target=tp,
+                            sl_target=sl,
+                            tp_pct=tp_pct_val,
+                            sl_pct=sl_pct_val,
+                            achieved_rr=achieved_rr_value,
+                            fib_ratio=tp_sl.get('chosen_ratio') if isinstance(tp_sl, dict) else None,
+                            atr_value=None,
+                            score=score,
+                            max_score=score_max,
+                            confidence=confidence,
+                            route=Route,
+                            regime=regime,
+                            passed_gatekeepers=passes,
+                            max_gatekeepers=gatekeepers_total
+                        )
+                        
+                        if not signal_uuid:
+                            print(f"[WARN] Failed to store signal for {symbol_val} (15min). Still attempting Telegram send.", flush=True)
+
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
                                 print(f"[DEBUG] send_telegram_alert about to send: symbol={symbol_val} price={entry_price} (type={type(entry_price)}) tp={tp} sl={sl} tp_source={(tp_sl.get('source') if isinstance(tp_sl, dict) else None)} chosen_ratio={(tp_sl.get('chosen_ratio') if isinstance(tp_sl, dict) else None)} achieved_rr={(tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None)}", flush=True)
@@ -638,6 +725,46 @@ def run_cycle():
 
                         regime = sf30._market_regime() if hasattr(sf30, "_market_regime") else None
 
+                        # ===== RR FILTERING (Enhanced PEC) =====
+                        achieved_rr_value = tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None
+                        
+                        if achieved_rr_value is None or achieved_rr_value < MIN_ACCEPTED_RR:
+                            # Filter out: RR too low
+                            print(f"[RR_FILTER] 30min signal REJECTED: {symbol_val} - RR {achieved_rr_value} < MIN {MIN_ACCEPTED_RR}", flush=True)
+                            continue
+                        
+                        # RR acceptable: Store signal + Fire
+                        print(f"[RR_FILTER] 30min signal ACCEPTED: {symbol_val} - RR {achieved_rr_value} >= MIN {MIN_ACCEPTED_RR}", flush=True)
+                        
+                        # Store signal to JSONL
+                        tp_pct_val = ((tp - entry_price) / entry_price * 100) if tp and entry_price else 0
+                        sl_pct_val = ((sl - entry_price) / entry_price * 100) if sl and entry_price else 0
+                        
+                        signal_uuid = create_and_store_signal(
+                            symbol=symbol_val,
+                            timeframe=tf_val,
+                            signal_type=signal_type,
+                            fired_time_utc=fired_time_utc,
+                            entry_price=entry_price,
+                            tp_target=tp,
+                            sl_target=sl,
+                            tp_pct=tp_pct_val,
+                            sl_pct=sl_pct_val,
+                            achieved_rr=achieved_rr_value,
+                            fib_ratio=tp_sl.get('chosen_ratio') if isinstance(tp_sl, dict) else None,
+                            atr_value=None,
+                            score=score,
+                            max_score=score_max,
+                            confidence=confidence,
+                            route=Route,
+                            regime=regime,
+                            passed_gatekeepers=passes,
+                            max_gatekeepers=gatekeepers_total
+                        )
+                        
+                        if not signal_uuid:
+                            print(f"[WARN] Failed to store signal for {symbol_val} (30min). Still attempting Telegram send.", flush=True)
+
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
                                 print(f"[DEBUG] send_telegram_alert about to send: symbol={symbol_val} price={entry_price} (type={type(entry_price)}) tp={tp} sl={sl} tp_source={(tp_sl.get('source') if isinstance(tp_sl, dict) else None)} chosen_ratio={(tp_sl.get('chosen_ratio') if isinstance(tp_sl, dict) else None)} achieved_rr={(tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None)}", flush=True)
@@ -836,6 +963,46 @@ def run_cycle():
                             traceback.print_exc()
 
                         regime = sf1h._market_regime() if hasattr(sf1h, "_market_regime") else None
+
+                        # ===== RR FILTERING (Enhanced PEC) =====
+                        achieved_rr_value = tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None
+                        
+                        if achieved_rr_value is None or achieved_rr_value < MIN_ACCEPTED_RR:
+                            # Filter out: RR too low
+                            print(f"[RR_FILTER] 1h signal REJECTED: {symbol_val} - RR {achieved_rr_value} < MIN {MIN_ACCEPTED_RR}", flush=True)
+                            continue
+                        
+                        # RR acceptable: Store signal + Fire
+                        print(f"[RR_FILTER] 1h signal ACCEPTED: {symbol_val} - RR {achieved_rr_value} >= MIN {MIN_ACCEPTED_RR}", flush=True)
+                        
+                        # Store signal to JSONL
+                        tp_pct_val = ((tp - entry_price) / entry_price * 100) if tp and entry_price else 0
+                        sl_pct_val = ((sl - entry_price) / entry_price * 100) if sl and entry_price else 0
+                        
+                        signal_uuid = create_and_store_signal(
+                            symbol=symbol_val,
+                            timeframe=tf_val,
+                            signal_type=signal_type,
+                            fired_time_utc=fired_time_utc,
+                            entry_price=entry_price,
+                            tp_target=tp,
+                            sl_target=sl,
+                            tp_pct=tp_pct_val,
+                            sl_pct=sl_pct_val,
+                            achieved_rr=achieved_rr_value,
+                            fib_ratio=tp_sl.get('chosen_ratio') if isinstance(tp_sl, dict) else None,
+                            atr_value=None,
+                            score=score,
+                            max_score=score_max,
+                            confidence=confidence,
+                            route=Route,
+                            regime=regime,
+                            passed_gatekeepers=passes,
+                            max_gatekeepers=gatekeepers_total
+                        )
+                        
+                        if not signal_uuid:
+                            print(f"[WARN] Failed to store signal for {symbol_val} (1h). Still attempting Telegram send.", flush=True)
 
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
