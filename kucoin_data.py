@@ -3,6 +3,10 @@ import pandas as pd
 import time
 from typing import Optional, Tuple
 
+# FIX 2026-02-22: OHLCV Cache (60s TTL)
+OHLCV_CACHE = {}
+OHLCV_CACHE_TTL = 60  # seconds
+
 # Supported spot timeframes mapping to KuCoin spot API 'type'
 # IMPORTANT: KuCoin uses specific naming: 1h→1hour, etc.
 TF_MAP = {
@@ -51,14 +55,27 @@ BINANCE_INTERVAL = {
 
 def fetch_ohlcv(symbol: str, tf: str, limit: int = 250, retries: int = 2) -> Optional[pd.DataFrame]:
     """
-    Internal: Fetch OHLCV data with retry logic.
+    Internal: Fetch OHLCV data with retry logic and caching (60s TTL).
     Tries (in order):
       1) KuCoin Spot (retries if timeout/error)
       2) KuCoin Futures (retries if timeout/error)
       3) Binance Spot (fallback, no retry)
     """
+    # FIX 2026-02-22: Check cache first (60s TTL)
+    cache_key = f"{symbol}_{tf}"
+    current_time = time.time()
+    if cache_key in OHLCV_CACHE:
+        cached_df, cached_ts = OHLCV_CACHE[cache_key]
+        if current_time - cached_ts < OHLCV_CACHE_TTL:
+            # print(f"[CACHE HIT] {cache_key} (age: {current_time - cached_ts:.1f}s)")  # Uncomment for debug
+            return cached_df.copy()  # Return a copy to prevent accidental mutations
+        else:
+            del OHLCV_CACHE[cache_key]  # Expired, remove
+    
+    result = None
+    
     # 1) KuCoin Spot (with retries)
-    if tf in TF_MAP:
+    if tf in TF_MAP and result is None:
         for sym in (symbol, symbol.replace('-', '/')):
             for attempt in range(retries):
                 try:
@@ -75,16 +92,19 @@ def fetch_ohlcv(symbol: str, tf: str, limit: int = 250, retries: int = 2) -> Opt
                     df[["open","high","low","close","volume"]] = df[["open","high","low","close","volume"]].astype(float)
                     df["timestamp"] = pd.to_datetime(df["timestamp"], unit="s")
                     df.set_index("timestamp", inplace=True)
-                    return df[["open","high","low","close","volume"]]
+                    result = df[["open","high","low","close","volume"]]
+                    break
                 except requests.Timeout:
                     if attempt < retries - 1:
                         time.sleep(1)  # Wait before retry
                     continue
                 except Exception:
                     continue
+            if result is not None:
+                break
 
     # 2) KuCoin Futures (with retries)
-    if tf in FUTURES_GRAN:
+    if tf in FUTURES_GRAN and result is None:
         for sym in (symbol, symbol.replace('-', '/')):
             for attempt in range(retries):
                 try:
@@ -102,37 +122,45 @@ def fetch_ohlcv(symbol: str, tf: str, limit: int = 250, retries: int = 2) -> Opt
                     df[["open","high","low","close","volume"]] = df[["open","high","low","close","volume"]].astype(float)
                     df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms")
                     df.set_index("timestamp", inplace=True)
-                    return df[["open","high","low","close","volume"]]
+                    result = df[["open","high","low","close","volume"]]
+                    break
                 except requests.Timeout:
                     if attempt < retries - 1:
                         time.sleep(1)  # Wait before retry
                     continue
                 except Exception:
                     continue
+            if result is not None:
+                break
 
     # 3) Binance fallback (no retry)
-    b_interval = BINANCE_INTERVAL.get(tf)
-    if b_interval:
-        sym_b = symbol.replace('-', '')
-        try:
-            url = f"https://api.binance.com/api/v3/klines?symbol={sym_b}&interval={b_interval}&limit={min(limit, 1000)}"
-            r = requests.get(url, timeout=15)
-            r.raise_for_status()
-            bars = r.json() or []
-            if bars:
-                df = pd.DataFrame(bars, columns=[
-                    "timestamp","open","high","low","close","volume",
-                    *([None] * (len(bars[0]) - 6))
-                ]).iloc[:, :6]
-                df.columns = ["timestamp","open","high","low","close","volume"]
-                df[["open","high","low","close","volume"]] = df[["open","high","low","close","volume"]].astype(float)
-                df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms")
-                df.set_index("timestamp", inplace=True)
-                return df
-        except Exception:
-            pass
+    if result is None:
+        b_interval = BINANCE_INTERVAL.get(tf)
+        if b_interval:
+            sym_b = symbol.replace('-', '')
+            try:
+                url = f"https://api.binance.com/api/v3/klines?symbol={sym_b}&interval={b_interval}&limit={min(limit, 1000)}"
+                r = requests.get(url, timeout=15)
+                r.raise_for_status()
+                bars = r.json() or []
+                if bars:
+                    df = pd.DataFrame(bars, columns=[
+                        "timestamp","open","high","low","close","volume",
+                        *([None] * (len(bars[0]) - 6))
+                    ]).iloc[:, :6]
+                    df.columns = ["timestamp","open","high","low","close","volume"]
+                    df[["open","high","low","close","volume"]] = df[["open","high","low","close","volume"]].astype(float)
+                    df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms")
+                    df.set_index("timestamp", inplace=True)
+                    result = df
+            except Exception:
+                pass
 
-    return None
+    # FIX 2026-02-22: Cache the result before returning
+    if result is not None:
+        OHLCV_CACHE[cache_key] = (result, time.time())
+    
+    return result
 
 def get_ohlcv(symbol: str, interval: str, limit: int = 250) -> Optional[pd.DataFrame]:
     """Public alias matching main.py signature."""
@@ -184,8 +212,8 @@ def get_live_entry_price(
     signal_type: str,
     tf: str = "15min",
     slippage: float = DEFAULT_SLIPPAGE,
-    long_adjust: float = 0.9900,
-    short_adjust: float = 1.0100,
+    long_adjust: float = 1.0000,
+    short_adjust: float = 1.0000,
     debug: bool = False
 ) -> Optional[float]:
     """

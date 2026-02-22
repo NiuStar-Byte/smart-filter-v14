@@ -299,9 +299,13 @@ def run_cycle():
                         bias = res15.get("bias", "NEUTRAL")
                         sf15.bias = bias
 
-                        # GLOBAL BYPASS: SuperGK disabled in main run (explicit)
-                        print("[SuperGK][MAIN] GLOBAL DISABLED - bypassing SuperGK for ALL signals (LONG and SHORT)", flush=True)
-                        super_gk_ok = True
+                        # RE-ENABLED: SuperGK validation for all signals (FIX: 2026-02-22)
+                        print("[SuperGK][MAIN] RE-ENABLED - validating SuperGK for ALL signals (LONG and SHORT)", flush=True)
+                        try:
+                            super_gk_ok = super_gk_aligned(bias, orderbook_result, density_result)
+                        except Exception as e:
+                            print(f"[SuperGK][MAIN] Error: {e}, defaulting to True for safety", flush=True)
+                            super_gk_ok = True
                         print(f"[SuperGK][MAIN] Result -> bias={bias} super_gk_ok={super_gk_ok}", flush=True)
 
                         if not super_gk_ok:
@@ -504,8 +508,13 @@ def run_cycle():
                         bias = res30.get("bias", "NEUTRAL")
                         sf30.bias = bias
 
-                        print("[SuperGK][MAIN] GLOBAL DISABLED - bypassing SuperGK for ALL signals (LONG and SHORT)", flush=True)
-                        super_gk_ok = True
+                        # RE-ENABLED: SuperGK validation for all signals (FIX: 2026-02-22)
+                        print("[SuperGK][MAIN] RE-ENABLED - validating SuperGK for ALL signals (LONG and SHORT)", flush=True)
+                        try:
+                            super_gk_ok = super_gk_aligned(bias, orderbook_result, density_result)
+                        except Exception as e:
+                            print(f"[SuperGK][MAIN] Error: {e}, defaulting to True for safety", flush=True)
+                            super_gk_ok = True
                         print(f"[SuperGK][MAIN] Result -> bias={bias} super_gk_ok={super_gk_ok}", flush=True)
 
                         if not super_gk_ok:
@@ -698,9 +707,13 @@ def run_cycle():
                         bias = res1h.get("bias", "NEUTRAL")
                         sf1h.bias = bias
 
-                        # GLOBAL BYPASS: SuperGK disabled in main run (explicit)
-                        print("[SuperGK][MAIN] GLOBAL DISABLED - bypassing SuperGK for ALL signals (LONG and SHORT)", flush=True)
-                        super_gk_ok = True
+                        # RE-ENABLED: SuperGK validation for all signals (FIX: 2026-02-22)
+                        print("[SuperGK][MAIN] RE-ENABLED - validating SuperGK for ALL signals (LONG and SHORT)", flush=True)
+                        try:
+                            super_gk_ok = super_gk_aligned(bias, orderbook_result, density_result)
+                        except Exception as e:
+                            print(f"[SuperGK][MAIN] Error: {e}, defaulting to True for safety", flush=True)
+                            super_gk_ok = True
                         print(f"[SuperGK][MAIN] Result -> bias={bias} super_gk_ok={super_gk_ok}", flush=True)
 
                         if not super_gk_ok:
