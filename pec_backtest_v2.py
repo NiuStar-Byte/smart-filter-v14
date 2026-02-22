@@ -159,6 +159,8 @@ def run_pec_backtest_v2(
                 
                 exit_price = exit_result['exit_price']
                 exit_reason = exit_result['exit_reason']
+                mfe = exit_result.get('mfe', 0)
+                mae = exit_result.get('mae', 0)
                 
                 # Calculate PnL
                 if signal_type == "LONG":
@@ -168,7 +170,10 @@ def run_pec_backtest_v2(
                 
                 is_win = pnl_pct > 0
                 
-                # Record result
+                # Calculate hold time
+                hold_bars = exit_result.get('exit_idx', entry_idx) - entry_idx
+                
+                # Record result (with exit_reason and MFE/MAE for analysis)
                 result = {
                     'symbol': symbol,
                     'timeframe': tf,
@@ -177,9 +182,12 @@ def run_pec_backtest_v2(
                     'tp_target': tp_price,
                     'sl_target': sl_price,
                     'exit_price': exit_price,
-                    'exit_reason': exit_reason,
+                    'exit_reason': exit_reason,  # KEY: TP | SL | TIMEOUT
                     'pnl_pct': pnl_pct,
                     'result': 'WIN' if is_win else 'LOSS',
+                    'hold_bars': hold_bars,
+                    'mfe': mfe,  # Max Favorable Excursion %
+                    'mae': mae,  # Max Adverse Excursion %
                     'fired_time': signal.get('fired_time_utc'),
                     'achieved_rr': signal.get('achieved_rr'),
                     'score': signal.get('score'),
