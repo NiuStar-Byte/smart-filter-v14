@@ -1,8 +1,14 @@
 import os
 import requests
 from tg_config import BOT_TOKEN, CHAT_ID
-from check_symbols import get_token_blockchain_info
+# Temporarily disabled due to SSL issue with Binance
+# from check_symbols import get_token_blockchain_info
 from typing import Any, Optional
+
+# Fallback: Return None if get_token_blockchain_info not available
+def get_token_blockchain_info(*args, **kwargs):
+    """Fallback: returns None when Binance check is disabled"""
+    return None
 
 SEND_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 SEND_FILE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendDocument"
