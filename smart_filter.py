@@ -37,7 +37,7 @@ class SmartFilter:
         df3m: Optional[pd.DataFrame] = None,
         df5m: Optional[pd.DataFrame] = None,
         tf: Optional[str] = None,
-        min_score: int = 14,
+        min_score: int = 16,  # FIX: 2026-02-22 - increased from 14 to reduce false positives (25% fewer signals)
         required_passed: Optional[int] = None,  # int or None allowed
         volume_multiplier: float = 2.5,
         liquidity_threshold: float = 0.25,
@@ -829,37 +829,11 @@ class SmartFilter:
         gatekeepers_total = len(all_gks)
         confidence = round(100 * passed_weight / total_weight, 1) if total_weight else 0.0
     
-        # --- SuperGK fetch: robust + logged (two attempts) ---
-        orderbook_result = None
-        density_result = None
-        cycle_ts = datetime.datetime.utcnow().isoformat()
-        try:
-            print(f"[{self.symbol}] [{cycle_ts}] SuperGK attempt 1 calling get_order_wall_delta / get_resting_density")
-            orderbook_result = get_order_wall_delta(self.symbol)
-            density_result = get_resting_density(self.symbol)
-            print(f"[OrderBookDeltaLog] {self.symbol} | {orderbook_result}")
-            print(f"[RestingOrderDensityLog] {self.symbol} | {density_result}")
-        except Exception as e:
-            print(f"[{self.symbol}] Error in SuperGK attempt 1: {e}")
-    
-        if orderbook_result is None or density_result is None:
-            try:
-                time.sleep(0.25)
-                print(f"[{self.symbol}] [{cycle_ts}] SuperGK attempt 2 retrying get_order_wall_delta / get_resting_density")
-                orderbook_result = get_order_wall_delta(self.symbol)
-                density_result = get_resting_density(self.symbol)
-                print(f"[OrderBookDeltaLog] {self.symbol} | {orderbook_result} (retry)")
-                print(f"[RestingOrderDensityLog] {self.symbol} | {density_result} (retry)")
-            except Exception as e:
-                print(f"[{self.symbol}] Error in SuperGK attempt 2: {e}")
-    
-        # Normalize responses to safe defaults if needed
-        if not isinstance(orderbook_result, dict):
-            print(f"[{self.symbol}] Warning: orderbook_result invalid - normalizing to defaults")
-            orderbook_result = {"buy_wall": 0, "sell_wall": 0}
-        if not isinstance(density_result, dict):
-            print(f"[{self.symbol}] Warning: density_result invalid - normalizing to defaults")
-            density_result = {"bid_density": 0, "ask_density": 0}
+        # --- SuperGK fetch REMOVED: FIX 2026-02-22 ---
+        # Removed redundant API calls (get_order_wall_delta, get_resting_density)
+        # main.py will fetch these for SuperGK validation. Using defaults for debug reporting only.
+        orderbook_result = {"buy_wall": 0, "sell_wall": 0}
+        density_result = {"bid_density": 0, "ask_density": 0}
     
         # --- Do not perform an authoritative SuperGK check inside analyze() ---
         # The final SuperGK decision is made in main.py using the freshest orderbook/density.
