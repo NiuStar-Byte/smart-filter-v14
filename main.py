@@ -548,21 +548,39 @@ def run_cycle():
                         if not signal_uuid:
                             print(f"[WARN] Failed to store signal for {symbol_val} (15min). Still attempting Telegram send.", flush=True)
 
-                        # [DISABLED] Alerts now sent only from run() for 2 sampled signals
-                        # if os.getenv("DRY_RUN", "false").lower() != "true":
-                        #     try:
-                        #         print(f"[DEBUG] send_telegram_alert about to send: symbol={symbol_val} price={entry_price} (type={type(entry_price)}) tp={tp} sl={sl} tp_source={(tp_sl.get('source') if isinstance(tp_sl, dict) else None)} chosen_ratio={(tp_sl.get('chosen_ratio') if isinstance(tp_sl, dict) else None)} achieved_rr={(tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None)}", flush=True)
-                        #         sent_ok = send_telegram_alert(...) # Removed to limit alerts to 2 per cycle
-                        #         print(f"[DEBUG] send_telegram_alert returned: {sent_ok}", flush=True)
-                        #         if sent_ok:
-                        #             last_sent[key15] = now
-                        #         else:
-                        #             print(f"[ERROR] Telegram send failed for {symbol_val} (15min). Not setting cooldown.", flush=True)
-                        #     except Exception as e:
-                        #         print(f"[ERROR] Exception during Telegram send for {symbol_val} (15min): {e}", flush=True)
-                        #         traceback.print_exc()
-                        else:
-                            print(f"[INFO] DRY_RUN enabled - simulated send for {symbol_val} (15min). Not setting cooldown.", flush=True)
+                        # Send trade alert to Telegram
+                        if os.getenv("DRY_RUN", "false").lower() != "true":
+                            try:
+                                sent_ok = send_telegram_alert(
+                                    numbered_signal=numbered_signal,
+                                    symbol=symbol_val,
+                                    signal_type=signal_type,
+                                    Route=Route,
+                                    price=entry_price,
+                                    tf=tf_val,
+                                    score=score,
+                                    passed=passes,
+                                    confidence=confidence,
+                                    weighted=passed_weight,
+                                    score_max=score_max,
+                                    gatekeepers_total=gatekeepers_total,
+                                    total_weight=total_weight,
+                                    reversal_side=res15.get("reversal_side"),
+                                    regime=regime,
+                                    early_breakout_15m=early_breakout_15m,
+                                    tp=tp,
+                                    sl=sl,
+                                    tp_sl=tp_sl,
+                                    chosen_ratio=None,
+                                    achieved_rr=achieved_rr_value
+                                )
+                                if sent_ok:
+                                    last_sent[key15] = now
+                                else:
+                                    print(f"[ERROR] Telegram send failed for {symbol_val}", flush=True)
+                            except Exception as e:
+                                print(f"[ERROR] Exception during Telegram send for {symbol_val}: {e}", flush=True)
+
                 else:
                     print(f"[INFO] No valid 15min signal for {symbol}.", flush=True)
             except Exception as e:
@@ -765,7 +783,7 @@ def run_cycle():
                         if not signal_uuid:
                             print(f"[WARN] Failed to store signal for {symbol_val} (30min). Still attempting Telegram send.", flush=True)
 
-                        # [DISABLED] Alerts now sent only from run() for 2 sampled signals
+                        # Send trade alert to Telegram
                         # if os.getenv("DRY_RUN", "false").lower() != "true":
                         #     try:
                         #         print(f"[DEBUG] send_telegram_alert about to send: symbol={symbol_val} price={entry_price} (type={type(entry_price)}) tp={tp} sl={sl} tp_source={(tp_sl.get('source') if isinstance(tp_sl, dict) else None)} chosen_ratio={(tp_sl.get('chosen_ratio') if isinstance(tp_sl, dict) else None)} achieved_rr={(tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None)}", flush=True)
@@ -982,7 +1000,7 @@ def run_cycle():
                         if not signal_uuid:
                             print(f"[WARN] Failed to store signal for {symbol_val} (1h). Still attempting Telegram send.", flush=True)
 
-                        # [DISABLED] Alerts now sent only from run() for 2 sampled signals
+                        # Send trade alert to Telegram
                         # if os.getenv("DRY_RUN", "false").lower() != "true":
                         #     try:
                         #         print(f"[DEBUG] send_telegram_alert about to send: symbol={symbol_val} price={entry_price} (type={type(entry_price)}) tp={tp} sl={sl} tp_source={(tp_sl.get('source') if isinstance(tp_sl, dict) else None)} chosen_ratio={(tp_sl.get('chosen_ratio') if isinstance(tp_sl, dict) else None)} achieved_rr={(tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None)}", flush=True)
