@@ -354,10 +354,9 @@ from datetime import datetime
 def run_cycle():
     """
     Single pass over all TOKENS. 
-    Debug file sending is DISABLED - valid_debugs no longer used.
+    Debug file sending is COMPLETELY DISABLED.
     """
     print("[INFO] Starting Smart Filter cycle (single pass)...", flush=True)
-    # valid_debugs = []  # DISABLED - debug file sending disabled
     now = time.time()
 
     for idx, symbol in enumerate(TOKENS, start=1):
@@ -412,7 +411,7 @@ def run_cycle():
                         if not super_gk_ok:
                             # legacy compatibility block (should not execute with global bypass)
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
-                            if len(valid_debugs) < 2:
+                            if False:  # DEBUG DISABLED
                                 valid_debugs.append({
                                 "symbol": symbol,
                                 "tf": "15min",
@@ -638,7 +637,7 @@ def run_cycle():
 
                         if not super_gk_ok:
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
-                            if len(valid_debugs) < 2:
+                            if False:  # DEBUG DISABLED
                                 valid_debugs.append({
                                 "symbol": symbol,
                                 "tf": "30min",
@@ -716,7 +715,7 @@ def run_cycle():
                             tp = sl = fib_levels = None
                             tp_sl = None
 
-                        if len(valid_debugs) < 2:
+                        if False:  # DEBUG DISABLED
                             valid_debugs.append({
                             "symbol": symbol_val,
                             "tf": tf_val,
@@ -855,7 +854,7 @@ def run_cycle():
 
                         if not super_gk_ok:
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
-                            if len(valid_debugs) < 2:
+                            if False:  # DEBUG DISABLED
                                 valid_debugs.append({
                                 "symbol": symbol,
                                 "tf": "1h",
@@ -933,7 +932,7 @@ def run_cycle():
                             tp = sl = fib_levels = None
                             tp_sl = None
 
-                        if len(valid_debugs) < 2:
+                        if False:  # DEBUG DISABLED
                             valid_debugs.append({
                             "symbol": symbol_val,
                             "tf": tf_val,
