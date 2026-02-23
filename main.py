@@ -54,8 +54,6 @@ TOKENS = [
 
 COOLDOWN = {"15min": 120, "30min": 240, "1h": 600}
 last_sent = {}
-GLOBAL_SYMBOL_COOLDOWN = 120  # Max 1 signal per symbol per 120 seconds (all TFs combined)
-last_sent_global = {}  # Track last send per symbol (any TF)
 
 # NOTE: Updated to use 15m, 30m, 1h (removed 3m, 5m - too noisy)
 # Based on Test-3 results: 15-min markets are optimal, longer timeframes reduce false signals
@@ -352,7 +350,6 @@ def run_cycle():
 
                 if isinstance(res15, dict) and res15.get("filters_ok") is True:
                     last15 = last_sent.get(key15, 0)
-                    print(f"[COOLDOWN-DEBUG] {symbol} 15min: now={now:.1f}, last_sent={last15:.1f}, diff={now - last15:.1f}s, required={COOLDOWN['15min']}s, pass={now - last15 >= COOLDOWN['15min']}", flush=True)
                     if now - last15 >= COOLDOWN["15min"]:
                         numbered_signal = f"{idx}.A"
 
@@ -551,12 +548,6 @@ def run_cycle():
                         if not signal_uuid:
                             print(f"[WARN] Failed to store signal for {symbol_val} (15min). Still attempting Telegram send.", flush=True)
 
-                        # GLOBAL SYMBOL COOLDOWN: Check if ANY timeframe of this symbol sent recently
-                        last_global = last_sent_global.get(symbol_val, 0)
-                        if now - last_global < GLOBAL_SYMBOL_COOLDOWN:
-                            print(f"[COOLDOWN] 15min signal BLOCKED for {symbol_val}: Global symbol cooldown active ({now - last_global:.1f}s / {GLOBAL_SYMBOL_COOLDOWN}s)", flush=True)
-                            continue
-                        
                         # Send trade alert to Telegram
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
@@ -585,7 +576,6 @@ def run_cycle():
                                 )
                                 if sent_ok:
                                     last_sent[key15] = now
-                                    last_sent_global[symbol_val] = now  # Update global cooldown
                                 else:
                                     print(f"[ERROR] Telegram send failed for {symbol_val}", flush=True)
                             except Exception as e:
