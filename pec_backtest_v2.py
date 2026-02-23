@@ -133,8 +133,10 @@ def run_pec_backtest_v2(
                 else:
                     ohlcv_times = pd.to_datetime(ohlcv_df.index).tz_convert(None)
                 
-                time_diffs = (ohlcv_times - fired_time_utc).abs()
-                entry_idx = time_diffs.argmin()
+                import numpy as np
+                time_deltas = ohlcv_times - fired_time_utc
+                time_diffs = np.abs(time_deltas.total_seconds())
+                entry_idx = np.argmin(time_diffs)
                 
                 if entry_idx + max_bars >= len(ohlcv_df):
                     print(f"  [SKIP] {symbol} {tf}: Not enough future bars (need {max_bars})")
