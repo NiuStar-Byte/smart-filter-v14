@@ -261,12 +261,13 @@ def send_telegram_alert(
     else:
         consensus_display = "⛓️ Consensus: Unknown"
 
-    # Fib ratio and achieved_rr line (if provided)
-    fib_rr_line = ""
-    if chosen_ratio is not None or achieved_rr is not None:
-        ratio_str = f"{chosen_ratio}" if chosen_ratio is not None else "N/A"
-        rr_str = f"{achieved_rr:.2f}" if (achieved_rr is not None and isinstance(achieved_rr, (int, float))) else "N/A"
-        fib_rr_line = f"💈 Fib: {ratio_str} | R:R: {rr_str}"
+    # RR and TP/SL source line (ATR-based 2:1 by default)
+    rr_line = ""
+    if achieved_rr is not None:
+        rr_str = f"{achieved_rr:.2f}" if isinstance(achieved_rr, (int, float)) else "N/A"
+        # Source indicates method: atr_2_to_1_long, atr_2_to_1_short, etc.
+        source_display = "ATR-Based 2:1 RR"
+        rr_line = f"📊 R:R: {rr_str}:1 | {source_display}"
 
     # Build message lines WITHOUT any blank empty lines
     lines = []
@@ -284,10 +285,10 @@ def send_telegram_alert(
     # append early breakout lines (each on its own single line)
     for eb in early_break_lines:
         lines.append(eb)
-    # consensus & fib/rr & fallback note
+    # consensus & rr & fallback note
     lines.append(consensus_display)
-    if fib_rr_line:
-        lines.append(fib_rr_line)
+    if rr_line:
+        lines.append(rr_line)
     if fallback_used:
         lines.append("⚠️ Note: TP/SL fallback used")
 

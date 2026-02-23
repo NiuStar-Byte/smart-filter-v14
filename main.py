@@ -534,8 +534,8 @@ def run_cycle():
                             tp_pct=tp_pct_val,
                             sl_pct=sl_pct_val,
                             achieved_rr=achieved_rr_value,
-                            fib_ratio=tp_sl.get('chosen_ratio') if isinstance(tp_sl, dict) else None,
-                            atr_value=None,
+                            fib_ratio=None,  # ATR-based 2:1 RR (no Fibonacci)
+                            atr_value=tp_sl.get('atr_value') if isinstance(tp_sl, dict) else None,
                             score=score,
                             max_score=score_max,
                             confidence=confidence,
@@ -751,8 +751,8 @@ def run_cycle():
                             tp_pct=tp_pct_val,
                             sl_pct=sl_pct_val,
                             achieved_rr=achieved_rr_value,
-                            fib_ratio=tp_sl.get('chosen_ratio') if isinstance(tp_sl, dict) else None,
-                            atr_value=None,
+                            fib_ratio=None,  # ATR-based 2:1 RR (no Fibonacci)
+                            atr_value=tp_sl.get('atr_value') if isinstance(tp_sl, dict) else None,
                             score=score,
                             max_score=score_max,
                             confidence=confidence,
@@ -968,8 +968,8 @@ def run_cycle():
                             tp_pct=tp_pct_val,
                             sl_pct=sl_pct_val,
                             achieved_rr=achieved_rr_value,
-                            fib_ratio=tp_sl.get('chosen_ratio') if isinstance(tp_sl, dict) else None,
-                            atr_value=None,
+                            fib_ratio=None,  # ATR-based 2:1 RR (no Fibonacci)
+                            atr_value=tp_sl.get('atr_value') if isinstance(tp_sl, dict) else None,
                             score=score,
                             max_score=score_max,
                             confidence=confidence,
