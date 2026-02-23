@@ -39,37 +39,62 @@ class SignalStore:
                 pass  # Create empty file
             print(f"[SignalStore] Created new signals file: {self.path}", flush=True)
     
+    def _get_signal_fingerprint(self, signal_dict: Dict) -> str:
+        """
+        Create deterministic identifier for signal based on ACTUAL signal properties.
+        SAME signal = SAME fingerprint (no matter how many times it fires)
+        DIFFERENT signal = DIFFERENT fingerprint
+        
+        Fingerprint = symbol + timeframe + entry_price (rounded to 8 decimals)
+        This way: LQTY 15min @ 0.2698 always has the same fingerprint
+        """
+        try:
+            symbol = signal_dict.get('symbol', '').upper()
+            timeframe = signal_dict.get('timeframe', '').lower()
+            entry_price = float(signal_dict.get('entry_price', 0))
+            
+            # Round to 8 decimals (crypto precision)
+            price_rounded = round(entry_price, 8)
+            
+            fingerprint = f"{symbol}_{timeframe}_{price_rounded:.8f}"
+            return fingerprint
+        
+        except Exception as e:
+            print(f"[SignalStore] Fingerprint error: {e}", flush=True)
+            return ""
+    
     def _check_duplicate(self, signal_dict: Dict) -> bool:
         """
-        Simple duplicate check: same symbol+tf+price within 120 seconds = block.
+        Check if signal is duplicate using fingerprint.
+        If SAME fingerprint fires within 120 seconds = BLOCK
         Returns True if should REJECT (is duplicate).
         """
         try:
+            fingerprint = self._get_signal_fingerprint(signal_dict)
+            if not fingerprint:
+                return False
+            
+            fired_time_str = signal_dict.get('fired_time_utc')
             symbol = signal_dict.get('symbol')
             timeframe = signal_dict.get('timeframe')
-            entry_price = float(signal_dict.get('entry_price', 0))
-            fired_time_str = signal_dict.get('fired_time_utc')
+            entry_price = signal_dict.get('entry_price')
             
-            key = f"{symbol}_{timeframe}"
-            
-            # Check if this exact signal was sent recently
-            if key in self._last_signal_per_key:
-                last = self._last_signal_per_key[key]
-                # Price within 0.1% and time within 120 seconds
-                price_diff = abs(last['price'] - entry_price) / max(entry_price, 0.00000001)
+            # Check if this fingerprint was sent recently
+            if fingerprint in self._last_signal_per_key:
+                last = self._last_signal_per_key[fingerprint]
                 try:
                     last_time = pd.Timestamp(last['time'], tz='UTC')
                     curr_time = pd.Timestamp(fired_time_str, tz='UTC')
                     time_diff = (curr_time - last_time).total_seconds()
                 except Exception:
-                    time_diff = 200  # If time parse fails, don't block
+                    time_diff = 200
                 
-                if price_diff < 0.001 and time_diff < 120:
-                    print(f"[SignalStore] DUPLICATE BLOCKED: {symbol} {timeframe} @ {entry_price:.8f} (fired {time_diff:.1f}s ago)", flush=True)
+                if time_diff < 120:
+                    print(f"[SignalStore] DUPLICATE BLOCKED: {symbol} {timeframe} @ {entry_price} (fingerprint:{fingerprint} fired {time_diff:.1f}s ago)", flush=True)
                     return True
             
-            # Update cache with this signal
-            self._last_signal_per_key[key] = {'price': entry_price, 'time': fired_time_str}
+            # Store this fingerprint
+            self._last_signal_per_key[fingerprint] = {'time': fired_time_str}
             return False
         
         except Exception as e:
