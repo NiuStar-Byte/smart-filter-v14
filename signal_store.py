@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 """
-signal_store.py
+signal_store.py (REVISED 2026-02-23: Hybrid UUID+Timestamp Approach)
 
 Permanent signal storage system for Smart Filter.
 Stores all fired signals to JSONL format with complete metadata.
 Allows reliable querying for PEC backtesting.
 
 Format: signals_fired.jsonl (one JSON dict per line)
+
+HYBRID DEDUP STRATEGY:
+- UUID: includes timestamp for unique identification per occurrence
+- Dedup Fingerprint: excludes timestamp for duplicate blocking within 120s
 """
 
 import json
@@ -19,6 +23,10 @@ class SignalStore:
     """
     Manages permanent signal storage and retrieval.
     Uses JSONL format for append-only, queryable storage.
+    
+    HYBRID DEDUP:
+    1. UUID (with timestamp): Unique per signal occurrence
+    2. Fingerprint (without timestamp): Blocks duplicates within 120s
     """
     
     def __init__(self, jsonl_path: str = "signals_fired.jsonl"):
@@ -30,7 +38,7 @@ class SignalStore:
         """
         self.path = jsonl_path
         self._ensure_file_exists()
-        self._last_signal_per_key = {}  # Simple: track last signal per symbol+timeframe
+        self._last_signal_per_fingerprint = {}  # Track last signal per fingerprint (no timestamp)
     
     def _ensure_file_exists(self):
         """Create JSONL file if it doesn't exist."""
@@ -41,11 +49,11 @@ class SignalStore:
     
     def _get_signal_fingerprint(self, signal_dict: Dict) -> str:
         """
-        Create deterministic identifier for signal based on ACTUAL signal properties.
-        SAME signal = SAME fingerprint (no matter how many times it fires)
-        DIFFERENT signal = DIFFERENT fingerprint
+        Create deterministic fingerprint for DEDUPLICATION (NO timestamp).
+        SAME signal attributes = SAME fingerprint (regardless of time)
+        Used to block rapid-fire duplicates within 120 seconds.
         
-        Fingerprint determined by:
+        Fingerprint determined by (5 attributes, NO timestamp):
         1. Symbol (e.g., BIO-USDT)
         2. Timeframe (e.g., 15min)
         3. Entry price (e.g., 0.027427)
@@ -62,6 +70,7 @@ class SignalStore:
             # Round to 8 decimals (crypto precision)
             price_rounded = round(entry_price, 8)
             
+            # NO timestamp in fingerprint → same signal fires at different times = different UUID but same fingerprint
             fingerprint = f"{symbol}_{timeframe}_{price_rounded:.8f}_{signal_type}_{score}"
             return fingerprint
         
@@ -71,7 +80,7 @@ class SignalStore:
     
     def _check_duplicate(self, signal_dict: Dict) -> bool:
         """
-        Check if signal is duplicate using fingerprint.
+        Check if signal is duplicate using fingerprint (without timestamp).
         If SAME fingerprint fires within 120 seconds = BLOCK
         Returns True if should REJECT (is duplicate).
         """
@@ -86,8 +95,8 @@ class SignalStore:
             entry_price = signal_dict.get('entry_price')
             
             # Check if this fingerprint was sent recently
-            if fingerprint in self._last_signal_per_key:
-                last = self._last_signal_per_key[fingerprint]
+            if fingerprint in self._last_signal_per_fingerprint:
+                last = self._last_signal_per_fingerprint[fingerprint]
                 try:
                     last_time = pd.Timestamp(last['time'], tz='UTC')
                     curr_time = pd.Timestamp(fired_time_str, tz='UTC')
@@ -99,8 +108,8 @@ class SignalStore:
                     print(f"[SignalStore] DUPLICATE BLOCKED: {symbol} {timeframe} @ {entry_price} (fingerprint:{fingerprint} fired {time_diff:.1f}s ago)", flush=True)
                     return True
             
-            # Store this fingerprint
-            self._last_signal_per_key[fingerprint] = {'time': fired_time_str}
+            # Store this fingerprint (for next dedup check)
+            self._last_signal_per_fingerprint[fingerprint] = {'time': fired_time_str}
             return False
         
         except Exception as e:
@@ -113,7 +122,7 @@ class SignalStore:
         
         Args:
             signal_dict: Complete signal data including:
-                - uuid: Unique signal ID
+                - uuid: Unique signal ID (includes timestamp for per-occurrence uniqueness)
                 - symbol: Trading pair (e.g., BTC-USDT)
                 - timeframe: Market timeframe (15min, 30min, 1h)
                 - signal_type: LONG or SHORT
@@ -135,7 +144,7 @@ class SignalStore:
                 - max_gatekeepers: Total gatekeepers
         
         Returns:
-            signal_uuid if successful, None if failed
+            signal_uuid if successful, None if failed (duplicate rejected)
         """
         try:
             # Validate required fields
@@ -150,13 +159,13 @@ class SignalStore:
                     print(f"[SignalStore] WARNING: Missing required field '{field}'", flush=True)
                     return None
             
-            # CHECK FOR DUPLICATES BEFORE STORING
+            # CHECK FOR DUPLICATES BEFORE STORING (uses fingerprint without timestamp)
             if self._check_duplicate(signal_dict):
                 return None  # Reject duplicate, don't store
             
             # Add metadata
             signal_dict['stored_at_utc'] = datetime.now(timezone.utc).isoformat()
-            signal_dict['version'] = '1.0'
+            signal_dict['version'] = '1.1'  # Updated for UUID+timestamp approach
             
             # Append to JSONL
             with open(self.path, 'a') as f:
