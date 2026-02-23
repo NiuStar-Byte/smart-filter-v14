@@ -30,9 +30,7 @@ class SignalStore:
         """
         self.path = jsonl_path
         self._ensure_file_exists()
-        self._last_signal_per_key = {}  # Track last signal per fingerprint
-        # Load last 100 signals from JSONL to populate cache (survive restarts)
-        self._populate_dedup_cache()
+        # NOTE: No in-memory cache. Dedup checks JSONL file directly (proven old method)
     
     def _ensure_file_exists(self):
         """Create JSONL file if it doesn't exist."""
@@ -40,43 +38,6 @@ class SignalStore:
             with open(self.path, 'w') as f:
                 pass  # Create empty file
             print(f"[SignalStore] Created new signals file: {self.path}", flush=True)
-    
-    def _populate_dedup_cache(self):
-        """
-        Load last 100 signals from JSONL and populate dedup cache.
-        This ensures duplicate detection survives Restarts (Railway redeploys, etc.)
-        """
-        try:
-            if not os.path.exists(self.path):
-                return
-            
-            signals = []
-            with open(self.path, 'r') as f:
-                for line in f:
-                    line = line.strip()
-                    if line:
-                        try:
-                            signals.append(json.loads(line))
-                        except json.JSONDecodeError:
-                            pass
-            
-            # Keep last 100 signals, populate cache
-            for signal in signals[-100:]:
-                try:
-                    fingerprint = self._get_signal_fingerprint(signal)
-                    if fingerprint:
-                        self._last_signal_per_key[fingerprint] = {
-                            'time': signal.get('fired_time_utc'),
-                            'symbol': signal.get('symbol'),
-                            'entry_price': signal.get('entry_price')
-                        }
-                except Exception:
-                    pass
-            
-            print(f"[SignalStore] Dedup cache populated with {len(self._last_signal_per_key)} recent fingerprints", flush=True)
-        
-        except Exception as e:
-            print(f"[SignalStore] Warning: Could not populate dedup cache: {e}", flush=True)
     
     def _get_signal_fingerprint(self, signal_dict: Dict) -> str:
         """
@@ -104,7 +65,9 @@ class SignalStore:
     
     def _check_duplicate(self, signal_dict: Dict) -> bool:
         """
-        Check if signal is duplicate using fingerprint.
+        Check if signal is duplicate by reading JSONL file directly.
+        This is the OLD PROVEN METHOD: check disk, not memory cache.
+        
         If SAME fingerprint fires within 120 seconds = BLOCK
         Returns True if should REJECT (is duplicate).
         """
@@ -118,24 +81,41 @@ class SignalStore:
             timeframe = signal_dict.get('timeframe')
             entry_price = signal_dict.get('entry_price')
             
-            # Check if this fingerprint was sent recently
-            if fingerprint in self._last_signal_per_key:
-                last = self._last_signal_per_key[fingerprint]
-                try:
-                    last_time = pd.Timestamp(last['time'], tz='UTC')
-                    curr_time = pd.Timestamp(fired_time_str, tz='UTC')
-                    time_diff = (curr_time - last_time).total_seconds()
-                    
-                    if time_diff < 120:
-                        print(f"[SignalStore] DUPLICATE BLOCKED: {symbol} {timeframe} @ {entry_price} (fingerprint:{fingerprint} fired {time_diff:.1f}s ago)", flush=True)
-                        return True
-                except Exception as e:
-                    print(f"[SignalStore] WARNING: Timestamp parse error (allowing signal): {e} - last['time']={last.get('time')} fired_time={fired_time_str}", flush=True)
-                    # If timestamp parsing fails, REJECT as precaution (better safe than duplicate)
-                    return True
+            # Parse current signal time
+            try:
+                curr_time = pd.Timestamp(fired_time_str, tz='UTC')
+            except Exception as e:
+                print(f"[SignalStore] ERROR: Cannot parse fired_time_utc: {fired_time_str} - {e}", flush=True)
+                return True  # REJECT if we can't parse time
             
-            # Store this fingerprint
-            self._last_signal_per_key[fingerprint] = {'time': fired_time_str}
+            # READ JSONL FILE DIRECTLY (old proven method)
+            if not os.path.exists(self.path):
+                return False
+            
+            with open(self.path, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    
+                    try:
+                        stored_signal = json.loads(line)
+                        stored_fingerprint = self._get_signal_fingerprint(stored_signal)
+                        
+                        # Check if fingerprint matches
+                        if stored_fingerprint == fingerprint:
+                            try:
+                                stored_time = pd.Timestamp(stored_signal.get('fired_time_utc'), tz='UTC')
+                                time_diff = (curr_time - stored_time).total_seconds()
+                                
+                                if time_diff < 120 and time_diff >= 0:
+                                    print(f"[SignalStore] DUPLICATE BLOCKED: {symbol} {timeframe} @ {entry_price} (fired {time_diff:.1f}s ago)", flush=True)
+                                    return True
+                            except Exception:
+                                pass
+                    except json.JSONDecodeError:
+                        continue
+            
             return False
         
         except Exception as e:
