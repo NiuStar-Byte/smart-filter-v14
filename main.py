@@ -577,26 +577,21 @@ def run_cycle():
                                 if sent_ok:
                                     last_sent[key15] = now
                                     
-                                    # IMMEDIATELY generate and send debug file for this specific signal
-                                    try:
-                                        export_signal_debug_txt(
-                                            symbol=symbol_val,
-                                            tf=tf_val,
-                                            bias=signal_type,
-                                            filter_weights_long=getattr(sf15, 'filter_weights_long', {}),
-                                            filter_weights_short=getattr(sf15, 'filter_weights_short', {}),
-                                            gatekeepers=getattr(sf15, 'gatekeepers', []),
-                                            results_long=res15.get("results_long", {}),
-                                            results_short=res15.get("results_short", {}),
-                                            orderbook_result=orderbook_result,
-                                            density_result=density_result
-                                        )
-                                        # Send the debug file immediately
-                                        if os.path.exists("signal_debug_temp.txt"):
-                                            send_telegram_file("signal_debug_temp.txt", caption=f"Debug: {symbol_val} {tf_val}")
-                                            print(f"[DEBUG] Sent debug file for {symbol_val} {tf_val}", flush=True)
-                                    except Exception as e:
-                                        print(f"[WARN] Failed to send debug file for {symbol_val}: {e}", flush=True)
+                                    # ADD TO DEBUG LIST ONLY IF SIGNAL WAS ACTUALLY SENT
+                                    if len(valid_debugs) < 20:  # Keep up to 20 debug objects (will pick 2 randomly later)
+                                        valid_debugs.append({
+                                            "symbol": symbol_val,
+                                            "tf": tf_val,
+                                            "bias": signal_type,
+                                            "filter_weights_long": getattr(sf15, 'filter_weights_long', {}),
+                                            "filter_weights_short": getattr(sf15, 'filter_weights_short', {}),
+                                            "gatekeepers": getattr(sf15, 'gatekeepers', []),
+                                            "results_long": res15.get("results_long", {}),
+                                            "results_short": res15.get("results_short", {}),
+                                            "caption": f"Debug: {symbol_val} {tf_val} SIGNAL FIRED",
+                                            "orderbook_result": orderbook_result,
+                                            "density_result": density_result
+                                        })
                                 else:
                                     print(f"[ERROR] Telegram send failed for {symbol_val}", flush=True)
                             except Exception as e:
@@ -1048,9 +1043,39 @@ def run_cycle():
 
     # End of per-symbol loop
     
-    # Note: Debug files are now sent IMMEDIATELY after each signal's Telegram alert
-    # (not accumulated in valid_debugs), ensuring 1:1 correlation
-    # valid_debugs kept for backward compatibility but not used for sending
+    # === SEND 2 RANDOM DEBUG FILES FROM ALL SIGNALS THAT FIRED ===
+    if valid_debugs:
+        num_to_send = min(2, len(valid_debugs))  # Pick 2 (or less if fewer signals)
+        selected_debugs = random.sample(valid_debugs, num_to_send)
+        
+        for debug_info in selected_debugs:
+            try:
+                symbol = debug_info.get("symbol")
+                tf = debug_info.get("tf")
+                bias = debug_info.get("bias")
+                
+                # Generate debug file for THIS specific symbol
+                export_signal_debug_txt(
+                    symbol=symbol,
+                    tf=tf,
+                    bias=bias,
+                    filter_weights_long=debug_info.get("filter_weights_long", {}),
+                    filter_weights_short=debug_info.get("filter_weights_short", {}),
+                    gatekeepers=debug_info.get("gatekeepers", []),
+                    results_long=debug_info.get("results_long", {}),
+                    results_short=debug_info.get("results_short", {}),
+                    orderbook_result=debug_info.get("orderbook_result", {}),
+                    density_result=debug_info.get("density_result", {})
+                )
+                
+                # Send the debug file
+                if os.path.exists("signal_debug_temp.txt"):
+                    send_telegram_file("signal_debug_temp.txt", caption=debug_info.get("caption", f"Debug: {symbol} {tf}"))
+                    print(f"[DEBUG-SEND] Sent debug file for {symbol} {tf} (1 of {num_to_send})", flush=True)
+            except Exception as e:
+                print(f"[WARN] Failed to send debug file: {e}", flush=True)
+    else:
+        print(f"[DEBUG] No signals fired this cycle, no debug files to send", flush=True)
     
     return valid_debugs
 
