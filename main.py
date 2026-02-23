@@ -106,6 +106,18 @@ def get_resting_order_density(symbol, depth=100, top_n=5):
 def candle_color(open, close):
     return 'green' if close > open else 'red'
 
+def _get_signal_fingerprint(symbol, timeframe, entry_price, signal_type, score):
+    """
+    Generate fingerprint for signal dedup (cycle-level and cross-cycle).
+    SAME signal attributes = SAME fingerprint
+    """
+    import hashlib
+    price_rounded = round(float(entry_price), 8)
+    signal_type_str = str(signal_type).upper()
+    score_int = int(score)
+    fingerprint_str = f"{symbol}_{timeframe}_{price_rounded:.8f}_{signal_type_str}_{score_int}"
+    return hashlib.md5(fingerprint_str.encode()).hexdigest()[:16]
+
 def _generate_deterministic_uuid(symbol, timeframe, entry_price, signal_type, score, fired_time_utc):
     """
     Generate deterministic UUID based on signal properties + timestamp.
@@ -346,10 +358,14 @@ from datetime import datetime
 def run_cycle():
     """
     Single pass over all TOKENS. 
-    Debug file sending is COMPLETELY DISABLED.
+    Tracks fired signals within cycle to prevent duplicates (same signal firing multiple times in same cycle).
     """
     print("[INFO] Starting Smart Filter cycle (single pass)...", flush=True)
     now = time.time()
+    
+    # Cycle-local dedup: track signal fingerprints fired THIS cycle only
+    # Reset every cycle to allow same signal to fire again next cycle if 120s window expires
+    cycle_fired_fingerprints = {}
 
     for idx, symbol in enumerate(TOKENS, start=1):
         print(f"[INFO] Checking {symbol}...", flush=True)
@@ -490,6 +506,12 @@ def run_cycle():
                         
                         print(f"[RR_FILTER] 15min signal ACCEPTED: {symbol_val} - RR {achieved_rr_value} >= MIN {MIN_ACCEPTED_RR}", flush=True)
                         
+                        # CYCLE-LEVEL DEDUP: Block if same signal fired already in THIS cycle
+                        cycle_fingerprint = _get_signal_fingerprint(symbol_val, tf_val, entry_price, signal_type, score)
+                        if cycle_fingerprint in cycle_fired_fingerprints:
+                            print(f"[DEDUP] 15min signal BLOCKED (fired earlier in same cycle): {symbol_val} fingerprint={cycle_fingerprint}", flush=True)
+                            continue
+                        
                         tp_pct_val = ((tp - entry_price) / entry_price * 100) if tp and entry_price else 0
                         sl_pct_val = ((sl - entry_price) / entry_price * 100) if sl and entry_price else 0
                         
@@ -518,6 +540,9 @@ def run_cycle():
                         if not signal_uuid:
                             print(f"[WARN] Signal {symbol_val} (15min) REJECTED - duplicate within 120s. NOT sending Telegram alert.", flush=True)
                             continue
+                        
+                        # CYCLE TRACKING: Record this fingerprint so duplicate doesn't fire again this cycle
+                        cycle_fired_fingerprints[cycle_fingerprint] = fired_time_utc.isoformat() if hasattr(fired_time_utc, 'isoformat') else str(fired_time_utc)
                         
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
@@ -682,6 +707,12 @@ def run_cycle():
                         
                         print(f"[RR_FILTER] 30min signal ACCEPTED: {symbol_val} - RR {achieved_rr_value} >= MIN {MIN_ACCEPTED_RR}", flush=True)
                         
+                        # CYCLE-LEVEL DEDUP: Block if same signal fired already in THIS cycle
+                        cycle_fingerprint = _get_signal_fingerprint(symbol_val, tf_val, entry_price, signal_type, score)
+                        if cycle_fingerprint in cycle_fired_fingerprints:
+                            print(f"[DEDUP] 30min signal BLOCKED (fired earlier in same cycle): {symbol_val} fingerprint={cycle_fingerprint}", flush=True)
+                            continue
+                        
                         tp_pct_val = ((tp - entry_price) / entry_price * 100) if tp and entry_price else 0
                         sl_pct_val = ((sl - entry_price) / entry_price * 100) if sl and entry_price else 0
                         
@@ -709,6 +740,9 @@ def run_cycle():
                         
                         if not signal_uuid:
                             print(f"[WARN] Failed to store signal for {symbol_val} (30min).", flush=True)
+                        else:
+                            # CYCLE TRACKING: Record this fingerprint so duplicate doesn't fire again this cycle
+                            cycle_fired_fingerprints[cycle_fingerprint] = fired_time_utc.isoformat() if hasattr(fired_time_utc, 'isoformat') else str(fired_time_utc)
 
                 else:
                     print(f"[INFO] No valid 30min signal for {symbol}.", flush=True)
@@ -841,6 +875,12 @@ def run_cycle():
                         
                         print(f"[RR_FILTER] 1h signal ACCEPTED: {symbol_val} - RR {achieved_rr_value} >= MIN {MIN_ACCEPTED_RR}", flush=True)
                         
+                        # CYCLE-LEVEL DEDUP: Block if same signal fired already in THIS cycle
+                        cycle_fingerprint = _get_signal_fingerprint(symbol_val, tf_val, entry_price, signal_type, score)
+                        if cycle_fingerprint in cycle_fired_fingerprints:
+                            print(f"[DEDUP] 1h signal BLOCKED (fired earlier in same cycle): {symbol_val} fingerprint={cycle_fingerprint}", flush=True)
+                            continue
+                        
                         tp_pct_val = ((tp - entry_price) / entry_price * 100) if tp and entry_price else 0
                         sl_pct_val = ((sl - entry_price) / entry_price * 100) if sl and entry_price else 0
                         
@@ -868,6 +908,9 @@ def run_cycle():
                         
                         if not signal_uuid:
                             print(f"[WARN] Failed to store signal for {symbol_val} (1h).", flush=True)
+                        else:
+                            # CYCLE TRACKING: Record this fingerprint so duplicate doesn't fire again this cycle
+                            cycle_fired_fingerprints[cycle_fingerprint] = fired_time_utc.isoformat() if hasattr(fired_time_utc, 'isoformat') else str(fired_time_utc)
 
                 else:
                     print(f"[INFO] No valid 1h signal for {symbol}.", flush=True)
