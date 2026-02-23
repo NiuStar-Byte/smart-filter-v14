@@ -19,7 +19,6 @@ class SignalStore:
     """
     Manages permanent signal storage and retrieval.
     Uses JSONL format for append-only, queryable storage.
-    Includes deduplication to prevent same signal firing twice per cycle.
     """
     
     def __init__(self, jsonl_path: str = "signals_fired.jsonl"):
@@ -31,8 +30,7 @@ class SignalStore:
         """
         self.path = jsonl_path
         self._ensure_file_exists()
-        self._recent_signals_cache = []  # Keep last 20 signals for deduplication
-        self._recent_window_seconds = 60  # Deduplicate within 60-second window
+        self._last_signal_per_key = {}  # Simple: track last signal per symbol+timeframe
     
     def _ensure_file_exists(self):
         """Create JSONL file if it doesn't exist."""
@@ -41,61 +39,46 @@ class SignalStore:
                 pass  # Create empty file
             print(f"[SignalStore] Created new signals file: {self.path}", flush=True)
     
-    def _is_duplicate_signal(self, signal_dict: Dict) -> bool:
+    def _check_duplicate(self, signal_dict: Dict) -> bool:
         """
-        Check if signal is a duplicate of a recently fired signal.
-        Deduplication criteria: Same symbol, timeframe, and entry price (within 0.0001 tolerance).
-        Window: Last 60 seconds.
-        
-        Args:
-            signal_dict: Signal to check
-        
-        Returns:
-            True if duplicate found, False if unique
+        Simple duplicate check: same symbol+tf+price within 120 seconds = block.
+        Returns True if should REJECT (is duplicate).
         """
         try:
-            current_time = datetime.now(timezone.utc)
             symbol = signal_dict.get('symbol')
             timeframe = signal_dict.get('timeframe')
             entry_price = float(signal_dict.get('entry_price', 0))
             fired_time_str = signal_dict.get('fired_time_utc')
             
-            if not all([symbol, timeframe, fired_time_str]):
-                return False  # Cannot deduplicate without full info
+            key = f"{symbol}_{timeframe}"
             
-            try:
-                fired_time = pd.Timestamp(fired_time_str, tz='UTC')
-            except Exception:
-                return False  # Skip dedup if time parse fails
+            # Check if this exact signal was sent recently
+            if key in self._last_signal_per_key:
+                last = self._last_signal_per_key[key]
+                # Price within 0.1% and time within 120 seconds
+                price_diff = abs(last['price'] - entry_price) / max(entry_price, 0.00000001)
+                try:
+                    last_time = pd.Timestamp(last['time'], tz='UTC')
+                    curr_time = pd.Timestamp(fired_time_str, tz='UTC')
+                    time_diff = (curr_time - last_time).total_seconds()
+                except Exception:
+                    time_diff = 200  # If time parse fails, don't block
+                
+                if price_diff < 0.001 and time_diff < 120:
+                    print(f"[SignalStore] DUPLICATE BLOCKED: {symbol} {timeframe} @ {entry_price:.8f} (fired {time_diff:.1f}s ago)", flush=True)
+                    return True
             
-            # Clean cache: remove signals older than window
-            self._recent_signals_cache = [
-                s for s in self._recent_signals_cache
-                if (current_time - pd.Timestamp(s.get('fired_time_utc', ''), tz='UTC')).total_seconds() < self._recent_window_seconds
-            ]
-            
-            # Check for duplicates in recent cache
-            PRICE_TOLERANCE = 0.0001
-            for recent_signal in self._recent_signals_cache:
-                if (recent_signal.get('symbol') == symbol and
-                    recent_signal.get('timeframe') == timeframe and
-                    abs(float(recent_signal.get('entry_price', 0)) - entry_price) < PRICE_TOLERANCE):
-                    
-                    time_diff = (fired_time - pd.Timestamp(recent_signal.get('fired_time_utc'), tz='UTC')).total_seconds()
-                    if time_diff < 10:  # Duplicate if within 10 seconds
-                        print(f"[SignalStore] DUPLICATE DETECTED: {symbol} {timeframe} @ {entry_price:.8f} (fired {time_diff:.1f}s after previous)", flush=True)
-                        return True
-            
+            # Update cache with this signal
+            self._last_signal_per_key[key] = {'price': entry_price, 'time': fired_time_str}
             return False
         
         except Exception as e:
-            print(f"[SignalStore] WARNING: Deduplication check failed: {e}", flush=True)
+            print(f"[SignalStore] Dedup check error (allowing signal): {e}", flush=True)
             return False
     
     def append_signal(self, signal_dict: Dict) -> Optional[str]:
         """
         Append a complete signal to JSONL file.
-        Includes deduplication check to prevent same signal firing twice.
         
         Args:
             signal_dict: Complete signal data including:
@@ -121,7 +104,7 @@ class SignalStore:
                 - max_gatekeepers: Total gatekeepers
         
         Returns:
-            signal_uuid if successful, None if failed or duplicate
+            signal_uuid if successful, None if failed
         """
         try:
             # Validate required fields
@@ -136,17 +119,13 @@ class SignalStore:
                     print(f"[SignalStore] WARNING: Missing required field '{field}'", flush=True)
                     return None
             
-            # === DEDUPLICATION CHECK ===
-            if self._is_duplicate_signal(signal_dict):
-                print(f"[SignalStore] REJECTED (duplicate): {signal_dict['uuid'][:8]}... ({signal_dict['symbol']} {signal_dict['timeframe']})", flush=True)
-                return None
+            # CHECK FOR DUPLICATES BEFORE STORING
+            if self._check_duplicate(signal_dict):
+                return None  # Reject duplicate, don't store
             
             # Add metadata
             signal_dict['stored_at_utc'] = datetime.now(timezone.utc).isoformat()
             signal_dict['version'] = '1.0'
-            
-            # Cache this signal for future deduplication checks
-            self._recent_signals_cache.append(signal_dict.copy())
             
             # Append to JSONL
             with open(self.path, 'a') as f:
