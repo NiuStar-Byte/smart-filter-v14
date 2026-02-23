@@ -576,6 +576,27 @@ def run_cycle():
                                 )
                                 if sent_ok:
                                     last_sent[key15] = now
+                                    
+                                    # IMMEDIATELY generate and send debug file for this specific signal
+                                    try:
+                                        export_signal_debug_txt(
+                                            symbol=symbol_val,
+                                            tf=tf_val,
+                                            bias=signal_type,
+                                            filter_weights_long=getattr(sf15, 'filter_weights_long', {}),
+                                            filter_weights_short=getattr(sf15, 'filter_weights_short', {}),
+                                            gatekeepers=getattr(sf15, 'gatekeepers', []),
+                                            results_long=res15.get("results_long", {}),
+                                            results_short=res15.get("results_short", {}),
+                                            orderbook_result=orderbook_result,
+                                            density_result=density_result
+                                        )
+                                        # Send the debug file immediately
+                                        if os.path.exists("signal_debug_temp.txt"):
+                                            send_telegram_file("signal_debug_temp.txt", caption=f"Debug: {symbol_val} {tf_val}")
+                                            print(f"[DEBUG] Sent debug file for {symbol_val} {tf_val}", flush=True)
+                                    except Exception as e:
+                                        print(f"[WARN] Failed to send debug file for {symbol_val}: {e}", flush=True)
                                 else:
                                     print(f"[ERROR] Telegram send failed for {symbol_val}", flush=True)
                             except Exception as e:
@@ -1027,12 +1048,9 @@ def run_cycle():
 
     # End of per-symbol loop
     
-    # === GLOBAL DEBUG GATE: Ensure exactly MAX 2 debug objects per cycle ===
-    # (Remove excess if somehow multiple branches added more than 2)
-    MAX_DEBUG_PER_CYCLE = 2
-    if len(valid_debugs) > MAX_DEBUG_PER_CYCLE:
-        print(f"[DEBUG-GATE] Trimmed {len(valid_debugs)} debugs to {MAX_DEBUG_PER_CYCLE} (max per cycle)", flush=True)
-        valid_debugs = valid_debugs[:MAX_DEBUG_PER_CYCLE]
+    # Note: Debug files are now sent IMMEDIATELY after each signal's Telegram alert
+    # (not accumulated in valid_debugs), ensuring 1:1 correlation
+    # valid_debugs kept for backward compatibility but not used for sending
     
     return valid_debugs
 
