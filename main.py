@@ -1026,15 +1026,28 @@ def run_cycle():
             traceback.print_exc()
 
     # End of per-symbol loop
+    
+    # === GLOBAL DEBUG GATE: Ensure exactly MAX 2 debug objects per cycle ===
+    # (Remove excess if somehow multiple branches added more than 2)
+    MAX_DEBUG_PER_CYCLE = 2
+    if len(valid_debugs) > MAX_DEBUG_PER_CYCLE:
+        print(f"[DEBUG-GATE] Trimmed {len(valid_debugs)} debugs to {MAX_DEBUG_PER_CYCLE} (max per cycle)", flush=True)
+        valid_debugs = valid_debugs[:MAX_DEBUG_PER_CYCLE]
+    
     return valid_debugs
 
 def run():
     """
     Continuous loop that calls run_cycle() then sleeps.
+    Enforces CYCLE_SLEEP interval and prevents overlapping cycles.
     """
     print("[INFO] Starting Smart Filter engine (LIVE MODE)...\n", flush=True)
+    last_cycle_end = 0
     while True:
         try:
+            cycle_start = time.time()
+            print(f"[CYCLE] START at {datetime.utcnow().isoformat()} (wall: {datetime.now().isoformat()})", flush=True)
+            
             valid_debugs = run_cycle()
 
             # --- [DISABLED] Debug file sending to prevent spam ---
@@ -1054,8 +1067,19 @@ def run():
             else:
                 print("[FIRED] No valid signals processed this cycle", flush=True)
 
-            print(f"[INFO] ✅ Cycle complete. Sleeping {CYCLE_SLEEP} seconds...\n", flush=True)
-            time.sleep(CYCLE_SLEEP)
+            cycle_end = time.time()
+            cycle_duration = cycle_end - cycle_start
+            print(f"[CYCLE] END at {datetime.utcnow().isoformat()} (duration: {cycle_duration:.2f}s)", flush=True)
+            
+            # ENFORCE CYCLE_SLEEP interval
+            time_to_sleep = CYCLE_SLEEP - cycle_duration
+            if time_to_sleep > 0:
+                print(f"[INFO] ✅ Cycle complete ({cycle_duration:.2f}s). Sleeping {time_to_sleep:.2f}s (total interval: {CYCLE_SLEEP}s)...\n", flush=True)
+                time.sleep(time_to_sleep)
+            else:
+                print(f"[WARN] Cycle took {cycle_duration:.2f}s (longer than CYCLE_SLEEP={CYCLE_SLEEP}s). No sleep. Next cycle starts immediately.\n", flush=True)
+            
+            last_cycle_end = time.time()
 
         except Exception as e:
             print(f"[FATAL] Exception in main loop: {e}", flush=True)
