@@ -45,18 +45,24 @@ class SignalStore:
         SAME signal = SAME fingerprint (no matter how many times it fires)
         DIFFERENT signal = DIFFERENT fingerprint
         
-        Fingerprint = symbol + timeframe + entry_price (rounded to 8 decimals)
-        This way: LQTY 15min @ 0.2698 always has the same fingerprint
+        Fingerprint determined by:
+        1. Symbol (e.g., BIO-USDT)
+        2. Timeframe (e.g., 15min)
+        3. Entry price (e.g., 0.027427)
+        4. Signal type (LONG or SHORT)
+        5. Score (e.g., 13)
         """
         try:
             symbol = signal_dict.get('symbol', '').upper()
             timeframe = signal_dict.get('timeframe', '').lower()
             entry_price = float(signal_dict.get('entry_price', 0))
+            signal_type = str(signal_dict.get('signal_type', '')).upper()
+            score = int(signal_dict.get('score', 0))
             
             # Round to 8 decimals (crypto precision)
             price_rounded = round(entry_price, 8)
             
-            fingerprint = f"{symbol}_{timeframe}_{price_rounded:.8f}"
+            fingerprint = f"{symbol}_{timeframe}_{price_rounded:.8f}_{signal_type}_{score}"
             return fingerprint
         
         except Exception as e:
