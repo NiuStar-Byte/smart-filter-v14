@@ -102,16 +102,20 @@ class SignalStore:
                         stored_signal = json.loads(line)
                         stored_fingerprint = self._get_signal_fingerprint(stored_signal)
                         
-                        # Check if fingerprint matches
+                        # Check if fingerprint matches (ANY symbol, ANY timeframe)
                         if stored_fingerprint == fingerprint:
                             try:
                                 stored_time = pd.Timestamp(stored_signal.get('fired_time_utc'), tz='UTC')
                                 time_diff = (curr_time - stored_time).total_seconds()
                                 
-                                if time_diff < 120 and time_diff >= 0:
-                                    print(f"[SignalStore] DUPLICATE BLOCKED: {symbol} {timeframe} @ {entry_price} (fired {time_diff:.1f}s ago)", flush=True)
+                                if 0 <= time_diff < 120:
+                                    stored_symbol = stored_signal.get('symbol')
+                                    stored_tf = stored_signal.get('timeframe')
+                                    stored_price = stored_signal.get('entry_price')
+                                    print(f"[SignalStore] ⛔ DUPLICATE BLOCKED (applies to ALL symbols): {symbol} {timeframe} @ {entry_price} matches {stored_symbol} {stored_tf} @ {stored_price} (fired {time_diff:.1f}s ago)", flush=True)
                                     return True
-                            except Exception:
+                            except Exception as e:
+                                print(f"[SignalStore] WARNING: Error comparing timestamps: {e}", flush=True)
                                 pass
                     except json.JSONDecodeError:
                         continue
