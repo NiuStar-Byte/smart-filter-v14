@@ -919,19 +919,9 @@ class SmartFilter:
             "final": valid_signal
         }
 
-        # Export debug file (unchanged)
-        export_signal_debug_txt(
-            symbol=self.symbol,
-            tf=self.tf,
-            bias=direction,
-            filter_weights_long=self.filter_weights_long,
-            filter_weights_short=self.filter_weights_short,
-            gatekeepers=self.gatekeepers,
-            results_long=results_long,
-            results_short=results_short,
-            orderbook_result=orderbook_result,
-            density_result=density_result
-        )
+        # DEBUG FILE GENERATION: DISABLED
+        # (causing Telegram spam - will re-enable when proper mechanism is in place)
+        # export_signal_debug_txt(...)
 
         regime = self._market_regime()
 
