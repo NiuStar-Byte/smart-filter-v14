@@ -33,6 +33,7 @@ class SignalStore:
         self._ensure_file_exists()
         self._recent_signals_cache = []  # Keep last 20 signals for deduplication
         self._recent_window_seconds = 60  # Deduplicate within 60-second window
+        self._load_recent_signals_from_file()  # Load from persistent file
     
     def _ensure_file_exists(self):
         """Create JSONL file if it doesn't exist."""
@@ -41,11 +42,37 @@ class SignalStore:
                 pass  # Create empty file
             print(f"[SignalStore] Created new signals file: {self.path}", flush=True)
     
+    def _load_recent_signals_from_file(self):
+        """Load last 20 signals from JSONL file on startup for persistent deduplication."""
+        try:
+            if not os.path.exists(self.path):
+                return
+            
+            signals = []
+            with open(self.path, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        signal = json.loads(line)
+                        signals.append(signal)
+                    except json.JSONDecodeError:
+                        continue
+            
+            # Keep last 20 signals
+            self._recent_signals_cache = signals[-20:] if len(signals) >= 20 else signals
+            print(f"[SignalStore] Loaded {len(self._recent_signals_cache)} recent signals from file for deduplication", flush=True)
+        
+        except Exception as e:
+            print(f"[SignalStore] WARNING: Could not load recent signals from file: {e}", flush=True)
+            self._recent_signals_cache = []
+    
     def _is_duplicate_signal(self, signal_dict: Dict) -> bool:
         """
         Check if signal is a duplicate of a recently fired signal.
-        Deduplication criteria: Same symbol, timeframe, and entry price (within 0.0001 tolerance).
-        Window: Last 60 seconds.
+        Deduplication criteria: Same symbol, timeframe, and entry price (within 0.1% tolerance).
+        Window: Last 120 seconds.
         
         Args:
             signal_dict: Signal to check
@@ -68,22 +95,27 @@ class SignalStore:
             except Exception:
                 return False  # Skip dedup if time parse fails
             
-            # Clean cache: remove signals older than window
+            # Clean cache: remove signals older than window (120 seconds = 2 minutes)
             self._recent_signals_cache = [
                 s for s in self._recent_signals_cache
-                if (current_time - pd.Timestamp(s.get('fired_time_utc', ''), tz='UTC')).total_seconds() < self._recent_window_seconds
+                if (current_time - pd.Timestamp(s.get('fired_time_utc', ''), tz='UTC')).total_seconds() < 120
             ]
             
             # Check for duplicates in recent cache
-            PRICE_TOLERANCE = 0.0001
+            # Use percentage-based tolerance: 0.1% of entry price (handles both small and large prices)
+            PRICE_TOLERANCE_PCT = 0.001  # 0.1%
+            price_tolerance = max(entry_price * PRICE_TOLERANCE_PCT, 0.00000001)  # Min 0.00000001
+            
             for recent_signal in self._recent_signals_cache:
+                recent_price = float(recent_signal.get('entry_price', 0))
+                
                 if (recent_signal.get('symbol') == symbol and
                     recent_signal.get('timeframe') == timeframe and
-                    abs(float(recent_signal.get('entry_price', 0)) - entry_price) < PRICE_TOLERANCE):
+                    abs(recent_price - entry_price) < price_tolerance):
                     
                     time_diff = (fired_time - pd.Timestamp(recent_signal.get('fired_time_utc'), tz='UTC')).total_seconds()
-                    if time_diff < 10:  # Duplicate if within 10 seconds
-                        print(f"[SignalStore] DUPLICATE DETECTED: {symbol} {timeframe} @ {entry_price:.8f} (fired {time_diff:.1f}s after previous)", flush=True)
+                    if time_diff < 15:  # Duplicate if within 15 seconds
+                        print(f"[SignalStore] DUPLICATE DETECTED: {symbol} {timeframe} @ {entry_price:.8f} (fired {time_diff:.1f}s after previous, tolerance={price_tolerance:.8f})", flush=True)
                         return True
             
             return False
