@@ -1,7 +1,8 @@
-# main.py
+# main.py (REVISED 2026-02-23: UUID + Timestamp)
 # Revised: refactored single-cycle run into `run_cycle()` and a persistent outer loop,
 # added safer SuperGK fetch normalization, environment-driven cycle sleep, and more defensive logging.
 # NOTE: This variant FORCE-BYPASSES SuperGK for ALL signals (LONG and SHORT).
+# UPDATED: UUID now includes fired_time_utc for unique identification per occurrence
 
 print("[INFO] main.py script started.", flush=True)
 from signal_debug_log import export_signal_debug_txt, log_fired_signal
@@ -67,7 +68,6 @@ CYCLE_SLEEP = int(os.getenv("CYCLE_SLEEP", "60"))
 # --- SuperGK helper: main_supergk_ok left for compatibility but main will bypass ---
 def main_supergk_ok(bias, orderbook_result, density_result, analyzer_result):
     """Legacy helper retained for compatibility. Not used when global bypass is enforced in main."""
-    # Keep behavior predictable if called elsewhere: call canonical function if available
     try:
         return super_gk_aligned(bias, orderbook_result, density_result)
     except Exception as e:
@@ -85,16 +85,12 @@ def get_resting_order_density(symbol, depth=100, top_n=5):
     returned densities are percentages (0..100). Defensive - returns zeros on error.
     """
     try:
-        # import here to avoid circular import on module load
         from kucoin_density import get_resting_density as _kd
         res = _kd(symbol, depth=depth, levels=top_n)
-        # Ensure fields exist and are numeric
         bid_density = float(res.get("bid_density", 0.0))
         ask_density = float(res.get("ask_density", 0.0))
-        # Sanity clamp: density should be between 0 and 100
         bid_density = max(0.0, min(100.0, bid_density))
         ask_density = max(0.0, min(100.0, ask_density))
-        # Also return totals for debugging
         return {
             "bid_density": bid_density,
             "ask_density": ask_density,
@@ -110,11 +106,10 @@ def get_resting_order_density(symbol, depth=100, top_n=5):
 def candle_color(open, close):
     return 'green' if close > open else 'red'
 
-def _generate_deterministic_uuid(symbol, timeframe, entry_price, signal_type, score):
+def _generate_deterministic_uuid(symbol, timeframe, entry_price, signal_type, score, fired_time_utc):
     """
-    Generate deterministic UUID based on signal properties.
-    SAME signal attributes = SAME UUID (always)
-    DIFFERENT attributes = DIFFERENT UUID
+    Generate deterministic UUID based on signal properties + timestamp.
+    SAME signal attributes at DIFFERENT times = DIFFERENT UUID (unique per occurrence)
     
     UUID determined by:
     1. Symbol (e.g., BIO-USDT)
@@ -122,19 +117,28 @@ def _generate_deterministic_uuid(symbol, timeframe, entry_price, signal_type, sc
     3. Entry price (e.g., 0.027427)
     4. Signal type (LONG or SHORT)
     5. Score (e.g., 13/18)
+    6. Fired timestamp (e.g., 2026-02-23T13:47:30.123456+00:00)
+    
+    This ensures unique identification per signal occurrence while maintaining
+    deterministic behavior for audit trails and historical tracking.
     """
     import hashlib
     
-    # Create fingerprint from ALL signal properties
+    # Create fingerprint from ALL signal properties INCLUDING timestamp
     price_rounded = round(float(entry_price), 8)
     signal_type_str = str(signal_type).upper()
     score_int = int(score)
     
-    fingerprint = f"{symbol}_{timeframe}_{price_rounded:.8f}_{signal_type_str}_{score_int}".encode('utf-8')
+    # Convert timestamp to ISO string if needed
+    if hasattr(fired_time_utc, 'isoformat'):
+        timestamp_str = fired_time_utc.isoformat()
+    else:
+        timestamp_str = str(fired_time_utc)
+    
+    fingerprint = f"{symbol}_{timeframe}_{price_rounded:.8f}_{signal_type_str}_{score_int}_{timestamp_str}".encode('utf-8')
     
     # Generate deterministic UUID from fingerprint hash
     hash_obj = hashlib.md5(fingerprint)
-    # Create UUID from first 16 bytes of hash
     deterministic_uuid = str(uuid_lib.UUID(bytes=hash_obj.digest()[:16]))
     
     return deterministic_uuid
@@ -146,9 +150,9 @@ def create_and_store_signal(symbol, timeframe, signal_type, fired_time_utc, entr
     """
     Create signal dict and store to JSONL.
     Uses global _signal_store initialized at module load time.
-    UUID is deterministic: same signal attributes = same UUID.
+    UUID is deterministic: same signal attributes + timestamp = unique UUID.
     
-    Returns: signal_uuid if successful, None if failed
+    Returns: signal_uuid if successful, None if failed (duplicate rejected)
     """
     global _signal_store_ready
     
@@ -157,10 +161,10 @@ def create_and_store_signal(symbol, timeframe, signal_type, fired_time_utc, entr
         return None
     
     try:
-        # Generate DETERMINISTIC UUID (not random)
-        # UUID determined by: symbol + timeframe + entry_price + signal_type + score
-        signal_uuid = _generate_deterministic_uuid(symbol, timeframe, entry_price, signal_type, score)
-        print(f"[UUID] Generated deterministic UUID: {signal_uuid[:8]}... for {symbol} {timeframe} {signal_type} @ {entry_price} (score:{score})", flush=True)
+        # Generate DETERMINISTIC UUID (includes timestamp for uniqueness)
+        # UUID determined by: symbol + timeframe + entry_price + signal_type + score + fired_time_utc
+        signal_uuid = _generate_deterministic_uuid(symbol, timeframe, entry_price, signal_type, score, fired_time_utc)
+        print(f"[UUID] Generated unique UUID: {signal_uuid[:8]}... for {symbol} {timeframe} {signal_type} @ {entry_price} (score:{score}) @ {fired_time_utc}", flush=True)
         
         signal_data = {
             "uuid": signal_uuid,
@@ -191,7 +195,7 @@ def create_and_store_signal(symbol, timeframe, signal_type, fired_time_utc, entr
         if stored_uuid:
             print(f"[STORED] Signal captured: {symbol} {timeframe} {signal_type} UUID={stored_uuid[:8]}...", flush=True)
         else:
-            print(f"[WARN] Signal store returned None for {symbol} {timeframe}", flush=True)
+            print(f"[WARN] Signal store returned None (duplicate blocked) for {symbol} {timeframe}", flush=True)
         
         return stored_uuid
     
@@ -228,8 +232,6 @@ def early_breakout(df, lookback=3):
 def log_orderbook_and_density(symbol):
     """
     Fetch fresh orderbook and resting density and print timestamped logs.
-    Adds ts (UTC) and source=main_log so you can confirm these logs were fetched
-    immediately prior to sending a signal (not a startup/import dump).
     """
     from datetime import datetime
     ts = datetime.utcnow().isoformat()
@@ -259,14 +261,12 @@ def log_orderbook_and_density(symbol):
     except Exception as e:
         print(f"[RestingOrderDensityLog] {symbol} ERROR: {e}", flush=True)
 
-# --- SuperGK canonical function retained for reference but not used by main (global bypass enforced below) ---
 def super_gk_aligned(bias, orderbook_result, density_result,
                      wall_pct_threshold=None, density_threshold=None,
                      wall_weight=None, density_weight=None, composite_threshold=None):
     """
     Composite-first SuperGK with optional bypasses.
     """
-    # Helper to read floats from env with defaults
     def _env_float(name, default):
         v = os.getenv(name)
         try:
@@ -341,14 +341,6 @@ def super_gk_aligned(bias, orderbook_result, density_result,
 
     return composite >= composite_threshold
 
-# --- run_cycle / main logic (UNCONDITIONAL SUPERGK BYPASS FOR ALL SIGNALS) ---
-# NOTE: this module expects these symbols to be available in the import environment:
-# TOKENS, OHLCV_LIMIT, COOLDOWN, last_sent, DEFAULT_SLIPPAGE
-# get_ohlcv, SmartFilter, early_breakout, get_live_entry_price,
-# get_order_wall_delta, get_resting_order_density, calculate_tp_sl,
-# log_fired_signal, send_telegram_alert
-# These are kept external so the function can be copy-pasted into your existing module.
-
 import traceback
 from datetime import datetime
 def run_cycle():
@@ -362,12 +354,11 @@ def run_cycle():
     for idx, symbol in enumerate(TOKENS, start=1):
         print(f"[INFO] Checking {symbol}...", flush=True)
         try:
-            # Fetch raw OHLCV for 15m, 30m, and 1h timeframes (removed 3m & 5m - too noisy)
             df15 = get_ohlcv(symbol, interval="15min", limit=OHLCV_LIMIT)
             df30 = get_ohlcv(symbol, interval="30min", limit=OHLCV_LIMIT)
             df1h = get_ohlcv(symbol, interval="1h", limit=OHLCV_LIMIT)
             if df15 is None or df15.empty or df30 is None or df30.empty or df1h is None or df1h.empty:
-                print(f"[WARN] Not enough data for {symbol} (df15, df30, or df1h empty). Skipping.", flush=True)
+                print(f"[WARN] Not enough data for {symbol}. Skipping.", flush=True)
                 continue
 
             early_breakout_15m = early_breakout(df15, lookback=3)
@@ -386,7 +377,6 @@ def run_cycle():
                     if now - last15 >= COOLDOWN["15min"]:
                         numbered_signal = f"{idx}.A"
 
-                        # Fresh orderbook/density logs (main_log)
                         log_orderbook_and_density(symbol)
                         try:
                             orderbook_result = get_order_wall_delta(symbol) or {}
@@ -402,39 +392,17 @@ def run_cycle():
                         bias = res15.get("bias", "NEUTRAL")
                         sf15.bias = bias
 
-                        # DISABLED: SuperGK validation (broken mechanism, blocking all signals)
-                        # TODO: Review SuperGK logic and fix it properly
                         print("[SuperGK][MAIN] DISABLED (broken) - bypassing SuperGK for ALL signals", flush=True)
-                        super_gk_ok = True  # Bypass until SuperGK is fixed
+                        super_gk_ok = True
                         print(f"[SuperGK][MAIN] Result -> bias={bias} super_gk_ok={super_gk_ok} (bypassed)", flush=True)
 
                         if not super_gk_ok:
-                            # legacy compatibility block (should not execute with global bypass)
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
-                            if False:  # DEBUG DISABLED
-                                valid_debugs.append({
-                                "symbol": symbol,
-                                "tf": "15min",
-                                "bias": bias,
-                                "filter_weights_long": getattr(sf15, 'filter_weights_long', []),
-                                "filter_weights_short": getattr(sf15, 'filter_weights_short', []),
-                                "gatekeepers": getattr(sf15, 'gatekeepers', []),
-                                "results_long": res15.get("results_long", {}),
-                                "results_short": res15.get("results_short", {}),
-                                "caption": f"Blocked signal debug for {symbol} 15min",
-                                "orderbook_result": orderbook_result,
-                                "density_result": density_result,
-                                "entry_price": res15.get("price"),
-                                "fired_time_utc": datetime.utcnow(),
-                                "early_breakout_15m": early_breakout_15m
-                                })
                             continue
 
-                        # --- Prepare to send ---
                         print(f"[LOG] Sending 15min alert for {res15.get('symbol')}", flush=True)
                         fired_time_utc = datetime.utcnow()
 
-                        # Live entry price preferred, fall back to analyzer price
                         entry_price_raw = None
                         try:
                             entry_price_raw = get_live_entry_price(
@@ -447,7 +415,6 @@ def run_cycle():
                             print(f"[WARN] get_live_entry_price raised: {e} -- falling back to analyzer price", flush=True)
                             entry_price_raw = res15.get("price", 0.0)
 
-                        # Coerce defensively
                         try:
                             entry_price = float(entry_price_raw)
                         except Exception:
@@ -458,10 +425,8 @@ def run_cycle():
                                 print(f"[WARN] Failed to coerce entry_price ({entry_price_raw}); defaulting to 0.0", flush=True)
                                 entry_price = 0.0
 
-                        # Debug: final entry price vs analyzer price
                         print(f"[DEBUG] entry_price_final={entry_price:.8f} analyzer_price={res15.get('price')}", flush=True)
 
-                        # Collect signal metadata
                         score = res15.get("score", 0)
                         score_max = res15.get("score_max", 0)
                         passes = res15.get("passes", 0)
@@ -478,7 +443,6 @@ def run_cycle():
                             confidence = 0.0
                         entry_idx = df15.index.get_loc(df15.index[-1])
 
-                        # Recompute TP/SL against the final live entry_price so TP/SL match execution price
                         tp_sl = None
                         tp = None
                         sl = None
@@ -488,7 +452,6 @@ def run_cycle():
                             tp = tp_sl.get('tp')
                             sl = tp_sl.get('sl')
                             fib_levels = tp_sl.get('fib_levels')
-                            # Debug: show tp_sl summary
                             print(f"[DEBUG] calculate_tp_sl -> tp={tp} sl={sl} chosen_ratio={tp_sl.get('chosen_ratio')} achieved_rr={tp_sl.get('achieved_rr')}", flush=True)
                             print(f"[DEBUG] tp_sl full dict for {symbol_val}: {tp_sl}", flush=True)
                         except Exception as e:
@@ -496,10 +459,6 @@ def run_cycle():
                             tp = sl = fib_levels = None
                             tp_sl = None
 
-                        # DEBUG FILE SENDING: DISABLED
-                        # (removed debug object collection - not used)
-
-                        # Log fired signal (tracking) and then send telegram
                         try:
                             log_fired_signal(
                                 symbol=symbol_val,
@@ -526,14 +485,11 @@ def run_cycle():
                         achieved_rr_value = tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None
                         
                         if achieved_rr_value is None or achieved_rr_value < MIN_ACCEPTED_RR:
-                            # Filter out: RR too low
                             print(f"[RR_FILTER] 15min signal REJECTED: {symbol_val} - RR {achieved_rr_value} < MIN {MIN_ACCEPTED_RR}", flush=True)
                             continue
                         
-                        # RR acceptable: Store signal + Fire
                         print(f"[RR_FILTER] 15min signal ACCEPTED: {symbol_val} - RR {achieved_rr_value} >= MIN {MIN_ACCEPTED_RR}", flush=True)
                         
-                        # Store signal to JSONL
                         tp_pct_val = ((tp - entry_price) / entry_price * 100) if tp and entry_price else 0
                         sl_pct_val = ((sl - entry_price) / entry_price * 100) if sl and entry_price else 0
                         
@@ -548,7 +504,7 @@ def run_cycle():
                             tp_pct=tp_pct_val,
                             sl_pct=sl_pct_val,
                             achieved_rr=achieved_rr_value,
-                            fib_ratio=None,  # ATR-based 2:1 RR (no Fibonacci)
+                            fib_ratio=None,
                             atr_value=tp_sl.get('atr_value') if isinstance(tp_sl, dict) else None,
                             score=score,
                             max_score=score_max,
@@ -561,9 +517,8 @@ def run_cycle():
                         
                         if not signal_uuid:
                             print(f"[WARN] Signal {symbol_val} (15min) REJECTED - duplicate within 120s. NOT sending Telegram alert.", flush=True)
-                            continue  # Skip to next symbol - don't send duplicate alert
+                            continue
                         
-                        # Send trade alert to Telegram ONLY if signal was accepted (not duplicate)
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
                                 sent_ok = send_telegram_alert(
@@ -602,7 +557,7 @@ def run_cycle():
                 print(f"[ERROR] Exception in processing 15min for {symbol}: {e}", flush=True)
                 traceback.print_exc()
 
-            # --- 30min TF block (mirror of 15min with identical safe flow) ---
+            # --- 30min TF block ---
             try:
                 key30 = f"{symbol}_30min"
                 sf30 = SmartFilter(symbol, df30, df3m=df15, df5m=df1h, tf="30min")
@@ -629,31 +584,12 @@ def run_cycle():
                         bias = res30.get("bias", "NEUTRAL")
                         sf30.bias = bias
 
-                        # DISABLED: SuperGK validation (broken mechanism, blocking all signals)
-                        # TODO: Review SuperGK logic and fix it properly
                         print("[SuperGK][MAIN] DISABLED (broken) - bypassing SuperGK for ALL signals", flush=True)
-                        super_gk_ok = True  # Bypass until SuperGK is fixed
+                        super_gk_ok = True
                         print(f"[SuperGK][MAIN] Result -> bias={bias} super_gk_ok={super_gk_ok} (bypassed)", flush=True)
 
                         if not super_gk_ok:
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
-                            if False:  # DEBUG DISABLED
-                                valid_debugs.append({
-                                "symbol": symbol,
-                                "tf": "30min",
-                                "bias": bias,
-                                "filter_weights_long": getattr(sf30, 'filter_weights_long', []),
-                                "filter_weights_short": getattr(sf30, 'filter_weights_short', []),
-                                "gatekeepers": getattr(sf30, 'gatekeepers', []),
-                                "results_long": res30.get("results_long", {}),
-                                "results_short": res30.get("results_short", {}),
-                                "caption": f"Blocked signal debug for {symbol} 30min",
-                                "orderbook_result": orderbook_result,
-                                "density_result": density_result,
-                                "entry_price": res30.get("price"),
-                                "fired_time_utc": datetime.utcnow(),
-                                "early_breakout_30m": early_breakout_30m
-                                })
                             continue
 
                         print(f"[LOG] Sending 30min alert for {res30.get('symbol')}", flush=True)
@@ -715,27 +651,6 @@ def run_cycle():
                             tp = sl = fib_levels = None
                             tp_sl = None
 
-                        if False:  # DEBUG DISABLED
-                            valid_debugs.append({
-                            "symbol": symbol_val,
-                            "tf": tf_val,
-                            "bias": bias,
-                            "filter_weights_long": getattr(sf30, 'filter_weights_long', []),
-                            "filter_weights_short": getattr(sf30, 'filter_weights_short', []),
-                            "gatekeepers": getattr(sf30, 'gatekeepers', []),
-                            "results_long": res30.get("results_long", {}),
-                            "results_short": res30.get("results_short", {}),
-                            "caption": f"Signal debug log for {symbol_val} {tf_val}",
-                            "orderbook_result": orderbook_result,
-                            "density_result": density_result,
-                            "entry_price": entry_price,
-                            "fired_time_utc": fired_time_utc,
-                            "early_breakout_30m": early_breakout_30m,
-                            "tp": tp,
-                            "sl": sl,
-                            "fib_levels": fib_levels
-                            })
-
                         try:
                             log_fired_signal(
                                 symbol=symbol_val,
@@ -762,14 +677,11 @@ def run_cycle():
                         achieved_rr_value = tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None
                         
                         if achieved_rr_value is None or achieved_rr_value < MIN_ACCEPTED_RR:
-                            # Filter out: RR too low
                             print(f"[RR_FILTER] 30min signal REJECTED: {symbol_val} - RR {achieved_rr_value} < MIN {MIN_ACCEPTED_RR}", flush=True)
                             continue
                         
-                        # RR acceptable: Store signal + Fire
                         print(f"[RR_FILTER] 30min signal ACCEPTED: {symbol_val} - RR {achieved_rr_value} >= MIN {MIN_ACCEPTED_RR}", flush=True)
                         
-                        # Store signal to JSONL
                         tp_pct_val = ((tp - entry_price) / entry_price * 100) if tp and entry_price else 0
                         sl_pct_val = ((sl - entry_price) / entry_price * 100) if sl and entry_price else 0
                         
@@ -784,7 +696,7 @@ def run_cycle():
                             tp_pct=tp_pct_val,
                             sl_pct=sl_pct_val,
                             achieved_rr=achieved_rr_value,
-                            fib_ratio=None,  # ATR-based 2:1 RR (no Fibonacci)
+                            fib_ratio=None,
                             atr_value=tp_sl.get('atr_value') if isinstance(tp_sl, dict) else None,
                             score=score,
                             max_score=score_max,
@@ -796,30 +708,15 @@ def run_cycle():
                         )
                         
                         if not signal_uuid:
-                            print(f"[WARN] Failed to store signal for {symbol_val} (30min). Still attempting Telegram send.", flush=True)
+                            print(f"[WARN] Failed to store signal for {symbol_val} (30min).", flush=True)
 
-                        # Send trade alert to Telegram
-                        # if os.getenv("DRY_RUN", "false").lower() != "true":
-                        #     try:
-                        #         print(f"[DEBUG] send_telegram_alert about to send: symbol={symbol_val} price={entry_price} (type={type(entry_price)}) tp={tp} sl={sl} tp_source={(tp_sl.get('source') if isinstance(tp_sl, dict) else None)} chosen_ratio={(tp_sl.get('chosen_ratio') if isinstance(tp_sl, dict) else None)} achieved_rr={(tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None)}", flush=True)
-                        #         sent_ok = send_telegram_alert(...) # Removed to limit alerts to 2 per cycle
-                        #         print(f"[DEBUG] send_telegram_alert returned: {sent_ok}", flush=True)
-                        #         if sent_ok:
-                        #             last_sent[key30] = now
-                        #         else:
-                        #             print(f"[ERROR] Telegram send failed for {symbol_val} (30min). Not setting cooldown.", flush=True)
-                        #     except Exception as e:
-                        #         print(f"[ERROR] Exception during Telegram send for {symbol_val} (30min): {e}", flush=True)
-                        #         traceback.print_exc()
-                        # else:
-                        #     print(f"[INFO] DRY_RUN enabled - simulated send for {symbol_val} (30min). Not setting cooldown.", flush=True)
                 else:
                     print(f"[INFO] No valid 30min signal for {symbol}.", flush=True)
             except Exception as e:
                 print(f"[ERROR] Exception in processing 30min for {symbol}: {e}", flush=True)
                 traceback.print_exc()
 
-            # --- 1h TF block (mirror of 15min with identical safe flow) ---
+            # --- 1h TF block ---
             try:
                 key1h = f"{symbol}_1h"
                 sf1h = SmartFilter(symbol, df1h, df3m=df30, df5m=None, tf="1h")
@@ -846,31 +743,12 @@ def run_cycle():
                         bias = res1h.get("bias", "NEUTRAL")
                         sf1h.bias = bias
 
-                        # DISABLED: SuperGK validation (broken mechanism, blocking all signals)
-                        # TODO: Review SuperGK logic and fix it properly
                         print("[SuperGK][MAIN] DISABLED (broken) - bypassing SuperGK for ALL signals", flush=True)
-                        super_gk_ok = True  # Bypass until SuperGK is fixed
+                        super_gk_ok = True
                         print(f"[SuperGK][MAIN] Result -> bias={bias} super_gk_ok={super_gk_ok} (bypassed)", flush=True)
 
                         if not super_gk_ok:
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
-                            if False:  # DEBUG DISABLED
-                                valid_debugs.append({
-                                "symbol": symbol,
-                                "tf": "1h",
-                                "bias": bias,
-                                "filter_weights_long": getattr(sf1h, 'filter_weights_long', []),
-                                "filter_weights_short": getattr(sf1h, 'filter_weights_short', []),
-                                "gatekeepers": getattr(sf1h, 'gatekeepers', []),
-                                "results_long": res1h.get("results_long", {}),
-                                "results_short": res1h.get("results_short", {}),
-                                "caption": f"Blocked signal debug for {symbol} 1h",
-                                "orderbook_result": orderbook_result,
-                                "density_result": density_result,
-                                "entry_price": res1h.get("price"),
-                                "fired_time_utc": datetime.utcnow(),
-                                "early_breakout_1h": early_breakout_1h
-                                })
                             continue
 
                         print(f"[LOG] Sending 1h alert for {res1h.get('symbol')}", flush=True)
@@ -932,27 +810,6 @@ def run_cycle():
                             tp = sl = fib_levels = None
                             tp_sl = None
 
-                        if False:  # DEBUG DISABLED
-                            valid_debugs.append({
-                            "symbol": symbol_val,
-                            "tf": tf_val,
-                            "bias": bias,
-                            "filter_weights_long": getattr(sf1h, 'filter_weights_long', []),
-                            "filter_weights_short": getattr(sf1h, 'filter_weights_short', []),
-                            "gatekeepers": getattr(sf1h, 'gatekeepers', []),
-                            "results_long": res1h.get("results_long", {}),
-                            "results_short": res1h.get("results_short", {}),
-                            "caption": f"Signal debug log for {symbol_val} {tf_val}",
-                            "orderbook_result": orderbook_result,
-                            "density_result": density_result,
-                            "entry_price": entry_price,
-                            "fired_time_utc": fired_time_utc,
-                            "early_breakout_1h": early_breakout_1h,
-                            "tp": tp,
-                            "sl": sl,
-                            "fib_levels": fib_levels
-                            })
-
                         try:
                             log_fired_signal(
                                 symbol=symbol_val,
@@ -979,14 +836,11 @@ def run_cycle():
                         achieved_rr_value = tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None
                         
                         if achieved_rr_value is None or achieved_rr_value < MIN_ACCEPTED_RR:
-                            # Filter out: RR too low
                             print(f"[RR_FILTER] 1h signal REJECTED: {symbol_val} - RR {achieved_rr_value} < MIN {MIN_ACCEPTED_RR}", flush=True)
                             continue
                         
-                        # RR acceptable: Store signal + Fire
                         print(f"[RR_FILTER] 1h signal ACCEPTED: {symbol_val} - RR {achieved_rr_value} >= MIN {MIN_ACCEPTED_RR}", flush=True)
                         
-                        # Store signal to JSONL
                         tp_pct_val = ((tp - entry_price) / entry_price * 100) if tp and entry_price else 0
                         sl_pct_val = ((sl - entry_price) / entry_price * 100) if sl and entry_price else 0
                         
@@ -1001,7 +855,7 @@ def run_cycle():
                             tp_pct=tp_pct_val,
                             sl_pct=sl_pct_val,
                             achieved_rr=achieved_rr_value,
-                            fib_ratio=None,  # ATR-based 2:1 RR (no Fibonacci)
+                            fib_ratio=None,
                             atr_value=tp_sl.get('atr_value') if isinstance(tp_sl, dict) else None,
                             score=score,
                             max_score=score_max,
@@ -1013,23 +867,8 @@ def run_cycle():
                         )
                         
                         if not signal_uuid:
-                            print(f"[WARN] Failed to store signal for {symbol_val} (1h). Still attempting Telegram send.", flush=True)
+                            print(f"[WARN] Failed to store signal for {symbol_val} (1h).", flush=True)
 
-                        # Send trade alert to Telegram
-                        # if os.getenv("DRY_RUN", "false").lower() != "true":
-                        #     try:
-                        #         print(f"[DEBUG] send_telegram_alert about to send: symbol={symbol_val} price={entry_price} (type={type(entry_price)}) tp={tp} sl={sl} tp_source={(tp_sl.get('source') if isinstance(tp_sl, dict) else None)} chosen_ratio={(tp_sl.get('chosen_ratio') if isinstance(tp_sl, dict) else None)} achieved_rr={(tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None)}", flush=True)
-                        #         sent_ok = send_telegram_alert(...) # Removed to limit alerts to 2 per cycle
-                        #         print(f"[DEBUG] send_telegram_alert returned: {sent_ok}", flush=True)
-                        #         if sent_ok:
-                        #             last_sent[key1h] = now
-                        #         else:
-                        #             print(f"[ERROR] Telegram send failed for {symbol_val} (1h). Not setting cooldown.", flush=True)
-                        #     except Exception as e:
-                        #         print(f"[ERROR] Exception during Telegram send for {symbol_val} (1h): {e}", flush=True)
-                        #         traceback.print_exc()
-                        # else:
-                        #     print(f"[INFO] DRY_RUN enabled - simulated send for {symbol_val} (1h). Not setting cooldown.", flush=True)
                 else:
                     print(f"[INFO] No valid 1h signal for {symbol}.", flush=True)
             except Exception as e:
@@ -1040,13 +879,7 @@ def run_cycle():
             print(f"[FATAL] Exception processing {symbol}: {e}", flush=True)
             traceback.print_exc()
 
-    # End of per-symbol loop
-    
-    # DEBUG FILE SENDING: DISABLED
-    # Reason: Signal/debug correlation issues and spam
-    # Will re-enable when proper mechanism is in place
     print(f"[DEBUG] Cycle complete (debug file sending disabled)", flush=True)
-    
     return None
 
 def run():
@@ -1062,15 +895,11 @@ def run():
             print(f"[CYCLE] START at {datetime.utcnow().isoformat()} (wall: {datetime.now().isoformat()})", flush=True)
             
             run_cycle()
-            
-            # Debug file sending: DISABLED
-            # (no debug files sent to Telegram)
 
             cycle_end = time.time()
             cycle_duration = cycle_end - cycle_start
             print(f"[CYCLE] END at {datetime.utcnow().isoformat()} (duration: {cycle_duration:.2f}s)", flush=True)
             
-            # ENFORCE CYCLE_SLEEP interval
             time_to_sleep = CYCLE_SLEEP - cycle_duration
             if time_to_sleep > 0:
                 print(f"[INFO] ✅ Cycle complete ({cycle_duration:.2f}s). Sleeping {time_to_sleep:.2f}s (total interval: {CYCLE_SLEEP}s)...\n", flush=True)
