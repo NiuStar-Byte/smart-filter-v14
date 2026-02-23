@@ -110,17 +110,27 @@ def get_resting_order_density(symbol, depth=100, top_n=5):
 def candle_color(open, close):
     return 'green' if close > open else 'red'
 
-def _generate_deterministic_uuid(symbol, timeframe, entry_price):
+def _generate_deterministic_uuid(symbol, timeframe, entry_price, signal_type, score):
     """
     Generate deterministic UUID based on signal properties.
     SAME signal attributes = SAME UUID (always)
     DIFFERENT attributes = DIFFERENT UUID
+    
+    UUID determined by:
+    1. Symbol (e.g., BIO-USDT)
+    2. Timeframe (e.g., 15min)
+    3. Entry price (e.g., 0.027427)
+    4. Signal type (LONG or SHORT)
+    5. Score (e.g., 13/18)
     """
     import hashlib
     
-    # Create fingerprint from signal properties
+    # Create fingerprint from ALL signal properties
     price_rounded = round(float(entry_price), 8)
-    fingerprint = f"{symbol}_{timeframe}_{price_rounded:.8f}".encode('utf-8')
+    signal_type_str = str(signal_type).upper()
+    score_int = int(score)
+    
+    fingerprint = f"{symbol}_{timeframe}_{price_rounded:.8f}_{signal_type_str}_{score_int}".encode('utf-8')
     
     # Generate deterministic UUID from fingerprint hash
     hash_obj = hashlib.md5(fingerprint)
@@ -148,8 +158,9 @@ def create_and_store_signal(symbol, timeframe, signal_type, fired_time_utc, entr
     
     try:
         # Generate DETERMINISTIC UUID (not random)
-        signal_uuid = _generate_deterministic_uuid(symbol, timeframe, entry_price)
-        print(f"[UUID] Generated deterministic UUID: {signal_uuid[:8]}... for {symbol} {timeframe} @ {entry_price}", flush=True)
+        # UUID determined by: symbol + timeframe + entry_price + signal_type + score
+        signal_uuid = _generate_deterministic_uuid(symbol, timeframe, entry_price, signal_type, score)
+        print(f"[UUID] Generated deterministic UUID: {signal_uuid[:8]}... for {symbol} {timeframe} {signal_type} @ {entry_price} (score:{score})", flush=True)
         
         signal_data = {
             "uuid": signal_uuid,
