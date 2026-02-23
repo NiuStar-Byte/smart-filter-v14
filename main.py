@@ -110,6 +110,25 @@ def get_resting_order_density(symbol, depth=100, top_n=5):
 def candle_color(open, close):
     return 'green' if close > open else 'red'
 
+def _generate_deterministic_uuid(symbol, timeframe, entry_price):
+    """
+    Generate deterministic UUID based on signal properties.
+    SAME signal attributes = SAME UUID (always)
+    DIFFERENT attributes = DIFFERENT UUID
+    """
+    import hashlib
+    
+    # Create fingerprint from signal properties
+    price_rounded = round(float(entry_price), 8)
+    fingerprint = f"{symbol}_{timeframe}_{price_rounded:.8f}".encode('utf-8')
+    
+    # Generate deterministic UUID from fingerprint hash
+    hash_obj = hashlib.md5(fingerprint)
+    # Create UUID from first 16 bytes of hash
+    deterministic_uuid = str(uuid_lib.UUID(bytes=hash_obj.digest()[:16]))
+    
+    return deterministic_uuid
+
 def create_and_store_signal(symbol, timeframe, signal_type, fired_time_utc, entry_price,
                            tp_target, sl_target, tp_pct, sl_pct, achieved_rr, fib_ratio,
                            atr_value, score, max_score, confidence, route, regime,
@@ -117,6 +136,7 @@ def create_and_store_signal(symbol, timeframe, signal_type, fired_time_utc, entr
     """
     Create signal dict and store to JSONL.
     Uses global _signal_store initialized at module load time.
+    UUID is deterministic: same signal attributes = same UUID.
     
     Returns: signal_uuid if successful, None if failed
     """
@@ -127,7 +147,9 @@ def create_and_store_signal(symbol, timeframe, signal_type, fired_time_utc, entr
         return None
     
     try:
-        signal_uuid = str(uuid_lib.uuid4())
+        # Generate DETERMINISTIC UUID (not random)
+        signal_uuid = _generate_deterministic_uuid(symbol, timeframe, entry_price)
+        print(f"[UUID] Generated deterministic UUID: {signal_uuid[:8]}... for {symbol} {timeframe} @ {entry_price}", flush=True)
         
         signal_data = {
             "uuid": signal_uuid,
