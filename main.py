@@ -546,7 +546,8 @@ def run_cycle():
                         )
                         
                         if not signal_uuid:
-                            print(f"[WARN] Failed to store signal for {symbol_val} (15min). Still attempting Telegram send.", flush=True)
+                            print(f"[WARN] Signal {symbol_val} (15min) REJECTED - duplicate within 120s. NOT sending Telegram alert.", flush=True)
+                            continue
 
                         # Send trade alert to Telegram
                         if os.getenv("DRY_RUN", "false").lower() != "true":
