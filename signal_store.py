@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 """
-signal_store.py (REVISED 2026-02-23: Hybrid UUID+Timestamp Approach)
+signal_store.py (REVISED 2026-02-23: Hybrid UUID+Timestamp)
 
-Permanent signal storage system for Smart Filter.
+Permanent signal storage for Smart Filter.
 Stores all fired signals to JSONL format with complete metadata.
-Allows reliable querying for PEC backtesting.
-
-Format: signals_fired.jsonl (one JSON dict per line)
 
 HYBRID DEDUP STRATEGY:
 - UUID: includes timestamp for unique identification per occurrence
@@ -20,45 +17,24 @@ from datetime import datetime, timezone
 import pandas as pd
 
 class SignalStore:
-    """
-    Manages permanent signal storage and retrieval.
-    Uses JSONL format for append-only, queryable storage.
-    
-    HYBRID DEDUP:
-    1. UUID (with timestamp): Unique per signal occurrence
-    2. Fingerprint (without timestamp): Blocks duplicates within 120s
-    """
+    """Manages permanent signal storage with hybrid dedup."""
     
     def __init__(self, jsonl_path: str = "signals_fired.jsonl"):
-        """
-        Initialize signal store.
-        
-        Args:
-            jsonl_path: Path to signals_fired.jsonl file
-        """
         self.path = jsonl_path
         self._ensure_file_exists()
-        self._last_signal_per_fingerprint = {}  # Track last signal per fingerprint (no timestamp)
+        self._last_signal_per_fingerprint = {}
     
     def _ensure_file_exists(self):
         """Create JSONL file if it doesn't exist."""
         if not os.path.exists(self.path):
             with open(self.path, 'w') as f:
-                pass  # Create empty file
+                pass
             print(f"[SignalStore] Created new signals file: {self.path}", flush=True)
     
     def _get_signal_fingerprint(self, signal_dict: Dict) -> str:
         """
         Create deterministic fingerprint for DEDUPLICATION (NO timestamp).
-        SAME signal attributes = SAME fingerprint (regardless of time)
-        Used to block rapid-fire duplicates within 120 seconds.
-        
-        Fingerprint determined by (5 attributes, NO timestamp):
-        1. Symbol (e.g., BIO-USDT)
-        2. Timeframe (e.g., 15min)
-        3. Entry price (e.g., 0.027427)
-        4. Signal type (LONG or SHORT)
-        5. Score (e.g., 13)
+        SAME signal = SAME fingerprint (regardless of time)
         """
         try:
             symbol = signal_dict.get('symbol', '').upper()
@@ -67,10 +43,7 @@ class SignalStore:
             signal_type = str(signal_dict.get('signal_type', '')).upper()
             score = int(signal_dict.get('score', 0))
             
-            # Round to 8 decimals (crypto precision)
             price_rounded = round(entry_price, 8)
-            
-            # NO timestamp in fingerprint → same signal fires at different times = different UUID but same fingerprint
             fingerprint = f"{symbol}_{timeframe}_{price_rounded:.8f}_{signal_type}_{score}"
             return fingerprint
         
@@ -80,7 +53,7 @@ class SignalStore:
     
     def _check_duplicate(self, signal_dict: Dict) -> bool:
         """
-        Check if signal is duplicate using fingerprint (without timestamp).
+        Check if signal is duplicate using fingerprint.
         If SAME fingerprint fires within 120 seconds = BLOCK
         Returns True if should REJECT (is duplicate).
         """
@@ -94,7 +67,6 @@ class SignalStore:
             timeframe = signal_dict.get('timeframe')
             entry_price = signal_dict.get('entry_price')
             
-            # Check if this fingerprint was sent recently
             if fingerprint in self._last_signal_per_fingerprint:
                 last = self._last_signal_per_fingerprint[fingerprint]
                 try:
@@ -105,74 +77,38 @@ class SignalStore:
                     time_diff = 200
                 
                 if time_diff < 120:
-                    print(f"[SignalStore] DUPLICATE BLOCKED: {symbol} {timeframe} @ {entry_price} (fingerprint:{fingerprint} fired {time_diff:.1f}s ago)", flush=True)
+                    print(f"[SignalStore] DUPLICATE BLOCKED: {symbol} {timeframe} @ {entry_price} (fired {time_diff:.1f}s ago)", flush=True)
                     return True
             
-            # Store this fingerprint (for next dedup check)
             self._last_signal_per_fingerprint[fingerprint] = {'time': fired_time_str}
             return False
         
         except Exception as e:
-            print(f"[SignalStore] Dedup check error (allowing signal): {e}", flush=True)
+            print(f"[SignalStore] Dedup check error: {e}", flush=True)
             return False
     
     def append_signal(self, signal_dict: Dict) -> Optional[str]:
-        """
-        Append a complete signal to JSONL file.
-        
-        Args:
-            signal_dict: Complete signal data including:
-                - uuid: Unique signal ID (includes timestamp for per-occurrence uniqueness)
-                - symbol: Trading pair (e.g., BTC-USDT)
-                - timeframe: Market timeframe (15min, 30min, 1h)
-                - signal_type: LONG or SHORT
-                - fired_time_utc: When signal was fired (ISO format)
-                - entry_price: Entry price at signal time
-                - tp_target: Take profit target price
-                - sl_target: Stop loss target price
-                - tp_pct: TP as percentage of entry
-                - sl_pct: SL as percentage of entry
-                - achieved_rr: Risk-reward ratio
-                - fib_ratio: Fibonacci level used for TP (if applicable)
-                - atr_value: ATR at signal time
-                - score: Filter score (0-20)
-                - max_score: Maximum possible score
-                - confidence: Confidence percentage (0-100)
-                - route: Trade route/confirmation
-                - regime: Market regime (UPTREND, DOWNTREND, RANGE, etc.)
-                - passed_gatekeepers: Number of gatekeepers passed
-                - max_gatekeepers: Total gatekeepers
-        
-        Returns:
-            signal_uuid if successful, None if failed (duplicate rejected)
-        """
+        """Append signal to JSONL. Returns: signal_uuid if successful, None if duplicate rejected."""
         try:
-            # Validate required fields
-            required = [
-                'uuid', 'symbol', 'timeframe', 'signal_type',
-                'fired_time_utc', 'entry_price', 'tp_target', 'sl_target',
-                'achieved_rr', 'score', 'confidence'
-            ]
+            required = ['uuid', 'symbol', 'timeframe', 'signal_type', 'fired_time_utc', 'entry_price', 'tp_target', 'sl_target', 'achieved_rr', 'score', 'confidence']
             
             for field in required:
                 if field not in signal_dict or signal_dict[field] is None:
                     print(f"[SignalStore] WARNING: Missing required field '{field}'", flush=True)
                     return None
             
-            # CHECK FOR DUPLICATES BEFORE STORING (uses fingerprint without timestamp)
+            # CHECK FOR DUPLICATES BEFORE STORING
             if self._check_duplicate(signal_dict):
-                return None  # Reject duplicate, don't store
+                return None
             
-            # Add metadata
             signal_dict['stored_at_utc'] = datetime.now(timezone.utc).isoformat()
-            signal_dict['version'] = '1.1'  # Updated for UUID+timestamp approach
+            signal_dict['version'] = '1.1'
             
-            # Append to JSONL
             with open(self.path, 'a') as f:
                 json.dump(signal_dict, f)
                 f.write('\n')
             
-            print(f"[SignalStore] Signal stored: {signal_dict['uuid'][:8]}... ({signal_dict['symbol']} {signal_dict['timeframe']} {signal_dict['signal_type']})", flush=True)
+            print(f"[SignalStore] Signal stored: {signal_dict['uuid'][:8]}...", flush=True)
             return signal_dict['uuid']
         
         except Exception as e:
@@ -180,28 +116,12 @@ class SignalStore:
             return None
     
     def load_all_signals(self) -> List[Dict]:
-        """
-        Load all signals from JSONL file.
-        
-        Returns:
-            List of all signal dicts
-        """
+        """Load all signals from JSONL file."""
         return self.load_signals()
     
     def load_signals(self, start_date: Optional[str] = None, end_date: Optional[str] = None,
                     symbols: Optional[List[str]] = None, timeframes: Optional[List[str]] = None) -> List[Dict]:
-        """
-        Load signals within date range and optional filters.
-        
-        Args:
-            start_date: ISO format start date (e.g., "2026-02-22")
-            end_date: ISO format end date (e.g., "2026-02-25")
-            symbols: Filter by symbols (e.g., ["BTC-USDT", "ETH-USDT"])
-            timeframes: Filter by timeframes (e.g., ["15min", "30min"])
-        
-        Returns:
-            List of signal dicts matching criteria
-        """
+        """Load signals within date range and optional filters."""
         try:
             signals = []
             
@@ -209,7 +129,6 @@ class SignalStore:
                 print(f"[SignalStore] File not found: {self.path}", flush=True)
                 return signals
             
-            # Parse date range if provided
             start_ts = None
             end_ts = None
             if start_date:
@@ -217,7 +136,6 @@ class SignalStore:
             if end_date:
                 end_ts = pd.Timestamp(end_date, tz='UTC')
             
-            # Read JSONL
             with open(self.path, 'r') as f:
                 for line_num, line in enumerate(f, 1):
                     line = line.strip()
@@ -227,7 +145,6 @@ class SignalStore:
                     try:
                         signal = json.loads(line)
                         
-                        # Date filtering
                         if start_ts or end_ts:
                             try:
                                 signal_ts = pd.Timestamp(signal.get('fired_time_utc'), tz='UTC')
@@ -236,14 +153,11 @@ class SignalStore:
                                 if end_ts and signal_ts > end_ts:
                                     continue
                             except Exception:
-                                print(f"[SignalStore] WARNING: Could not parse timestamp on line {line_num}", flush=True)
                                 continue
                         
-                        # Symbol filtering
                         if symbols and signal.get('symbol') not in symbols:
                             continue
                         
-                        # Timeframe filtering
                         if timeframes and signal.get('timeframe') not in timeframes:
                             continue
                         
@@ -253,7 +167,7 @@ class SignalStore:
                         print(f"[SignalStore] WARNING: JSON parse error on line {line_num}: {e}", flush=True)
                         continue
             
-            print(f"[SignalStore] Loaded {len(signals)} signals from {self.path}", flush=True)
+            print(f"[SignalStore] Loaded {len(signals)} signals", flush=True)
             return signals
         
         except Exception as e:
@@ -261,15 +175,7 @@ class SignalStore:
             return []
     
     def get_signal_by_uuid(self, uuid: str) -> Optional[Dict]:
-        """
-        Retrieve specific signal by UUID.
-        
-        Args:
-            uuid: Signal UUID to retrieve
-        
-        Returns:
-            Signal dict if found, None if not found
-        """
+        """Retrieve specific signal by UUID."""
         try:
             if not os.path.exists(self.path):
                 return None
@@ -294,50 +200,12 @@ class SignalStore:
             return None
     
     def get_signal_count(self, start_date: Optional[str] = None, end_date: Optional[str] = None) -> int:
-        """
-        Get count of signals in date range.
-        
-        Args:
-            start_date: Optional ISO date start
-            end_date: Optional ISO date end
-        
-        Returns:
-            Count of signals
-        """
+        """Get count of signals in date range."""
         signals = self.load_signals(start_date=start_date, end_date=end_date)
         return len(signals)
     
-    def get_signals_by_batch(self, start_date: str, end_date: str, 
-                            limit: Optional[int] = None) -> List[Dict]:
-        """
-        Get signals for a specific backtest batch.
-        
-        Args:
-            start_date: Batch start date (ISO format)
-            end_date: Batch end date (ISO format)
-            limit: Optional limit (e.g., 50 for Batch 1)
-        
-        Returns:
-            List of signals within date range
-        """
-        signals = self.load_signals(start_date=start_date, end_date=end_date)
-        
-        if limit:
-            signals = signals[:limit]
-        
-        print(f"[SignalStore] Batch: {len(signals)} signals from {start_date} to {end_date}", flush=True)
-        return signals
-    
-    def export_to_csv(self, output_path: str, start_date: Optional[str] = None, 
-                     end_date: Optional[str] = None):
-        """
-        Export signals to CSV for analysis.
-        
-        Args:
-            output_path: CSV output file path
-            start_date: Optional start date filter
-            end_date: Optional end date filter
-        """
+    def export_to_csv(self, output_path: str, start_date: Optional[str] = None, end_date: Optional[str] = None):
+        """Export signals to CSV for analysis."""
         try:
             signals = self.load_signals(start_date=start_date, end_date=end_date)
             
@@ -354,8 +222,6 @@ class SignalStore:
             print(f"[SignalStore] ERROR exporting to CSV: {e}", flush=True)
             return False
 
-
-# Global instance
 _store = None
 
 def get_signal_store(jsonl_path: str = "signals_fired.jsonl") -> SignalStore:
