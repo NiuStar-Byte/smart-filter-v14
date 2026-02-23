@@ -353,10 +353,11 @@ import traceback
 from datetime import datetime
 def run_cycle():
     """
-    Single pass over all TOKENS. Returns list of valid_debug dicts collected during this cycle.
+    Single pass over all TOKENS. 
+    Debug file sending is DISABLED - valid_debugs no longer used.
     """
     print("[INFO] Starting Smart Filter cycle (single pass)...", flush=True)
-    valid_debugs = []
+    # valid_debugs = []  # DISABLED - debug file sending disabled
     now = time.time()
 
     for idx, symbol in enumerate(TOKENS, start=1):
@@ -496,27 +497,8 @@ def run_cycle():
                             tp = sl = fib_levels = None
                             tp_sl = None
 
-                        # Append debug object used for exporting debug files
-                        if len(valid_debugs) < 2:
-                            valid_debugs.append({
-                            "symbol": symbol_val,
-                            "tf": tf_val,
-                            "bias": bias,
-                            "filter_weights_long": getattr(sf15, 'filter_weights_long', []),
-                            "filter_weights_short": getattr(sf15, 'filter_weights_short', []),
-                            "gatekeepers": getattr(sf15, 'gatekeepers', []),
-                            "results_long": res15.get("results_long", {}),
-                            "results_short": res15.get("results_short", {}),
-                            "caption": f"Signal debug log for {symbol_val} {tf_val}",
-                            "orderbook_result": orderbook_result,
-                            "density_result": density_result,
-                            "entry_price": entry_price,
-                            "fired_time_utc": fired_time_utc,
-                            "early_breakout_15m": early_breakout_15m,
-                            "tp": tp,
-                            "sl": sl,
-                            "fib_levels": fib_levels
-                            })
+                        # DEBUG FILE SENDING: DISABLED
+                        # (removed debug object collection - not used)
 
                         # Log fired signal (tracking) and then send telegram
                         try:
@@ -1064,9 +1046,9 @@ def run_cycle():
     # DEBUG FILE SENDING: DISABLED
     # Reason: Signal/debug correlation issues and spam
     # Will re-enable when proper mechanism is in place
-    print(f"[DEBUG] Cycle complete: {len(valid_debugs)} signals fired (debug file sending disabled)", flush=True)
+    print(f"[DEBUG] Cycle complete (debug file sending disabled)", flush=True)
     
-    return valid_debugs
+    return None
 
 def run():
     """
@@ -1080,24 +1062,10 @@ def run():
             cycle_start = time.time()
             print(f"[CYCLE] START at {datetime.utcnow().isoformat()} (wall: {datetime.now().isoformat()})", flush=True)
             
-            valid_debugs = run_cycle()
-
-            # --- [DISABLED] Debug file sending to prevent spam ---
-            # Debug files are now only generated on-demand for troubleshooting
-            # If needed, uncomment lines below and use ONLY for debugging
-            # try:
-            #     if valid_debugs and len(valid_debugs) >= 2:
-            #         num = min(2, len(valid_debugs))
-            #         for debug_info in random.sample(valid_debugs, num):
-            #             # Send only 2 debug files per cycle MAX
-            #             pass
-            # except Exception as e:
-            #     pass
-
-            if valid_debugs:
-                print(f"[FIRED] Processed {len(valid_debugs)} valid signals this cycle", flush=True)
-            else:
-                print("[FIRED] No valid signals processed this cycle", flush=True)
+            run_cycle()
+            
+            # Debug file sending: DISABLED
+            # (no debug files sent to Telegram)
 
             cycle_end = time.time()
             cycle_duration = cycle_end - cycle_start
