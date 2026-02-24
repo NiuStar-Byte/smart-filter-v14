@@ -37,7 +37,7 @@ class SmartFilter:
         df3m: Optional[pd.DataFrame] = None,
         df5m: Optional[pd.DataFrame] = None,
         tf: Optional[str] = None,
-        min_score: int = 13,  # FIX: 2026-02-22 - increased from 12 to reduce false positives (25% fewer signals)
+        min_score: int = 14,  # FIX: 2026-02-22 - increased from 12 to reduce false positives (25% fewer signals)
         required_passed: Optional[int] = None,  # int or None allowed
         volume_multiplier: float = 2.5,
         liquidity_threshold: float = 0.25,
