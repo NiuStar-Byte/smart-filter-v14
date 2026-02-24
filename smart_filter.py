@@ -91,12 +91,11 @@ class SmartFilter:
         # LONG: Candle Confirmation + Support/Resistance (tight entry logic)
         # SHORT: Candle Confirmation only (looser, Support/Resistance blocks SHORT)
         self.gatekeepers_long = [
-            "Candle Confirmation",
-            "Support/Resistance"
+            "Candle Confirmation" # LONG/SHORT deploy Support/Resistance at Filters not at Gatekeeper
         ]
         
         self.gatekeepers_short = [
-            "Candle Confirmation"  # SHORT doesn't need Support/Resistance gatekeeper
+            "Candle Confirmation"  # LONG/SHORT deploy Support/Resistance at Filters not at Gatekeeper
         ]
         
         # Legacy gatekeepers (for backward compatibility in other methods)
