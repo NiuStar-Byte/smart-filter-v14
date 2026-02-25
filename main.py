@@ -27,6 +27,7 @@ import math
 # NEW: Enhanced tracking & safe OHLCV (PROJECT-3 SmartFilter fixes)
 from signal_tracking_enhanced import get_signal_tracker
 from ohlcv_fetch_safe import safe_fetch_ohlcv_by_tf, check_tf_data_available, should_skip_symbol
+from signal_logger import SignalLogger
 from pathlib import Path
 
 # === INITIALIZE SIGNAL STORAGE (EARLY & ROBUST) ===
@@ -337,11 +338,12 @@ def run_cycle():
     Single pass over all TOKENS. Returns list of valid_debug dicts collected during this cycle.
     """
     print("[INFO] Starting Smart Filter cycle (single pass)...", flush=True)
+    logger = SignalLogger(enabled=True)  # Clean, informative logging
     valid_debugs = []
     now = time.time()
 
     for idx, symbol in enumerate(TOKENS, start=1):
-        print(f"[INFO] Checking {symbol}...", flush=True)
+        # Skip verbose "[INFO] Checking" log
         try:
             # Fetch OHLCV independently for each TF (PROJECT-3 SmartFilter fix - decouple TF processing)
             ohlcv_data = safe_fetch_ohlcv_by_tf(symbol, get_ohlcv)
@@ -600,14 +602,14 @@ def run_cycle():
                                 print(f"[DEBUG] 15min: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
                                 if sent_ok:
                                     last_sent[key15] = now
-                                    print(f"[✅ SENT] 15min signal for {symbol_val}", flush=True)
+                                    logger.signal_sent(symbol_val, "15min", signal_uuid[:12])
                                 else:
-                                    print(f"[❌ FAILED] Telegram send returned False for {symbol_val} (15min)", flush=True)
+                                    logger.signal_rejected(symbol_val, "15min", "Telegram send failed")
                             except Exception as e:
                                 print(f"[ERROR] Exception during Telegram send for {symbol_val}: {e}", flush=True)
 
                 else:
-                    print(f"[INFO] No valid 15min signal for {symbol}.", flush=True)
+                    pass  # Silent - not a signal
             except Exception as e:
                 print(f"[ERROR] Exception in processing 15min for {symbol}: {e}", flush=True)
                 traceback.print_exc()
@@ -839,14 +841,14 @@ def run_cycle():
                                 print(f"[DEBUG] 30min: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
                                 if sent_ok:
                                     last_sent[key30] = now
-                                    print(f"[✅ SENT] 30min signal for {symbol_val}", flush=True)
+                                    logger.signal_sent(symbol_val, "30min", signal_uuid[:12])
                                 else:
-                                    print(f"[❌ FAILED] Telegram send returned False for {symbol_val} (30min)", flush=True)
+                                    logger.signal_rejected(symbol_val, "30min", "Telegram send failed")
                             except Exception as e:
                                 print(f"[ERROR] Exception during Telegram send for {symbol_val} (30min): {e}", flush=True)
                                 traceback.print_exc()
                 else:
-                    print(f"[INFO] No valid 30min signal for {symbol}.", flush=True)
+                    pass  # Silent - not a signal
             except Exception as e:
                 print(f"[ERROR] Exception in processing 30min for {symbol}: {e}", flush=True)
                 traceback.print_exc()
@@ -1078,14 +1080,14 @@ def run_cycle():
                                 print(f"[DEBUG] 1h: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
                                 if sent_ok:
                                     last_sent[key1h] = now
-                                    print(f"[✅ SENT] 1h signal for {symbol_val}", flush=True)
+                                    logger.signal_sent(symbol_val, "1h", signal_uuid[:12])
                                 else:
-                                    print(f"[❌ FAILED] Telegram send returned False for {symbol_val} (1h)", flush=True)
+                                    logger.signal_rejected(symbol_val, "1h", "Telegram send failed")
                             except Exception as e:
                                 print(f"[ERROR] Exception during Telegram send for {symbol_val} (1h): {e}", flush=True)
                                 traceback.print_exc()
                 else:
-                    print(f"[INFO] No valid 1h signal for {symbol}.", flush=True)
+                    pass  # Silent - not a signal
             except Exception as e:
                 print(f"[ERROR] Exception in processing 1h for {symbol}: {e}", flush=True)
                 traceback.print_exc()
@@ -1096,7 +1098,7 @@ def run_cycle():
 
     # End of per-symbol loop
     
-    print(f"[DEBUG] Cycle complete: {len(valid_debugs)} valid debug entries collected", flush=True)
+    logger.cycle_summary()
     return valid_debugs
 
 def run():
