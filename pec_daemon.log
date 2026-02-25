@@ -1,6 +1,21 @@
 /Users/geniustarigan/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
   warnings.warn(
-[DAEMON] PEC Auto-Update started at 2026-02-25 13:35:56
+[DAEMON] PEC Auto-Update started at 2026-02-25 13:58:46
 [DAEMON] Updates every 5 minutes
 [DAEMON] Stop with: pkill -f pec_daemon.py
+
+
+================================================================================
+[PEC UPDATE] 2026-02-25 13:58:46
+================================================================================
+
+❌ SL HIT (3 signals):
+   ARKM-USDT    15min  | P&L: $   -0.05 (-0.56%)
+   ARKM-USDT    15min  | P&L: $   -0.05 (-0.56%)
+   ARKM-USDT    15min  | P&L: $   -0.05 (-0.56%)
+
+📊 PEC STATS:
+   Total: 62 | Open: 48 | TP: 4 | SL: 10 | Timeout: 0
+   Win Rate: 40.0% | Total P&L: $+29.76
+================================================================================
 

@@ -26,17 +26,20 @@ class PECExecutor:
     def get_current_price(self, symbol: str) -> Optional[float]:
         """Get current price from public KuCoin API (no auth needed)"""
         try:
-            pair = symbol.replace("-", "")
             url = f"{self.kucoin_api_base}/api/v1/market/orderbook/level1?symbol={symbol}"
-            response = requests.get(url, timeout=5)
+            response = requests.get(url, timeout=3)  # Reduced timeout from 5 to 3 sec
             
             if response.status_code == 200:
                 data = response.json()
                 if data.get('code') == '200000':
                     price = float(data['data'].get('price', 0))
                     return price
+        except requests.exceptions.Timeout:
+            pass  # Timeout - skip this symbol
+        except requests.exceptions.ConnectionError:
+            pass  # Network error - skip
         except Exception as e:
-            pass
+            pass  # Other errors - skip
         
         return None
     
