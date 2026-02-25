@@ -48,6 +48,7 @@ class SignalSentTracker:
         
         Returns: True if logged successfully, False otherwise
         """
+        import sys
         try:
             sent_record = {
                 "uuid": signal_uuid,
@@ -77,10 +78,14 @@ class SignalSentTracker:
             
             with open(self.sent_signals_path, 'a') as f:
                 f.write(json.dumps(sent_record) + '\n')
+                f.flush()  # Force write to disk immediately
             
+            print(f"[PEC] Logged {symbol} {timeframe} to SENT_SIGNALS.jsonl", flush=True)
             return True
         except Exception as e:
             print(f"[ERROR] Failed to log sent signal: {e}", flush=True)
+            import traceback
+            traceback.print_exc()
             return False
     
     def update_signal_execution(self, 
