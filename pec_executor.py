@@ -127,11 +127,18 @@ class PECExecutor:
             max_bars = self.max_bars.get(timeframe, 5)
             
             # Calculate bars elapsed since signal fired
-            time_delta_minutes = (datetime.utcnow() - fired_time).total_seconds() / 60
+            now = datetime.utcnow()
+            time_delta_minutes = (now - fired_time).total_seconds() / 60
             bars_elapsed = int(time_delta_minutes / tf_minutes)
+            
+            # DEBUG: Log timeout calculation for signals near timeout
+            if bars_elapsed >= max_bars - 2:
+                print(f"[PEC-TIMEOUT-DEBUG] {symbol} {timeframe}: bars={bars_elapsed}/{max_bars}, "
+                      f"fired={fired_time_str}, now={now}, delta_min={time_delta_minutes:.1f}", flush=True)
             
             # If bars exceed max, mark as TIMEOUT
             if bars_elapsed >= max_bars:
+                print(f"[PEC-TIMEOUT-HIT] {symbol} {timeframe}: {bars_elapsed} bars >= {max_bars} max", flush=True)
                 # For LONG: calculate P&L based on current price (timeout exit price)
                 if signal.get('signal_type') == 'LONG':
                     pnl_usd = (current_price - entry_price) * signal.get('confidence', 1.0)
@@ -148,7 +155,7 @@ class PECExecutor:
                     'pnl_pct': pnl_pct
                 }
         except Exception as e:
-            pass
+            print(f"[PEC-TIMEOUT-ERROR] {symbol}: {e}", flush=True)
         
         return None  # Still open
     
