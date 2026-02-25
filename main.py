@@ -28,6 +28,7 @@ import math
 from signal_tracking_enhanced import get_signal_tracker
 from ohlcv_fetch_safe import safe_fetch_ohlcv_by_tf, check_tf_data_available, should_skip_symbol
 from signal_logger import SignalLogger
+from signal_sent_tracker import get_signal_sent_tracker  # PEC: Track SENT signals only
 from pathlib import Path
 
 # === INITIALIZE SIGNAL STORAGE (EARLY & ROBUST) ===
@@ -38,6 +39,15 @@ try:
 except Exception as e:
     _signal_store_ready = False
     print(f"[ERROR] Signal store init failed: {e}. Signals will fire to Telegram only.", flush=True)
+
+# === INITIALIZE SENT SIGNAL TRACKER (PEC) ===
+try:
+    _sent_signal_tracker = get_signal_sent_tracker("SENT_SIGNALS.jsonl")
+    _sent_tracker_ready = True
+    print(f"[INIT] Sent signal tracker ready: {os.path.abspath('SENT_SIGNALS.jsonl')}", flush=True)
+except Exception as e:
+    _sent_tracker_ready = False
+    print(f"[ERROR] Sent signal tracker init failed: {e}. PEC will not have execution data.", flush=True)
 
 # === INITIALIZE SIGNAL TRACKING (EARLY & ROBUST) - NEW PROJECT-3 FIX ===
 try:
@@ -609,6 +619,28 @@ def run_cycle():
                                 if sent_ok:
                                     last_sent[key15] = now
                                     logger.signal_sent(symbol_val, "15min", signal_uuid[:12])
+                                    
+                                    # Log to SENT_SIGNALS for PEC tracking
+                                    if _sent_tracker_ready:
+                                        _sent_signal_tracker.log_sent_signal(
+                                            signal_uuid=signal_uuid,
+                                            symbol=symbol_val,
+                                            timeframe="15min",
+                                            signal_type=signal_type,
+                                            entry_price=entry_price,
+                                            tp_target=tp,
+                                            sl_target=sl,
+                                            tp_pct=tp_pct_val,
+                                            sl_pct=sl_pct_val,
+                                            achieved_rr=achieved_rr_value,
+                                            score=score,
+                                            max_score=score_max,
+                                            confidence=confidence,
+                                            route=Route,
+                                            regime=regime,
+                                            telegram_msg_id=signal_uuid[:12],
+                                            fired_time_utc=fired_time_utc.isoformat()
+                                        )
                                 else:
                                     logger.signal_rejected(symbol_val, "15min", "Telegram send failed")
                             except Exception as e:
@@ -854,6 +886,28 @@ def run_cycle():
                                 if sent_ok:
                                     last_sent[key30] = now
                                     logger.signal_sent(symbol_val, "30min", signal_uuid[:12])
+                                    
+                                    # Log to SENT_SIGNALS for PEC tracking
+                                    if _sent_tracker_ready:
+                                        _sent_signal_tracker.log_sent_signal(
+                                            signal_uuid=signal_uuid,
+                                            symbol=symbol_val,
+                                            timeframe="30min",
+                                            signal_type=signal_type,
+                                            entry_price=entry_price,
+                                            tp_target=tp,
+                                            sl_target=sl,
+                                            tp_pct=tp_pct_val,
+                                            sl_pct=sl_pct_val,
+                                            achieved_rr=achieved_rr_value,
+                                            score=score,
+                                            max_score=score_max,
+                                            confidence=confidence,
+                                            route=Route,
+                                            regime=regime,
+                                            telegram_msg_id=signal_uuid[:12],
+                                            fired_time_utc=fired_time_utc.isoformat()
+                                        )
                                 else:
                                     logger.signal_rejected(symbol_val, "30min", "Telegram send failed")
                             except Exception as e:
@@ -1099,6 +1153,28 @@ def run_cycle():
                                 if sent_ok:
                                     last_sent[key1h] = now
                                     logger.signal_sent(symbol_val, "1h", signal_uuid[:12])
+                                    
+                                    # Log to SENT_SIGNALS for PEC tracking
+                                    if _sent_tracker_ready:
+                                        _sent_signal_tracker.log_sent_signal(
+                                            signal_uuid=signal_uuid,
+                                            symbol=symbol_val,
+                                            timeframe="1h",
+                                            signal_type=signal_type,
+                                            entry_price=entry_price,
+                                            tp_target=tp,
+                                            sl_target=sl,
+                                            tp_pct=tp_pct_val,
+                                            sl_pct=sl_pct_val,
+                                            achieved_rr=achieved_rr_value,
+                                            score=score,
+                                            max_score=score_max,
+                                            confidence=confidence,
+                                            route=Route,
+                                            regime=regime,
+                                            telegram_msg_id=signal_uuid[:12],
+                                            fired_time_utc=fired_time_utc.isoformat()
+                                        )
                                 else:
                                     logger.signal_rejected(symbol_val, "1h", "Telegram send failed")
                             except Exception as e:
@@ -1117,6 +1193,23 @@ def run_cycle():
     # End of per-symbol loop
     
     logger.cycle_summary()
+    
+    # Print SENT_SIGNALS summary for PEC tracking
+    if _sent_tracker_ready:
+        stats = _sent_signal_tracker.get_summary_stats()
+        if stats:
+            print("\n" + "="*70, flush=True)
+            print("PEC SIGNAL TRACKING SUMMARY (for Position Entry Confidence):", flush=True)
+            print(f"  Total Sent:      {stats.get('total_sent', 0)}", flush=True)
+            print(f"  Open (Running):  {stats.get('open', 0)}", flush=True)
+            print(f"  TP Hit:          {stats.get('tp_hit', 0)}", flush=True)
+            print(f"  SL Hit:          {stats.get('sl_hit', 0)}", flush=True)
+            print(f"  Timeout:         {stats.get('timeout', 0)}", flush=True)
+            print(f"  Closed Trades:   {stats.get('closed', 0)}", flush=True)
+            print(f"  Total P&L:       ${stats.get('total_pnl_usd', 0)}", flush=True)
+            print(f"  Win Rate:        {stats.get('win_rate_pct', 0)}% ({stats.get('winning_trades', 0)}W/{stats.get('losing_trades', 0)}L)", flush=True)
+            print("="*70 + "\n", flush=True)
+    
     return valid_debugs
 
 def run():
