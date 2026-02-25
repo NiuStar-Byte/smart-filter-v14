@@ -468,6 +468,9 @@ def run_cycle():
                             confidence = 0.0
                         entry_idx = df15.index.get_loc(df15.index[-1])
 
+                        # Log signal generated (passes SmartFilter)
+                        logger.signal_generated(symbol_val, tf_val, signal_type, score, entry_price)
+
                         # Recompute TP/SL against the final live entry_price so TP/SL match execution price
                         tp_sl = None
                         tp = None
@@ -711,6 +714,9 @@ def run_cycle():
                             confidence = 0.0
                         entry_idx = df30.index.get_loc(df30.index[-1])
 
+                        # Log signal generated (passes SmartFilter)
+                        logger.signal_generated(symbol_val, tf_val, signal_type, score, entry_price)
+
                         tp_sl = None
                         tp = None
                         sl = None
@@ -949,6 +955,9 @@ def run_cycle():
                         except Exception:
                             confidence = 0.0
                         entry_idx = df1h.index.get_loc(df1h.index[-1])
+
+                        # Log signal generated (passes SmartFilter)
+                        logger.signal_generated(symbol_val, tf_val, signal_type, score, entry_price)
 
                         tp_sl = None
                         tp = None
