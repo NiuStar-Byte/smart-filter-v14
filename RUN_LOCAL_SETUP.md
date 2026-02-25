@@ -25,16 +25,13 @@ pip install pandas numpy requests pytz python-dateutil
 
 ## Step 3: Configure Environment Variables
 
-Create a `.env` file in the repo root:
+Create a `.env` file in the repo root. **No KuCoin API credentials needed!** SmartFilter uses only public endpoints.
 
 ```bash
 cat > .env << 'ENVEOF'
-# KuCoin API
-KUCOIN_API_KEY=your_key_here
-KUCOIN_API_SECRET=your_secret_here
-KUCOIN_API_PASSPHRASE=your_passphrase_here
-
-# Telegram
+# Telegram Bot Token & Chat ID (required for alerts)
+# Get BOT_TOKEN from @BotFather on Telegram
+# Get CHAT_ID from https://api.telegram.org/bot<TOKEN>/getUpdates after sending a message
 TELEGRAM_BOT_TOKEN=your_bot_token_here
 TELEGRAM_CHAT_ID=your_chat_id_here
 
@@ -44,6 +41,11 @@ DRY_RUN=false
 DEBUG_FILTERS=false
 ENVEOF
 ```
+
+**Why no KuCoin API keys needed?** SmartFilter fetches from public KuCoin endpoints:
+- OHLCV: `api.kucoin.com/api/v1/market/candles` (public)
+- Orderbook: `api.kucoin.com/api/v1/market/orderbook` (public)
+- No authentication required!
 
 ## Step 4: Run SmartFilter Locally
 
