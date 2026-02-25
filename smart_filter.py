@@ -37,10 +37,10 @@ class SmartFilter:
         df3m: Optional[pd.DataFrame] = None,
         df5m: Optional[pd.DataFrame] = None,
         tf: Optional[str] = None,
-        min_score: int = 13,  # FIX: 2026-02-22 - increased from 12 to reduce false positives (25% fewer signals)
+        min_score: int = 15,  # FIX: 2026-02-22 - increased from 12 to reduce false positives (25% fewer signals)
         required_passed: Optional[int] = None,  # int or None allowed
-        volume_multiplier: float = 2.5,
-        liquidity_threshold: float = 0.25,
+        volume_multiplier: float = 2.25,
+        liquidity_threshold: float = 0.20,
         kwargs: Optional[dict] = None
     ):
         if kwargs is None:
@@ -91,12 +91,11 @@ class SmartFilter:
         # LONG: Candle Confirmation + Support/Resistance (tight entry logic)
         # SHORT: Candle Confirmation only (looser, Support/Resistance blocks SHORT)
         self.gatekeepers_long = [
-            "Candle Confirmation",
-            "Support/Resistance"
+            "Candle Confirmation" # LONG/SHORT deploy Support/Resistance at Filters not at Gatekeeper
         ]
         
         self.gatekeepers_short = [
-            "Candle Confirmation"  # SHORT doesn't need Support/Resistance gatekeeper
+            "Candle Confirmation"  # LONG/SHORT deploy Support/Resistance at Filters not at Gatekeeper
         ]
         
         # Legacy gatekeepers (for backward compatibility in other methods)
