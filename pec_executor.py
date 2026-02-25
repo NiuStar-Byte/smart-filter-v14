@@ -21,7 +21,12 @@ class PECExecutor:
     def __init__(self, sent_signals_path: str = "SENT_SIGNALS.jsonl"):
         self.sent_signals_path = sent_signals_path
         self.kucoin_api_base = "https://api.kucoin.com"
-        self.timeout_hours = 24  # Mark as TIMEOUT if open >24h
+        # MAX_BARS timeout per timeframe (bars since signal fired)
+        self.max_bars = {
+            "15min": 15,   # 15 bars × 15min = 225 min = 3.75 hours
+            "30min": 10,   # 10 bars × 30min = 300 min = 5 hours
+            "1h": 5        # 5 bars × 60min = 300 min = 5 hours
+        }
     
     def get_current_price(self, symbol: str) -> Optional[float]:
         """Get current price from public KuCoin API (no auth needed)"""
@@ -106,19 +111,43 @@ class PECExecutor:
                     'pnl_pct': pnl_pct
                 }
         
-        # Check TIMEOUT (>24 hours open)
+        # Check TIMEOUT (max bars reached for this timeframe)
         try:
+            timeframe = signal.get('timeframe', '')
             fired_time = datetime.fromisoformat(fired_time_str.replace('Z', '+00:00'))
-            if datetime.utcnow() - fired_time > timedelta(hours=self.timeout_hours):
-                pnl_usd = (current_price - entry_price) * signal.get('confidence', 1.0)
-                pnl_pct = ((current_price - entry_price) / entry_price) * 100
+            
+            # Convert timeframe to minutes
+            tf_minutes = {
+                '15min': 15,
+                '30min': 30,
+                '1h': 60
+            }.get(timeframe, 60)
+            
+            # Get max bars for this timeframe
+            max_bars = self.max_bars.get(timeframe, 5)
+            
+            # Calculate bars elapsed since signal fired
+            time_delta_minutes = (datetime.utcnow() - fired_time).total_seconds() / 60
+            bars_elapsed = int(time_delta_minutes / tf_minutes)
+            
+            # If bars exceed max, mark as TIMEOUT
+            if bars_elapsed >= max_bars:
+                # For LONG: calculate P&L based on current price (timeout exit price)
+                if signal.get('signal_type') == 'LONG':
+                    pnl_usd = (current_price - entry_price) * signal.get('confidence', 1.0)
+                    pnl_pct = ((current_price - entry_price) / entry_price) * 100
+                # For SHORT: calculate P&L based on current price
+                else:
+                    pnl_usd = (entry_price - current_price) * signal.get('confidence', 1.0)
+                    pnl_pct = ((entry_price - current_price) / entry_price) * 100
+                
                 return {
                     'status': 'TIMEOUT',
-                    'exit_price': current_price,
+                    'exit_price': current_price,  # timeout_price = current_price
                     'pnl_usd': pnl_usd,
                     'pnl_pct': pnl_pct
                 }
-        except:
+        except Exception as e:
             pass
         
         return None  # Still open
