@@ -615,7 +615,7 @@ def run_cycle():
             # --- 30min TF block (mirror of 15min with identical safe flow) ---
             try:
                 key30 = f"{symbol}_30min"
-                sf30 = SmartFilter(symbol, df30, tf="30min")
+                sf30 = SmartFilter(symbol, df30, min_score=14, tf="30min")  # FIX: 30min scores 14/19 (1 point lower than 15min)
                 regime30 = sf30._market_regime()
                 res30 = sf30.analyze()
 
