@@ -80,7 +80,8 @@ class SignalSentTracker:
                 f.write(json.dumps(sent_record) + '\n')
                 f.flush()  # Force write to disk immediately
             
-            print(f"[PEC] Logged {symbol} {timeframe} to SENT_SIGNALS.jsonl", flush=True)
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            print(f"[✅ PEC SENT] {symbol:15} {timeframe:6} to SENT_SIGNALS.jsonl | {now}", flush=True)
             return True
         except Exception as e:
             print(f"[ERROR] Failed to log sent signal: {e}", flush=True)
