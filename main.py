@@ -24,6 +24,11 @@ from signal_store import get_signal_store
 from pec_config import MIN_ACCEPTED_RR, SIGNALS_JSONL_PATH
 import math
 
+# NEW: Enhanced tracking & safe OHLCV (PROJECT-3 SmartFilter fixes)
+from signal_tracking_enhanced import get_signal_tracker
+from ohlcv_fetch_safe import safe_fetch_ohlcv_by_tf, check_tf_data_available, should_skip_symbol
+from pathlib import Path
+
 # === INITIALIZE SIGNAL STORAGE (EARLY & ROBUST) ===
 try:
     _signal_store = get_signal_store(SIGNALS_JSONL_PATH)
@@ -32,6 +37,15 @@ try:
 except Exception as e:
     _signal_store_ready = False
     print(f"[ERROR] Signal store init failed: {e}. Signals will fire to Telegram only.", flush=True)
+
+# === INITIALIZE SIGNAL TRACKING (EARLY & ROBUST) - NEW PROJECT-3 FIX ===
+try:
+    _signal_tracker = get_signal_tracker(SIGNALS_JSONL_PATH)
+    _signal_tracker_ready = True
+    print(f"[INIT] Signal tracker ready: {os.path.abspath(Path(SIGNALS_JSONL_PATH).parent / 'signal_status.jsonl')}", flush=True)
+except Exception as e:
+    _signal_tracker_ready = False
+    print(f"[ERROR] Signal tracker init failed: {e}. Tracking disabled.", flush=True)
 
 # --- Configuration ---
 # Full liquid pairs from kucoin_orderbook.py - 90+ symbols
@@ -329,17 +343,24 @@ def run_cycle():
     for idx, symbol in enumerate(TOKENS, start=1):
         print(f"[INFO] Checking {symbol}...", flush=True)
         try:
-            # Fetch raw OHLCV for 15m, 30m, and 1h timeframes (removed 3m & 5m - too noisy)
-            df15 = get_ohlcv(symbol, interval="15min", limit=OHLCV_LIMIT)
-            df30 = get_ohlcv(symbol, interval="30min", limit=OHLCV_LIMIT)
-            df1h = get_ohlcv(symbol, interval="1h", limit=OHLCV_LIMIT)
-            if df15 is None or df15.empty or df30 is None or df30.empty or df1h is None or df1h.empty:
-                print(f"[WARN] Not enough data for {symbol} (df15, df30, or df1h empty). Skipping.", flush=True)
+            # Fetch OHLCV independently for each TF (PROJECT-3 SmartFilter fix - decouple TF processing)
+            ohlcv_data = safe_fetch_ohlcv_by_tf(symbol, get_ohlcv)
+            
+            # Check if symbol should be skipped (ALL TFs missing)
+            should_skip, skip_reason = should_skip_symbol(ohlcv_data)
+            if should_skip:
+                print(f"[WARN] Skipping {symbol}: {skip_reason}", flush=True)
                 continue
-
-            early_breakout_15m = early_breakout(df15, lookback=3)
-            early_breakout_30m = early_breakout(df30, lookback=3)
-            early_breakout_1h = early_breakout(df1h, lookback=3)
+            
+            # Extract data (may be None for individual TFs - that's OK now)
+            df15 = ohlcv_data.get("15min")
+            df30 = ohlcv_data.get("30min")
+            df1h = ohlcv_data.get("1h")
+            
+            # Calculate early breakout only for TFs with data
+            early_breakout_15m = early_breakout(df15, lookback=3) if df15 is not None else None
+            early_breakout_30m = early_breakout(df30, lookback=3) if df30 is not None else None
+            early_breakout_1h = early_breakout(df1h, lookback=3) if df1h is not None else None
 
             # --- 15min TF block ---
             try:
