@@ -17,7 +17,7 @@ def find_closest_ohlcv_bar(fired_time_utc, ohlcv_df, tf):
     Args:
         fired_time_utc: pd.Timestamp or datetime in UTC
         ohlcv_df: DataFrame with datetime index in UTC
-        tf: timeframe string ('3min', '5min', etc.)
+        tf: timeframe string ("15min", "30min", etc.)
     
     Returns:
         tuple: (bar_index, bar_time, time_diff_minutes) or (None, None, None) if no match
@@ -253,7 +253,7 @@ def run_pec_check(
     Args:
         symbol: str, e.g. "SPK-USDT"
         fired_time_utc: pd.Timestamp in UTC, timestamp when signal was fired
-        tf: str, e.g. "3min"
+        tf: str, e.g. "15min"
         signal_type: "LONG" or "SHORT"
         entry_price: float, actual entry price
         ohlcv_df: pd.DataFrame with columns: ["open", "high", "low", "close", ...]

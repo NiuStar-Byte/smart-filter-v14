@@ -271,7 +271,7 @@ if __name__ == "__main__":
     # quick smoke test for the log function
     log_fired_signal(
         symbol="HIPPO-USDT",
-        tf="3min",
+        tf="15min",
         signal_type="LONG",
         entry_idx=99,
         fired_time=str(datetime.now()),

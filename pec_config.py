@@ -25,9 +25,7 @@ print(f"[PEC_CONFIG] MIN_ACCEPTED_RR = {MIN_ACCEPTED_RR}:1", flush=True)
 # Aligned to ~3.75-5 hour hold time across all timeframes
 
 MAX_BARS_BY_TF = {
-    "3min": 20,      # 60 min hold
-    "5min": 12,      # 60 min hold
-    "15min": 15,     # 225 min (3.75 hr) hold
+    "15min": 20,     # 300 min (5 hr) hold
     "30min": 10,     # 300 min (5 hr) hold
     "1h": 5,         # 5 hr hold
 }
