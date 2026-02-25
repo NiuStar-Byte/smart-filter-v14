@@ -573,6 +573,7 @@ def run_cycle():
                         # Send trade alert to Telegram
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
+                                print(f"[DEBUG] 15min: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
                                 sent_ok = send_telegram_alert(
                                     numbered_signal=numbered_signal,
                                     symbol=symbol_val,
@@ -596,10 +597,12 @@ def run_cycle():
                                     chosen_ratio=None,
                                     achieved_rr=achieved_rr_value
                                 )
+                                print(f"[DEBUG] 15min: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
                                 if sent_ok:
                                     last_sent[key15] = now
+                                    print(f"[✅ SENT] 15min signal for {symbol_val}", flush=True)
                                 else:
-                                    print(f"[ERROR] Telegram send failed for {symbol_val}", flush=True)
+                                    print(f"[❌ FAILED] Telegram send returned False for {symbol_val} (15min)", flush=True)
                             except Exception as e:
                                 print(f"[ERROR] Exception during Telegram send for {symbol_val}: {e}", flush=True)
 
@@ -809,6 +812,7 @@ def run_cycle():
                         # Send trade alert to Telegram
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
+                                print(f"[DEBUG] 30min: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
                                 sent_ok = send_telegram_alert(
                                     numbered_signal=numbered_signal,
                                     symbol=symbol_val,
@@ -832,10 +836,12 @@ def run_cycle():
                                     chosen_ratio=None,
                                     achieved_rr=achieved_rr_value
                                 )
+                                print(f"[DEBUG] 30min: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
                                 if sent_ok:
                                     last_sent[key30] = now
+                                    print(f"[✅ SENT] 30min signal for {symbol_val}", flush=True)
                                 else:
-                                    print(f"[ERROR] Telegram send failed for {symbol_val} (30min)", flush=True)
+                                    print(f"[❌ FAILED] Telegram send returned False for {symbol_val} (30min)", flush=True)
                             except Exception as e:
                                 print(f"[ERROR] Exception during Telegram send for {symbol_val} (30min): {e}", flush=True)
                                 traceback.print_exc()
@@ -1045,6 +1051,7 @@ def run_cycle():
                         # Send trade alert to Telegram
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
+                                print(f"[DEBUG] 1h: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
                                 sent_ok = send_telegram_alert(
                                     numbered_signal=numbered_signal,
                                     symbol=symbol_val,
@@ -1068,10 +1075,12 @@ def run_cycle():
                                     chosen_ratio=None,
                                     achieved_rr=achieved_rr_value
                                 )
+                                print(f"[DEBUG] 1h: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
                                 if sent_ok:
                                     last_sent[key1h] = now
+                                    print(f"[✅ SENT] 1h signal for {symbol_val}", flush=True)
                                 else:
-                                    print(f"[ERROR] Telegram send failed for {symbol_val} (1h)", flush=True)
+                                    print(f"[❌ FAILED] Telegram send returned False for {symbol_val} (1h)", flush=True)
                             except Exception as e:
                                 print(f"[ERROR] Exception during Telegram send for {symbol_val} (1h): {e}", flush=True)
                                 traceback.print_exc()
