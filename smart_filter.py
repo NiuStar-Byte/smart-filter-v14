@@ -1709,11 +1709,12 @@ class SmartFilter:
         cond2_short = high < high_prev
         cond3_short = close < close_prev
     
-        print(
-            f"[{self.symbol}] [HH/LL Trend] Conditions | "
-            f"cond1_long={cond1_long}, cond2_long={cond2_long}, cond3_long={cond3_long}, "
-            f"cond1_short={cond1_short}, cond2_short={cond2_short}, cond3_short={cond3_short}"
-        )
+        if DEBUG_FILTERS:
+            print(
+                f"[{self.symbol}] [HH/LL Trend] Conditions | "
+                f"cond1_long={cond1_long}, cond2_long={cond2_long}, cond3_long={cond3_long}, "
+                f"cond1_short={cond1_short}, cond2_short={cond2_short}, cond3_short={cond3_short}"
+            )
     
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
