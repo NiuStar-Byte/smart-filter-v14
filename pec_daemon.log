@@ -1,6 +1,6 @@
 /Users/geniustarigan/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
   warnings.warn(
-[DAEMON] PEC Auto-Update started at 2026-02-25 14:07:42
+[DAEMON] PEC Auto-Update started at 2026-02-25 14:12:43
 [DAEMON] Updates every 5 minutes
 [DAEMON] Stop with: pkill -f pec_daemon.py
 

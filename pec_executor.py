@@ -163,27 +163,42 @@ class PECExecutor:
                         record['pnl_pct'] = round(result['pnl_pct'], 2)
                         record['closed_at'] = datetime.utcnow().isoformat()
                         
-                        # Track summary
+                        # Track summary (include timestamp when signal fired)
+                        fired_time = record.get('fired_time_utc', '')
+                        # Convert UTC to local time (GMT+7)
+                        if fired_time:
+                            try:
+                                dt = datetime.fromisoformat(fired_time.replace('Z', '+00:00'))
+                                # Format as HH:MM:SS GMT+7 (just time for brevity)
+                                local_time = dt.strftime("%H:%M:%S")
+                            except:
+                                local_time = ''
+                        else:
+                            local_time = ''
+                        
                         if result['status'] == 'TP_HIT':
                             summary['tp_hits'].append({
                                 'symbol': record.get('symbol'),
                                 'timeframe': record.get('timeframe'),
                                 'pnl_usd': record['pnl_usd'],
-                                'pnl_pct': record['pnl_pct']
+                                'pnl_pct': record['pnl_pct'],
+                                'fired_time': local_time
                             })
                         elif result['status'] == 'SL_HIT':
                             summary['sl_hits'].append({
                                 'symbol': record.get('symbol'),
                                 'timeframe': record.get('timeframe'),
                                 'pnl_usd': record['pnl_usd'],
-                                'pnl_pct': record['pnl_pct']
+                                'pnl_pct': record['pnl_pct'],
+                                'fired_time': local_time
                             })
                         elif result['status'] == 'TIMEOUT':
                             summary['timeouts'].append({
                                 'symbol': record.get('symbol'),
                                 'timeframe': record.get('timeframe'),
                                 'pnl_usd': record['pnl_usd'],
-                                'pnl_pct': record['pnl_pct']
+                                'pnl_pct': record['pnl_pct'],
+                                'fired_time': local_time
                             })
             
             # Write back updated records
@@ -256,17 +271,20 @@ class PECExecutor:
         if summary['tp_hits']:
             print(f"\n✅ TP HIT ({len(summary['tp_hits'])} signals):", flush=True)
             for hit in summary['tp_hits']:
-                print(f"   {hit['symbol']:12} {hit['timeframe']:6} | P&L: ${hit['pnl_usd']:8.2f} ({hit['pnl_pct']:+.2f}%)", flush=True)
+                fired = f" | Fired: {hit['fired_time']}" if hit.get('fired_time') else ""
+                print(f"   {hit['symbol']:12} {hit['timeframe']:6} | P&L: ${hit['pnl_usd']:8.2f} ({hit['pnl_pct']:+.2f}%){fired}", flush=True)
         
         if summary['sl_hits']:
             print(f"\n❌ SL HIT ({len(summary['sl_hits'])} signals):", flush=True)
             for hit in summary['sl_hits']:
-                print(f"   {hit['symbol']:12} {hit['timeframe']:6} | P&L: ${hit['pnl_usd']:8.2f} ({hit['pnl_pct']:+.2f}%)", flush=True)
+                fired = f" | Fired: {hit['fired_time']}" if hit.get('fired_time') else ""
+                print(f"   {hit['symbol']:12} {hit['timeframe']:6} | P&L: ${hit['pnl_usd']:8.2f} ({hit['pnl_pct']:+.2f}%){fired}", flush=True)
         
         if summary['timeouts']:
             print(f"\n⏱️  TIMEOUT ({len(summary['timeouts'])} signals):", flush=True)
             for hit in summary['timeouts']:
-                print(f"   {hit['symbol']:12} {hit['timeframe']:6} | P&L: ${hit['pnl_usd']:8.2f} ({hit['pnl_pct']:+.2f}%)", flush=True)
+                fired = f" | Fired: {hit['fired_time']}" if hit.get('fired_time') else ""
+                print(f"   {hit['symbol']:12} {hit['timeframe']:6} | P&L: ${hit['pnl_usd']:8.2f} ({hit['pnl_pct']:+.2f}%){fired}", flush=True)
         
         # Print stats
         stats = self.get_stats()
