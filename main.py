@@ -367,9 +367,12 @@ def run_cycle():
             # --- 15min TF block ---
             try:
                 key15 = f"{symbol}_15min"
-                sf15 = SmartFilter(symbol, df15, tf="15min")
-                regime15 = sf15._market_regime()
-                res15 = sf15.analyze()
+                if df15 is None or df15.empty:
+                    res15 = None
+                else:
+                    sf15 = SmartFilter(symbol, df15, tf="15min")
+                    regime15 = sf15._market_regime()
+                    res15 = sf15.analyze()
 
                 if isinstance(res15, dict) and res15.get("filters_ok") is True:
                     last15 = last_sent.get(key15, 0)
@@ -620,9 +623,12 @@ def run_cycle():
             # --- 30min TF block (mirror of 15min with identical safe flow) ---
             try:
                 key30 = f"{symbol}_30min"
-                sf30 = SmartFilter(symbol, df30, min_score=14, tf="30min")  # FIX: 30min scores 14/19 (1 point lower than 15min)
-                regime30 = sf30._market_regime()
-                res30 = sf30.analyze()
+                if df30 is None or df30.empty:
+                    res30 = None
+                else:
+                    sf30 = SmartFilter(symbol, df30, min_score=14, tf="30min")  # FIX: 30min scores 14/19 (1 point lower than 15min)
+                    regime30 = sf30._market_regime()
+                    res30 = sf30.analyze()
 
                 if isinstance(res30, dict) and res30.get("filters_ok") is True:
                     last30 = last_sent.get(key30, 0)
@@ -862,9 +868,12 @@ def run_cycle():
             # --- 1h TF block (mirror of 15min with identical safe flow) ---
             try:
                 key1h = f"{symbol}_1h"
-                sf1h = SmartFilter(symbol, df1h, tf="1h")
-                regime1h = sf1h._market_regime()
-                res1h = sf1h.analyze()
+                if df1h is None or df1h.empty:
+                    res1h = None
+                else:
+                    sf1h = SmartFilter(symbol, df1h, tf="1h")
+                    regime1h = sf1h._market_regime()
+                    res1h = sf1h.analyze()
 
                 if isinstance(res1h, dict) and res1h.get("filters_ok") is True:
                     last1h = last_sent.get(key1h, 0)
