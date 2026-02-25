@@ -834,7 +834,7 @@ class SmartFilter:
         # --- Do not perform an authoritative SuperGK check inside analyze() ---
         # The final SuperGK decision is made in main.py using the freshest orderbook/density.
         try:
-            if DEBUG_FILTERS: print(f"[{self.symbol} [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.", flush=True)
+            # [VERBOSE LOG DISABLED]] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.", flush=True)
             # Keep orderbook_result and density_result available in the returned dict for main.py
             super_gk_ok = None
         except Exception as e:
@@ -1033,17 +1033,17 @@ class SmartFilter:
         short_met = sum(conds_short)
     
         if debug:
-            if DEBUG_FILTERS: print(f"[{self.symbol} [TREND] long_met={long_met}, short_met={short_met}, min_conditions={min_conditions}, ema_cloud={ema_cloud}")
+            # [VERBOSE LOG DISABLED]] long_met={long_met}, short_met={short_met}, min_conditions={min_conditions}, ema_cloud={ema_cloud}")
     
         # Decision logic: at least min_conditions and dominant direction
         if long_met >= min_conditions and long_met > short_met:
-            if DEBUG_FILTERS: print(f"[{self.symbol} [TREND] Signal: LONG | long_met={long_met}, short_met={short_met}")
+            # [VERBOSE LOG DISABLED]] Signal: LONG | long_met={long_met}, short_met={short_met}")
             return "LONG"
         elif short_met >= min_conditions and short_met > long_met:
-            if DEBUG_FILTERS: print(f"[{self.symbol} [TREND] Signal: SHORT | long_met={long_met}, short_met={short_met}")
+            # [VERBOSE LOG DISABLED]] Signal: SHORT | long_met={long_met}, short_met={short_met}")
             return "SHORT"
         else:
-            if DEBUG_FILTERS: print(f"[{self.symbol} [TREND] No signal fired | long_met={long_met}, short_met={short_met}")
+            # [VERBOSE LOG DISABLED]] No signal fired | long_met={long_met}, short_met={short_met}")
             return None
 
     def _check_macd(self, fast=12, slow=26, signal=9, min_conditions=2, debug=False):
@@ -1053,7 +1053,7 @@ class SmartFilter:
         """
         if len(self.df) < slow + 3:
             if debug:
-                if DEBUG_FILTERS: print(f"[{self.symbol} [MACD] Not enough data for slow EMA={slow}")
+                # [VERBOSE LOG DISABLED]] Not enough data for slow EMA={slow}")
             return None
     
         efast = self.df['close'].ewm(span=fast, adjust=False).mean()
@@ -1095,16 +1095,16 @@ class SmartFilter:
         short_conditions_met = sum([cond1_short, cond2_short, cond3_short, cond4_short, cond5_short, cond6_short])
     
         if debug:
-            if DEBUG_FILTERS: print(f"[{self.symbol} [MACD] macd={macd.iloc[-1]:.6f}, signal={signal_line.iloc[-1]:.6f}, "
+            # [VERBOSE LOG DISABLED]] macd={macd.iloc[-1]:.6f}, signal={signal_line.iloc[-1]:.6f}, "
                   f"macd_hist={macd_hist.iloc[-1]:.6f}, close={close}, close_prev={close_prev}, "
                   f"cross_up={cross_up}, cross_down={cross_down}, divergence={divergence}, "
                   f"long_met={long_conditions_met}, short_met={short_conditions_met}")
     
         if long_conditions_met >= min_conditions and long_conditions_met > short_conditions_met:
-            if DEBUG_FILTERS: print(f"[{self.symbol} [MACD] Signal: LONG | long_met={long_conditions_met}, short_met={short_conditions_met}")
+            # [VERBOSE LOG DISABLED]] Signal: LONG | long_met={long_conditions_met}, short_met={short_conditions_met}")
             return "LONG"
         elif short_conditions_met >= min_conditions and short_conditions_met > long_conditions_met:
-            if DEBUG_FILTERS: print(f"[{self.symbol} [MACD] Signal: SHORT | long_met={long_conditions_met}, short_met={short_conditions_met}")
+            # [VERBOSE LOG DISABLED]] Signal: SHORT | long_met={long_conditions_met}, short_met={short_conditions_met}")
             return "SHORT"
         else:
             return None
@@ -1119,7 +1119,7 @@ class SmartFilter:
         required_len = max(window + 2, rsi_period + 2, cci_period + 2, stochrsi_period + 2, willr_period + 2)
         if len(self.df) < required_len:
             if debug:
-                if DEBUG_FILTERS: print(f"[{self.symbol} [Momentum] Not enough data for required indicators.")
+                # [VERBOSE LOG DISABLED]] Not enough data for required indicators.")
             return None
     
         roc = self.df['close'].pct_change(periods=window)
@@ -1163,16 +1163,16 @@ class SmartFilter:
         short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short, cond5_short, cond6_short, cond7_short])
     
         if debug:
-            if DEBUG_FILTERS: print(f"[{self.symbol} [Momentum] values: "
+            # [VERBOSE LOG DISABLED]] values: "
                   f"momentum={momentum:.6f}, acceleration={acceleration:.6f}, close={close}, close_prev={close_prev}, "
                   f"rsi={rsi_latest:.2f}, cci={cci_latest:.2f}, stochrsi={stochrsi_latest:.2f}, willr={willr_latest:.2f}, "
                   f"long_met={long_met}, short_met={short_met}")
     
         if long_met >= min_conditions and long_met > short_met:
-            if DEBUG_FILTERS: print(f"[{self.symbol} [Momentum] Signal: LONG | long_met={long_met}, short_met={short_met}")
+            # [VERBOSE LOG DISABLED]] Signal: LONG | long_met={long_met}, short_met={short_met}")
             return "LONG"
         elif short_met >= min_conditions and short_met > long_met:
-            if DEBUG_FILTERS: print(f"[{self.symbol} [Momentum] Signal: SHORT | long_met={long_met}, short_met={short_met}")
+            # [VERBOSE LOG DISABLED]] Signal: SHORT | long_met={long_met}, short_met={short_met}")
             return "SHORT"
         else:
             return None
@@ -1198,7 +1198,7 @@ class SmartFilter:
         # Defensive: Check rolling window length
         if len(self.df) < rolling_window + 2:
             if debug:
-                if DEBUG_FILTERS: print(f"[{self.symbol} [Volume Spike] Not enough data for rolling window")
+                # [VERBOSE LOG DISABLED] Spike] Not enough data for rolling window")
             return None
     
         avg = self.df['volume'].rolling(rolling_window).mean().iat[-2]
@@ -1237,7 +1237,7 @@ class SmartFilter:
         if signal and require_5m_trend:
             vol_trend = True  # Volume spike confirmation
             if debug:
-                if DEBUG_FILTERS: print(f"[{self.symbol} [Volume Spike] 5m volume trend check: {vol_trend} (latest={df5m['volume'].iat[-1]}, prev={df5m['volume'].iat[-2]})")
+                # [VERBOSE LOG DISABLED] Spike] 5m volume trend check: {vol_trend} (latest={df5m['volume'].iat[-1]}, prev={df5m['volume'].iat[-2]})")
             if not vol_trend:
                 return None
     
@@ -1310,7 +1310,7 @@ class SmartFilter:
                 "close": close,
                 "close_prev": close_prev
             }
-            if DEBUG_FILTERS: print(f"[{self.symbol} [Liquidity Awareness] signal={signal} | long_met={long_met}, short_met={short_met}, liquidity_metrics={liquidity_metrics}")
+            # [VERBOSE LOG DISABLED] Awareness] signal={signal} | long_met={long_met}, short_met={short_met}, liquidity_metrics={liquidity_metrics}")
     
         return signal
 
@@ -1426,7 +1426,7 @@ class SmartFilter:
             signal = "SHORT"
     
         if debug:
-            if DEBUG_FILTERS: print(f"[{self.symbol} [Absorption] signal={signal} | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, absorption={absorption_metrics}")
+            # [VERBOSE LOG DISABLED]] signal={signal} | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, absorption={absorption_metrics}")
     
         return signal
 
@@ -1448,7 +1448,7 @@ class SmartFilter:
             volume_ma = self.df['volume'].rolling(window=20).mean().iat[-1]
         except Exception as e:
             if debug:
-                if DEBUG_FILTERS: print(f"[{self.symbol} [VWAP Divergence] Missing data or index error: {e}")
+                # [VERBOSE LOG DISABLED] Divergence] Missing data or index error: {e}")
             return None
     
         # Graceful handling for NaN volume_ma
@@ -1552,12 +1552,12 @@ class SmartFilter:
         missing = [c for c in required_cols if c not in self.df.columns]
         if missing:
             if debug:
-                if DEBUG_FILTERS: print(f"[{self.symbol} [Support/Resistance] Missing columns: {missing}")
+                # [VERBOSE LOG DISABLED]/Resistance] Missing columns: {missing}")
             return None
     
         if len(self.df) < window + 1:
             if debug:
-                if DEBUG_FILTERS: print(f"[{self.symbol} [Support/Resistance] Not enough data (need at least {window + 1} rows).")
+                # [VERBOSE LOG DISABLED]/Resistance] Not enough data (need at least {window + 1} rows).")
             return None
     
         # Safely get rolling extremes (the helper may raise if indices are short)
@@ -1566,7 +1566,7 @@ class SmartFilter:
             _, resistance = self._get_rolling_extremes('high', window)
         except Exception as e:
             if debug:
-                if DEBUG_FILTERS: print(f"[{self.symbol} [Support/Resistance] Error getting rolling extremes: {e}")
+                # [VERBOSE LOG DISABLED]/Resistance] Error getting rolling extremes: {e}")
             return None
     
         # Latest price/volume values
@@ -1577,7 +1577,7 @@ class SmartFilter:
             volume_prev = float(self.df['volume'].iat[-2])
         except Exception as e:
             if debug:
-                if DEBUG_FILTERS: print(f"[{self.symbol} [Support/Resistance] Error reading price/volume: {e}")
+                # [VERBOSE LOG DISABLED]/Resistance] Error reading price/volume: {e}")
             return None
     
         # Safe proximity calculations
@@ -1688,7 +1688,7 @@ class SmartFilter:
             return None
 
     def _check_hh_ll(self, debug=False):
-        if DEBUG_FILTERS: print(f"[{self.symbol} [HH/LL Trend] Function called")
+        # [VERBOSE LOG DISABLED] Trend] Function called")
         high = self.df['high'].iat[-1]
         high_prev = self.df['high'].iat[-2]
         low = self.df['low'].iat[-1]
@@ -1696,7 +1696,7 @@ class SmartFilter:
         close = self.df['close'].iat[-1]
         close_prev = self.df['close'].iat[-2]
     
-        if DEBUG_FILTERS: print(f"[{self.symbol} [HH/LL Trend] Values | high={high}, high_prev={high_prev}, low={low}, low_prev={low_prev}, close={close}, close_prev={close_prev}")
+        # [VERBOSE LOG DISABLED] Trend] Values | high={high}, high_prev={high_prev}, low={low}, low_prev={low_prev}, close={close}, close_prev={close_prev}")
     
         hh = high
         ll = low
@@ -1718,16 +1718,16 @@ class SmartFilter:
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
     
-        if DEBUG_FILTERS: print(f"[{self.symbol} [HH/LL Trend] Met Counts | long_met={long_met}, short_met={short_met}")
+        # [VERBOSE LOG DISABLED] Trend] Met Counts | long_met={long_met}, short_met={short_met}")
     
         if long_met >= 2 and long_met > short_met:
-            if DEBUG_FILTERS: print(f"[{self.symbol} [HH/LL Trend] Signal: LONG | long_met={long_met}, short_met={short_met}, hh={hh}, ll={ll}")
+            # [VERBOSE LOG DISABLED] Trend] Signal: LONG | long_met={long_met}, short_met={short_met}, hh={hh}, ll={ll}")
             return "LONG"
         elif short_met >= 2 and short_met > long_met:
-            if DEBUG_FILTERS: print(f"[{self.symbol} [HH/LL Trend] Signal: SHORT | long_met={long_met}, short_met={short_met}, hh={hh}, ll={ll}")
+            # [VERBOSE LOG DISABLED] Trend] Signal: SHORT | long_met={long_met}, short_met={short_met}, hh={hh}, ll={ll}")
             return "SHORT"
         else:
-            if DEBUG_FILTERS: print(f"[{self.symbol} [HH/LL Trend] No signal fired | long_met={long_met}, short_met={short_met}, hh={hh}, ll={ll}")
+            # [VERBOSE LOG DISABLED] Trend] No signal fired | long_met={long_met}, short_met={short_met}, hh={hh}, ll={ll}")
             return None
 
     def _check_liquidity_pool(self, lookback=20, min_cond=2, debug=False):
@@ -1756,14 +1756,14 @@ class SmartFilter:
         short_met = sum([cond1_short, cond2_short])
 
         if long_met >= min_cond and long_met > short_met:
-            if DEBUG_FILTERS: print(f"[{self.symbol} [Liquidity Pool] Signal: LONG | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, liquidity_pool={liquidity_pool}")
+            # [VERBOSE LOG DISABLED] Pool] Signal: LONG | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, liquidity_pool={liquidity_pool}")
             return "LONG"
         elif short_met >= min_cond and short_met > long_met:
-            if DEBUG_FILTERS: print(f"[{self.symbol} [Liquidity Pool] Signal: SHORT | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, liquidity_pool={liquidity_pool}")
+            # [VERBOSE LOG DISABLED] Pool] Signal: SHORT | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, liquidity_pool={liquidity_pool}")
             return "SHORT"
         else:
             if debug:
-                if DEBUG_FILTERS: print(f"[{self.symbol} [Liquidity Pool] No signal fired | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, liquidity_pool={liquidity_pool}")
+                # [VERBOSE LOG DISABLED] Pool] No signal fired | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, liquidity_pool={liquidity_pool}")
             return None
 
     def _check_atr_momentum_burst(
@@ -2003,13 +2003,13 @@ class SmartFilter:
             close = self.df['close'].iat[-1]
             adx = self.df['adx'].iat[-1] if 'adx' in self.df.columns else None
         except (KeyError, IndexError):
-            if DEBUG_FILTERS: print(f"[{self.symbol} [Chop Zone Check] Missing required columns or insufficient data.")
+            # [VERBOSE LOG DISABLED] Zone Check] Missing required columns or insufficient data.")
             return None
     
         chop_zone = chop
     
         if chop >= chop_threshold:
-            if DEBUG_FILTERS: print(f"[{self.symbol} [Chop Zone Check] Market too choppy (chop_zone={chop_zone:.2f} >= {chop_threshold})")
+            # [VERBOSE LOG DISABLED] Zone Check] Market too choppy (chop_zone={chop_zone:.2f} >= {chop_threshold})")
             return None
     
         cond1_long = ema9 > ema21
@@ -2060,7 +2060,7 @@ class SmartFilter:
         # Defensive checks
         if len(self.df) < 2:
             if debug:
-                if DEBUG_FILTERS: print(f"[{self.symbol} [Candle Confirmation] Not enough data (need at least 2 rows).")
+                # [VERBOSE LOG DISABLED] Confirmation] Not enough data (need at least 2 rows).")
             return None
 
         open_ = float(self.df['open'].iat[-1])
@@ -2153,22 +2153,22 @@ class SmartFilter:
         )
 
         if debug:
-            if DEBUG_FILTERS: print(f"[{self.symbol} [Candle Confirmation] {log_info}")
-            if DEBUG_FILTERS: print(f"[{self.symbol} [Candle Confirmation] conds_long={[cond1_long, cond2_long, cond3_long, cond4_long]}, conds_short={[cond1_short, cond2_short, cond3_short, cond4_short]}, long_met={long_met}, short_met={short_met}")
+            # [VERBOSE LOG DISABLED] Confirmation] {log_info}")
+            # [VERBOSE LOG DISABLED] Confirmation] conds_long={[cond1_long, cond2_long, cond3_long, cond4_long]}, conds_short={[cond1_short, cond2_short, cond3_short, cond4_short]}, long_met={long_met}, short_met={short_met}")
 
         # Use a stricter decision rule to avoid one-off candles producing GKs:
         # require at least 2 meaningful confirmations and a strict majority
         if long_met >= 2 and long_met > short_met:
             if debug:
-                if DEBUG_FILTERS: print(f"[{self.symbol} [Candle Confirmation] Signal: LONG | {log_info}")
+                # [VERBOSE LOG DISABLED] Confirmation] Signal: LONG | {log_info}")
             return "LONG"
         elif short_met >= 2 and short_met > long_met:
             if debug:
-                if DEBUG_FILTERS: print(f"[{self.symbol} [Candle Confirmation] Signal: SHORT | {log_info}")
+                # [VERBOSE LOG DISABLED] Confirmation] Signal: SHORT | {log_info}")
             return "SHORT"
         else:
             if debug:
-                if DEBUG_FILTERS: print(f"[{self.symbol} [Candle Confirmation] No signal | long_met={long_met}, short_met={short_met}")
+                # [VERBOSE LOG DISABLED] Confirmation] No signal | long_met={long_met}, short_met={short_met}")
             return None   
             
     def _check_wick_dominance(
@@ -2228,15 +2228,15 @@ class SmartFilter:
     
         if long_met >= 2 and long_met > short_met:
             if debug:
-                if DEBUG_FILTERS: print(f"[{self.symbol} [Wick Dominance] Signal: LONG | long_met={long_met}, short_met={short_met}, {log_info}")
+                # [VERBOSE LOG DISABLED] Dominance] Signal: LONG | long_met={long_met}, short_met={short_met}, {log_info}")
             return "LONG"
         elif short_met >= 2 and short_met > long_met:
             if debug:
-                if DEBUG_FILTERS: print(f"[{self.symbol} [Wick Dominance] Signal: SHORT | long_met={long_met}, short_met={short_met}, {log_info}")
+                # [VERBOSE LOG DISABLED] Dominance] Signal: SHORT | long_met={long_met}, short_met={short_met}, {log_info}")
             return "SHORT"
         else:
             if debug:
-                if DEBUG_FILTERS: print(f"[{self.symbol} [Wick Dominance] No signal fired | long_met={long_met}, short_met={short_met}, {log_info}")
+                # [VERBOSE LOG DISABLED] Dominance] No signal fired | long_met={long_met}, short_met={short_met}, {log_info}")
             return None
 
     def _market_regime(
