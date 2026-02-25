@@ -343,6 +343,69 @@ def super_gk_aligned(bias, orderbook_result, density_result,
 
 import traceback
 from datetime import datetime
+import json
+
+# === DEDUP WINDOWS (per timeframe) ===
+DEDUP_WINDOWS = {
+    "15min": 1200,   # 20 minutes in seconds
+    "30min": 2400,   # 40 minutes in seconds
+    "1h": 4800       # 80 minutes in seconds
+}
+
+def is_duplicate_signal(symbol, timeframe, signal_type):
+    """
+    Check if this signal (symbol + timeframe + signal_type) was sent recently
+    within the dedup window for that timeframe.
+    
+    Returns: True if duplicate (should skip), False if new signal (should send)
+    """
+    try:
+        # Check if SENT_SIGNALS.jsonl exists
+        sent_signals_path = "SENT_SIGNALS.jsonl"
+        if not os.path.exists(sent_signals_path):
+            return False  # No file = no duplicates possible
+        
+        # Get dedup window for this timeframe
+        window_seconds = DEDUP_WINDOWS.get(timeframe, 1200)
+        current_time = datetime.now(pytz.UTC)
+        
+        # Read SENT_SIGNALS.jsonl line by line
+        with open(sent_signals_path, 'r') as f:
+            for line in f:
+                if not line.strip():
+                    continue
+                try:
+                    signal_record = json.loads(line)
+                    
+                    # Check if same symbol + timeframe + signal_type
+                    if (signal_record.get('symbol') == symbol and 
+                        signal_record.get('timeframe') == timeframe and 
+                        signal_record.get('signal_type') == signal_type):
+                        
+                        # Check if within dedup window
+                        sent_time_str = signal_record.get('sent_time_utc')
+                        if sent_time_str:
+                            sent_time = datetime.fromisoformat(sent_time_str.replace('Z', '+00:00'))
+                            if not sent_time.tzinfo:
+                                sent_time = pytz.UTC.localize(sent_time)
+                            
+                            time_diff_seconds = (current_time - sent_time).total_seconds()
+                            
+                            # If within window = duplicate
+                            if time_diff_seconds < window_seconds:
+                                print(f"[DEDUP] {symbol} {timeframe} {signal_type}: Found duplicate from {time_diff_seconds:.0f}s ago. SKIPPING.", flush=True)
+                                return True
+                
+                except json.JSONDecodeError:
+                    continue
+        
+        # No duplicate found
+        return False
+    
+    except Exception as e:
+        print(f"[DEDUP-ERROR] {symbol} {timeframe}: {e}. Assuming NOT duplicate.", flush=True)
+        return False
+
 def run_cycle():
     """
     Single pass over all TOKENS. Returns list of valid_debug dicts collected during this cycle.
@@ -352,8 +415,8 @@ def run_cycle():
     valid_debugs = []
     now = time.time()
     
-    # CRITICAL: Deduplication tracking (prevent duplicate signals in same cycle)
-    signals_sent_this_cycle = set()  # Track: "SYMBOL_TIMEFRAME" -> sent only once per cycle
+    # NOTE: Deduplication now uses SENT_SIGNALS.jsonl with per-timeframe windows
+    # (see is_duplicate_signal function above)
 
     for idx, symbol in enumerate(TOKENS, start=1):
         # Skip verbose "[INFO] Checking" log
@@ -591,10 +654,8 @@ def run_cycle():
                             print(f"[WARN] Signal {symbol_val} (15min) REJECTED - duplicate within 120s. NOT sending Telegram alert.", flush=True)
                             continue
 
-                        # CRITICAL: Deduplication check (prevent duplicate in same cycle)
-                        signal_key = f"{symbol_val}_15min"
-                        if signal_key in signals_sent_this_cycle:
-                            print(f"[DEDUP] 15min: {symbol_val} already sent this cycle. SKIPPING duplicate.", flush=True)
+                        # CRITICAL: Deduplication check (prevent duplicate within DEDUP_WINDOWS)
+                        if is_duplicate_signal(symbol_val, "15min", signal_type):
                             continue
                         
                         # Send trade alert to Telegram
@@ -627,7 +688,7 @@ def run_cycle():
                                 print(f"[DEBUG] 15min: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
                                 if sent_ok:
                                     last_sent[key15] = now
-                                    signals_sent_this_cycle.add(signal_key)  # Track for deduplication
+                                    # signals_sent_this_cycle.add(signal_key)  # Dedup now uses SENT_SIGNALS.jsonl
                                     logger.signal_sent(symbol_val, "15min", signal_uuid[:12])
                                     
                                     # Log to SENT_SIGNALS for PEC tracking
@@ -867,10 +928,8 @@ def run_cycle():
                             print(f"[WARN] Signal {symbol_val} (30min) REJECTED - duplicate within 120s. NOT sending Telegram alert.", flush=True)
                             continue
 
-                        # CRITICAL: Deduplication check (prevent duplicate in same cycle)
-                        signal_key = f"{symbol_val}_30min"
-                        if signal_key in signals_sent_this_cycle:
-                            print(f"[DEDUP] 30min: {symbol_val} already sent this cycle. SKIPPING duplicate.", flush=True)
+                        # CRITICAL: Deduplication check (prevent duplicate within DEDUP_WINDOWS)
+                        if is_duplicate_signal(symbol_val, "30min", signal_type):
                             continue
                         
                         # Send trade alert to Telegram
@@ -903,7 +962,7 @@ def run_cycle():
                                 print(f"[DEBUG] 30min: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
                                 if sent_ok:
                                     last_sent[key30] = now
-                                    signals_sent_this_cycle.add(signal_key)  # Track for deduplication
+                                    # signals_sent_this_cycle.add(signal_key)  # Dedup now uses SENT_SIGNALS.jsonl
                                     logger.signal_sent(symbol_val, "30min", signal_uuid[:12])
                                     
                                     # Log to SENT_SIGNALS for PEC tracking
@@ -1143,10 +1202,8 @@ def run_cycle():
                             print(f"[WARN] Signal {symbol_val} (1h) REJECTED - duplicate within 120s. NOT sending Telegram alert.", flush=True)
                             continue
 
-                        # CRITICAL: Deduplication check (prevent duplicate in same cycle)
-                        signal_key = f"{symbol_val}_1h"
-                        if signal_key in signals_sent_this_cycle:
-                            print(f"[DEDUP] 1h: {symbol_val} already sent this cycle. SKIPPING duplicate.", flush=True)
+                        # CRITICAL: Deduplication check (prevent duplicate within DEDUP_WINDOWS)
+                        if is_duplicate_signal(symbol_val, "1h", signal_type):
                             continue
                         
                         # Send trade alert to Telegram
@@ -1179,7 +1236,7 @@ def run_cycle():
                                 print(f"[DEBUG] 1h: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
                                 if sent_ok:
                                     last_sent[key1h] = now
-                                    signals_sent_this_cycle.add(signal_key)  # Track for deduplication
+                                    # signals_sent_this_cycle.add(signal_key)  # Dedup now uses SENT_SIGNALS.jsonl
                                     logger.signal_sent(symbol_val, "1h", signal_uuid[:12])
                                     
                                     # Log to SENT_SIGNALS for PEC tracking
