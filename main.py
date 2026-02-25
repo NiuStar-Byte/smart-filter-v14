@@ -351,6 +351,9 @@ def run_cycle():
     logger = SignalLogger(enabled=True)  # Clean, informative logging
     valid_debugs = []
     now = time.time()
+    
+    # CRITICAL: Deduplication tracking (prevent duplicate signals in same cycle)
+    signals_sent_this_cycle = set()  # Track: "SYMBOL_TIMEFRAME" -> sent only once per cycle
 
     for idx, symbol in enumerate(TOKENS, start=1):
         # Skip verbose "[INFO] Checking" log
@@ -588,6 +591,12 @@ def run_cycle():
                             print(f"[WARN] Signal {symbol_val} (15min) REJECTED - duplicate within 120s. NOT sending Telegram alert.", flush=True)
                             continue
 
+                        # CRITICAL: Deduplication check (prevent duplicate in same cycle)
+                        signal_key = f"{symbol_val}_15min"
+                        if signal_key in signals_sent_this_cycle:
+                            print(f"[DEDUP] 15min: {symbol_val} already sent this cycle. SKIPPING duplicate.", flush=True)
+                            continue
+                        
                         # Send trade alert to Telegram
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
@@ -618,6 +627,7 @@ def run_cycle():
                                 print(f"[DEBUG] 15min: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
                                 if sent_ok:
                                     last_sent[key15] = now
+                                    signals_sent_this_cycle.add(signal_key)  # Track for deduplication
                                     logger.signal_sent(symbol_val, "15min", signal_uuid[:12])
                                     
                                     # Log to SENT_SIGNALS for PEC tracking
@@ -857,6 +867,12 @@ def run_cycle():
                             print(f"[WARN] Signal {symbol_val} (30min) REJECTED - duplicate within 120s. NOT sending Telegram alert.", flush=True)
                             continue
 
+                        # CRITICAL: Deduplication check (prevent duplicate in same cycle)
+                        signal_key = f"{symbol_val}_30min"
+                        if signal_key in signals_sent_this_cycle:
+                            print(f"[DEDUP] 30min: {symbol_val} already sent this cycle. SKIPPING duplicate.", flush=True)
+                            continue
+                        
                         # Send trade alert to Telegram
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
@@ -887,6 +903,7 @@ def run_cycle():
                                 print(f"[DEBUG] 30min: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
                                 if sent_ok:
                                     last_sent[key30] = now
+                                    signals_sent_this_cycle.add(signal_key)  # Track for deduplication
                                     logger.signal_sent(symbol_val, "30min", signal_uuid[:12])
                                     
                                     # Log to SENT_SIGNALS for PEC tracking
@@ -1126,6 +1143,12 @@ def run_cycle():
                             print(f"[WARN] Signal {symbol_val} (1h) REJECTED - duplicate within 120s. NOT sending Telegram alert.", flush=True)
                             continue
 
+                        # CRITICAL: Deduplication check (prevent duplicate in same cycle)
+                        signal_key = f"{symbol_val}_1h"
+                        if signal_key in signals_sent_this_cycle:
+                            print(f"[DEDUP] 1h: {symbol_val} already sent this cycle. SKIPPING duplicate.", flush=True)
+                            continue
+                        
                         # Send trade alert to Telegram
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
@@ -1156,6 +1179,7 @@ def run_cycle():
                                 print(f"[DEBUG] 1h: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
                                 if sent_ok:
                                     last_sent[key1h] = now
+                                    signals_sent_this_cycle.add(signal_key)  # Track for deduplication
                                     logger.signal_sent(symbol_val, "1h", signal_uuid[:12])
                                     
                                     # Log to SENT_SIGNALS for PEC tracking

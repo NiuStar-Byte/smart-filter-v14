@@ -19,14 +19,16 @@ class SignalLogger:
         if not self.enabled:
             return
         self.signal_count[tf] += 1
-        print(f"[SIGNAL] {symbol:15} {tf:6} {bias:6} @ {entry_price:12.2f} (Score: {score}/19)", flush=True)
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"[SIGNAL] {symbol:15} {tf:6} {bias:6} @ {entry_price:12.2f} (Score: {score}/19) | {now}", flush=True)
 
     def signal_sent(self, symbol: str, tf: str, msg_id: str):
         """Log when signal reaches Telegram"""
         if not self.enabled:
             return
         self.sent_count[tf] += 1
-        print(f"[✅ SENT]  {symbol:15} {tf:6} → Telegram (ID: {msg_id[:8]}...)", flush=True)
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"[✅ SENT]  {symbol:15} {tf:6} → Telegram (ID: {msg_id[:8]}...) | {now}", flush=True)
 
     def signal_rejected(self, symbol: str, tf: str, reason: str):
         """Log when signal is rejected"""
@@ -42,9 +44,10 @@ class SignalLogger:
         total_generated = sum(self.signal_count.values())
         total_sent = sum(self.sent_count.values())
         elapsed = (datetime.now() - self.start_time).total_seconds()
+        cycle_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
         print("\n" + "="*70, flush=True)
-        print(f"CYCLE SUMMARY ({elapsed:.1f}s):", flush=True)
+        print(f"CYCLE SUMMARY ({elapsed:.1f}s) | {cycle_time}", flush=True)
         print(f"  Generated: 15m={self.signal_count['15min']} | 30m={self.signal_count['30min']} | 1h={self.signal_count['1h']} (Total: {total_generated})", flush=True)
         print(f"  Sent:      15m={self.sent_count['15min']} | 30m={self.sent_count['30min']} | 1h={self.sent_count['1h']} (Total: {total_sent})", flush=True)
         print(f"  Rejected:  {self.rejected_count}", flush=True)
