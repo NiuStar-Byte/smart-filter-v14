@@ -212,9 +212,6 @@ class PECExecutor:
             return stats
         
         try:
-            winning = 0
-            losing = 0
-            
             with open(self.sent_signals_path, 'r') as f:
                 for line in f:
                     if line.strip():
@@ -234,13 +231,11 @@ class PECExecutor:
                         pnl = record.get('pnl_usd', 0)
                         if pnl:
                             stats['total_pnl_usd'] += pnl
-                            if pnl > 0:
-                                winning += 1
-                            else:
-                                losing += 1
             
-            if winning + losing > 0:
-                stats['win_rate_pct'] = round((winning / (winning + losing)) * 100, 1)
+            # Win Rate = TP_HIT / (TP_HIT + SL_HIT)
+            closed_trades = stats['tp_hit'] + stats['sl_hit']
+            if closed_trades > 0:
+                stats['win_rate_pct'] = round((stats['tp_hit'] / closed_trades) * 100, 1)
             
             stats['total_pnl_usd'] = round(stats['total_pnl_usd'], 2)
         
