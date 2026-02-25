@@ -10,10 +10,7 @@ OHLCV_CACHE_TTL = 60  # seconds
 # Supported spot timeframes mapping to KuCoin spot API 'type'
 # IMPORTANT: KuCoin uses specific naming: 1h→1hour, etc.
 TF_MAP = {
-    "1min": "1min",
-    "3min": "3min",
-    "5min": "5min",
-    "15min": "15min",
+    "1min": "1min",    "15min": "15min",
     "30min": "30min",
     "1h": "1hour",    # KuCoin requires "1hour" not "1h"
     "2h": "2hour",

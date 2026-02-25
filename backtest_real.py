@@ -19,7 +19,7 @@ def backtest_symbol_timeframe(symbol, tf, days=100, min_score=14):
     
     Args:
         symbol: str, e.g., "BTC-USDT"
-        tf: str, e.g., "5min"
+        tf: str, e.g., "30min"
         days: int, lookback period
         min_score: int, minimum filter score to consider signal
     
@@ -172,7 +172,7 @@ def run_multi_backtest(symbols, timeframes, days=100):
     
     Args:
         symbols: list, e.g., ["BTC-USDT", "ETH-USDT", "SOL-USDT"]
-        timeframes: list, e.g., ["5min", "15min"]
+        timeframes: list, e.g., ["30min", "15min"]
         days: int, lookback period
     
     Returns:

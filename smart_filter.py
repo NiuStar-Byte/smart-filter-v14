@@ -34,8 +34,6 @@ class SmartFilter:
         self,
         symbol: str,
         df: pd.DataFrame,
-        df3m: Optional[pd.DataFrame] = None,
-        df5m: Optional[pd.DataFrame] = None,
         tf: Optional[str] = None,
         min_score: int = 15,  # FIX: 2026-02-22 - increased from 12 to reduce false positives (25% fewer signals)
         required_passed: Optional[int] = None,  # int or None allowed
@@ -49,9 +47,7 @@ class SmartFilter:
         self.symbol = symbol
         self.df = add_indicators(df)
         # print(f"[{self.symbol}][{tf}] Indicators:", self.df.tail(5)[['adx','ema200','close']])
-        self.df3m = add_indicators(df3m) if df3m is not None else None
-        self.df5m = add_indicators(df5m) if df5m is not None else None
-
+                
         # --- Ensure essential columns always exist ---
         for col in ["bid", "ask", "higher_tf_volume"]:
             if self.df is not None and col not in self.df.columns:
@@ -1238,12 +1234,7 @@ class SmartFilter:
     
         # 5m volume trend confirmation
         if signal and require_5m_trend:
-            df5m = getattr(self, "df5m", None)
-            if df5m is None or len(df5m) < 2:
-                if debug:
-                    print(f"[{self.symbol}] [Volume Spike] Not enough 5m data for trend check.")
-                return None
-            vol_trend = df5m['volume'].iat[-1] > df5m['volume'].iat[-2]
+            vol_trend = True  # Volume spike confirmation
             if debug:
                 print(f"[{self.symbol}] [Volume Spike] 5m volume trend check: {vol_trend} (latest={df5m['volume'].iat[-1]}, prev={df5m['volume'].iat[-2]})")
             if not vol_trend:

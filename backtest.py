@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 # --------- 1) FETCH OHLCV FROM KUCOIN ---------
-TF_MAP = {"2min":"2min", "3min":"3min", "5min":"5min"}
+TF_MAP = {"2min":"2min", "15min":"15min", "30min":"30min"}
 def fetch_ohlcv(symbol: str, tf: str) -> pd.DataFrame | None:
     if tf not in TF_MAP:
         print(f"Unsupported timeframe: {tf}")
@@ -36,8 +36,8 @@ from smart_filter import SmartFilter
 
 # --------- 3) BACKTEST FUNCTION ---------
 def backtest_symbol(symbol: str,
-                    tf_main: str = "5min",
-                    tf_mtf:  str = "3min",
+                    tf_main: str = "30min",
+                    tf_mtf:  str = "15min",
                     lookback: int = 14,
                     hold_bars: int = 1):
     df_main = fetch_ohlcv(symbol, tf_main)

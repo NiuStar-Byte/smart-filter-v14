@@ -26,7 +26,7 @@ def find_closest_ohlcv_bar(fired_time_utc, ohlcv_df, tf):
     Args:
         fired_time_utc: pd.Timestamp or datetime in UTC
         ohlcv_df: DataFrame with datetime index in UTC
-        tf: timeframe string ('3min', '5min', etc.)
+        tf: timeframe string ("15min", "30min", etc.)
 
     Returns:
         tuple: (bar_index, bar_time, time_diff_minutes) or (None, None, None) if no match
@@ -287,7 +287,7 @@ def run_pec_backtest(
                     continue
                 
                 # Validate time difference (should be reasonable for the timeframe)
-                max_allowed_diff = 3 if tf in ('3min', '3m') else 5  # minutes
+                max_allowed_diff = 3 if tf in ("15min", "15min") else 5  # minutes
                 if time_diff_minutes > max_allowed_diff:
                     print(f"[PEC] Time difference too large ({time_diff_minutes:.2f} min > {max_allowed_diff} min) for {symbol} {tf}. Skipping.")
                     continue
