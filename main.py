@@ -621,7 +621,7 @@ def run_cycle():
                                     logger.signal_sent(symbol_val, "15min", signal_uuid[:12])
                                     
                                     # Log to SENT_SIGNALS for PEC tracking
-                                    if _sent_tracker_ready:
+                                    try:
                                         _sent_signal_tracker.log_sent_signal(
                                             signal_uuid=signal_uuid,
                                             symbol=symbol_val,
@@ -641,6 +641,8 @@ def run_cycle():
                                             telegram_msg_id=signal_uuid[:12],
                                             fired_time_utc=fired_time_utc.isoformat()
                                         )
+                                    except Exception as e:
+                                        print(f"[ERROR] Failed to log PEC signal for {symbol_val}: {e}", flush=True)
                                 else:
                                     logger.signal_rejected(symbol_val, "15min", "Telegram send failed")
                             except Exception as e:
@@ -888,7 +890,7 @@ def run_cycle():
                                     logger.signal_sent(symbol_val, "30min", signal_uuid[:12])
                                     
                                     # Log to SENT_SIGNALS for PEC tracking
-                                    if _sent_tracker_ready:
+                                    try:
                                         _sent_signal_tracker.log_sent_signal(
                                             signal_uuid=signal_uuid,
                                             symbol=symbol_val,
@@ -908,6 +910,8 @@ def run_cycle():
                                             telegram_msg_id=signal_uuid[:12],
                                             fired_time_utc=fired_time_utc.isoformat()
                                         )
+                                    except Exception as e:
+                                        print(f"[ERROR] Failed to log PEC signal for {symbol_val}: {e}", flush=True)
                                 else:
                                     logger.signal_rejected(symbol_val, "30min", "Telegram send failed")
                             except Exception as e:
@@ -1155,7 +1159,7 @@ def run_cycle():
                                     logger.signal_sent(symbol_val, "1h", signal_uuid[:12])
                                     
                                     # Log to SENT_SIGNALS for PEC tracking
-                                    if _sent_tracker_ready:
+                                    try:
                                         _sent_signal_tracker.log_sent_signal(
                                             signal_uuid=signal_uuid,
                                             symbol=symbol_val,
@@ -1175,6 +1179,8 @@ def run_cycle():
                                             telegram_msg_id=signal_uuid[:12],
                                             fired_time_utc=fired_time_utc.isoformat()
                                         )
+                                    except Exception as e:
+                                        print(f"[ERROR] Failed to log PEC signal for {symbol_val}: {e}", flush=True)
                                 else:
                                     logger.signal_rejected(symbol_val, "1h", "Telegram send failed")
                             except Exception as e:
