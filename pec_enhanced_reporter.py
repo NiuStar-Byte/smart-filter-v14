@@ -90,29 +90,24 @@ class PECEnhancedReporter:
         except:
             return "-"
     
-    def generate_report(self):
-        """Generate comprehensive report"""
-        report = []
-        
-        # Header (at top before everything)
-        report.append("")
-        report.append("=" * 200)
-        report.append("📊 PEC ENHANCED REPORTER - SIGNAL PERFORMANCE ANALYSIS")
-        report.append("=" * 200)
-        report.append("")
+    def _generate_detailed_signal_list(self):
+        """Generate detailed signal list section"""
+        detail_lines = []
         
         # Main header for detailed signal list
-        report.append("📋 DETAILED SIGNAL LIST: FIX POSITION SIZE $100, LEVERAGE 10x")
-        report.append(f"Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S GMT+7')}")
-        report.append(f"Total Signals Loaded: {len(self.signals)}")
-        report.append("")
+        detail_lines.append("")
+        detail_lines.append("=" * 200)
+        detail_lines.append("📋 DETAILED SIGNAL LIST: FIX POSITION SIZE $100, LEVERAGE 10x")
+        detail_lines.append(f"Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S GMT+7')}")
+        detail_lines.append(f"Total Signals Loaded: {len(self.signals)}")
+        detail_lines.append("")
         
         # Column headers
-        report.append("─" * 200)
-        report.append(f"{'Symbol':<12} {'TF':<8} {'Dir':<5} {'Route':<18} {'Regime':<6} {'Conf':<6} "
-                     f"{'Status':<10} {'Entry':<12} {'Exit':<12} {'PnL':<10} "
-                     f"{'Fired Time':<12} {'Exit Time/TimeOut':<18} {'Duration':<12}")
-        report.append("─" * 200)
+        detail_lines.append("─" * 200)
+        detail_lines.append(f"{'Symbol':<12} {'TF':<8} {'Dir':<5} {'Route':<18} {'Regime':<6} {'Conf':<6} "
+                           f"{'Status':<10} {'Entry':<12} {'Exit':<12} {'PnL':<10} "
+                           f"{'Fired Time':<12} {'Exit Time/TimeOut':<18} {'Duration':<12}")
+        detail_lines.append("─" * 200)
         
         for signal in sorted(self.signals, key=lambda s: s.get('fired_time_utc', ''), reverse=True):
             symbol = signal.get('symbol', 'N/A')[:11]
@@ -173,12 +168,24 @@ class PECEnhancedReporter:
                 # Trade is still open - show dash
                 duration = "-"
             
-            report.append(f"{symbol:<12} {tf:<8} {direction:<5} {route:<18} {regime:<6} {confidence:<6} "
-                         f"{status:<10} {entry:<12} {exit_str:<12} {pnl_str:<10} "
-                         f"{fired_time:<12} {exit_time:<18} {duration:<12}")
+            detail_lines.append(f"{symbol:<12} {tf:<8} {direction:<5} {route:<18} {regime:<6} {confidence:<6} "
+                              f"{status:<10} {entry:<12} {exit_str:<12} {pnl_str:<10} "
+                              f"{fired_time:<12} {exit_time:<18} {duration:<12}")
+        
+        return detail_lines
+    
+    def generate_report(self):
+        """Generate comprehensive report"""
+        report = []
+        
+        # Header (at top before everything)
+        report.append("")
+        report.append("=" * 200)
+        report.append("📊 PEC ENHANCED REPORTER - SIGNAL PERFORMANCE ANALYSIS")
+        report.append("=" * 200)
+        report.append("")
         
         # Aggregates Section
-        report.append("")
         report.append("=" * 200)
         report.append("📊 AGGREGATES - DIMENSIONAL BREAKDOWN")
         report.append("=" * 200)
@@ -381,7 +388,11 @@ class PECEnhancedReporter:
                          f"TIMEOUT: {stats['timeout']:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
         report.append("")
         
+        # Add Detailed Signal List section (before summary)
+        report.extend(self._generate_detailed_signal_list())
+        
         # Summary
+        report.append("")
         report.append("=" * 200)
         report.append("📊 SUMMARY")
         report.append("=" * 200)
