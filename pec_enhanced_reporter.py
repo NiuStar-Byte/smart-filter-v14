@@ -196,10 +196,12 @@ class PECEnhancedReporter:
         report.append("─" * 120)
         tf_stats = self._aggregate_by('timeframe')
         for key, stats in sorted(tf_stats.items()):
-            closed = stats['tp'] + stats['sl'] + stats['timeout']
-            wr = (stats['tp'] / closed * 100) if closed > 0 else 0
+            closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
+            win_count = stats['tp'] + stats['timeout_win']
+            wr = (win_count / closed * 100) if closed > 0 else 0
+            total_timeout = stats['timeout_win'] + stats['timeout_loss']
             report.append(f"{key:<12} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
-                         f"TIMEOUT: {stats['timeout']:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+                         f"TIMEOUT: {total_timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
         report.append("")
         
         # By Direction
@@ -207,10 +209,12 @@ class PECEnhancedReporter:
         report.append("─" * 120)
         dir_stats = self._aggregate_by('signal_type')
         for key, stats in sorted(dir_stats.items()):
-            closed = stats['tp'] + stats['sl'] + stats['timeout']
-            wr = (stats['tp'] / closed * 100) if closed > 0 else 0
+            closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
+            win_count = stats['tp'] + stats['timeout_win']
+            wr = (win_count / closed * 100) if closed > 0 else 0
+            total_timeout = stats['timeout_win'] + stats['timeout_loss']
             report.append(f"{key:<12} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
-                         f"TIMEOUT: {stats['timeout']:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+                         f"TIMEOUT: {total_timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
         report.append("")
         
         # By Route
@@ -218,10 +222,12 @@ class PECEnhancedReporter:
         report.append("─" * 120)
         route_stats = self._aggregate_by('route')  # lowercase in JSON
         for key, stats in sorted(route_stats.items()):
-            closed = stats['tp'] + stats['sl'] + stats['timeout']
-            wr = (stats['tp'] / closed * 100) if closed > 0 else 0
+            closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
+            win_count = stats['tp'] + stats['timeout_win']
+            wr = (win_count / closed * 100) if closed > 0 else 0
+            total_timeout = stats['timeout_win'] + stats['timeout_loss']
             report.append(f"{key:<18} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
-                         f"TIMEOUT: {stats['timeout']:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+                         f"TIMEOUT: {total_timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
         report.append("")
         
         # By Regime
@@ -229,10 +235,12 @@ class PECEnhancedReporter:
         report.append("─" * 120)
         regime_stats = self._aggregate_by('regime')
         for key, stats in sorted(regime_stats.items()):
-            closed = stats['tp'] + stats['sl'] + stats['timeout']
-            wr = (stats['tp'] / closed * 100) if closed > 0 else 0
+            closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
+            win_count = stats['tp'] + stats['timeout_win']
+            wr = (win_count / closed * 100) if closed > 0 else 0
+            total_timeout = stats['timeout_win'] + stats['timeout_loss']
             report.append(f"{key:<12} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
-                         f"TIMEOUT: {stats['timeout']:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+                         f"TIMEOUT: {total_timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
         report.append("")
         
         # By Confidence
@@ -283,10 +291,12 @@ class PECEnhancedReporter:
         report.append("─" * 120)
         tf_dir_stats = self._aggregate_by_dimensions(['timeframe', 'signal_type'])
         for key, stats in sorted(tf_dir_stats.items()):
-            closed = stats['tp'] + stats['sl'] + stats['timeout']
-            wr = (stats['tp'] / closed * 100) if closed > 0 else 0
+            closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
+            win_count = stats['tp'] + stats['timeout_win']
+            wr = (win_count / closed * 100) if closed > 0 else 0
+            total_timeout = stats['timeout_win'] + stats['timeout_loss']
             report.append(f"{key[0]:<8} | {key[1]:<5} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
-                         f"TIMEOUT: {stats['timeout']:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+                         f"TIMEOUT: {total_timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
         report.append("")
         
         # By TimeFrame x Regime
@@ -294,10 +304,12 @@ class PECEnhancedReporter:
         report.append("─" * 120)
         tf_regime_stats = self._aggregate_by_dimensions(['timeframe', 'regime'])
         for key, stats in sorted(tf_regime_stats.items()):
-            closed = stats['tp'] + stats['sl'] + stats['timeout']
-            wr = (stats['tp'] / closed * 100) if closed > 0 else 0
+            closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
+            win_count = stats['tp'] + stats['timeout_win']
+            wr = (win_count / closed * 100) if closed > 0 else 0
+            total_timeout = stats['timeout_win'] + stats['timeout_loss']
             report.append(f"{key[0]:<8} | {key[1]:<6} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
-                         f"TIMEOUT: {stats['timeout']:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+                         f"TIMEOUT: {total_timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
         report.append("")
         
         # By Direction x Regime
@@ -305,10 +317,12 @@ class PECEnhancedReporter:
         report.append("─" * 120)
         dir_regime_stats = self._aggregate_by_dimensions(['signal_type', 'regime'])
         for key, stats in sorted(dir_regime_stats.items()):
-            closed = stats['tp'] + stats['sl'] + stats['timeout']
-            wr = (stats['tp'] / closed * 100) if closed > 0 else 0
+            closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
+            win_count = stats['tp'] + stats['timeout_win']
+            wr = (win_count / closed * 100) if closed > 0 else 0
+            total_timeout = stats['timeout_win'] + stats['timeout_loss']
             report.append(f"{key[0]:<5} | {key[1]:<6} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
-                         f"TIMEOUT: {stats['timeout']:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+                         f"TIMEOUT: {total_timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
         report.append("")
         
         # By Direction x Route
@@ -316,10 +330,12 @@ class PECEnhancedReporter:
         report.append("─" * 120)
         dir_route_stats = self._aggregate_by_dimensions(['signal_type', 'route'])
         for key, stats in sorted(dir_route_stats.items()):
-            closed = stats['tp'] + stats['sl'] + stats['timeout']
-            wr = (stats['tp'] / closed * 100) if closed > 0 else 0
+            closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
+            win_count = stats['tp'] + stats['timeout_win']
+            wr = (win_count / closed * 100) if closed > 0 else 0
+            total_timeout = stats['timeout_win'] + stats['timeout_loss']
             report.append(f"{key[0]:<5} | {key[1]:<18} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
-                         f"TIMEOUT: {stats['timeout']:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+                         f"TIMEOUT: {total_timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
         report.append("")
         
         # By Route x Regime
@@ -327,10 +343,12 @@ class PECEnhancedReporter:
         report.append("─" * 120)
         route_regime_stats = self._aggregate_by_dimensions(['route', 'regime'])
         for key, stats in sorted(route_regime_stats.items()):
-            closed = stats['tp'] + stats['sl'] + stats['timeout']
-            wr = (stats['tp'] / closed * 100) if closed > 0 else 0
+            closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
+            win_count = stats['tp'] + stats['timeout_win']
+            wr = (win_count / closed * 100) if closed > 0 else 0
+            total_timeout = stats['timeout_win'] + stats['timeout_loss']
             report.append(f"{key[0]:<18} | {key[1]:<6} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
-                         f"TIMEOUT: {stats['timeout']:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+                         f"TIMEOUT: {total_timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
         report.append("")
         
         # By TimeFrame x Direction x Route
@@ -338,10 +356,12 @@ class PECEnhancedReporter:
         report.append("─" * 140)
         tf_dir_route_stats = self._aggregate_by_dimensions(['timeframe', 'signal_type', 'route'])
         for key, stats in sorted(tf_dir_route_stats.items()):
-            closed = stats['tp'] + stats['sl'] + stats['timeout']
-            wr = (stats['tp'] / closed * 100) if closed > 0 else 0
+            closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
+            win_count = stats['tp'] + stats['timeout_win']
+            wr = (win_count / closed * 100) if closed > 0 else 0
+            total_timeout = stats['timeout_win'] + stats['timeout_loss']
             report.append(f"{key[0]:<8} | {key[1]:<5} | {key[2]:<18} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
-                         f"TIMEOUT: {stats['timeout']:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+                         f"TIMEOUT: {total_timeout:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
         report.append("")
         
         # By TimeFrame x Direction x Regime
@@ -349,10 +369,12 @@ class PECEnhancedReporter:
         report.append("─" * 140)
         tf_dir_regime_stats = self._aggregate_by_dimensions(['timeframe', 'signal_type', 'regime'])
         for key, stats in sorted(tf_dir_regime_stats.items()):
-            closed = stats['tp'] + stats['sl'] + stats['timeout']
-            wr = (stats['tp'] / closed * 100) if closed > 0 else 0
+            closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
+            win_count = stats['tp'] + stats['timeout_win']
+            wr = (win_count / closed * 100) if closed > 0 else 0
+            total_timeout = stats['timeout_win'] + stats['timeout_loss']
             report.append(f"{key[0]:<8} | {key[1]:<5} | {key[2]:<6} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
-                         f"TIMEOUT: {stats['timeout']:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+                         f"TIMEOUT: {total_timeout:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
         report.append("")
         
         # By Direction x Route x Regime
@@ -360,10 +382,12 @@ class PECEnhancedReporter:
         report.append("─" * 140)
         dir_route_regime_stats = self._aggregate_by_dimensions(['signal_type', 'route', 'regime'])
         for key, stats in sorted(dir_route_regime_stats.items()):
-            closed = stats['tp'] + stats['sl'] + stats['timeout']
-            wr = (stats['tp'] / closed * 100) if closed > 0 else 0
+            closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
+            win_count = stats['tp'] + stats['timeout_win']
+            wr = (win_count / closed * 100) if closed > 0 else 0
+            total_timeout = stats['timeout_win'] + stats['timeout_loss']
             report.append(f"{key[0]:<5} | {key[1]:<18} | {key[2]:<6} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
-                         f"TIMEOUT: {stats['timeout']:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+                         f"TIMEOUT: {total_timeout:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
         report.append("")
         
         # By TimeFrame x Direction x Confidence
@@ -371,10 +395,12 @@ class PECEnhancedReporter:
         report.append("─" * 140)
         tf_dir_conf_stats = self._aggregate_by_dimensions(['timeframe', 'signal_type', 'confidence_level'])
         for key, stats in sorted(tf_dir_conf_stats.items()):
-            closed = stats['tp'] + stats['sl'] + stats['timeout']
-            wr = (stats['tp'] / closed * 100) if closed > 0 else 0
+            closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
+            win_count = stats['tp'] + stats['timeout_win']
+            wr = (win_count / closed * 100) if closed > 0 else 0
+            total_timeout = stats['timeout_win'] + stats['timeout_loss']
             report.append(f"{key[0]:<8} | {key[1]:<5} | {key[2]:<10} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
-                         f"TIMEOUT: {stats['timeout']:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+                         f"TIMEOUT: {total_timeout:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
         report.append("")
         
         # By TimeFrame x Route x Regime
@@ -382,10 +408,12 @@ class PECEnhancedReporter:
         report.append("─" * 140)
         tf_route_regime_stats = self._aggregate_by_dimensions(['timeframe', 'route', 'regime'])
         for key, stats in sorted(tf_route_regime_stats.items()):
-            closed = stats['tp'] + stats['sl'] + stats['timeout']
-            wr = (stats['tp'] / closed * 100) if closed > 0 else 0
+            closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
+            win_count = stats['tp'] + stats['timeout_win']
+            wr = (win_count / closed * 100) if closed > 0 else 0
+            total_timeout = stats['timeout_win'] + stats['timeout_loss']
             report.append(f"{key[0]:<8} | {key[1]:<18} | {key[2]:<6} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
-                         f"TIMEOUT: {stats['timeout']:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+                         f"TIMEOUT: {total_timeout:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
         report.append("")
         
         # Add Detailed Signal List section (before summary)
@@ -396,12 +424,37 @@ class PECEnhancedReporter:
         report.append("=" * 200)
         report.append("📊 SUMMARY")
         report.append("=" * 200)
+        
+        # Count signals by status
         total_signals = len(self.signals)
-        closed_signals = sum(1 for s in self.signals if s.get('status') in ['TP_HIT', 'SL_HIT', 'TIMEOUT'])
         total_tp = sum(1 for s in self.signals if s.get('status') == 'TP_HIT')
         total_sl = sum(1 for s in self.signals if s.get('status') == 'SL_HIT')
-        total_timeout = sum(1 for s in self.signals if s.get('status') == 'TIMEOUT')
-        overall_wr = (total_tp / closed_signals * 100) if closed_signals > 0 else 0
+        
+        # Separate TIMEOUT into wins and losses based on P&L
+        timeout_wins = 0
+        timeout_losses = 0
+        for s in self.signals:
+            if s.get('status') == 'TIMEOUT' and s.get('actual_exit_price'):
+                pnl_calc = self._calculate_pnl_usd(
+                    s.get('entry_price'),
+                    s.get('actual_exit_price'),
+                    s.get('signal_type')
+                )
+                if pnl_calc is not None:
+                    if pnl_calc > 0:
+                        timeout_wins += 1
+                    elif pnl_calc < 0:
+                        timeout_losses += 1
+        
+        total_timeout = timeout_wins + timeout_losses
+        total_open = sum(1 for s in self.signals if s.get('status') == 'OPEN')
+        
+        # Closed trades = TP + SL + TIMEOUT_WIN + TIMEOUT_LOSS
+        closed_signals = total_tp + total_sl + timeout_wins + timeout_losses
+        
+        # Win Rate = (TP + TIMEOUT_WIN) / Closed Trades
+        win_count = total_tp + timeout_wins
+        overall_wr = (win_count / closed_signals * 100) if closed_signals > 0 else 0
         
         # RECALCULATE total P&L using notional position of $1,000
         total_pnl = 0.0
@@ -415,9 +468,10 @@ class PECEnhancedReporter:
                 if pnl_calc is not None:
                     total_pnl += pnl_calc
         
-        report.append(f"Total Signals: {total_signals}")
-        report.append(f"Closed Trades: {closed_signals} (TP: {total_tp}, SL: {total_sl}, TIMEOUT: {total_timeout})")
-        report.append(f"Overall Win Rate: {overall_wr:.1f}%")
+        # Display Summary
+        report.append(f"Total Signals: {total_signals} (Count Win = {total_tp}; Count Loss = {total_sl}; Count TimeOut = {total_timeout}; Count Open = {total_open})")
+        report.append(f"Closed Trades: {closed_signals} (TP: {total_tp}, SL: {total_sl}; TimeOut Win = {timeout_wins}; TimeOut Loss = {timeout_losses})")
+        report.append(f"Overall Win Rate: {overall_wr:.2f}% >> [ (count TP + Count TimeOut Win) / (Closed Trades) ] = [ ({total_tp}+{timeout_wins}) / {closed_signals} ]")
         report.append(f"Total P&L: ${total_pnl:+.2f}")
         report.append("")
         
@@ -425,7 +479,7 @@ class PECEnhancedReporter:
     
     def _aggregate_by(self, dimension):
         """Aggregate statistics by dimension (all lowercase field names)"""
-        stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout': 0, 'pnl': 0.0})
+        stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout_win': 0, 'timeout_loss': 0, 'pnl': 0.0})
         
         for signal in self.signals:
             # Get the key value for this dimension
@@ -439,7 +493,18 @@ class PECEnhancedReporter:
             elif status == 'SL_HIT':
                 stats[key]['sl'] += 1
             elif status == 'TIMEOUT':
-                stats[key]['timeout'] += 1
+                # Separate TIMEOUT into wins and losses based on P&L
+                if signal.get('actual_exit_price'):
+                    pnl_calc = self._calculate_pnl_usd(
+                        signal.get('entry_price'),
+                        signal.get('actual_exit_price'),
+                        signal.get('signal_type')
+                    )
+                    if pnl_calc is not None:
+                        if pnl_calc > 0:
+                            stats[key]['timeout_win'] += 1
+                        elif pnl_calc < 0:
+                            stats[key]['timeout_loss'] += 1
             
             # RECALCULATE P&L using notional position of $1,000
             if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
@@ -455,7 +520,7 @@ class PECEnhancedReporter:
     
     def _aggregate_by_dimensions(self, dimensions):
         """Aggregate statistics by multiple dimensions (tuple of field names)"""
-        stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout': 0, 'pnl': 0.0})
+        stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout_win': 0, 'timeout_loss': 0, 'pnl': 0.0})
         
         for signal in self.signals:
             # Build tuple key from multiple dimensions
@@ -483,7 +548,18 @@ class PECEnhancedReporter:
             elif status == 'SL_HIT':
                 stats[key]['sl'] += 1
             elif status == 'TIMEOUT':
-                stats[key]['timeout'] += 1
+                # Separate TIMEOUT into wins and losses based on P&L
+                if signal.get('actual_exit_price'):
+                    pnl_calc = self._calculate_pnl_usd(
+                        signal.get('entry_price'),
+                        signal.get('actual_exit_price'),
+                        signal.get('signal_type')
+                    )
+                    if pnl_calc is not None:
+                        if pnl_calc > 0:
+                            stats[key]['timeout_win'] += 1
+                        elif pnl_calc < 0:
+                            stats[key]['timeout_loss'] += 1
             
             # RECALCULATE P&L using notional position of $1,000
             if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
