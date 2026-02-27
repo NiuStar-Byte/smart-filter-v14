@@ -207,3 +207,204 @@ def add_indicators(df: pd.DataFrame) -> pd.DataFrame:
     df['chop_zone'] = compute_choppiness_index(df)
     df['williams_r'] = compute_williams_r(df)
     return df
+
+
+# ==================== CONSOLIDATED CALCULATION FUNCTIONS ====================
+
+def calculate_true_range(df: pd.DataFrame, period: int = 14) -> pd.Series:
+    """
+    Calculate True Range for ATR and TP/SL calculations.
+    TR = MAX(high - low, |high - close[prev]|, |low - close[prev]|)
+    
+    Used by both ATR (add_indicators) and TP/SL calculations.
+    Consolidated here to avoid duplication.
+    
+    Args:
+        df: DataFrame with 'high', 'low', 'close' columns
+        period: Lookback period for rolling average (for ATR)
+    
+    Returns:
+        pd.Series: True Range values
+    """
+    try:
+        high_low = df['high'] - df['low']
+        high_close = np.abs(df['high'] - df['close'].shift())
+        low_close = np.abs(df['low'] - df['close'].shift())
+        tr = np.maximum(high_low, np.maximum(high_close, low_close))
+        return tr
+    except Exception as e:
+        print(f"[calculate_true_range] Error: {e}", flush=True)
+        return pd.Series(0, index=df.index)
+
+
+def calculate_atr_for_tp_sl(df: pd.DataFrame, entry_price: float, lookback: int = 14) -> float:
+    """
+    Calculate ATR value for TP/SL calculations.
+    Reuses True Range calculation to avoid duplication.
+    
+    Args:
+        df: DataFrame with OHLC data
+        entry_price: Entry price (used as fallback if ATR too small)
+        lookback: ATR period (default 14)
+    
+    Returns:
+        float: ATR value
+    """
+    try:
+        tr = calculate_true_range(df, lookback)
+        atr = tr.rolling(max(1, lookback), min_periods=1).mean()
+        atr_val = float(atr.iat[-1]) if len(atr) > 0 else 0.0
+        
+        if np.isnan(atr_val) or atr_val <= 0:
+            # Fallback: 1% of entry price
+            atr_val = max(entry_price * 0.01, 0.0001)
+        
+        return atr_val
+    except Exception as e:
+        print(f"[calculate_atr_for_tp_sl] Error: {e}, using entry_price * 0.01 as fallback", flush=True)
+        return max(entry_price * 0.01, 0.0001)
+
+
+def calculate_tp_sl_from_atr(entry_price: float, atr_value: float, direction: str,
+                             atr_mult_tp: float = 2.0, atr_mult_sl: float = 1.0) -> dict:
+    """
+    Calculate TP/SL from ATR value using 2:1 Risk:Reward ratio.
+    
+    LONG:  TP = Entry + (2.0 × ATR), SL = Entry - (1.0 × ATR)
+    SHORT: TP = Entry - (2.0 × ATR), SL = Entry + (1.0 × ATR)
+    
+    Args:
+        entry_price: Entry price
+        atr_value: ATR value
+        direction: "LONG" or "SHORT"
+        atr_mult_tp: ATR multiplier for TP (default 2.0)
+        atr_mult_sl: ATR multiplier for SL (default 1.0)
+    
+    Returns:
+        dict: {'tp': float, 'sl': float, 'achieved_rr': 2.0, 'source': str}
+    """
+    try:
+        dir_up = str(direction).strip().upper() == "LONG"
+        dir_down = str(direction).strip().upper() == "SHORT"
+        
+        if dir_up:
+            tp = entry_price + (atr_mult_tp * atr_value)
+            sl = entry_price - (atr_mult_sl * atr_value)
+            source = "atr_2_to_1_long"
+        elif dir_down:
+            tp = entry_price - (atr_mult_tp * atr_value)
+            sl = entry_price + (atr_mult_sl * atr_value)
+            source = "atr_2_to_1_short"
+        else:
+            # Default to LONG
+            tp = entry_price + (atr_mult_tp * atr_value)
+            sl = entry_price - (atr_mult_sl * atr_value)
+            source = "atr_2_to_1_default_long"
+        
+        return {
+            'tp': round(float(tp), 8),
+            'sl': round(float(sl), 8),
+            'achieved_rr': 2.0,
+            'atr_value': float(atr_value),
+            'source': source,
+            'fib_levels': None,
+            'chosen_ratio': None,
+            'sl_capped': False
+        }
+    except Exception as e:
+        print(f"[calculate_tp_sl_from_atr] Error: {e}", flush=True)
+        return {
+            'tp': entry_price + atr_value,
+            'sl': entry_price - atr_value,
+            'achieved_rr': 2.0,
+            'atr_value': float(atr_value),
+            'source': 'exception_fallback',
+            'fib_levels': None,
+            'chosen_ratio': None,
+            'sl_capped': False
+        }
+
+
+def calculate_pnl(entry_price: float, exit_price: float, direction: str, 
+                  notional_position: float = 1000.0) -> dict:
+    """
+    Calculate P&L (USD and percentage) for a closed trade.
+    
+    Formula: 
+      - P&L% = ((exit - entry) / entry) × 100
+      - P&L USD = ((exit - entry) / entry) × notional_position
+    
+    Notional position represents leverage-adjusted capital:
+      - Default: $100 position × 10x leverage = $1,000 notional
+    
+    Args:
+        entry_price: Entry price
+        exit_price: Exit price
+        direction: "LONG" or "SHORT"
+        notional_position: Notional position size for P&L calc (default $1000)
+    
+    Returns:
+        dict: {
+            'pnl_usd': float,
+            'pnl_pct': float,
+            'direction': str
+        }
+    """
+    try:
+        entry = float(entry_price)
+        exit_val = float(exit_price)
+        
+        if entry == 0:
+            print(f"[calculate_pnl] Warning: entry_price is 0, returning 0 P&L", flush=True)
+            return {'pnl_usd': 0.0, 'pnl_pct': 0.0, 'direction': direction}
+        
+        dir_up = str(direction).strip().upper() == "LONG"
+        dir_down = str(direction).strip().upper() == "SHORT"
+        
+        if dir_up:
+            # LONG: profit if exit > entry
+            pnl_pct = ((exit_val - entry) / entry) * 100
+            pnl_usd = ((exit_val - entry) / entry) * notional_position
+        elif dir_down:
+            # SHORT: profit if exit < entry
+            pnl_pct = ((entry - exit_val) / entry) * 100
+            pnl_usd = ((entry - exit_val) / entry) * notional_position
+        else:
+            # Default to LONG
+            pnl_pct = ((exit_val - entry) / entry) * 100
+            pnl_usd = ((exit_val - entry) / entry) * notional_position
+        
+        return {
+            'pnl_usd': round(float(pnl_usd), 4),
+            'pnl_pct': round(float(pnl_pct), 2),
+            'direction': direction
+        }
+    except Exception as e:
+        print(f"[calculate_pnl] Error: {e}", flush=True)
+        return {'pnl_usd': 0.0, 'pnl_pct': 0.0, 'direction': direction}
+
+
+def detect_early_breakout(df: pd.DataFrame, lookback: int = 3) -> bool:
+    """
+    Detect if price has broken out above recent high.
+    
+    LONG: Current close > close from N candles ago (uptrend confirmation)
+    
+    Args:
+        df: DataFrame with 'close' column
+        lookback: Number of candles to look back (default 3)
+    
+    Returns:
+        bool: True if breakout detected, False otherwise
+    """
+    try:
+        if df is None or len(df) < lookback + 1:
+            return False
+        
+        current_close = df['close'].iat[-1]
+        past_close = df['close'].iat[-lookback-1]
+        
+        return bool(current_close > past_close)
+    except Exception as e:
+        print(f"[detect_early_breakout] Error: {e}", flush=True)
+        return False

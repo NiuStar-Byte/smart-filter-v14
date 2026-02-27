@@ -7,6 +7,8 @@ Strategy:
 - Check current prices via public KuCoin API
 - Update signal status: OPEN → TP_HIT/SL_HIT/TIMEOUT
 - Print summary of changes only
+
+REFACTORED (2026-02-27): Uses consolidated P&L calculation from calculations.py
 """
 
 import json
@@ -14,6 +16,9 @@ import os
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 import requests
+
+# Import consolidated P&L calculation
+from calculations import calculate_pnl
 
 class PECExecutor:
     """Auto-execute and track PEC signals"""
@@ -75,46 +80,43 @@ class PECExecutor:
         # P&L formula: (exit_price - entry_price) / entry_price * notional_position
         # This isolates signal quality from position sizing decisions
         NOTIONAL_POSITION = 1000.0  # $100 position × 10x leverage
+        signal_type = signal.get('signal_type')
         
-        if signal.get('signal_type') == 'LONG':
+        if signal_type == 'LONG':
             if current_price >= tp_target:
-                # P&L as percentage-based: (price_move / entry) * notional
-                pnl_pct = ((current_price - entry_price) / entry_price) * 100
-                pnl_usd = ((current_price - entry_price) / entry_price) * NOTIONAL_POSITION
+                # Use consolidated P&L calculation
+                pnl_result = calculate_pnl(entry_price, current_price, 'LONG', NOTIONAL_POSITION)
                 return {
                     'status': 'TP_HIT',
                     'exit_price': current_price,
-                    'pnl_usd': pnl_usd,
-                    'pnl_pct': pnl_pct
+                    'pnl_usd': pnl_result['pnl_usd'],
+                    'pnl_pct': pnl_result['pnl_pct']
                 }
             elif current_price <= sl_target:
-                pnl_pct = ((current_price - entry_price) / entry_price) * 100
-                pnl_usd = ((current_price - entry_price) / entry_price) * NOTIONAL_POSITION
+                pnl_result = calculate_pnl(entry_price, current_price, 'LONG', NOTIONAL_POSITION)
                 return {
                     'status': 'SL_HIT',
                     'exit_price': current_price,
-                    'pnl_usd': pnl_usd,
-                    'pnl_pct': pnl_pct
+                    'pnl_usd': pnl_result['pnl_usd'],
+                    'pnl_pct': pnl_result['pnl_pct']
                 }
         
-        elif signal.get('signal_type') == 'SHORT':
+        elif signal_type == 'SHORT':
             if current_price <= tp_target:
-                pnl_pct = ((entry_price - current_price) / entry_price) * 100
-                pnl_usd = ((entry_price - current_price) / entry_price) * NOTIONAL_POSITION
+                pnl_result = calculate_pnl(entry_price, current_price, 'SHORT', NOTIONAL_POSITION)
                 return {
                     'status': 'TP_HIT',
                     'exit_price': current_price,
-                    'pnl_usd': pnl_usd,
-                    'pnl_pct': pnl_pct
+                    'pnl_usd': pnl_result['pnl_usd'],
+                    'pnl_pct': pnl_result['pnl_pct']
                 }
             elif current_price >= sl_target:
-                pnl_pct = ((entry_price - current_price) / entry_price) * 100
-                pnl_usd = ((entry_price - current_price) / entry_price) * NOTIONAL_POSITION
+                pnl_result = calculate_pnl(entry_price, current_price, 'SHORT', NOTIONAL_POSITION)
                 return {
                     'status': 'SL_HIT',
                     'exit_price': current_price,
-                    'pnl_usd': pnl_usd,
-                    'pnl_pct': pnl_pct
+                    'pnl_usd': pnl_result['pnl_usd'],
+                    'pnl_pct': pnl_result['pnl_pct']
                 }
         
         # Check TIMEOUT (max bars reached for this timeframe)
@@ -147,20 +149,14 @@ class PECExecutor:
                 print(f"[PEC-TIMEOUT-HIT] {symbol} {timeframe}: {bars_elapsed} bars >= {max_bars} max", flush=True)
                 # FIXED POSITION SIZE: $100 with 10x leverage = $1,000 notional
                 NOTIONAL_POSITION = 1000.0  # $100 position × 10x leverage
-                # For LONG: calculate P&L based on current price (timeout exit price)
-                if signal.get('signal_type') == 'LONG':
-                    pnl_pct = ((current_price - entry_price) / entry_price) * 100
-                    pnl_usd = ((current_price - entry_price) / entry_price) * NOTIONAL_POSITION
-                # For SHORT: calculate P&L based on current price
-                else:
-                    pnl_pct = ((entry_price - current_price) / entry_price) * 100
-                    pnl_usd = ((entry_price - current_price) / entry_price) * NOTIONAL_POSITION
+                # Use consolidated P&L calculation
+                pnl_result = calculate_pnl(entry_price, current_price, signal.get('signal_type'), NOTIONAL_POSITION)
                 
                 return {
                     'status': 'TIMEOUT',
                     'exit_price': current_price,  # timeout_price = current_price
-                    'pnl_usd': pnl_usd,
-                    'pnl_pct': pnl_pct
+                    'pnl_usd': pnl_result['pnl_usd'],
+                    'pnl_pct': pnl_result['pnl_pct']
                 }
         except Exception as e:
             print(f"[PEC-TIMEOUT-ERROR] {symbol}: {e}", flush=True)

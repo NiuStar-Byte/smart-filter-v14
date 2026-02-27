@@ -1,11 +1,14 @@
 """
-tp_sl_retracement.py (2026-02-23: ATR-Based 2:1 RR)
+tp_sl_retracement.py (2026-02-27: Consolidated TP/SL Calculation)
 
 TP/SL calculation for Smart Filter.
 - ATR-based 2:1 Risk:Reward ratio
 - TP = Entry ± (2.0 × ATR)
 - SL = Entry ± (1.0 × ATR)
 - Always returns achieved_rr = 2.0
+
+NOTE: Refactored to use consolidated calculations from calculations.py
+to avoid duplication of ATR and TP/SL logic.
 """
 
 import os
@@ -13,6 +16,9 @@ from typing import Any, Dict, Optional
 
 import numpy as np
 import pandas as pd
+
+# Import consolidated calculation functions
+from calculations import calculate_atr_for_tp_sl, calculate_tp_sl_from_atr
 
 DEFAULT_ATR_LOOKBACK = int(os.getenv("TP_SL_LOOKBACK", "14"))
 DEFAULT_ATR_MULT_TP = float(os.getenv("TP_SL_ATR_MULT_TP", "2.0"))
@@ -38,6 +44,8 @@ def calculate_tp_sl(df: pd.DataFrame, entry_price: float, direction: str,
     ATR-Based 2:1 RR TP/SL Calculation.
     TP = Entry ± (2.0 × ATR)
     SL = Entry ± (1.0 × ATR)
+    
+    REFACTORED: Uses consolidated functions from calculations.py
     """
     if lookback is None:
         try:
@@ -69,81 +77,28 @@ def calculate_tp_sl(df: pd.DataFrame, entry_price: float, direction: str,
         else:
             raise ValueError("DataFrame must contain 'high','low','close' columns")
 
+    # Convert to numeric
     high = pd.to_numeric(df['high'], errors='coerce').astype(float)
     low = pd.to_numeric(df['low'], errors='coerce').astype(float)
     close = pd.to_numeric(df['close'], errors='coerce').astype(float)
+    df_clean = df.copy()
+    df_clean['high'] = high
+    df_clean['low'] = low
+    df_clean['close'] = close
 
-    try:
-        tr_values = np.maximum.reduce([
-            (high - low).values,
-            (high - close.shift(1)).abs().values,
-            (low - close.shift(1)).abs().values
-        ])
-        tr = pd.Series(tr_values, index=df.index)
-    except Exception:
-        tr = pd.concat([
-            (high - low).abs(),
-            (high - close.shift(1)).abs(),
-            (low - close.shift(1)).abs()
-        ], axis=1).max(axis=1)
-        tr = tr.fillna((high - low)).astype(float)
+    # Use consolidated ATR calculation
+    atr = calculate_atr_for_tp_sl(df_clean, entry_f, lookback)
 
-    atr_period = int(min(max(1, lookback), len(df)))
-    atr = tr.rolling(atr_period, min_periods=1).mean().iat[-1] if len(tr) > 0 else 0.0
-    atr = float(0.0 if np.isnan(atr) else atr)
-
-    if atr <= 0:
-        atr = entry_f * 0.01
-
-    dir_up = str(direction).strip().upper() == "LONG"
-    dir_down = str(direction).strip().upper() == "SHORT"
-
-    tp = None
-    sl = None
-    source = None
-
-    try:
-        if dir_up:
-            tp = entry_f + (atr_mult_tp * atr)
-            sl = entry_f - (atr_mult_sl * atr)
-            source = "atr_2_to_1_long"
-        elif dir_down:
-            tp = entry_f - (atr_mult_tp * atr)
-            sl = entry_f + (atr_mult_sl * atr)
-            source = "atr_2_to_1_short"
-        else:
-            tp = entry_f + (atr_mult_tp * atr)
-            sl = entry_f - (atr_mult_sl * atr)
-            source = "atr_2_to_1_default_long"
-    except Exception as e:
-        print(f"[tp_sl_retracement] Exception: {e}", flush=True)
-        tp = entry_f + (atr_mult_tp * atr)
-        sl = entry_f - (atr_mult_sl * atr)
-        source = "atr_2_to_1_exception"
-
-    tp_f = _safe_float(tp, entry_f + atr_mult_tp * atr)
-    sl_f = _safe_float(sl, entry_f - atr_mult_sl * atr)
-
-    tp_rounded = round(float(tp_f), 8)
-    sl_rounded = round(float(sl_f), 8)
-    achieved_rr = 2.0
+    # Use consolidated TP/SL calculation from ATR
+    result = calculate_tp_sl_from_atr(entry_f, atr, direction, atr_mult_tp, atr_mult_sl)
 
     try:
         print(
             f"[tp_sl_retracement] ATR_2_1_RR | direction={direction} entry={entry_f:.8f} "
-            f"atr={atr:.8f} tp={tp_rounded:.8f} sl={sl_rounded:.8f} rr={achieved_rr}",
+            f"atr={atr:.8f} tp={result['tp']:.8f} sl={result['sl']:.8f} rr={result['achieved_rr']}",
             flush=True
         )
     except Exception:
         pass
 
-    return {
-        'tp': tp_rounded,
-        'sl': sl_rounded,
-        'source': source,
-        'achieved_rr': achieved_rr,
-        'atr_value': float(atr),
-        'fib_levels': None,
-        'chosen_ratio': None,
-        'sl_capped': False
-    }
+    return result
