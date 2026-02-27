@@ -265,6 +265,122 @@ class PECEnhancedReporter:
                          f"TIMEOUT: {timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${pnl:+.2f}")
         report.append("")
         
+        # === MULTI-DIMENSIONAL AGGREGATES ===
+        report.append("=" * 200)
+        report.append("📊 MULTI-DIMENSIONAL AGGREGATES")
+        report.append("=" * 200)
+        report.append("")
+        
+        # By TimeFrame x Direction
+        report.append("🕐📈 BY TIMEFRAME x DIRECTION")
+        report.append("─" * 120)
+        tf_dir_stats = self._aggregate_by_dimensions(['timeframe', 'signal_type'])
+        for key, stats in sorted(tf_dir_stats.items()):
+            closed = stats['tp'] + stats['sl'] + stats['timeout']
+            wr = (stats['tp'] / closed * 100) if closed > 0 else 0
+            report.append(f"{key[0]:<8} | {key[1]:<5} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
+                         f"TIMEOUT: {stats['timeout']:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+        report.append("")
+        
+        # By TimeFrame x Regime
+        report.append("🕐🌊 BY TIMEFRAME x REGIME")
+        report.append("─" * 120)
+        tf_regime_stats = self._aggregate_by_dimensions(['timeframe', 'regime'])
+        for key, stats in sorted(tf_regime_stats.items()):
+            closed = stats['tp'] + stats['sl'] + stats['timeout']
+            wr = (stats['tp'] / closed * 100) if closed > 0 else 0
+            report.append(f"{key[0]:<8} | {key[1]:<6} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
+                         f"TIMEOUT: {stats['timeout']:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+        report.append("")
+        
+        # By Direction x Regime
+        report.append("📈🌊 BY DIRECTION x REGIME")
+        report.append("─" * 120)
+        dir_regime_stats = self._aggregate_by_dimensions(['signal_type', 'regime'])
+        for key, stats in sorted(dir_regime_stats.items()):
+            closed = stats['tp'] + stats['sl'] + stats['timeout']
+            wr = (stats['tp'] / closed * 100) if closed > 0 else 0
+            report.append(f"{key[0]:<5} | {key[1]:<6} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
+                         f"TIMEOUT: {stats['timeout']:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+        report.append("")
+        
+        # By Direction x Route
+        report.append("📈🛣️  BY DIRECTION x ROUTE")
+        report.append("─" * 120)
+        dir_route_stats = self._aggregate_by_dimensions(['signal_type', 'route'])
+        for key, stats in sorted(dir_route_stats.items()):
+            closed = stats['tp'] + stats['sl'] + stats['timeout']
+            wr = (stats['tp'] / closed * 100) if closed > 0 else 0
+            report.append(f"{key[0]:<5} | {key[1]:<18} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
+                         f"TIMEOUT: {stats['timeout']:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+        report.append("")
+        
+        # By Route x Regime
+        report.append("🛣️ 🌊 BY ROUTE x REGIME")
+        report.append("─" * 120)
+        route_regime_stats = self._aggregate_by_dimensions(['route', 'regime'])
+        for key, stats in sorted(route_regime_stats.items()):
+            closed = stats['tp'] + stats['sl'] + stats['timeout']
+            wr = (stats['tp'] / closed * 100) if closed > 0 else 0
+            report.append(f"{key[0]:<18} | {key[1]:<6} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
+                         f"TIMEOUT: {stats['timeout']:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+        report.append("")
+        
+        # By TimeFrame x Direction x Route
+        report.append("🕐📈🛣️  BY TIMEFRAME x DIRECTION x ROUTE")
+        report.append("─" * 140)
+        tf_dir_route_stats = self._aggregate_by_dimensions(['timeframe', 'signal_type', 'route'])
+        for key, stats in sorted(tf_dir_route_stats.items()):
+            closed = stats['tp'] + stats['sl'] + stats['timeout']
+            wr = (stats['tp'] / closed * 100) if closed > 0 else 0
+            report.append(f"{key[0]:<8} | {key[1]:<5} | {key[2]:<18} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
+                         f"TIMEOUT: {stats['timeout']:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+        report.append("")
+        
+        # By TimeFrame x Direction x Regime
+        report.append("🕐📈🌊 BY TIMEFRAME x DIRECTION x REGIME")
+        report.append("─" * 140)
+        tf_dir_regime_stats = self._aggregate_by_dimensions(['timeframe', 'signal_type', 'regime'])
+        for key, stats in sorted(tf_dir_regime_stats.items()):
+            closed = stats['tp'] + stats['sl'] + stats['timeout']
+            wr = (stats['tp'] / closed * 100) if closed > 0 else 0
+            report.append(f"{key[0]:<8} | {key[1]:<5} | {key[2]:<6} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
+                         f"TIMEOUT: {stats['timeout']:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+        report.append("")
+        
+        # By Direction x Route x Regime
+        report.append("📈🛣️ 🌊 BY DIRECTION x ROUTE x REGIME")
+        report.append("─" * 140)
+        dir_route_regime_stats = self._aggregate_by_dimensions(['signal_type', 'route', 'regime'])
+        for key, stats in sorted(dir_route_regime_stats.items()):
+            closed = stats['tp'] + stats['sl'] + stats['timeout']
+            wr = (stats['tp'] / closed * 100) if closed > 0 else 0
+            report.append(f"{key[0]:<5} | {key[1]:<18} | {key[2]:<6} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
+                         f"TIMEOUT: {stats['timeout']:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+        report.append("")
+        
+        # By TimeFrame x Direction x Confidence
+        report.append("🕐📈💡 BY TIMEFRAME x DIRECTION x CONFIDENCE")
+        report.append("─" * 140)
+        tf_dir_conf_stats = self._aggregate_by_dimensions(['timeframe', 'signal_type', 'confidence_level'])
+        for key, stats in sorted(tf_dir_conf_stats.items()):
+            closed = stats['tp'] + stats['sl'] + stats['timeout']
+            wr = (stats['tp'] / closed * 100) if closed > 0 else 0
+            report.append(f"{key[0]:<8} | {key[1]:<5} | {key[2]:<10} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
+                         f"TIMEOUT: {stats['timeout']:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+        report.append("")
+        
+        # By TimeFrame x Route x Regime
+        report.append("🕐🛣️ 🌊 BY TIMEFRAME x ROUTE x REGIME")
+        report.append("─" * 140)
+        tf_route_regime_stats = self._aggregate_by_dimensions(['timeframe', 'route', 'regime'])
+        for key, stats in sorted(tf_route_regime_stats.items()):
+            closed = stats['tp'] + stats['sl'] + stats['timeout']
+            wr = (stats['tp'] / closed * 100) if closed > 0 else 0
+            report.append(f"{key[0]:<8} | {key[1]:<18} | {key[2]:<6} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
+                         f"TIMEOUT: {stats['timeout']:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+        report.append("")
+        
         # Summary
         report.append("=" * 200)
         report.append("📊 SUMMARY")
@@ -303,6 +419,50 @@ class PECEnhancedReporter:
         for signal in self.signals:
             # Get the key value for this dimension
             key = signal.get(dimension, 'N/A')
+            
+            stats[key]['count'] += 1
+            
+            status = signal.get('status', 'OPEN')
+            if status == 'TP_HIT':
+                stats[key]['tp'] += 1
+            elif status == 'SL_HIT':
+                stats[key]['sl'] += 1
+            elif status == 'TIMEOUT':
+                stats[key]['timeout'] += 1
+            
+            # RECALCULATE P&L using notional position of $1,000
+            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                pnl_calc = self._calculate_pnl_usd(
+                    signal.get('entry_price'),
+                    signal.get('actual_exit_price'),
+                    signal.get('signal_type')
+                )
+                if pnl_calc is not None:
+                    stats[key]['pnl'] += pnl_calc
+        
+        return stats
+    
+    def _aggregate_by_dimensions(self, dimensions):
+        """Aggregate statistics by multiple dimensions (tuple of field names)"""
+        stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout': 0, 'pnl': 0.0})
+        
+        for signal in self.signals:
+            # Build tuple key from multiple dimensions
+            key_parts = []
+            for dim in dimensions:
+                if dim == 'confidence_level':
+                    # Convert confidence to level
+                    conf = signal.get('confidence', 0)
+                    if conf >= 76:
+                        key_parts.append('HIGH')
+                    elif 51 <= conf < 76:
+                        key_parts.append('MID')
+                    else:
+                        key_parts.append('LOW')
+                else:
+                    key_parts.append(str(signal.get(dim, 'N/A')))
+            
+            key = tuple(key_parts)
             
             stats[key]['count'] += 1
             
