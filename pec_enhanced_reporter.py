@@ -98,7 +98,7 @@ class PECEnhancedReporter:
         report.append("─" * 200)
         report.append(f"{'Symbol':<12} {'TF':<8} {'Dir':<5} {'Route':<18} {'Regime':<6} {'Conf':<6} "
                      f"{'Status':<10} {'Entry':<12} {'Exit':<12} {'PnL':<10} "
-                     f"{'Fired Time':<12} {'Exit Time':<12} {'Duration':<12}")
+                     f"{'Fired Time':<12} {'Exit Time/TimeOut':<18} {'Duration':<12}")
         report.append("─" * 200)
         
         for signal in sorted(self.signals, key=lambda s: s.get('fired_time_utc', ''), reverse=True):
@@ -129,24 +129,27 @@ class PECEnhancedReporter:
                 pnl_str = "OPEN"
             pnl_str = pnl_str[:9]
             
-            # Times
+            # Times and Duration
             fired_time = self.get_gmt7_time(signal.get('fired_time_utc'))
-            exit_time = signal.get('actual_exit_time')
-            if exit_time:
-                exit_time = self.get_gmt7_time(exit_time)
-            else:
-                # For TIMEOUT, calculate expected window
-                tf_val = signal.get('timeframe', '')
-                if status == 'TIMEOUT':
-                    timeout_mins = {'15min': 225, '30min': 300, '1h': 300}.get(tf_val, 300)
-                    hours = timeout_mins // 60
-                    mins = timeout_mins % 60
-                    exit_time = f"~{hours}h {mins}m"
-                else:
-                    exit_time = "N/A"
             
-            # Duration
+            # Exit Time/TimeOut column
             if signal.get('actual_exit_time'):
+                # Trade is closed - show actual exit time
+                exit_time = self.get_gmt7_time(signal.get('actual_exit_time'))
+            elif status == 'TIMEOUT':
+                # Trade timed out - show expected timeout window
+                tf_val = signal.get('timeframe', '')
+                timeout_mins = {'15min': 225, '30min': 300, '1h': 300}.get(tf_val, 300)
+                hours = timeout_mins // 60
+                mins = timeout_mins % 60
+                exit_time = f"~{hours}h {mins}m"
+            else:
+                # Trade is still open - show dash
+                exit_time = "-"
+            
+            # Duration column
+            if signal.get('actual_exit_time'):
+                # Calculate actual duration
                 try:
                     fired = datetime.fromisoformat(signal.get('fired_time_utc').replace('Z', '+00:00'))
                     exited = datetime.fromisoformat(signal.get('actual_exit_time').replace('Z', '+00:00'))
@@ -154,13 +157,14 @@ class PECEnhancedReporter:
                     mins = int(delta.total_seconds() // 60)
                     duration = f"{mins}m"
                 except:
-                    duration = "N/A"
+                    duration = "-"
             else:
-                duration = "OPEN"
+                # Trade still open - show dash
+                duration = "-"
             
             report.append(f"{symbol:<12} {tf:<8} {direction:<5} {route:<18} {regime:<6} {confidence:<6} "
                          f"{status:<10} {entry:<12} {exit_str:<12} {pnl_str:<10} "
-                         f"{fired_time:<12} {exit_time:<12} {duration:<12}")
+                         f"{fired_time:<12} {exit_time:<18} {duration:<12}")
         
         # Aggregates Section
         report.append("")
