@@ -415,8 +415,11 @@ def run_cycle():
     valid_debugs = []
     now = time.time()
     
+    # IN-MEMORY DEDUP: Track signals sent in THIS CYCLE (prevents intra-cycle duplicates)
+    signals_sent_this_cycle = set()
+    
     # NOTE: Deduplication now uses SENT_SIGNALS.jsonl with per-timeframe windows
-    # (see is_duplicate_signal function above)
+    # PLUS in-memory set for same-cycle duplicates (see is_duplicate_signal function above)
 
     for idx, symbol in enumerate(TOKENS, start=1):
         # Skip verbose "[INFO] Checking" log
@@ -654,9 +657,18 @@ def run_cycle():
                             print(f"[WARN] Signal {symbol_val} (15min) REJECTED - duplicate within 120s. NOT sending Telegram alert.", flush=True)
                             continue
 
+                        # IN-MEMORY DEDUP: Check if sent in THIS CYCLE (prevents rapid duplicates)
+                        cycle_key = f"{symbol_val}|15min|{signal_type}"
+                        if cycle_key in signals_sent_this_cycle:
+                            print(f"[DEDUP-CYCLE] 15min {symbol_val} {signal_type}: Already sent in THIS CYCLE. SKIPPING.", flush=True)
+                            continue
+                        
                         # CRITICAL: Deduplication check (prevent duplicate within DEDUP_WINDOWS)
                         if is_duplicate_signal(symbol_val, "15min", signal_type):
                             continue
+                        
+                        # Mark as sent in this cycle
+                        signals_sent_this_cycle.add(cycle_key)
                         
                         # Send trade alert to Telegram
                         if os.getenv("DRY_RUN", "false").lower() != "true":
@@ -928,9 +940,47 @@ def run_cycle():
                             print(f"[WARN] Signal {symbol_val} (30min) REJECTED - duplicate within 120s. NOT sending Telegram alert.", flush=True)
                             continue
 
+                        # IN-MEMORY DEDUP: Check if sent in THIS CYCLE (prevents rapid duplicates)
+                        cycle_key = f"{symbol_val}|30min|{signal_type}"
+                        if cycle_key in signals_sent_this_cycle:
+                            print(f"[DEDUP-CYCLE] 30min {symbol_val} {signal_type}: Already sent in THIS CYCLE. SKIPPING.", flush=True)
+                            continue
+                        
                         # CRITICAL: Deduplication check (prevent duplicate within DEDUP_WINDOWS)
                         if is_duplicate_signal(symbol_val, "30min", signal_type):
+                            print(f"[DEDUP-WINDOW] 30min {symbol_val} {signal_type}: Duplicate within dedup window. SKIPPING.", flush=True)
                             continue
+                        
+                        # Mark as sent in this cycle
+                        signals_sent_this_cycle.add(cycle_key)
+                        
+                        # TEMP DEBUG: Verify gate code is reached
+                        print(f"[GATE-ENTRY] 30min {symbol_val} signal reached gate block", flush=True)
+                        
+                        # EMA200 CONFIRMATION GATE: Align short-term signal to long-term trend
+                        # Small incremental test on 30min only
+                        try:
+                            close_price = sf30.df['close'].iat[-1] if sf30.df is not None and not sf30.df.empty else None
+                            ema200_val = sf30.df['ema200'].iat[-1] if sf30.df is not None and 'ema200' in sf30.df.columns and not sf30.df.empty else None
+                            
+                            # DIAGNOSTIC: Always log gate status
+                            has_ema200_col = 'ema200' in df30.columns if df30 is not None else False
+                            print(f"[EMA200-DEBUG] 30min {symbol_val}: has_col={has_ema200_col}, close={close_price}, ema200={ema200_val}", flush=True)
+                            
+                            if close_price is not None and ema200_val is not None:
+                                if signal_type == "LONG" and close_price < ema200_val:
+                                    print(f"[EMA200-GATE] 30min {symbol_val}: LONG rejected (close ${close_price:.6f} < EMA200 ${ema200_val:.6f})", flush=True)
+                                    continue
+                                elif signal_type == "SHORT" and close_price > ema200_val:
+                                    print(f"[EMA200-GATE] 30min {symbol_val}: SHORT rejected (close ${close_price:.6f} > EMA200 ${ema200_val:.6f})", flush=True)
+                                    continue
+                                else:
+                                    signal_alignment = "LONG above EMA200" if signal_type == "LONG" else "SHORT below EMA200"
+                                    print(f"[EMA200-PASS] 30min {symbol_val}: {signal_alignment} ✓", flush=True)
+                            else:
+                                print(f"[EMA200-SKIP] 30min {symbol_val}: Skipping gate (values missing)", flush=True)
+                        except Exception as e:
+                            print(f"[EMA200-WARN] 30min {symbol_val}: Error checking EMA200: {e}", flush=True)
                         
                         # Send trade alert to Telegram
                         if os.getenv("DRY_RUN", "false").lower() != "true":
@@ -1202,9 +1252,18 @@ def run_cycle():
                             print(f"[WARN] Signal {symbol_val} (1h) REJECTED - duplicate within 120s. NOT sending Telegram alert.", flush=True)
                             continue
 
+                        # IN-MEMORY DEDUP: Check if sent in THIS CYCLE (prevents rapid duplicates)
+                        cycle_key = f"{symbol_val}|1h|{signal_type}"
+                        if cycle_key in signals_sent_this_cycle:
+                            print(f"[DEDUP-CYCLE] 1h {symbol_val} {signal_type}: Already sent in THIS CYCLE. SKIPPING.", flush=True)
+                            continue
+                        
                         # CRITICAL: Deduplication check (prevent duplicate within DEDUP_WINDOWS)
                         if is_duplicate_signal(symbol_val, "1h", signal_type):
                             continue
+                        
+                        # Mark as sent in this cycle
+                        signals_sent_this_cycle.add(cycle_key)
                         
                         # Send trade alert to Telegram
                         if os.getenv("DRY_RUN", "false").lower() != "true":

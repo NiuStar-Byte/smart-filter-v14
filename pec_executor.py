@@ -71,10 +71,16 @@ class PECExecutor:
             return None
         
         # Check TP hit
+        # FIXED POSITION SIZE: $100 with 10x leverage = $1,000 notional exposure
+        # P&L formula: (exit_price - entry_price) / entry_price * notional_position
+        # This isolates signal quality from position sizing decisions
+        NOTIONAL_POSITION = 1000.0  # $100 position × 10x leverage
+        
         if signal.get('signal_type') == 'LONG':
             if current_price >= tp_target:
-                pnl_usd = (current_price - entry_price) * signal.get('confidence', 1.0)
+                # P&L as percentage-based: (price_move / entry) * notional
                 pnl_pct = ((current_price - entry_price) / entry_price) * 100
+                pnl_usd = ((current_price - entry_price) / entry_price) * NOTIONAL_POSITION
                 return {
                     'status': 'TP_HIT',
                     'exit_price': current_price,
@@ -82,8 +88,8 @@ class PECExecutor:
                     'pnl_pct': pnl_pct
                 }
             elif current_price <= sl_target:
-                pnl_usd = (current_price - entry_price) * signal.get('confidence', 1.0)
                 pnl_pct = ((current_price - entry_price) / entry_price) * 100
+                pnl_usd = ((current_price - entry_price) / entry_price) * NOTIONAL_POSITION
                 return {
                     'status': 'SL_HIT',
                     'exit_price': current_price,
@@ -93,8 +99,8 @@ class PECExecutor:
         
         elif signal.get('signal_type') == 'SHORT':
             if current_price <= tp_target:
-                pnl_usd = (entry_price - current_price) * signal.get('confidence', 1.0)
                 pnl_pct = ((entry_price - current_price) / entry_price) * 100
+                pnl_usd = ((entry_price - current_price) / entry_price) * NOTIONAL_POSITION
                 return {
                     'status': 'TP_HIT',
                     'exit_price': current_price,
@@ -102,8 +108,8 @@ class PECExecutor:
                     'pnl_pct': pnl_pct
                 }
             elif current_price >= sl_target:
-                pnl_usd = (entry_price - current_price) * signal.get('confidence', 1.0)
                 pnl_pct = ((entry_price - current_price) / entry_price) * 100
+                pnl_usd = ((entry_price - current_price) / entry_price) * NOTIONAL_POSITION
                 return {
                     'status': 'SL_HIT',
                     'exit_price': current_price,
@@ -139,14 +145,16 @@ class PECExecutor:
             # If bars exceed max, mark as TIMEOUT
             if bars_elapsed >= max_bars:
                 print(f"[PEC-TIMEOUT-HIT] {symbol} {timeframe}: {bars_elapsed} bars >= {max_bars} max", flush=True)
+                # FIXED POSITION SIZE: $100 with 10x leverage = $1,000 notional
+                NOTIONAL_POSITION = 1000.0  # $100 position × 10x leverage
                 # For LONG: calculate P&L based on current price (timeout exit price)
                 if signal.get('signal_type') == 'LONG':
-                    pnl_usd = (current_price - entry_price) * signal.get('confidence', 1.0)
                     pnl_pct = ((current_price - entry_price) / entry_price) * 100
+                    pnl_usd = ((current_price - entry_price) / entry_price) * NOTIONAL_POSITION
                 # For SHORT: calculate P&L based on current price
                 else:
-                    pnl_usd = (entry_price - current_price) * signal.get('confidence', 1.0)
                     pnl_pct = ((entry_price - current_price) / entry_price) * 100
+                    pnl_usd = ((entry_price - current_price) / entry_price) * NOTIONAL_POSITION
                 
                 return {
                     'status': 'TIMEOUT',
@@ -195,7 +203,7 @@ class PECExecutor:
                         # Update record
                         record['status'] = result['status']
                         record['actual_exit_price'] = result['exit_price']
-                        record['pnl_usd'] = round(result['pnl_usd'], 2)
+                        record['pnl_usd'] = round(result['pnl_usd'], 4)
                         record['pnl_pct'] = round(result['pnl_pct'], 2)
                         record['closed_at'] = datetime.utcnow().isoformat()
                         
@@ -205,8 +213,10 @@ class PECExecutor:
                         if fired_time:
                             try:
                                 dt = datetime.fromisoformat(fired_time.replace('Z', '+00:00'))
-                                # Format as HH:MM:SS GMT+7 (just time for brevity)
-                                local_time = dt.strftime("%H:%M:%S")
+                                # Add 7 hours to convert UTC to GMT+7
+                                gmt7_time = dt + timedelta(hours=7)
+                                # Format as HH:MM:SS GMT+7
+                                local_time = gmt7_time.strftime("%H:%M:%S")
                             except:
                                 local_time = ''
                         else:
@@ -288,7 +298,7 @@ class PECExecutor:
             if closed_trades > 0:
                 stats['win_rate_pct'] = round((stats['tp_hit'] / closed_trades) * 100, 1)
             
-            stats['total_pnl_usd'] = round(stats['total_pnl_usd'], 2)
+            stats['total_pnl_usd'] = round(stats['total_pnl_usd'], 4)
         
         except Exception as e:
             print(f"[ERROR] Failed to get stats: {e}", flush=True)
