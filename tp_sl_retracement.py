@@ -39,11 +39,19 @@ def _safe_float(v: Any, default: Optional[float] = None) -> Optional[float]:
 
 
 def calculate_tp_sl(df: pd.DataFrame, entry_price: float, direction: str,
-                    atr_multiplier: Optional[float] = None, lookback: Optional[int] = None) -> Dict[str, Any]:
+                    atr_multiplier: Optional[float] = None, lookback: Optional[int] = None,
+                    regime: Optional[str] = None) -> Dict[str, Any]:
     """
     ATR-Based 2:1 RR TP/SL Calculation.
     TP = Entry ± (2.0 × ATR)
     SL = Entry ± (1.0 × ATR)
+    
+    OPTION C: For RANGE regime, increase TP multiplier by 1.5x:
+    TP = Entry ± (3.0 × ATR)  [2.0 × 1.5 = 3.0]
+    SL = Entry ± (1.0 × ATR)  [unchanged - keep same risk]
+    RR becomes 3:1 instead of 2:1
+    
+    Rationale: RANGE trades need stricter TP criteria to avoid choppy false signals
     
     REFACTORED: Uses consolidated functions from calculations.py
     """
@@ -90,7 +98,8 @@ def calculate_tp_sl(df: pd.DataFrame, entry_price: float, direction: str,
     atr = calculate_atr_for_tp_sl(df_clean, entry_f, lookback)
 
     # Use consolidated TP/SL calculation from ATR
-    result = calculate_tp_sl_from_atr(entry_f, atr, direction, atr_mult_tp, atr_mult_sl)
+    # Pass regime for Option C: RANGE trades get 3:1 RR instead of 2:1
+    result = calculate_tp_sl_from_atr(entry_f, atr, direction, atr_mult_tp, atr_mult_sl, regime=regime)
 
     try:
         print(

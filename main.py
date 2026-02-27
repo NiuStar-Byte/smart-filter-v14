@@ -86,6 +86,14 @@ PEC_BARS = 5
 PEC_WINDOW_MINUTES = 720
 OHLCV_LIMIT = 250  # Optimized: covers EMA200 + safety buffer, reduces API calls
 
+# EMA CONFIGURATION PER TIMEFRAME (Optimization 2026-02-27)
+# Gate logic uses TF-specific EMAs instead of EMA200 for all
+EMA_CONFIG = {
+    "15min": 50,   # 50 × 15min = 750min = 12.5h (responsive, short-term)
+    "30min": 100,  # 100 × 30min = 3000min = 50h = 2d (balanced, medium-term)
+    "1h": 200      # 200 × 60min = 12000min = 8d (standard, long-term)
+}
+
 # cycle sleep can be controlled via environment variable (seconds)
 CYCLE_SLEEP = int(os.getenv("CYCLE_SLEEP", "60"))
 
@@ -553,13 +561,16 @@ def run_cycle():
                         # Log signal generated (passes SmartFilter)
                         logger.signal_generated(symbol_val, tf_val, signal_type, score, entry_price)
 
+                        # Get market regime EARLY (needed for Option C: RANGE TP scaling)
+                        regime = sf15._market_regime() if hasattr(sf15, "_market_regime") else None
+
                         # Recompute TP/SL against the final live entry_price so TP/SL match execution price
                         tp_sl = None
                         tp = None
                         sl = None
                         fib_levels = None
                         try:
-                            tp_sl = calculate_tp_sl(df15, entry_price, signal_type)
+                            tp_sl = calculate_tp_sl(df15, entry_price, signal_type, regime=regime)
                             tp = tp_sl.get('tp')
                             sl = tp_sl.get('sl')
                             fib_levels = tp_sl.get('fib_levels')
@@ -614,9 +625,7 @@ def run_cycle():
                             print(f"[WARN] log_fired_signal raised: {e}", flush=True)
                             traceback.print_exc()
 
-                        regime = sf15._market_regime() if hasattr(sf15, "_market_regime") else None
-
-                        # ===== RR FILTERING (Enhanced PEC) =====
+                        # ===== RR FILTERING (Enhanced PEC) ===== (regime already calculated earlier)
                         achieved_rr_value = tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None
                         
                         if achieved_rr_value is None or achieved_rr_value < MIN_ACCEPTED_RR:
@@ -840,12 +849,15 @@ def run_cycle():
                         # Log signal generated (passes SmartFilter)
                         logger.signal_generated(symbol_val, tf_val, signal_type, score, entry_price)
 
+                        # Get market regime EARLY (needed for Option C: RANGE TP scaling)
+                        regime = sf30._market_regime() if hasattr(sf30, "_market_regime") else None
+
                         tp_sl = None
                         tp = None
                         sl = None
                         fib_levels = None
                         try:
-                            tp_sl = calculate_tp_sl(df30, entry_price, signal_type)
+                            tp_sl = calculate_tp_sl(df30, entry_price, signal_type, regime=regime)
                             tp = tp_sl.get('tp')
                             sl = tp_sl.get('sl')
                             fib_levels = tp_sl.get('fib_levels')
@@ -897,9 +909,7 @@ def run_cycle():
                             print(f"[WARN] log_fired_signal raised: {e}", flush=True)
                             traceback.print_exc()
 
-                        regime = sf30._market_regime() if hasattr(sf30, "_market_regime") else None
-
-                        # ===== RR FILTERING (Enhanced PEC) =====
+                        # ===== RR FILTERING (Enhanced PEC) ===== (regime already calculated earlier)
                         achieved_rr_value = tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None
                         
                         if achieved_rr_value is None or achieved_rr_value < MIN_ACCEPTED_RR:
@@ -957,30 +967,33 @@ def run_cycle():
                         # TEMP DEBUG: Verify gate code is reached
                         print(f"[GATE-ENTRY] 30min {symbol_val} signal reached gate block", flush=True)
                         
-                        # EMA200 CONFIRMATION GATE: Align short-term signal to long-term trend
-                        # Small incremental test on 30min only
+                        # EMA CONFIRMATION GATE (TF-Specific): Align short-term signal to long-term trend
+                        # Optimization 2026-02-27: Use EMA100 for 30min (better short-term alignment than EMA200)
                         try:
+                            ema_period_30m = EMA_CONFIG.get("30min", 100)  # Default EMA100 for 30min
+                            ema_col_name = f"ema{ema_period_30m}"
+                            
                             close_price = sf30.df['close'].iat[-1] if sf30.df is not None and not sf30.df.empty else None
-                            ema200_val = sf30.df['ema200'].iat[-1] if sf30.df is not None and 'ema200' in sf30.df.columns and not sf30.df.empty else None
+                            ema_val = sf30.df[ema_col_name].iat[-1] if sf30.df is not None and ema_col_name in sf30.df.columns and not sf30.df.empty else None
                             
                             # DIAGNOSTIC: Always log gate status
-                            has_ema200_col = 'ema200' in df30.columns if df30 is not None else False
-                            print(f"[EMA200-DEBUG] 30min {symbol_val}: has_col={has_ema200_col}, close={close_price}, ema200={ema200_val}", flush=True)
+                            has_ema_col = ema_col_name in sf30.df.columns if sf30.df is not None else False
+                            print(f"[EMA{ema_period_30m}-DEBUG] 30min {symbol_val}: has_col={has_ema_col}, close={close_price}, ema{ema_period_30m}={ema_val}", flush=True)
                             
-                            if close_price is not None and ema200_val is not None:
-                                if signal_type == "LONG" and close_price < ema200_val:
-                                    print(f"[EMA200-GATE] 30min {symbol_val}: LONG rejected (close ${close_price:.6f} < EMA200 ${ema200_val:.6f})", flush=True)
+                            if close_price is not None and ema_val is not None:
+                                if signal_type == "LONG" and close_price < ema_val:
+                                    print(f"[EMA{ema_period_30m}-GATE] 30min {symbol_val}: LONG rejected (close ${close_price:.6f} < EMA{ema_period_30m} ${ema_val:.6f})", flush=True)
                                     continue
-                                elif signal_type == "SHORT" and close_price > ema200_val:
-                                    print(f"[EMA200-GATE] 30min {symbol_val}: SHORT rejected (close ${close_price:.6f} > EMA200 ${ema200_val:.6f})", flush=True)
+                                elif signal_type == "SHORT" and close_price > ema_val:
+                                    print(f"[EMA{ema_period_30m}-GATE] 30min {symbol_val}: SHORT rejected (close ${close_price:.6f} > EMA{ema_period_30m} ${ema_val:.6f})", flush=True)
                                     continue
                                 else:
-                                    signal_alignment = "LONG above EMA200" if signal_type == "LONG" else "SHORT below EMA200"
-                                    print(f"[EMA200-PASS] 30min {symbol_val}: {signal_alignment} ✓", flush=True)
+                                    signal_alignment = f"LONG above EMA{ema_period_30m}" if signal_type == "LONG" else f"SHORT below EMA{ema_period_30m}"
+                                    print(f"[EMA{ema_period_30m}-PASS] 30min {symbol_val}: {signal_alignment} ✓", flush=True)
                             else:
-                                print(f"[EMA200-SKIP] 30min {symbol_val}: Skipping gate (values missing)", flush=True)
+                                print(f"[EMA{ema_period_30m}-SKIP] 30min {symbol_val}: Skipping gate (values missing)", flush=True)
                         except Exception as e:
-                            print(f"[EMA200-WARN] 30min {symbol_val}: Error checking EMA200: {e}", flush=True)
+                            print(f"[EMA{ema_period_30m}-WARN] 30min {symbol_val}: Error checking gate: {e}", flush=True)
                         
                         # Send trade alert to Telegram
                         if os.getenv("DRY_RUN", "false").lower() != "true":
@@ -1152,12 +1165,15 @@ def run_cycle():
                         # Log signal generated (passes SmartFilter)
                         logger.signal_generated(symbol_val, tf_val, signal_type, score, entry_price)
 
+                        # Get market regime EARLY (needed for Option C: RANGE TP scaling)
+                        regime = sf1h._market_regime() if hasattr(sf1h, "_market_regime") else None
+
                         tp_sl = None
                         tp = None
                         sl = None
                         fib_levels = None
                         try:
-                            tp_sl = calculate_tp_sl(df1h, entry_price, signal_type)
+                            tp_sl = calculate_tp_sl(df1h, entry_price, signal_type, regime=regime)
                             tp = tp_sl.get('tp')
                             sl = tp_sl.get('sl')
                             fib_levels = tp_sl.get('fib_levels')
@@ -1209,9 +1225,7 @@ def run_cycle():
                             print(f"[WARN] log_fired_signal raised: {e}", flush=True)
                             traceback.print_exc()
 
-                        regime = sf1h._market_regime() if hasattr(sf1h, "_market_regime") else None
-
-                        # ===== RR FILTERING (Enhanced PEC) =====
+                        # ===== RR FILTERING (Enhanced PEC) ===== (regime already calculated earlier)
                         achieved_rr_value = tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None
                         
                         if achieved_rr_value is None or achieved_rr_value < MIN_ACCEPTED_RR:

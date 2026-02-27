@@ -11,7 +11,7 @@ def add_ema_columns(df: pd.DataFrame) -> pd.DataFrame:
     """
     Adds commonly used EMA columns to the DataFrame.
     """
-    ema_spans = [6, 9, 10, 12, 13, 20, 21, 26, 50, 200]
+    ema_spans = [6, 9, 10, 12, 13, 20, 21, 26, 50, 100, 200]  # Added EMA100 for 30min gate (2026-02-27)
     for span in ema_spans:
         df[f'ema{span}'] = compute_ema(df['close'], span)
     return df
@@ -266,45 +266,61 @@ def calculate_atr_for_tp_sl(df: pd.DataFrame, entry_price: float, lookback: int 
 
 
 def calculate_tp_sl_from_atr(entry_price: float, atr_value: float, direction: str,
-                             atr_mult_tp: float = 2.0, atr_mult_sl: float = 1.0) -> dict:
+                             atr_mult_tp: float = 2.0, atr_mult_sl: float = 1.0,
+                             regime: str = None) -> dict:
     """
-    Calculate TP/SL from ATR value using 2:1 Risk:Reward ratio.
+    Calculate TP/SL from ATR value using 2:1 (or 3:1 for RANGE) Risk:Reward ratio.
     
+    STANDARD (BULL/BEAR):
     LONG:  TP = Entry + (2.0 × ATR), SL = Entry - (1.0 × ATR)
     SHORT: TP = Entry - (2.0 × ATR), SL = Entry + (1.0 × ATR)
+    
+    OPTION C - RANGE REGIME (Stricter Exits):
+    LONG:  TP = Entry + (3.0 × ATR), SL = Entry - (1.0 × ATR)  [RR 3:1]
+    SHORT: TP = Entry - (3.0 × ATR), SL = Entry + (1.0 × ATR)  [RR 3:1]
+    
+    Rationale: RANGE trades need stricter TP criteria to avoid choppy false signals
     
     Args:
         entry_price: Entry price
         atr_value: ATR value
         direction: "LONG" or "SHORT"
-        atr_mult_tp: ATR multiplier for TP (default 2.0)
-        atr_mult_sl: ATR multiplier for SL (default 1.0)
+        atr_mult_tp: ATR multiplier for TP (default 2.0, becomes 3.0 for RANGE)
+        atr_mult_sl: ATR multiplier for SL (default 1.0, unchanged for RANGE)
+        regime: Market regime ("BULL", "BEAR", "RANGE") - RANGE gets stricter TP
     
     Returns:
-        dict: {'tp': float, 'sl': float, 'achieved_rr': 2.0, 'source': str}
+        dict: {'tp': float, 'sl': float, 'achieved_rr': float, 'source': str}
     """
     try:
+        # OPTION C: For RANGE regime, increase TP multiplier by 1.5x
+        if regime == "RANGE":
+            atr_mult_tp = atr_mult_tp * 1.5  # 2.0 → 3.0
+        
         dir_up = str(direction).strip().upper() == "LONG"
         dir_down = str(direction).strip().upper() == "SHORT"
         
         if dir_up:
             tp = entry_price + (atr_mult_tp * atr_value)
             sl = entry_price - (atr_mult_sl * atr_value)
-            source = "atr_2_to_1_long"
+            source = "atr_3_to_1_long_range" if regime == "RANGE" else "atr_2_to_1_long"
         elif dir_down:
             tp = entry_price - (atr_mult_tp * atr_value)
             sl = entry_price + (atr_mult_sl * atr_value)
-            source = "atr_2_to_1_short"
+            source = "atr_3_to_1_short_range" if regime == "RANGE" else "atr_2_to_1_short"
         else:
             # Default to LONG
             tp = entry_price + (atr_mult_tp * atr_value)
             sl = entry_price - (atr_mult_sl * atr_value)
             source = "atr_2_to_1_default_long"
         
+        # Calculate achieved RR
+        achieved_rr = atr_mult_tp / atr_mult_sl  # Will be 3.0 for RANGE, 2.0 otherwise
+        
         return {
             'tp': round(float(tp), 8),
             'sl': round(float(sl), 8),
-            'achieved_rr': 2.0,
+            'achieved_rr': achieved_rr,
             'atr_value': float(atr_value),
             'source': source,
             'fib_levels': None,
