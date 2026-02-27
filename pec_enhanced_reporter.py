@@ -54,14 +54,14 @@ class PECEnhancedReporter:
             return str(utc_time_str)[:19]
     
     def _calculate_pnl_usd(self, entry_price: float, exit_price: float, direction: str) -> float:
-        """Recalculate P&L USD using notional position of $1,000 ($100 × 10x leverage)"""
+        """Calculate P&L USD using notional position of $1,000 ($100 × 10x leverage)"""
         try:
             if not entry_price or entry_price == 0:
                 return None
             
             entry = float(entry_price)
             exit_val = float(exit_price)
-            notional_position = 1000.0  # $100 × 10x leverage
+            notional_position = 1000.0  # $100 entry × 10x leverage = $1,000 notional
             
             dir_up = str(direction).strip().upper() == "LONG"
             dir_down = str(direction).strip().upper() == "SHORT"
@@ -76,6 +76,16 @@ class PECEnhancedReporter:
             return round(pnl_usd, 4)
         except:
             return None
+    
+    def _format_duration_hms(self, total_seconds: int) -> str:
+        """Format duration as HH:MM:SS with zero-padding"""
+        try:
+            hours = int(total_seconds // 3600)
+            minutes = int((total_seconds % 3600) // 60)
+            seconds = int(total_seconds % 60)
+            return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+        except:
+            return "-"
     
     def generate_report(self):
         """Generate comprehensive report"""
@@ -142,20 +152,18 @@ class PECEnhancedReporter:
             
             # Duration column
             if status == 'TIMEOUT':
-                # For TIMEOUT: show expected timeout window
+                # For TIMEOUT: show expected timeout window in HH:MM:SS format
                 tf_val = signal.get('timeframe', '')
-                timeout_mins = {'15min': 225, '30min': 300, '1h': 300}.get(tf_val, 300)
-                hours = timeout_mins // 60
-                mins = timeout_mins % 60
-                duration = f"~{hours}h {mins}m"
+                timeout_secs = {'15min': 225*60, '30min': 300*60, '1h': 300*60}.get(tf_val, 300*60)
+                duration = self._format_duration_hms(timeout_secs)
             elif signal.get('closed_at'):
-                # For TP_HIT/SL_HIT: calculate actual duration
+                # For TP_HIT/SL_HIT: calculate actual duration in HH:MM:SS format
                 try:
                     fired = datetime.fromisoformat(signal.get('fired_time_utc').replace('Z', '+00:00'))
                     closed = datetime.fromisoformat(signal.get('closed_at').replace('Z', '+00:00'))
                     delta = closed - fired
-                    mins = int(delta.total_seconds() // 60)
-                    duration = f"{mins}m"
+                    total_seconds = int(delta.total_seconds())
+                    duration = self._format_duration_hms(total_seconds)
                 except:
                     duration = "-"
             else:
