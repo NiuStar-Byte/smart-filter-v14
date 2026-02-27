@@ -103,17 +103,17 @@ class PECEnhancedReporter:
         detail_lines.append("")
         
         # Column headers
-        detail_lines.append("─" * 200)
-        detail_lines.append(f"{'Symbol':<12} {'TF':<8} {'Dir':<5} {'Route':<18} {'Regime':<6} {'Conf':<6} "
+        detail_lines.append("─" * 220)
+        detail_lines.append(f"{'Symbol':<12} {'TF':<8} {'Dir':<6} {'Route':<20} {'Regime':<6} {'Conf':<6} "
                            f"{'Status':<10} {'Entry':<12} {'Exit':<12} {'PnL':<10} "
                            f"{'Fired Time':<12} {'Exit Time/TimeOut':<18} {'Duration':<12}")
-        detail_lines.append("─" * 200)
+        detail_lines.append("─" * 220)
         
         for signal in sorted(self.signals, key=lambda s: s.get('fired_time_utc', ''), reverse=True):
             symbol = signal.get('symbol', 'N/A')[:11]
             tf = signal.get('timeframe', 'N/A')[:7]
-            direction = signal.get('signal_type', 'N/A')[:4]
-            route = signal.get('route', 'N/A')[:17]  # FIXED: lowercase 'route'
+            direction = signal.get('signal_type', 'N/A')[:5]
+            route = signal.get('route', 'N/A')[:19]  # FIXED: lowercase 'route'
             regime = signal.get('regime', 'N/A')[:5]
             confidence = f"{signal.get('confidence', 0):.0f}%"[:5]
             status = signal.get('status', 'OPEN')[:9]
@@ -168,7 +168,7 @@ class PECEnhancedReporter:
                 # Trade is still open - show dash
                 duration = "-"
             
-            detail_lines.append(f"{symbol:<12} {tf:<8} {direction:<5} {route:<18} {regime:<6} {confidence:<6} "
+            detail_lines.append(f"{symbol:<12} {tf:<8} {direction:<6} {route:<20} {regime:<6} {confidence:<6} "
                               f"{status:<10} {entry:<12} {exit_str:<12} {pnl_str:<10} "
                               f"{fired_time:<12} {exit_time:<18} {duration:<12}")
         
