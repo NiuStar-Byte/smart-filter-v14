@@ -132,34 +132,34 @@ class PECEnhancedReporter:
             # Times and Duration
             fired_time = self.get_gmt7_time(signal.get('fired_time_utc'))
             
-            # Exit Time/TimeOut column
-            if signal.get('actual_exit_time'):
-                # Trade is closed - show actual exit time
-                exit_time = self.get_gmt7_time(signal.get('actual_exit_time'))
-            elif status == 'TIMEOUT':
-                # Trade timed out - show expected timeout window
-                tf_val = signal.get('timeframe', '')
-                timeout_mins = {'15min': 225, '30min': 300, '1h': 300}.get(tf_val, 300)
-                hours = timeout_mins // 60
-                mins = timeout_mins % 60
-                exit_time = f"~{hours}h {mins}m"
+            # Exit Time/TimeOut column - show actual close time
+            if signal.get('closed_at'):
+                # Trade is closed - show actual close time
+                exit_time = self.get_gmt7_time(signal.get('closed_at'))
             else:
                 # Trade is still open - show dash
                 exit_time = "-"
             
             # Duration column
-            if signal.get('actual_exit_time'):
-                # Calculate actual duration
+            if status == 'TIMEOUT':
+                # For TIMEOUT: show expected timeout window
+                tf_val = signal.get('timeframe', '')
+                timeout_mins = {'15min': 225, '30min': 300, '1h': 300}.get(tf_val, 300)
+                hours = timeout_mins // 60
+                mins = timeout_mins % 60
+                duration = f"~{hours}h {mins}m"
+            elif signal.get('closed_at'):
+                # For TP_HIT/SL_HIT: calculate actual duration
                 try:
                     fired = datetime.fromisoformat(signal.get('fired_time_utc').replace('Z', '+00:00'))
-                    exited = datetime.fromisoformat(signal.get('actual_exit_time').replace('Z', '+00:00'))
-                    delta = exited - fired
+                    closed = datetime.fromisoformat(signal.get('closed_at').replace('Z', '+00:00'))
+                    delta = closed - fired
                     mins = int(delta.total_seconds() // 60)
                     duration = f"{mins}m"
                 except:
                     duration = "-"
             else:
-                # Trade still open - show dash
+                # Trade is still open - show dash
                 duration = "-"
             
             report.append(f"{symbol:<12} {tf:<8} {direction:<5} {route:<18} {regime:<6} {confidence:<6} "
