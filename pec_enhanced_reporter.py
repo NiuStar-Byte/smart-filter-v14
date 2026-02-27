@@ -81,19 +81,6 @@ class PECEnhancedReporter:
         """Generate comprehensive report"""
         report = []
         
-        # FILTER: Only include signals fired at 15:00:00 GMT+7 or later
-        filtered_signals = []
-        for signal in self.signals:
-            try:
-                fired_time_utc = signal.get('fired_time_utc', '')
-                if fired_time_utc:
-                    dt = datetime.fromisoformat(fired_time_utc.replace('Z', '+00:00'))
-                    gmt7 = dt.astimezone(timezone(timedelta(hours=7)))
-                    if gmt7.hour >= 15:  # 3pm GMT+7 or later
-                        filtered_signals.append(signal)
-            except:
-                pass
-        
         # Header (at top before everything)
         report.append("")
         report.append("=" * 200)
@@ -105,7 +92,6 @@ class PECEnhancedReporter:
         report.append("📋 DETAILED SIGNAL LIST: FIX POSITION SIZE $100, LEVERAGE 10x")
         report.append(f"Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S GMT+7')}")
         report.append(f"Total Signals Loaded: {len(self.signals)}")
-        report.append(f"Filtered Signals (≥15:00 GMT+7): {len(filtered_signals)}")
         report.append("")
         
         # Column headers
@@ -115,7 +101,7 @@ class PECEnhancedReporter:
                      f"{'Fired Time':<12} {'Exit Time/TimeOut':<18} {'Duration':<12}")
         report.append("─" * 200)
         
-        for signal in sorted(filtered_signals, key=lambda s: s.get('fired_time_utc', ''), reverse=True):
+        for signal in sorted(self.signals, key=lambda s: s.get('fired_time_utc', ''), reverse=True):
             symbol = signal.get('symbol', 'N/A')[:11]
             tf = signal.get('timeframe', 'N/A')[:7]
             direction = signal.get('signal_type', 'N/A')[:4]
@@ -190,7 +176,7 @@ class PECEnhancedReporter:
         # By TimeFrame
         report.append("🕐 BY TIMEFRAME")
         report.append("─" * 120)
-        tf_stats = self._aggregate_by('timeframe', filtered_signals)
+        tf_stats = self._aggregate_by('timeframe')
         for key, stats in sorted(tf_stats.items()):
             closed = stats['tp'] + stats['sl'] + stats['timeout']
             wr = (stats['tp'] / closed * 100) if closed > 0 else 0
@@ -201,7 +187,7 @@ class PECEnhancedReporter:
         # By Direction
         report.append("📈 BY DIRECTION")
         report.append("─" * 120)
-        dir_stats = self._aggregate_by('signal_type', filtered_signals)
+        dir_stats = self._aggregate_by('signal_type')
         for key, stats in sorted(dir_stats.items()):
             closed = stats['tp'] + stats['sl'] + stats['timeout']
             wr = (stats['tp'] / closed * 100) if closed > 0 else 0
@@ -212,7 +198,7 @@ class PECEnhancedReporter:
         # By Route
         report.append("🛣️  BY ROUTE")
         report.append("─" * 120)
-        route_stats = self._aggregate_by('route', filtered_signals)  # lowercase in JSON
+        route_stats = self._aggregate_by('route')  # lowercase in JSON
         for key, stats in sorted(route_stats.items()):
             closed = stats['tp'] + stats['sl'] + stats['timeout']
             wr = (stats['tp'] / closed * 100) if closed > 0 else 0
@@ -223,7 +209,7 @@ class PECEnhancedReporter:
         # By Regime
         report.append("🌊 BY REGIME")
         report.append("─" * 120)
-        regime_stats = self._aggregate_by('regime', filtered_signals)
+        regime_stats = self._aggregate_by('regime')
         for key, stats in sorted(regime_stats.items()):
             closed = stats['tp'] + stats['sl'] + stats['timeout']
             wr = (stats['tp'] / closed * 100) if closed > 0 else 0
@@ -235,10 +221,10 @@ class PECEnhancedReporter:
         report.append("💡 BY CONFIDENCE LEVEL")
         report.append("─" * 120)
         
-        # Bin confidence levels (from filtered signals only)
-        high_conf = [s for s in filtered_signals if s.get('confidence', 0) >= 76]
-        mid_conf = [s for s in filtered_signals if 51 <= s.get('confidence', 0) < 76]
-        low_conf = [s for s in filtered_signals if s.get('confidence', 0) <= 50]
+        # Bin confidence levels
+        high_conf = [s for s in self.signals if s.get('confidence', 0) >= 76]
+        mid_conf = [s for s in self.signals if 51 <= s.get('confidence', 0) < 76]
+        low_conf = [s for s in self.signals if s.get('confidence', 0) <= 50]
         
         for conf_level, signals_list, label in [
             ('HIGH', high_conf, 'HIGH (≥76%)'),
@@ -272,16 +258,16 @@ class PECEnhancedReporter:
         report.append("=" * 200)
         report.append("📊 SUMMARY")
         report.append("=" * 200)
-        total_signals = len(filtered_signals)
-        closed_signals = sum(1 for s in filtered_signals if s.get('status') in ['TP_HIT', 'SL_HIT', 'TIMEOUT'])
-        total_tp = sum(1 for s in filtered_signals if s.get('status') == 'TP_HIT')
-        total_sl = sum(1 for s in filtered_signals if s.get('status') == 'SL_HIT')
-        total_timeout = sum(1 for s in filtered_signals if s.get('status') == 'TIMEOUT')
+        total_signals = len(self.signals)
+        closed_signals = sum(1 for s in self.signals if s.get('status') in ['TP_HIT', 'SL_HIT', 'TIMEOUT'])
+        total_tp = sum(1 for s in self.signals if s.get('status') == 'TP_HIT')
+        total_sl = sum(1 for s in self.signals if s.get('status') == 'SL_HIT')
+        total_timeout = sum(1 for s in self.signals if s.get('status') == 'TIMEOUT')
         overall_wr = (total_tp / closed_signals * 100) if closed_signals > 0 else 0
         
         # RECALCULATE total P&L using notional position of $1,000
         total_pnl = 0.0
-        for s in filtered_signals:
+        for s in self.signals:
             if s.get('status') in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
                 pnl_calc = self._calculate_pnl_usd(
                     s.get('entry_price'),
@@ -299,14 +285,11 @@ class PECEnhancedReporter:
         
         return "\n".join(report)
     
-    def _aggregate_by(self, dimension, signals_list=None):
+    def _aggregate_by(self, dimension):
         """Aggregate statistics by dimension (all lowercase field names)"""
         stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout': 0, 'pnl': 0.0})
         
-        if signals_list is None:
-            signals_list = self.signals
-        
-        for signal in signals_list:
+        for signal in self.signals:
             # Get the key value for this dimension
             key = signal.get(dimension, 'N/A')
             
