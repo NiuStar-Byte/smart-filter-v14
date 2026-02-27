@@ -44,6 +44,9 @@ class PECEnhancedReporter:
             # Parse ISO format UTC time
             if 'T' in utc_time_str:
                 dt = datetime.fromisoformat(utc_time_str.replace('Z', '+00:00'))
+                # If datetime is naive (no timezone), mark as UTC explicitly
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
             else:
                 return utc_time_str[:19]
             
