@@ -112,6 +112,7 @@ def get_tier_lookup() -> TierLookup:
     return _tier_lookup
 
 def get_signal_tier(timeframe: str, direction: str, route: str = None, regime: str = None) -> str:
-    """Convenience function to get tier for a signal"""
+    """Convenience function to get tier for a signal (reloads latest tier file each time)"""
     lookup = get_tier_lookup()
+    lookup.reload()  # Always reload latest tier data (SIGNAL_TIERS updates frequently)
     return lookup.get_tier(timeframe, direction, route, regime)
