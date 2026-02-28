@@ -52,13 +52,14 @@ class TierLookup:
     
     def get_tier(self, timeframe: str, direction: str, route: str = None, regime: str = None) -> str:
         """
-        Look up tier for a signal combo.
+        Look up tier for a signal combo (ALL parent combos, not just TF-anchored).
         
         Checks combinations in order:
-        1. TF_DIR_ROUTE_REGIME (4D)
-        3. TF_DIR_ROUTE (3D) 
-        3. TF_DIR (2D)
-        4. Default to Tier-X if not found
+        1. 4D: TF_DIR_ROUTE_REGIME
+        2. 3D: TF_DIR_ROUTE, TF_DIR_REGIME, TF_ROUTE_REGIME, DIR_ROUTE_REGIME, DIR_ROUTE, DIR_REGIME, ROUTE_REGIME
+        3. 2D: TF_DIR, TF_ROUTE, TF_REGIME, DIR_ROUTE, DIR_REGIME, ROUTE_REGIME
+        4. 1D: TF, DIR, ROUTE, REGIME
+        5. Default to Tier-X if not found
         
         Returns: "Tier-1", "Tier-2", "Tier-3", or "Tier-X"
         """
@@ -72,24 +73,42 @@ class TierLookup:
             route_val = str(route).strip() if route else None
             regime_val = str(regime).strip() if regime else None
             
-            # Build combo names to search for
+            # Build ALL possible combo names to search for (most specific to least)
             combos_to_check = []
             
-            # 4D combo (if both route and regime available)
+            # 4D combo (most specific)
             if route_val and regime_val:
                 combos_to_check.append(f"TF_DIR_ROUTE_REGIME_{tf}_{dir_val}_{route_val}_{regime_val}")
             
-            # 3D combos
+            # 3D combos (7 possibilities)
+            if route_val and regime_val:
+                combos_to_check.append(f"TF_ROUTE_REGIME_{tf}_{route_val}_{regime_val}")
+                combos_to_check.append(f"DIR_ROUTE_REGIME_{dir_val}_{route_val}_{regime_val}")
             if route_val:
                 combos_to_check.append(f"TF_DIR_ROUTE_{tf}_{dir_val}_{route_val}")
-            
             if regime_val:
                 combos_to_check.append(f"TF_DIR_REGIME_{tf}_{dir_val}_{regime_val}")
+            if route_val:
+                combos_to_check.append(f"DIR_ROUTE_{dir_val}_{route_val}")
+            if regime_val:
+                combos_to_check.append(f"DIR_REGIME_{dir_val}_{regime_val}")
+            if route_val and regime_val:
+                combos_to_check.append(f"ROUTE_REGIME_{route_val}_{regime_val}")
             
-            # 2D combo (always try this)
+            # 2D combos
             combos_to_check.append(f"TF_DIR_{tf}_{dir_val}")
+            if route_val:
+                combos_to_check.append(f"TF_ROUTE_{tf}_{route_val}")
+            if regime_val:
+                combos_to_check.append(f"TF_REGIME_{tf}_{regime_val}")
+            if route_val:
+                combos_to_check.append(f"DIR_ROUTE_{dir_val}_{route_val}")
+            if regime_val:
+                combos_to_check.append(f"DIR_REGIME_{dir_val}_{regime_val}")
+            if route_val and regime_val:
+                combos_to_check.append(f"ROUTE_REGIME_{route_val}_{regime_val}")
             
-            # Search for each combo in tier lists
+            # Search for each combo in tier lists (stop at first match)
             for combo in combos_to_check:
                 if combo in self.tier_data.get("tier1", []):
                     return "Tier-1"
