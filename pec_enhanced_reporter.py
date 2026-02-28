@@ -229,83 +229,89 @@ class PECEnhancedReporter:
         
         # By TimeFrame
         report.append("🕐 BY TIMEFRAME")
-        report.append("─" * 120)
+        report.append("─" * 150)
+        report.append(f"{'TimeFrame':<12} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<8} | {'Closed':<7} | {'WR':<8} | {'P&L':<10} | {'Avg TP Duration':<17} | {'Avg SL Duration':<17}")
+        report.append("─" * 150)
         tf_stats = self._aggregate_by('timeframe')
         for key, stats in sorted(tf_stats.items()):
             closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
             win_count = stats['tp'] + stats['timeout_win']
             wr = (win_count / closed * 100) if closed > 0 else 0
             total_timeout = stats['timeout_win'] + stats['timeout_loss']
-            report.append(f"{key:<12} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
-                         f"TIMEOUT: {total_timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
             
             # Add duration metrics
             tf_signals = [s for s in self.signals if s.get('timeframe') == key]
             avg_tp_dur = self._calculate_avg_duration_by_status(tf_signals, 'TP_HIT')
             avg_sl_dur = self._calculate_avg_duration_by_status(tf_signals, 'SL_HIT')
-            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
+            
+            report.append(f"{key:<12} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {total_timeout:<8} | {closed:<7} | {wr:>6.1f}% | ${stats['pnl']:>+8.2f} | {avg_tp_dur:<17} | {avg_sl_dur:<17}")
         report.append("")
         
         # By Direction
         report.append("📈 BY DIRECTION")
-        report.append("─" * 120)
+        report.append("─" * 150)
+        report.append(f"{'Direction':<12} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<8} | {'Closed':<7} | {'WR':<8} | {'P&L':<10} | {'Avg TP Duration':<17} | {'Avg SL Duration':<17}")
+        report.append("─" * 150)
         dir_stats = self._aggregate_by('signal_type')
         for key, stats in sorted(dir_stats.items()):
             closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
             win_count = stats['tp'] + stats['timeout_win']
             wr = (win_count / closed * 100) if closed > 0 else 0
             total_timeout = stats['timeout_win'] + stats['timeout_loss']
-            report.append(f"{key:<12} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
-                         f"TIMEOUT: {total_timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
             
             # Add duration metrics
             dir_signals = [s for s in self.signals if s.get('signal_type') == key]
             avg_tp_dur = self._calculate_avg_duration_by_status(dir_signals, 'TP_HIT')
             avg_sl_dur = self._calculate_avg_duration_by_status(dir_signals, 'SL_HIT')
-            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
+            
+            report.append(f"{key:<12} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {total_timeout:<8} | {closed:<7} | {wr:>6.1f}% | ${stats['pnl']:>+8.2f} | {avg_tp_dur:<17} | {avg_sl_dur:<17}")
         report.append("")
         
         # By Route
         report.append("🛣️  BY ROUTE")
-        report.append("─" * 120)
+        report.append("─" * 150)
+        report.append(f"{'Route':<20} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<8} | {'Closed':<7} | {'WR':<8} | {'P&L':<10} | {'Avg TP Duration':<17} | {'Avg SL Duration':<17}")
+        report.append("─" * 150)
         route_stats = self._aggregate_by('route')  # lowercase in JSON
         for key, stats in sorted(route_stats.items()):
             closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
             win_count = stats['tp'] + stats['timeout_win']
             wr = (win_count / closed * 100) if closed > 0 else 0
             total_timeout = stats['timeout_win'] + stats['timeout_loss']
-            report.append(f"{key:<18} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
-                         f"TIMEOUT: {total_timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
             
             # Add duration metrics
             route_signals = [s for s in self.signals if s.get('route') == key]
             avg_tp_dur = self._calculate_avg_duration_by_status(route_signals, 'TP_HIT')
             avg_sl_dur = self._calculate_avg_duration_by_status(route_signals, 'SL_HIT')
-            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
+            
+            report.append(f"{key:<20} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {total_timeout:<8} | {closed:<7} | {wr:>6.1f}% | ${stats['pnl']:>+8.2f} | {avg_tp_dur:<17} | {avg_sl_dur:<17}")
         report.append("")
         
         # By Regime
         report.append("🌊 BY REGIME")
-        report.append("─" * 120)
+        report.append("─" * 150)
+        report.append(f"{'Regime':<12} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<8} | {'Closed':<7} | {'WR':<8} | {'P&L':<10} | {'Avg TP Duration':<17} | {'Avg SL Duration':<17}")
+        report.append("─" * 150)
         regime_stats = self._aggregate_by('regime')
         for key, stats in sorted(regime_stats.items()):
             closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
             win_count = stats['tp'] + stats['timeout_win']
             wr = (win_count / closed * 100) if closed > 0 else 0
             total_timeout = stats['timeout_win'] + stats['timeout_loss']
-            report.append(f"{key:<12} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
-                         f"TIMEOUT: {total_timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
             
             # Add duration metrics
             regime_signals = [s for s in self.signals if s.get('regime') == key]
             avg_tp_dur = self._calculate_avg_duration_by_status(regime_signals, 'TP_HIT')
             avg_sl_dur = self._calculate_avg_duration_by_status(regime_signals, 'SL_HIT')
-            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
+            
+            report.append(f"{key:<12} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {total_timeout:<8} | {closed:<7} | {wr:>6.1f}% | ${stats['pnl']:>+8.2f} | {avg_tp_dur:<17} | {avg_sl_dur:<17}")
         report.append("")
         
         # By Confidence
         report.append("💡 BY CONFIDENCE LEVEL")
-        report.append("─" * 120)
+        report.append("─" * 150)
+        report.append(f"{'Confidence':<20} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<8} | {'Closed':<7} | {'WR':<8} | {'P&L':<10} | {'Avg TP Duration':<17} | {'Avg SL Duration':<17}")
+        report.append("─" * 150)
         
         # Bin confidence levels
         high_conf = [s for s in self.signals if s.get('confidence', 0) >= 76]
@@ -319,10 +325,23 @@ class PECEnhancedReporter:
         ]:
             tp = sum(1 for s in signals_list if s.get('status') == 'TP_HIT')
             sl = sum(1 for s in signals_list if s.get('status') == 'SL_HIT')
-            timeout = sum(1 for s in signals_list if s.get('status') == 'TIMEOUT')
-            closed = tp + sl + timeout
+            timeout_count = sum(1 for s in signals_list if s.get('status') == 'TIMEOUT')
+            closed = tp + sl + timeout_count
             total = len(signals_list)
-            wr = (tp / closed * 100) if closed > 0 else 0
+            
+            # Separate TIMEOUT into wins/losses for accurate WR
+            timeout_wins = 0
+            for s in signals_list:
+                if s.get('status') == 'TIMEOUT' and s.get('actual_exit_price'):
+                    pnl_calc = self._calculate_pnl_usd(
+                        s.get('entry_price'),
+                        s.get('actual_exit_price'),
+                        s.get('signal_type')
+                    )
+                    if pnl_calc is not None and pnl_calc > 0:
+                        timeout_wins += 1
+            
+            wr = ((tp + timeout_wins) / closed * 100) if closed > 0 else 0
             
             # RECALCULATE P&L using notional position of $1,000
             pnl = 0.0
@@ -336,13 +355,11 @@ class PECEnhancedReporter:
                     if pnl_calc is not None:
                         pnl += pnl_calc
             
-            report.append(f"{label:<18} | Total: {total:<4} | TP: {tp:<3} | SL: {sl:<3} | "
-                         f"TIMEOUT: {timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${pnl:+.2f}")
-            
             # Add duration metrics
             avg_tp_dur = self._calculate_avg_duration_by_status(signals_list, 'TP_HIT')
             avg_sl_dur = self._calculate_avg_duration_by_status(signals_list, 'SL_HIT')
-            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
+            
+            report.append(f"{label:<20} | {total:<6} | {tp:<4} | {sl:<4} | {timeout_count:<8} | {closed:<7} | {wr:>6.1f}% | ${pnl:>+8.2f} | {avg_tp_dur:<17} | {avg_sl_dur:<17}")
         report.append("")
         
         # === MULTI-DIMENSIONAL AGGREGATES ===
@@ -353,167 +370,175 @@ class PECEnhancedReporter:
         
         # By TimeFrame x Direction
         report.append("🕐📈 BY TIMEFRAME x DIRECTION")
-        report.append("─" * 120)
+        report.append("─" * 170)
+        report.append(f"{'TF':<8} | {'Dir':<6} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<8} | {'Closed':<7} | {'WR':<8} | {'P&L':<10} | {'Avg TP Duration':<17} | {'Avg SL Duration':<17}")
+        report.append("─" * 170)
         tf_dir_stats = self._aggregate_by_dimensions(['timeframe', 'signal_type'])
         for key, stats in sorted(tf_dir_stats.items()):
             closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
             win_count = stats['tp'] + stats['timeout_win']
             wr = (win_count / closed * 100) if closed > 0 else 0
             total_timeout = stats['timeout_win'] + stats['timeout_loss']
-            report.append(f"{key[0]:<8} | {key[1]:<5} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
-                         f"TIMEOUT: {total_timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
             
             # Add duration metrics
             combo_signals = [s for s in self.signals if s.get('timeframe') == key[0] and s.get('signal_type') == key[1]]
             avg_tp_dur = self._calculate_avg_duration_by_status(combo_signals, 'TP_HIT')
             avg_sl_dur = self._calculate_avg_duration_by_status(combo_signals, 'SL_HIT')
-            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
+            
+            report.append(f"{key[0]:<8} | {key[1]:<6} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {total_timeout:<8} | {closed:<7} | {wr:>6.1f}% | ${stats['pnl']:>+8.2f} | {avg_tp_dur:<17} | {avg_sl_dur:<17}")
         report.append("")
         
         # By TimeFrame x Regime
         report.append("🕐🌊 BY TIMEFRAME x REGIME")
-        report.append("─" * 120)
+        report.append("─" * 170)
+        report.append(f"{'TF':<8} | {'Regime':<8} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<8} | {'Closed':<7} | {'WR':<8} | {'P&L':<10} | {'Avg TP Duration':<17} | {'Avg SL Duration':<17}")
+        report.append("─" * 170)
         tf_regime_stats = self._aggregate_by_dimensions(['timeframe', 'regime'])
         for key, stats in sorted(tf_regime_stats.items()):
             closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
             win_count = stats['tp'] + stats['timeout_win']
             wr = (win_count / closed * 100) if closed > 0 else 0
             total_timeout = stats['timeout_win'] + stats['timeout_loss']
-            report.append(f"{key[0]:<8} | {key[1]:<6} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
-                         f"TIMEOUT: {total_timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
             
             # Add duration metrics
             combo_signals = [s for s in self.signals if s.get('timeframe') == key[0] and s.get('regime') == key[1]]
             avg_tp_dur = self._calculate_avg_duration_by_status(combo_signals, 'TP_HIT')
             avg_sl_dur = self._calculate_avg_duration_by_status(combo_signals, 'SL_HIT')
-            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
+            
+            report.append(f"{key[0]:<8} | {key[1]:<8} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {total_timeout:<8} | {closed:<7} | {wr:>6.1f}% | ${stats['pnl']:>+8.2f} | {avg_tp_dur:<17} | {avg_sl_dur:<17}")
         report.append("")
         
         # By Direction x Regime
         report.append("📈🌊 BY DIRECTION x REGIME")
-        report.append("─" * 120)
+        report.append("─" * 170)
+        report.append(f"{'Dir':<6} | {'Regime':<8} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<8} | {'Closed':<7} | {'WR':<8} | {'P&L':<10} | {'Avg TP Duration':<17} | {'Avg SL Duration':<17}")
+        report.append("─" * 170)
         dir_regime_stats = self._aggregate_by_dimensions(['signal_type', 'regime'])
         for key, stats in sorted(dir_regime_stats.items()):
             closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
             win_count = stats['tp'] + stats['timeout_win']
             wr = (win_count / closed * 100) if closed > 0 else 0
             total_timeout = stats['timeout_win'] + stats['timeout_loss']
-            report.append(f"{key[0]:<5} | {key[1]:<6} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
-                         f"TIMEOUT: {total_timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
             
             # Add duration metrics
             combo_signals = [s for s in self.signals if s.get('signal_type') == key[0] and s.get('regime') == key[1]]
             avg_tp_dur = self._calculate_avg_duration_by_status(combo_signals, 'TP_HIT')
             avg_sl_dur = self._calculate_avg_duration_by_status(combo_signals, 'SL_HIT')
-            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
+            
+            report.append(f"{key[0]:<6} | {key[1]:<8} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {total_timeout:<8} | {closed:<7} | {wr:>6.1f}% | ${stats['pnl']:>+8.2f} | {avg_tp_dur:<17} | {avg_sl_dur:<17}")
         report.append("")
         
         # By Direction x Route
         report.append("📈🛣️  BY DIRECTION x ROUTE")
-        report.append("─" * 120)
+        report.append("─" * 190)
+        report.append(f"{'Dir':<6} | {'Route':<20} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<8} | {'Closed':<7} | {'WR':<8} | {'P&L':<10} | {'Avg TP Duration':<17} | {'Avg SL Duration':<17}")
+        report.append("─" * 190)
         dir_route_stats = self._aggregate_by_dimensions(['signal_type', 'route'])
         for key, stats in sorted(dir_route_stats.items()):
             closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
             win_count = stats['tp'] + stats['timeout_win']
             wr = (win_count / closed * 100) if closed > 0 else 0
             total_timeout = stats['timeout_win'] + stats['timeout_loss']
-            report.append(f"{key[0]:<5} | {key[1]:<18} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
-                         f"TIMEOUT: {total_timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
             
             # Add duration metrics
             combo_signals = [s for s in self.signals if s.get('signal_type') == key[0] and s.get('route') == key[1]]
             avg_tp_dur = self._calculate_avg_duration_by_status(combo_signals, 'TP_HIT')
             avg_sl_dur = self._calculate_avg_duration_by_status(combo_signals, 'SL_HIT')
-            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
+            
+            report.append(f"{key[0]:<6} | {key[1]:<20} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {total_timeout:<8} | {closed:<7} | {wr:>6.1f}% | ${stats['pnl']:>+8.2f} | {avg_tp_dur:<17} | {avg_sl_dur:<17}")
         report.append("")
         
         # By Route x Regime
         report.append("🛣️ 🌊 BY ROUTE x REGIME")
-        report.append("─" * 120)
+        report.append("─" * 190)
+        report.append(f"{'Route':<20} | {'Regime':<8} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<8} | {'Closed':<7} | {'WR':<8} | {'P&L':<10} | {'Avg TP Duration':<17} | {'Avg SL Duration':<17}")
+        report.append("─" * 190)
         route_regime_stats = self._aggregate_by_dimensions(['route', 'regime'])
         for key, stats in sorted(route_regime_stats.items()):
             closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
             win_count = stats['tp'] + stats['timeout_win']
             wr = (win_count / closed * 100) if closed > 0 else 0
             total_timeout = stats['timeout_win'] + stats['timeout_loss']
-            report.append(f"{key[0]:<18} | {key[1]:<6} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
-                         f"TIMEOUT: {total_timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
             
             # Add duration metrics
             combo_signals = [s for s in self.signals if s.get('route') == key[0] and s.get('regime') == key[1]]
             avg_tp_dur = self._calculate_avg_duration_by_status(combo_signals, 'TP_HIT')
             avg_sl_dur = self._calculate_avg_duration_by_status(combo_signals, 'SL_HIT')
-            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
+            
+            report.append(f"{key[0]:<20} | {key[1]:<8} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {total_timeout:<8} | {closed:<7} | {wr:>6.1f}% | ${stats['pnl']:>+8.2f} | {avg_tp_dur:<17} | {avg_sl_dur:<17}")
         report.append("")
         
         # By TimeFrame x Direction x Route
         report.append("🕐📈🛣️  BY TIMEFRAME x DIRECTION x ROUTE")
-        report.append("─" * 140)
+        report.append("─" * 210)
+        report.append(f"{'TF':<8} | {'Dir':<6} | {'Route':<20} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<8} | {'Closed':<7} | {'WR':<8} | {'P&L':<10} | {'Avg TP Duration':<17} | {'Avg SL Duration':<17}")
+        report.append("─" * 210)
         tf_dir_route_stats = self._aggregate_by_dimensions(['timeframe', 'signal_type', 'route'])
         for key, stats in sorted(tf_dir_route_stats.items()):
             closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
             win_count = stats['tp'] + stats['timeout_win']
             wr = (win_count / closed * 100) if closed > 0 else 0
             total_timeout = stats['timeout_win'] + stats['timeout_loss']
-            report.append(f"{key[0]:<8} | {key[1]:<5} | {key[2]:<18} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
-                         f"TIMEOUT: {total_timeout:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
             
             # Add duration metrics
             combo_signals = [s for s in self.signals if s.get('timeframe') == key[0] and s.get('signal_type') == key[1] and s.get('route') == key[2]]
             avg_tp_dur = self._calculate_avg_duration_by_status(combo_signals, 'TP_HIT')
             avg_sl_dur = self._calculate_avg_duration_by_status(combo_signals, 'SL_HIT')
-            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
+            
+            report.append(f"{key[0]:<8} | {key[1]:<6} | {key[2]:<20} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {total_timeout:<8} | {closed:<7} | {wr:>6.1f}% | ${stats['pnl']:>+8.2f} | {avg_tp_dur:<17} | {avg_sl_dur:<17}")
         report.append("")
         
         # By TimeFrame x Direction x Regime
         report.append("🕐📈🌊 BY TIMEFRAME x DIRECTION x REGIME")
-        report.append("─" * 140)
+        report.append("─" * 190)
+        report.append(f"{'TF':<8} | {'Dir':<6} | {'Regime':<8} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<8} | {'Closed':<7} | {'WR':<8} | {'P&L':<10} | {'Avg TP Duration':<17} | {'Avg SL Duration':<17}")
+        report.append("─" * 190)
         tf_dir_regime_stats = self._aggregate_by_dimensions(['timeframe', 'signal_type', 'regime'])
         for key, stats in sorted(tf_dir_regime_stats.items()):
             closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
             win_count = stats['tp'] + stats['timeout_win']
             wr = (win_count / closed * 100) if closed > 0 else 0
             total_timeout = stats['timeout_win'] + stats['timeout_loss']
-            report.append(f"{key[0]:<8} | {key[1]:<5} | {key[2]:<6} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
-                         f"TIMEOUT: {total_timeout:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
             
             # Add duration metrics
             combo_signals = [s for s in self.signals if s.get('timeframe') == key[0] and s.get('signal_type') == key[1] and s.get('regime') == key[2]]
             avg_tp_dur = self._calculate_avg_duration_by_status(combo_signals, 'TP_HIT')
             avg_sl_dur = self._calculate_avg_duration_by_status(combo_signals, 'SL_HIT')
-            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
+            
+            report.append(f"{key[0]:<8} | {key[1]:<6} | {key[2]:<8} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {total_timeout:<8} | {closed:<7} | {wr:>6.1f}% | ${stats['pnl']:>+8.2f} | {avg_tp_dur:<17} | {avg_sl_dur:<17}")
         report.append("")
         
         # By Direction x Route x Regime
         report.append("📈🛣️ 🌊 BY DIRECTION x ROUTE x REGIME")
-        report.append("─" * 140)
+        report.append("─" * 210)
+        report.append(f"{'Dir':<6} | {'Route':<20} | {'Regime':<8} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<8} | {'Closed':<7} | {'WR':<8} | {'P&L':<10} | {'Avg TP Duration':<17} | {'Avg SL Duration':<17}")
+        report.append("─" * 210)
         dir_route_regime_stats = self._aggregate_by_dimensions(['signal_type', 'route', 'regime'])
         for key, stats in sorted(dir_route_regime_stats.items()):
             closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
             win_count = stats['tp'] + stats['timeout_win']
             wr = (win_count / closed * 100) if closed > 0 else 0
             total_timeout = stats['timeout_win'] + stats['timeout_loss']
-            report.append(f"{key[0]:<5} | {key[1]:<18} | {key[2]:<6} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
-                         f"TIMEOUT: {total_timeout:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
             
             # Add duration metrics
             combo_signals = [s for s in self.signals if s.get('signal_type') == key[0] and s.get('route') == key[1] and s.get('regime') == key[2]]
             avg_tp_dur = self._calculate_avg_duration_by_status(combo_signals, 'TP_HIT')
             avg_sl_dur = self._calculate_avg_duration_by_status(combo_signals, 'SL_HIT')
-            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
+            
+            report.append(f"{key[0]:<6} | {key[1]:<20} | {key[2]:<8} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {total_timeout:<8} | {closed:<7} | {wr:>6.1f}% | ${stats['pnl']:>+8.2f} | {avg_tp_dur:<17} | {avg_sl_dur:<17}")
         report.append("")
         
         # By TimeFrame x Direction x Confidence
         report.append("🕐📈💡 BY TIMEFRAME x DIRECTION x CONFIDENCE")
-        report.append("─" * 140)
+        report.append("─" * 210)
+        report.append(f"{'TF':<8} | {'Dir':<6} | {'Confidence':<12} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<8} | {'Closed':<7} | {'WR':<8} | {'P&L':<10} | {'Avg TP Duration':<17} | {'Avg SL Duration':<17}")
+        report.append("─" * 210)
         tf_dir_conf_stats = self._aggregate_by_dimensions(['timeframe', 'signal_type', 'confidence_level'])
         for key, stats in sorted(tf_dir_conf_stats.items()):
             closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
             win_count = stats['tp'] + stats['timeout_win']
             wr = (win_count / closed * 100) if closed > 0 else 0
             total_timeout = stats['timeout_win'] + stats['timeout_loss']
-            report.append(f"{key[0]:<8} | {key[1]:<5} | {key[2]:<10} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
-                         f"TIMEOUT: {total_timeout:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
             
             # Add duration metrics
             # key[2] is confidence_level (HIGH/MID/LOW), need to filter by actual confidence ranges
@@ -523,26 +548,28 @@ class PECEnhancedReporter:
                            and conf_range[0] <= s.get('confidence', 0) <= conf_range[1]]
             avg_tp_dur = self._calculate_avg_duration_by_status(combo_signals, 'TP_HIT')
             avg_sl_dur = self._calculate_avg_duration_by_status(combo_signals, 'SL_HIT')
-            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
+            
+            report.append(f"{key[0]:<8} | {key[1]:<6} | {key[2]:<12} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {total_timeout:<8} | {closed:<7} | {wr:>6.1f}% | ${stats['pnl']:>+8.2f} | {avg_tp_dur:<17} | {avg_sl_dur:<17}")
         report.append("")
         
         # By TimeFrame x Route x Regime
         report.append("🕐🛣️ 🌊 BY TIMEFRAME x ROUTE x REGIME")
-        report.append("─" * 140)
+        report.append("─" * 210)
+        report.append(f"{'TF':<8} | {'Route':<20} | {'Regime':<8} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<8} | {'Closed':<7} | {'WR':<8} | {'P&L':<10} | {'Avg TP Duration':<17} | {'Avg SL Duration':<17}")
+        report.append("─" * 210)
         tf_route_regime_stats = self._aggregate_by_dimensions(['timeframe', 'route', 'regime'])
         for key, stats in sorted(tf_route_regime_stats.items()):
             closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
             win_count = stats['tp'] + stats['timeout_win']
             wr = (win_count / closed * 100) if closed > 0 else 0
             total_timeout = stats['timeout_win'] + stats['timeout_loss']
-            report.append(f"{key[0]:<8} | {key[1]:<18} | {key[2]:<6} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
-                         f"TIMEOUT: {total_timeout:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
             
             # Add duration metrics
             combo_signals = [s for s in self.signals if s.get('timeframe') == key[0] and s.get('route') == key[1] and s.get('regime') == key[2]]
             avg_tp_dur = self._calculate_avg_duration_by_status(combo_signals, 'TP_HIT')
             avg_sl_dur = self._calculate_avg_duration_by_status(combo_signals, 'SL_HIT')
-            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
+            
+            report.append(f"{key[0]:<8} | {key[1]:<20} | {key[2]:<8} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {total_timeout:<8} | {closed:<7} | {wr:>6.1f}% | ${stats['pnl']:>+8.2f} | {avg_tp_dur:<17} | {avg_sl_dur:<17}")
         report.append("")
         
         # Add Detailed Signal List section (before summary)
@@ -597,11 +624,16 @@ class PECEnhancedReporter:
                 if pnl_calc is not None:
                     total_pnl += pnl_calc
         
+        # Calculate average durations for summary
+        avg_tp_duration_summary = self._calculate_avg_duration_by_status(self.signals, 'TP_HIT')
+        avg_sl_duration_summary = self._calculate_avg_duration_by_status(self.signals, 'SL_HIT')
+        
         # Display Summary
         report.append(f"Total Signals: {total_signals} (Count Win = {total_tp}; Count Loss = {total_sl}; Count TimeOut = {total_timeout}; Count Open = {total_open})")
         report.append(f"Closed Trades: {closed_signals} (TP: {total_tp}, SL: {total_sl}; TimeOut Win = {timeout_wins}; TimeOut Loss = {timeout_losses})")
         report.append(f"Overall Win Rate: {overall_wr:.2f}% >> [ (count TP + Count TimeOut Win) / (Closed Trades) ] = [ ({total_tp}+{timeout_wins}) / {closed_signals} ]")
         report.append(f"Total P&L: ${total_pnl:+.2f}")
+        report.append(f"Avg TP Duration: {avg_tp_duration_summary} | Avg SL Duration: {avg_sl_duration_summary}")
         report.append("")
         
         return "\n".join(report)
