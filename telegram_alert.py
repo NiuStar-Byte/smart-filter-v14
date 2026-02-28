@@ -276,9 +276,9 @@ def send_telegram_alert(
     # Tier tag display (production criteria only - VERSION B AGREED)
     # Tags appear on Telegram only when signal combo meets thresholds
     tier_icon_map = {
-        "Tier-1": "⭐",
-        "Tier-2": "🟡", 
-        "Tier-3": "🔵"
+        "Tier-1": "🥇",
+        "Tier-2": "🥈", 
+        "Tier-3": "🥉"
     }
     tier_icon = tier_icon_map.get(tier, "")
     tier_display = f" {tier_icon} {tier}" if tier and tier != "Tier-X" else ""
