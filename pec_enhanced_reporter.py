@@ -1014,13 +1014,43 @@ class PECEnhancedReporter:
         return "\n".join(output)
     
     def save_signal_tiers(self, tiers):
-        """Save tiers to timestamped file"""
-        now = datetime.now(timezone(timedelta(hours=7)))
-        filename = f"SIGNAL_TIERS_{now.strftime('%Y-%m-%d_%H%M')}.json"
+        """Append tiers to SIGNAL_TIERS.json (cumulative history)"""
+        filename = "SIGNAL_TIERS.json"
         
+        # Extract timestamp from tiers data
+        timestamp = tiers.get("generated_at", datetime.now(timezone(timedelta(hours=7))).strftime('%Y-%m-%d %H:%M:%S GMT+7'))
+        
+        # Build entry (without the full tiers dict, just the summary)
+        entry = {
+            "timestamp": timestamp,
+            "tier1": tiers.get("tier1", []),
+            "tier2": tiers.get("tier2", []),
+            "tier3": tiers.get("tier3", []),
+            "tierx": tiers.get("tierx", []),
+            "config_version": tiers.get("config_version", "B (AGREED)")
+        }
+        
+        # Load existing history or create new
+        history = []
+        if os.path.exists(filename):
+            try:
+                with open(filename, 'r') as f:
+                    history = json.load(f)
+                if not isinstance(history, list):
+                    # Old format (single dict), convert to list
+                    history = [history]
+            except Exception as e:
+                print(f"[TIER-SAVE] Could not read existing {filename}: {e}. Starting fresh.", flush=True)
+                history = []
+        
+        # Append new entry
+        history.append(entry)
+        
+        # Write back
         with open(filename, 'w') as f:
-            json.dump(tiers, f, indent=2)
+            json.dump(history, f, indent=2)
         
+        print(f"[TIER-SAVE] Appended tier entry to {filename} (total entries: {len(history)})", flush=True)
         return filename
 
 if __name__ == "__main__":
@@ -1034,7 +1064,21 @@ if __name__ == "__main__":
     
     print("\n✅ Report saved to PEC_ENHANCED_REPORT.txt")
     
-    # Generate and save signal tiers
+    # Generate and save signal tiers (append-only)
     tiers = reporter.generate_signal_tiers()
     tier_file = reporter.save_signal_tiers(tiers)
-    print(f"✅ Signal tiers saved to {tier_file}")
+    print(f"✅ Signal tiers appended to {tier_file}")
+    
+    # Cleanup old SIGNAL_TIERS_*.json timestamped files (no longer needed)
+    import glob
+    old_tier_files = glob.glob("SIGNAL_TIERS_*.json")
+    if old_tier_files:
+        for f in old_tier_files:
+            try:
+                os.remove(f)
+                print(f"🗑️  Removed old tier file: {f}")
+            except Exception as e:
+                print(f"[WARN] Could not remove {f}: {e}")
+    
+    if old_tier_files:
+        print(f"✅ Cleaned up {len(old_tier_files)} old SIGNAL_TIERS_*.json files")

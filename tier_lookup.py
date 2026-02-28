@@ -15,26 +15,35 @@ class TierLookup:
         self.load_latest_tiers()
     
     def load_latest_tiers(self):
-        """Load the latest SIGNAL_TIERS_*.json file"""
+        """Load the latest entry from SIGNAL_TIERS.json (append-only file)"""
         try:
-            # Find all tier files
-            tier_files = glob.glob("SIGNAL_TIERS_*.json")
+            filename = "SIGNAL_TIERS.json"
             
-            if not tier_files:
-                print("[TIER] No SIGNAL_TIERS files found. All signals will be Tier-X.", flush=True)
+            if not os.path.exists(filename):
+                print(f"[TIER] {filename} not found. All signals will be Tier-X.", flush=True)
                 self.tier_data = {"tier1": [], "tier2": [], "tier3": [], "tierx": []}
                 self.tier_file = None
                 return
             
-            # Sort by modification time, get latest
-            tier_files.sort(key=os.path.getmtime, reverse=True)
-            latest_file = tier_files[0]
+            with open(filename, 'r') as f:
+                data = json.load(f)
             
-            with open(latest_file, 'r') as f:
-                self.tier_data = json.load(f)
+            # Handle both old format (single dict) and new format (list)
+            if isinstance(data, list):
+                if not data:
+                    print(f"[TIER] {filename} is empty. All signals will be Tier-X.", flush=True)
+                    self.tier_data = {"tier1": [], "tier2": [], "tier3": [], "tierx": []}
+                else:
+                    # Get latest entry (last in list)
+                    latest_entry = data[-1]
+                    self.tier_data = latest_entry
+                    print(f"[TIER] Loaded latest entry from {filename} (timestamp: {latest_entry.get('timestamp', 'N/A')})", flush=True)
+            else:
+                # Old single-dict format
+                self.tier_data = data
+                print(f"[TIER] Loaded {filename} (legacy format)", flush=True)
             
-            self.tier_file = latest_file
-            print(f"[TIER] Loaded: {latest_file}", flush=True)
+            self.tier_file = filename
             
         except Exception as e:
             print(f"[TIER-ERROR] Failed to load tier data: {e}. Defaulting to Tier-X.", flush=True)
