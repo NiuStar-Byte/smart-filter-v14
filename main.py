@@ -81,6 +81,56 @@ TOKENS = [
 COOLDOWN = {"15min": 120, "30min": 240, "1h": 600}
 last_sent = {}
 
+def initialize_last_sent():
+    """Load recent sent signals from SENT_SIGNALS.jsonl to restore last_sent state after daemon restart"""
+    global last_sent
+    import time
+    now = time.time()
+    
+    try:
+        if not os.path.exists("SENT_SIGNALS.jsonl"):
+            return
+        
+        # Read last 100 lines of SENT_SIGNALS.jsonl to find recent signals
+        with open("SENT_SIGNALS.jsonl", "r") as f:
+            lines = f.readlines()
+        
+        # Process recent signals (last 200 lines, ~10 mins of signals)
+        for line in lines[-200:]:
+            try:
+                signal = json.loads(line.strip())
+                symbol = signal.get("symbol")
+                tf = signal.get("timeframe")
+                sent_time_str = signal.get("sent_time_utc")
+                
+                if not (symbol and tf and sent_time_str):
+                    continue
+                
+                # Parse sent_time_utc to get timestamp
+                try:
+                    sent_dt = datetime.fromisoformat(sent_time_str.replace('Z', '+00:00'))
+                    if sent_dt.tzinfo is None:
+                        sent_dt = sent_dt.replace(tzinfo=timezone.utc)
+                    sent_timestamp = sent_dt.timestamp()
+                except:
+                    continue
+                
+                # Only consider signals sent within the last COOLDOWN window
+                key = f"{symbol}_{tf}"
+                max_cooldown = max(COOLDOWN.values())
+                
+                if now - sent_timestamp < max_cooldown:
+                    # Store the latest sent time for this symbol+tf combo
+                    if key not in last_sent or sent_timestamp > last_sent[key]:
+                        last_sent[key] = sent_timestamp
+            except:
+                pass
+        
+        if last_sent:
+            print(f"[INIT] Restored {len(last_sent)} last_sent entries from SENT_SIGNALS.jsonl", flush=True)
+    except Exception as e:
+        print(f"[WARN] Failed to initialize last_sent: {e}", flush=True)
+
 # NOTE: Updated to use 15m, 30m, 1h (removed 3m, 5m - too noisy)
 # Based on Test-3 results: 15-min markets are optimal, longer timeframes reduce false signals
 PEC_BARS = 5
@@ -1394,6 +1444,10 @@ def run():
     Enforces CYCLE_SLEEP interval and prevents overlapping cycles.
     """
     print("[INFO] Starting Smart Filter engine (LIVE MODE)...\n", flush=True)
+    
+    # Initialize last_sent from recent SENT_SIGNALS.jsonl to avoid resending after restart
+    initialize_last_sent()
+    
     last_cycle_end = 0
     while True:
         try:
