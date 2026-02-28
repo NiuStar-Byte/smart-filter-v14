@@ -6,12 +6,14 @@ Enhanced Features:
 - Position size & leverage header
 - Extended columns: Route, Exit Price, Exit Time, Duration
 - 5D aggregates: TF, Direction, Route, Regime, Confidence
+- Dynamic tier configuration from tier_config.py
 """
 
 import json
 from datetime import datetime, timezone, timedelta
 from collections import defaultdict
 import os
+from tier_config import TIER_THRESHOLDS
 
 class PECEnhancedReporter:
     def __init__(self, sent_signals_file="SENT_SIGNALS.jsonl"):
@@ -769,15 +771,28 @@ class PECEnhancedReporter:
     def generate_signal_tiers(self):
         """
         Generate SIGNAL_TIERS.json based on PEC aggregates.
-        Evaluates all dimension combos against tier criteria.
+        Evaluates all dimension combos against configurable tier criteria.
         
-        Tier Criteria:
-        - Tier-1 (🥇): WR ≥60% + Avg P&L/trade ≥$5 + closed≥100
-        - Tier-2 (🥈): WR 40-59% + Avg P&L/trade ≥$2 + closed≥100
-        - Tier-3 (🥉): WR <40% OR Avg P&L/trade <$2 + closed≥100
-        - Tier-X (⚙️): closed <100 (insufficient data)
+        Criteria loaded from tier_config.py (TIER_THRESHOLDS):
+        - min_trades: Minimum closed trades required
+        - tier1_wr: Win rate threshold for Tier-1
+        - tier1_pnl: Avg P&L per trade for Tier-1
+        - tier2_wr_min: Min win rate for Tier-2
+        - tier2_pnl: Avg P&L per trade for Tier-2
+        - tier3_min_pnl: Min P&L for Tier-3
         """
         tiers = {'tier1': [], 'tier2': [], 'tier3': [], 'tierx': []}
+        
+        # Get dynamic thresholds from config
+        th = TIER_THRESHOLDS
+        min_trades = th.get("min_trades", 25)
+        tier1_wr = th.get("tier1_wr", 0.60)
+        tier1_pnl = th.get("tier1_pnl", 5.0)
+        tier2_wr_min = th.get("tier2_wr_min", 0.40)
+        tier2_pnl = th.get("tier2_pnl", 2.0)
+        tier3_min_pnl = th.get("tier3_min_pnl", 0.00)
+        
+        print(f"[TIER-CONFIG] min_trades={min_trades}, tier1_wr={tier1_wr}, tier1_pnl={tier1_pnl}, tier2_wr_min={tier2_wr_min}, tier2_pnl={tier2_pnl}", flush=True)
         
         # Evaluate all 2-dimensional combos
         combos_2d = [
@@ -794,19 +809,21 @@ class PECEnhancedReporter:
                 combo_name = f"{label}_{key[0]}_{key[1]}"
                 closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
                 
-                if closed < 100:
+                if closed < min_trades:
                     tiers['tierx'].append(combo_name)
                 else:
                     win_count = stat['tp'] + stat['timeout_win']
-                    wr = (win_count / closed * 100) if closed > 0 else 0
+                    wr = (win_count / closed) if closed > 0 else 0
                     avg_pnl_per_trade = stat['pnl'] / closed if closed > 0 else 0
                     
-                    if wr >= 60 and avg_pnl_per_trade >= 5:
+                    if wr >= tier1_wr and avg_pnl_per_trade >= tier1_pnl:
                         tiers['tier1'].append(combo_name)
-                    elif 40 <= wr < 60 and avg_pnl_per_trade >= 2:
+                    elif tier2_wr_min <= wr < tier1_wr and avg_pnl_per_trade >= tier2_pnl:
                         tiers['tier2'].append(combo_name)
-                    else:
+                    elif avg_pnl_per_trade >= tier3_min_pnl:
                         tiers['tier3'].append(combo_name)
+                    else:
+                        tiers['tierx'].append(combo_name)
         
         # Evaluate all 3-dimensional combos
         combos_3d = [
@@ -822,22 +839,25 @@ class PECEnhancedReporter:
                 combo_name = f"{label}_{key[0]}_{key[1]}_{key[2]}"
                 closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
                 
-                if closed < 100:
+                if closed < min_trades:
                     tiers['tierx'].append(combo_name)
                 else:
                     win_count = stat['tp'] + stat['timeout_win']
-                    wr = (win_count / closed * 100) if closed > 0 else 0
+                    wr = (win_count / closed) if closed > 0 else 0
                     avg_pnl_per_trade = stat['pnl'] / closed if closed > 0 else 0
                     
-                    if wr >= 60 and avg_pnl_per_trade >= 5:
+                    if wr >= tier1_wr and avg_pnl_per_trade >= tier1_pnl:
                         tiers['tier1'].append(combo_name)
-                    elif 40 <= wr < 60 and avg_pnl_per_trade >= 2:
+                    elif tier2_wr_min <= wr < tier1_wr and avg_pnl_per_trade >= tier2_pnl:
                         tiers['tier2'].append(combo_name)
-                    else:
+                    elif avg_pnl_per_trade >= tier3_min_pnl:
                         tiers['tier3'].append(combo_name)
+                    else:
+                        tiers['tierx'].append(combo_name)
         
-        # Add timestamp
+        # Add timestamp and config version
         tiers['generated_at'] = datetime.now(timezone(timedelta(hours=7))).strftime('%Y-%m-%d %H:%M:%S GMT+7')
+        tiers['config_version'] = 'A (LOOSE - DEMO)' if min_trades == 5 else 'B (AGREED)' if min_trades == 25 else 'C (STRICT)'
         
         return tiers
     
