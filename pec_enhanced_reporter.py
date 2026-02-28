@@ -126,6 +126,30 @@ class PECEnhancedReporter:
         except:
             return "N/A"
     
+    def _calculate_avg_timeout_by_timeframe(self, timeframe: str) -> str:
+        """Calculate average duration for TIMEOUT trades by specific timeframe"""
+        try:
+            matching_signals = []
+            for s in self.signals:
+                if s.get('status') == 'TIMEOUT' and s.get('timeframe') == timeframe and s.get('fired_time_utc') and s.get('closed_at'):
+                    try:
+                        fired = datetime.fromisoformat(s.get('fired_time_utc').replace('Z', '+00:00'))
+                        closed = datetime.fromisoformat(s.get('closed_at').replace('Z', '+00:00'))
+                        delta = closed - fired
+                        total_seconds = int(delta.total_seconds())
+                        if total_seconds > 0:
+                            matching_signals.append(total_seconds)
+                    except:
+                        pass
+            
+            if not matching_signals:
+                return "N/A"
+            
+            avg_seconds = sum(matching_signals) / len(matching_signals)
+            return self._format_duration_hm(int(avg_seconds))
+        except:
+            return "N/A"
+    
     def _generate_detailed_signal_list(self):
         """Generate detailed signal list section"""
         detail_lines = []
@@ -628,12 +652,18 @@ class PECEnhancedReporter:
         avg_tp_duration_summary = self._calculate_avg_duration_by_status(self.signals, 'TP_HIT')
         avg_sl_duration_summary = self._calculate_avg_duration_by_status(self.signals, 'SL_HIT')
         
+        # Calculate average TIMEOUT durations by timeframe
+        avg_timeout_15min = self._calculate_avg_timeout_by_timeframe('15min')
+        avg_timeout_30min = self._calculate_avg_timeout_by_timeframe('30min')
+        avg_timeout_1h = self._calculate_avg_timeout_by_timeframe('1h')
+        
         # Display Summary
         report.append(f"Total Signals: {total_signals} (Count Win = {total_tp}; Count Loss = {total_sl}; Count TimeOut = {total_timeout}; Count Open = {total_open})")
         report.append(f"Closed Trades: {closed_signals} (TP: {total_tp}, SL: {total_sl}; TimeOut Win = {timeout_wins}; TimeOut Loss = {timeout_losses})")
         report.append(f"Overall Win Rate: {overall_wr:.2f}% >> [ (count TP + Count TimeOut Win) / (Closed Trades) ] = [ ({total_tp}+{timeout_wins}) / {closed_signals} ]")
         report.append(f"Total P&L: ${total_pnl:+.2f}")
         report.append(f"Avg TP Duration: {avg_tp_duration_summary} | Avg SL Duration: {avg_sl_duration_summary}")
+        report.append(f"Avg TIMEOUT Duration: 15min={avg_timeout_15min} | 30min={avg_timeout_30min} | 1h={avg_timeout_1h}")
         report.append("")
         
         return "\n".join(report)
