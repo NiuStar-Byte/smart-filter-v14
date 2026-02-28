@@ -90,6 +90,42 @@ class PECEnhancedReporter:
         except:
             return "-"
     
+    def _format_duration_hm(self, total_seconds: int) -> str:
+        """Format duration as Xh Ym (human readable)"""
+        try:
+            hours = int(total_seconds // 3600)
+            minutes = int((total_seconds % 3600) // 60)
+            if hours > 0:
+                return f"{hours}h {minutes}m"
+            else:
+                return f"{minutes}m"
+        except:
+            return "-"
+    
+    def _calculate_avg_duration_by_status(self, signals_list, status: str) -> str:
+        """Calculate average duration for signals with specific status (TP_HIT or SL_HIT)"""
+        try:
+            matching_signals = []
+            for s in signals_list:
+                if s.get('status') == status and s.get('fired_time_utc') and s.get('closed_at'):
+                    try:
+                        fired = datetime.fromisoformat(s.get('fired_time_utc').replace('Z', '+00:00'))
+                        closed = datetime.fromisoformat(s.get('closed_at').replace('Z', '+00:00'))
+                        delta = closed - fired
+                        total_seconds = int(delta.total_seconds())
+                        if total_seconds > 0:
+                            matching_signals.append(total_seconds)
+                    except:
+                        pass
+            
+            if not matching_signals:
+                return "N/A"
+            
+            avg_seconds = sum(matching_signals) / len(matching_signals)
+            return self._format_duration_hm(int(avg_seconds))
+        except:
+            return "N/A"
+    
     def _generate_detailed_signal_list(self):
         """Generate detailed signal list section"""
         detail_lines = []
@@ -202,6 +238,12 @@ class PECEnhancedReporter:
             total_timeout = stats['timeout_win'] + stats['timeout_loss']
             report.append(f"{key:<12} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
                          f"TIMEOUT: {total_timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+            
+            # Add duration metrics
+            tf_signals = [s for s in self.signals if s.get('timeframe') == key]
+            avg_tp_dur = self._calculate_avg_duration_by_status(tf_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(tf_signals, 'SL_HIT')
+            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
         report.append("")
         
         # By Direction
@@ -215,6 +257,12 @@ class PECEnhancedReporter:
             total_timeout = stats['timeout_win'] + stats['timeout_loss']
             report.append(f"{key:<12} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
                          f"TIMEOUT: {total_timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+            
+            # Add duration metrics
+            dir_signals = [s for s in self.signals if s.get('signal_type') == key]
+            avg_tp_dur = self._calculate_avg_duration_by_status(dir_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(dir_signals, 'SL_HIT')
+            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
         report.append("")
         
         # By Route
@@ -228,6 +276,12 @@ class PECEnhancedReporter:
             total_timeout = stats['timeout_win'] + stats['timeout_loss']
             report.append(f"{key:<18} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
                          f"TIMEOUT: {total_timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+            
+            # Add duration metrics
+            route_signals = [s for s in self.signals if s.get('route') == key]
+            avg_tp_dur = self._calculate_avg_duration_by_status(route_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(route_signals, 'SL_HIT')
+            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
         report.append("")
         
         # By Regime
@@ -241,6 +295,12 @@ class PECEnhancedReporter:
             total_timeout = stats['timeout_win'] + stats['timeout_loss']
             report.append(f"{key:<12} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
                          f"TIMEOUT: {total_timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+            
+            # Add duration metrics
+            regime_signals = [s for s in self.signals if s.get('regime') == key]
+            avg_tp_dur = self._calculate_avg_duration_by_status(regime_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(regime_signals, 'SL_HIT')
+            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
         report.append("")
         
         # By Confidence
@@ -278,6 +338,11 @@ class PECEnhancedReporter:
             
             report.append(f"{label:<18} | Total: {total:<4} | TP: {tp:<3} | SL: {sl:<3} | "
                          f"TIMEOUT: {timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${pnl:+.2f}")
+            
+            # Add duration metrics
+            avg_tp_dur = self._calculate_avg_duration_by_status(signals_list, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(signals_list, 'SL_HIT')
+            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
         report.append("")
         
         # === MULTI-DIMENSIONAL AGGREGATES ===
@@ -297,6 +362,12 @@ class PECEnhancedReporter:
             total_timeout = stats['timeout_win'] + stats['timeout_loss']
             report.append(f"{key[0]:<8} | {key[1]:<5} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
                          f"TIMEOUT: {total_timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+            
+            # Add duration metrics
+            combo_signals = [s for s in self.signals if s.get('timeframe') == key[0] and s.get('signal_type') == key[1]]
+            avg_tp_dur = self._calculate_avg_duration_by_status(combo_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(combo_signals, 'SL_HIT')
+            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
         report.append("")
         
         # By TimeFrame x Regime
@@ -310,6 +381,12 @@ class PECEnhancedReporter:
             total_timeout = stats['timeout_win'] + stats['timeout_loss']
             report.append(f"{key[0]:<8} | {key[1]:<6} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
                          f"TIMEOUT: {total_timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+            
+            # Add duration metrics
+            combo_signals = [s for s in self.signals if s.get('timeframe') == key[0] and s.get('regime') == key[1]]
+            avg_tp_dur = self._calculate_avg_duration_by_status(combo_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(combo_signals, 'SL_HIT')
+            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
         report.append("")
         
         # By Direction x Regime
@@ -323,6 +400,12 @@ class PECEnhancedReporter:
             total_timeout = stats['timeout_win'] + stats['timeout_loss']
             report.append(f"{key[0]:<5} | {key[1]:<6} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
                          f"TIMEOUT: {total_timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+            
+            # Add duration metrics
+            combo_signals = [s for s in self.signals if s.get('signal_type') == key[0] and s.get('regime') == key[1]]
+            avg_tp_dur = self._calculate_avg_duration_by_status(combo_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(combo_signals, 'SL_HIT')
+            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
         report.append("")
         
         # By Direction x Route
@@ -336,6 +419,12 @@ class PECEnhancedReporter:
             total_timeout = stats['timeout_win'] + stats['timeout_loss']
             report.append(f"{key[0]:<5} | {key[1]:<18} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
                          f"TIMEOUT: {total_timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+            
+            # Add duration metrics
+            combo_signals = [s for s in self.signals if s.get('signal_type') == key[0] and s.get('route') == key[1]]
+            avg_tp_dur = self._calculate_avg_duration_by_status(combo_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(combo_signals, 'SL_HIT')
+            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
         report.append("")
         
         # By Route x Regime
@@ -349,6 +438,12 @@ class PECEnhancedReporter:
             total_timeout = stats['timeout_win'] + stats['timeout_loss']
             report.append(f"{key[0]:<18} | {key[1]:<6} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
                          f"TIMEOUT: {total_timeout:<3} | Closed: {closed:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+            
+            # Add duration metrics
+            combo_signals = [s for s in self.signals if s.get('route') == key[0] and s.get('regime') == key[1]]
+            avg_tp_dur = self._calculate_avg_duration_by_status(combo_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(combo_signals, 'SL_HIT')
+            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
         report.append("")
         
         # By TimeFrame x Direction x Route
@@ -362,6 +457,12 @@ class PECEnhancedReporter:
             total_timeout = stats['timeout_win'] + stats['timeout_loss']
             report.append(f"{key[0]:<8} | {key[1]:<5} | {key[2]:<18} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
                          f"TIMEOUT: {total_timeout:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+            
+            # Add duration metrics
+            combo_signals = [s for s in self.signals if s.get('timeframe') == key[0] and s.get('signal_type') == key[1] and s.get('route') == key[2]]
+            avg_tp_dur = self._calculate_avg_duration_by_status(combo_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(combo_signals, 'SL_HIT')
+            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
         report.append("")
         
         # By TimeFrame x Direction x Regime
@@ -375,6 +476,12 @@ class PECEnhancedReporter:
             total_timeout = stats['timeout_win'] + stats['timeout_loss']
             report.append(f"{key[0]:<8} | {key[1]:<5} | {key[2]:<6} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
                          f"TIMEOUT: {total_timeout:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+            
+            # Add duration metrics
+            combo_signals = [s for s in self.signals if s.get('timeframe') == key[0] and s.get('signal_type') == key[1] and s.get('regime') == key[2]]
+            avg_tp_dur = self._calculate_avg_duration_by_status(combo_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(combo_signals, 'SL_HIT')
+            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
         report.append("")
         
         # By Direction x Route x Regime
@@ -388,6 +495,12 @@ class PECEnhancedReporter:
             total_timeout = stats['timeout_win'] + stats['timeout_loss']
             report.append(f"{key[0]:<5} | {key[1]:<18} | {key[2]:<6} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
                          f"TIMEOUT: {total_timeout:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+            
+            # Add duration metrics
+            combo_signals = [s for s in self.signals if s.get('signal_type') == key[0] and s.get('route') == key[1] and s.get('regime') == key[2]]
+            avg_tp_dur = self._calculate_avg_duration_by_status(combo_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(combo_signals, 'SL_HIT')
+            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
         report.append("")
         
         # By TimeFrame x Direction x Confidence
@@ -401,6 +514,16 @@ class PECEnhancedReporter:
             total_timeout = stats['timeout_win'] + stats['timeout_loss']
             report.append(f"{key[0]:<8} | {key[1]:<5} | {key[2]:<10} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
                          f"TIMEOUT: {total_timeout:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+            
+            # Add duration metrics
+            # key[2] is confidence_level (HIGH/MID/LOW), need to filter by actual confidence ranges
+            conf_mapping = {'HIGH': (76, 100), 'MID': (51, 75), 'LOW': (0, 50)}
+            conf_range = conf_mapping.get(key[2], (0, 100))
+            combo_signals = [s for s in self.signals if s.get('timeframe') == key[0] and s.get('signal_type') == key[1] 
+                           and conf_range[0] <= s.get('confidence', 0) <= conf_range[1]]
+            avg_tp_dur = self._calculate_avg_duration_by_status(combo_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(combo_signals, 'SL_HIT')
+            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
         report.append("")
         
         # By TimeFrame x Route x Regime
@@ -414,6 +537,12 @@ class PECEnhancedReporter:
             total_timeout = stats['timeout_win'] + stats['timeout_loss']
             report.append(f"{key[0]:<8} | {key[1]:<18} | {key[2]:<6} | Total: {stats['count']:<4} | TP: {stats['tp']:<3} | SL: {stats['sl']:<3} | "
                          f"TIMEOUT: {total_timeout:<3} | WR: {wr:.1f}% | P&L: ${stats['pnl']:+.2f}")
+            
+            # Add duration metrics
+            combo_signals = [s for s in self.signals if s.get('timeframe') == key[0] and s.get('route') == key[1] and s.get('regime') == key[2]]
+            avg_tp_dur = self._calculate_avg_duration_by_status(combo_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(combo_signals, 'SL_HIT')
+            report.append(f"   ⏱️ Avg TP Duration: {avg_tp_dur} | Avg SL Duration: {avg_sl_dur}")
         report.append("")
         
         # Add Detailed Signal List section (before summary)
@@ -572,6 +701,91 @@ class PECEnhancedReporter:
                     stats[key]['pnl'] += pnl_calc
         
         return stats
+    
+    def generate_signal_tiers(self):
+        """
+        Generate SIGNAL_TIERS.json based on PEC aggregates.
+        Evaluates all dimension combos against tier criteria.
+        
+        Tier Criteria:
+        - Tier-1 (🥇): WR ≥60% + Avg P&L/trade ≥$5 + closed≥100
+        - Tier-2 (🥈): WR 40-59% + Avg P&L/trade ≥$2 + closed≥100
+        - Tier-3 (🥉): WR <40% OR Avg P&L/trade <$2 + closed≥100
+        - Tier-X (⚙️): closed <100 (insufficient data)
+        """
+        tiers = {'tier1': [], 'tier2': [], 'tier3': [], 'tierx': []}
+        
+        # Evaluate all 2-dimensional combos
+        combos_2d = [
+            (['timeframe', 'signal_type'], 'TF_DIR'),
+            (['timeframe', 'regime'], 'TF_REGIME'),
+            (['signal_type', 'regime'], 'DIR_REGIME'),
+            (['signal_type', 'route'], 'DIR_ROUTE'),
+            (['route', 'regime'], 'ROUTE_REGIME'),
+        ]
+        
+        for dimensions, label in combos_2d:
+            stats = self._aggregate_by_dimensions(dimensions)
+            for key, stat in stats.items():
+                combo_name = f"{label}_{key[0]}_{key[1]}"
+                closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
+                
+                if closed < 100:
+                    tiers['tierx'].append(combo_name)
+                else:
+                    win_count = stat['tp'] + stat['timeout_win']
+                    wr = (win_count / closed * 100) if closed > 0 else 0
+                    avg_pnl_per_trade = stat['pnl'] / closed if closed > 0 else 0
+                    
+                    if wr >= 60 and avg_pnl_per_trade >= 5:
+                        tiers['tier1'].append(combo_name)
+                    elif 40 <= wr < 60 and avg_pnl_per_trade >= 2:
+                        tiers['tier2'].append(combo_name)
+                    else:
+                        tiers['tier3'].append(combo_name)
+        
+        # Evaluate all 3-dimensional combos
+        combos_3d = [
+            (['timeframe', 'signal_type', 'route'], 'TF_DIR_ROUTE'),
+            (['timeframe', 'signal_type', 'regime'], 'TF_DIR_REGIME'),
+            (['signal_type', 'route', 'regime'], 'DIR_ROUTE_REGIME'),
+            (['timeframe', 'route', 'regime'], 'TF_ROUTE_REGIME'),
+        ]
+        
+        for dimensions, label in combos_3d:
+            stats = self._aggregate_by_dimensions(dimensions)
+            for key, stat in stats.items():
+                combo_name = f"{label}_{key[0]}_{key[1]}_{key[2]}"
+                closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
+                
+                if closed < 100:
+                    tiers['tierx'].append(combo_name)
+                else:
+                    win_count = stat['tp'] + stat['timeout_win']
+                    wr = (win_count / closed * 100) if closed > 0 else 0
+                    avg_pnl_per_trade = stat['pnl'] / closed if closed > 0 else 0
+                    
+                    if wr >= 60 and avg_pnl_per_trade >= 5:
+                        tiers['tier1'].append(combo_name)
+                    elif 40 <= wr < 60 and avg_pnl_per_trade >= 2:
+                        tiers['tier2'].append(combo_name)
+                    else:
+                        tiers['tier3'].append(combo_name)
+        
+        # Add timestamp
+        tiers['generated_at'] = datetime.now(timezone(timedelta(hours=7))).strftime('%Y-%m-%d %H:%M:%S GMT+7')
+        
+        return tiers
+    
+    def save_signal_tiers(self, tiers):
+        """Save tiers to timestamped file"""
+        now = datetime.now(timezone(timedelta(hours=7)))
+        filename = f"SIGNAL_TIERS_{now.strftime('%Y-%m-%d_%H%M')}.json"
+        
+        with open(filename, 'w') as f:
+            json.dump(tiers, f, indent=2)
+        
+        return filename
 
 if __name__ == "__main__":
     reporter = PECEnhancedReporter()
@@ -583,3 +797,8 @@ if __name__ == "__main__":
         f.write(report)
     
     print("\n✅ Report saved to PEC_ENHANCED_REPORT.txt")
+    
+    # Generate and save signal tiers
+    tiers = reporter.generate_signal_tiers()
+    tier_file = reporter.save_signal_tiers(tiers)
+    print(f"✅ Signal tiers saved to {tier_file}")
