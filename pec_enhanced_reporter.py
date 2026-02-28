@@ -670,6 +670,16 @@ class PECEnhancedReporter:
         report.append(f"Avg TIMEOUT Duration: 15min={avg_timeout_15min} | 30min={avg_timeout_30min} | 1h={avg_timeout_1h}")
         report.append("")
         
+        # === NEW: HIERARCHY RANKING SECTION ===
+        report.append("=" * 200)
+        report.append("🎯 HIERARCHY RANKING - 2D / 3D / 4D PERFORMANCE TRACKING")
+        report.append("=" * 200)
+        report.append("")
+        
+        # Get hierarchy rankings
+        hierarchy_section = self._generate_hierarchy_ranking()
+        report.append(hierarchy_section)
+        
         return "\n".join(report)
     
     def _aggregate_by(self, dimension):
@@ -860,6 +870,133 @@ class PECEnhancedReporter:
         tiers['config_version'] = 'A (LOOSE - DEMO)' if min_trades == 5 else 'B (AGREED)' if min_trades == 25 else 'C (STRICT)'
         
         return tiers
+    
+    def _generate_hierarchy_ranking(self):
+        """Generate 2D, 3D, 4D hierarchy ranking for decision-making"""
+        output = []
+        
+        # Get 2D aggregates
+        combos_2d = [
+            (['timeframe', 'signal_type'], 'TF_DIR'),
+            (['timeframe', 'regime'], 'TF_REGIME'),
+            (['signal_type', 'regime'], 'DIR_REGIME'),
+            (['signal_type', 'route'], 'DIR_ROUTE'),
+            (['route', 'regime'], 'ROUTE_REGIME'),
+        ]
+        
+        output.append("📊 2-DIMENSIONAL COMBOS (Top Performers)")
+        output.append("─" * 140)
+        
+        for dimensions, label in combos_2d:
+            stats = self._aggregate_by_dimensions(dimensions)
+            min_trades = TIER_THRESHOLDS.get("min_trades", 25)
+            
+            # Filter & rank by WR then P&L
+            valid_combos = []
+            for key, stat in stats.items():
+                closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
+                if closed >= min_trades:
+                    win_count = stat['tp'] + stat['timeout_win']
+                    wr = (win_count / closed) if closed > 0 else 0
+                    avg_pnl = stat['pnl'] / closed if closed > 0 else 0
+                    valid_combos.append({
+                        'name': f"{label}_{key[0]}_{key[1]}",
+                        'wr': wr,
+                        'pnl': stat['pnl'],
+                        'avg_pnl': avg_pnl,
+                        'closed': closed,
+                        'tp': stat['tp'],
+                        'sl': stat['sl']
+                    })
+            
+            # Sort by WR descending, then by P&L
+            valid_combos.sort(key=lambda x: (x['wr'], x['pnl']), reverse=True)
+            
+            if valid_combos:
+                output.append(f"\n  {label}:")
+                for combo in valid_combos[:3]:  # Top 3 per category
+                    output.append(f"    ✓ {combo['name']:40} | WR: {combo['wr']*100:5.1f}% | P&L: ${combo['pnl']:+8.2f} | Avg: ${combo['avg_pnl']:+.2f} | Closed: {combo['closed']}")
+        
+        output.append("")
+        output.append("📊 3-DIMENSIONAL COMBOS (Top Performers)")
+        output.append("─" * 140)
+        
+        # Get 3D aggregates
+        combos_3d = [
+            (['timeframe', 'signal_type', 'route'], 'TF_DIR_ROUTE'),
+            (['timeframe', 'signal_type', 'regime'], 'TF_DIR_REGIME'),
+            (['signal_type', 'route', 'regime'], 'DIR_ROUTE_REGIME'),
+            (['timeframe', 'route', 'regime'], 'TF_ROUTE_REGIME'),
+        ]
+        
+        all_3d = []
+        for dimensions, label in combos_3d:
+            stats = self._aggregate_by_dimensions(dimensions)
+            min_trades = TIER_THRESHOLDS.get("min_trades", 25)
+            
+            for key, stat in stats.items():
+                closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
+                if closed >= min_trades:
+                    win_count = stat['tp'] + stat['timeout_win']
+                    wr = (win_count / closed) if closed > 0 else 0
+                    avg_pnl = stat['pnl'] / closed if closed > 0 else 0
+                    all_3d.append({
+                        'name': f"{label}_{key[0]}_{key[1]}_{key[2]}",
+                        'wr': wr,
+                        'pnl': stat['pnl'],
+                        'avg_pnl': avg_pnl,
+                        'closed': closed,
+                        'tp': stat['tp'],
+                        'sl': stat['sl']
+                    })
+        
+        all_3d.sort(key=lambda x: (x['wr'], x['pnl']), reverse=True)
+        
+        if all_3d:
+            output.append("\n  Top 5 3D Combos by WR:")
+            for combo in all_3d[:5]:
+                output.append(f"    ✓ {combo['name']:55} | WR: {combo['wr']*100:5.1f}% | P&L: ${combo['pnl']:+8.2f} | Avg: ${combo['avg_pnl']:+.2f} | Closed: {combo['closed']}")
+        else:
+            output.append("\n  No 3D combos meet minimum trade threshold yet.")
+        
+        output.append("")
+        output.append("📊 4-DIMENSIONAL COMBOS (Top Performers)")
+        output.append("─" * 140)
+        
+        # Get 4D aggregate (TF x Direction x Route x Regime)
+        stats_4d = self._aggregate_by_dimensions(['timeframe', 'signal_type', 'route', 'regime'])
+        min_trades = TIER_THRESHOLDS.get("min_trades", 25)
+        
+        all_4d = []
+        for key, stat in stats_4d.items():
+            closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
+            if closed >= min_trades:
+                win_count = stat['tp'] + stat['timeout_win']
+                wr = (win_count / closed) if closed > 0 else 0
+                avg_pnl = stat['pnl'] / closed if closed > 0 else 0
+                all_4d.append({
+                    'name': f"TF_DIR_ROUTE_REGIME_{key[0]}_{key[1]}_{key[2]}_{key[3]}",
+                    'wr': wr,
+                    'pnl': stat['pnl'],
+                    'avg_pnl': avg_pnl,
+                    'closed': closed,
+                    'tp': stat['tp'],
+                    'sl': stat['sl']
+                })
+        
+        all_4d.sort(key=lambda x: (x['wr'], x['pnl']), reverse=True)
+        
+        if all_4d:
+            output.append("\n  Top 5 4D Combos by WR:")
+            for combo in all_4d[:5]:
+                output.append(f"    ✓ {combo['name']:70} | WR: {combo['wr']*100:5.1f}% | P&L: ${combo['pnl']:+8.2f} | Avg: ${combo['avg_pnl']:+.2f} | Closed: {combo['closed']}")
+        else:
+            output.append("\n  No 4D combos meet minimum trade threshold yet.")
+        
+        output.append("")
+        output.append("=" * 140)
+        
+        return "\n".join(output)
     
     def save_signal_tiers(self, tiers):
         """Save tiers to timestamped file"""
