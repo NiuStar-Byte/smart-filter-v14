@@ -59,7 +59,7 @@ class PECEnhancedReporter:
     def _calculate_pnl_usd(self, entry_price: float, exit_price: float, direction: str) -> float:
         """Calculate P&L USD using notional position of $1,000 ($100 × 10x leverage)"""
         try:
-            if not entry_price or entry_price == 0:
+            if not entry_price or entry_price == 0 or not exit_price or exit_price == 0:
                 return None
             
             entry = float(entry_price)
@@ -70,9 +70,11 @@ class PECEnhancedReporter:
             dir_down = str(direction).strip().upper() == "SHORT"
             
             if dir_up:
+                # LONG: use entry as denominator
                 pnl_usd = ((exit_val - entry) / entry) * notional_position
             elif dir_down:
-                pnl_usd = ((entry - exit_val) / entry) * notional_position
+                # SHORT: use exit as denominator (notional basis at exit)
+                pnl_usd = ((entry - exit_val) / exit_val) * notional_position
             else:
                 return None
             
