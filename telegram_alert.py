@@ -273,11 +273,11 @@ def send_telegram_alert(
     # Build message lines WITHOUT any blank empty lines
     lines = []
     
-    # Tier tags disabled (POC criteria removed - using production criteria only)
-    # Tier tags will appear on Telegram once combos meet VERSION B (AGREED) thresholds
-    # For now: only internal tracking via SIGNAL_TIERS.json
+    # Tier tag display (production criteria only - VERSION B AGREED)
+    # Tags appear on Telegram only when signal combo meets thresholds
+    tier_display = f" {tier}" if tier and tier != "Tier-X" else ""
     
-    lines.append(f"{numbered_signal}. {symbol} ({tf})")
+    lines.append(f"{numbered_signal}. {symbol} ({tf}){tier_display}")
     lines.append(f"{'📉' if regime_display == 'BEAR' else ('📈' if regime_display == 'BULL' else '🔎')} Regime: {regime_display}")
     lines.append(f"{signal_icon} {signal_str} Signal")
     lines.append(f"{route_icon} {route_str}")
