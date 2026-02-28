@@ -275,7 +275,13 @@ def send_telegram_alert(
     
     # Tier tag display (production criteria only - VERSION B AGREED)
     # Tags appear on Telegram only when signal combo meets thresholds
-    tier_display = f" {tier}" if tier and tier != "Tier-X" else ""
+    tier_icon_map = {
+        "Tier-1": "⭐",
+        "Tier-2": "🟡", 
+        "Tier-3": "🔵"
+    }
+    tier_icon = tier_icon_map.get(tier, "")
+    tier_display = f" {tier_icon} {tier}" if tier and tier != "Tier-X" else ""
     
     lines.append(f"{numbered_signal}. {symbol} ({tf}){tier_display}")
     lines.append(f"{'📉' if regime_display == 'BEAR' else ('📈' if regime_display == 'BULL' else '🔎')} Regime: {regime_display}")
