@@ -81,6 +81,26 @@ TOKENS = [
 COOLDOWN = {"15min": 120, "30min": 240, "1h": 600}
 last_sent = {}
 
+# === LOGGING CONTROL ===
+# Disable verbose analysis logs to reduce Railway rate limit issues (67 messages dropped)
+VERBOSE_LOGGING = os.getenv("VERBOSE_LOGGING", "0") == "1"
+
+import contextlib
+
+@contextlib.contextmanager
+def suppress_stdout():
+    """Temporarily suppress stdout logging"""
+    if VERBOSE_LOGGING:
+        yield
+    else:
+        import sys
+        old_stdout = sys.stdout
+        try:
+            sys.stdout = open(os.devnull, 'w')
+            yield
+        finally:
+            sys.stdout = old_stdout
+
 def initialize_last_sent():
     """Load recent sent signals from SENT_SIGNALS.jsonl to restore last_sent state after daemon restart"""
     global last_sent
