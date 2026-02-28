@@ -105,6 +105,7 @@ def send_telegram_alert(
     tp_sl: Optional[dict] = None,
     chosen_ratio: Optional[float] = None,
     achieved_rr: Optional[float] = None,
+    tier: str = "Tier-X",  # Dynamic tier tag
 ) -> bool:
     """
     Send a Telegram formatted alert message without extra blank lines.
@@ -271,7 +272,11 @@ def send_telegram_alert(
 
     # Build message lines WITHOUT any blank empty lines
     lines = []
-    lines.append(f"{numbered_signal}. {symbol} ({tf})")
+    
+    # Tier tag icon mapping
+    tier_icon = "🥇" if tier == "Tier-1" else ("🥈" if tier == "Tier-2" else ("🥉" if tier == "Tier-3" else "⚙️"))
+    
+    lines.append(f"{numbered_signal}. {symbol} ({tf}) {tier_icon} {tier}")
     lines.append(f"{'📉' if regime_display == 'BEAR' else ('📈' if regime_display == 'BULL' else '🔎')} Regime: {regime_display}")
     lines.append(f"{signal_icon} {signal_str} Signal")
     lines.append(f"{route_icon} {route_str}")

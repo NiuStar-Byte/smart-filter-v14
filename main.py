@@ -16,6 +16,7 @@ from kucoin_data import get_live_entry_price, DEFAULT_SLIPPAGE
 from kucoin_data import get_ohlcv
 from smart_filter import SmartFilter
 from telegram_alert import send_telegram_alert, send_telegram_file
+from tier_lookup import get_signal_tier
 from kucoin_orderbook import get_order_wall_delta
 from pec_engine import run_pec_check, export_pec_log
 from tp_sl_retracement import calculate_tp_sl
@@ -682,6 +683,10 @@ def run_cycle():
                         # Send trade alert to Telegram
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
+                                # Get signal tier (dynamic - will be Tier-X initially, populates over time)
+                                signal_tier = get_signal_tier(tf_val, signal_type, Route, regime)
+                                print(f"[TIER] 15min {symbol_val}: {signal_tier}", flush=True)
+                                
                                 print(f"[DEBUG] 15min: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
                                 sent_ok = send_telegram_alert(
                                     numbered_signal=numbered_signal,
@@ -704,7 +709,8 @@ def run_cycle():
                                     sl=sl,
                                     tp_sl=tp_sl,
                                     chosen_ratio=None,
-                                    achieved_rr=achieved_rr_value
+                                    achieved_rr=achieved_rr_value,
+                                    tier=signal_tier
                                 )
                                 print(f"[DEBUG] 15min: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
                                 if sent_ok:
@@ -998,6 +1004,10 @@ def run_cycle():
                         # Send trade alert to Telegram
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
+                                # Get signal tier (dynamic - will be Tier-X initially, populates over time)
+                                signal_tier = get_signal_tier(tf_val, signal_type, Route, regime)
+                                print(f"[TIER] 30min {symbol_val}: {signal_tier}", flush=True)
+                                
                                 print(f"[DEBUG] 30min: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
                                 sent_ok = send_telegram_alert(
                                     numbered_signal=numbered_signal,
@@ -1020,7 +1030,8 @@ def run_cycle():
                                     sl=sl,
                                     tp_sl=tp_sl,
                                     chosen_ratio=None,
-                                    achieved_rr=achieved_rr_value
+                                    achieved_rr=achieved_rr_value,
+                                    tier=signal_tier
                                 )
                                 print(f"[DEBUG] 30min: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
                                 if sent_ok:
@@ -1282,6 +1293,10 @@ def run_cycle():
                         # Send trade alert to Telegram
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
+                                # Get signal tier (dynamic - will be Tier-X initially, populates over time)
+                                signal_tier = get_signal_tier(tf_val, signal_type, Route, regime)
+                                print(f"[TIER] 1h {symbol_val}: {signal_tier}", flush=True)
+                                
                                 print(f"[DEBUG] 1h: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
                                 sent_ok = send_telegram_alert(
                                     numbered_signal=numbered_signal,
@@ -1304,7 +1319,8 @@ def run_cycle():
                                     sl=sl,
                                     tp_sl=tp_sl,
                                     chosen_ratio=None,
-                                    achieved_rr=achieved_rr_value
+                                    achieved_rr=achieved_rr_value,
+                                    tier=signal_tier
                                 )
                                 print(f"[DEBUG] 1h: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
                                 if sent_ok:
