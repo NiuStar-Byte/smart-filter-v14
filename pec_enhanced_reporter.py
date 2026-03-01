@@ -853,14 +853,16 @@ class PECEnhancedReporter:
                 if pnl_calc is not None:
                     total_pnl += pnl_calc
         
-        # Calculate average durations for summary
-        avg_tp_duration_summary = self._calculate_avg_duration_by_status(self.signals, 'TP_HIT')
-        avg_sl_duration_summary = self._calculate_avg_duration_by_status(self.signals, 'SL_HIT')
+        # Calculate average durations for summary (EXCLUDING stale timeouts from TP/SL)
+        # Filter signals to exclude stale timeouts
+        clean_signals = [s for s in self.signals if not (s.get('data_quality_flag') and 'STALE_TIMEOUT' in s.get('data_quality_flag'))]
+        avg_tp_duration_summary = self._calculate_avg_duration_by_status(clean_signals, 'TP_HIT')
+        avg_sl_duration_summary = self._calculate_avg_duration_by_status(clean_signals, 'SL_HIT')
         
-        # Calculate average TIMEOUT durations by timeframe
-        avg_timeout_15min = self._calculate_avg_timeout_by_timeframe('15min')
-        avg_timeout_30min = self._calculate_avg_timeout_by_timeframe('30min')
-        avg_timeout_1h = self._calculate_avg_timeout_by_timeframe('1h')
+        # Calculate TIMEOUT WINDOW durations by timeframe (max_bars × tf_minutes, NOT actual closure duration)
+        timeout_window_15min = self._format_duration_hm(15 * 15 * 60)  # 15 bars × 15 min = 225 min = 3h 45m
+        timeout_window_30min = self._format_duration_hm(10 * 30 * 60)  # 10 bars × 30 min = 300 min = 5h
+        timeout_window_1h = self._format_duration_hm(5 * 60 * 60)      # 5 bars × 60 min = 300 min = 5h
         
         # Display Summary (with stale timeout exclusion note)
         stale_timeout_count = sum(1 for s in self.signals if s.get('data_quality_flag') and 'STALE_TIMEOUT' in s.get('data_quality_flag'))
@@ -869,8 +871,8 @@ class PECEnhancedReporter:
         report.append(f"Closed Trades (Clean Data): {closed_signals} (TP: {total_tp}, SL: {total_sl}; TimeOut Win = {timeout_wins}; TimeOut Loss = {timeout_losses})")
         report.append(f"Overall Win Rate: {overall_wr:.2f}% >> [ (count TP + Count TimeOut Win) / (Closed Trades) ] = [ ({total_tp}+{timeout_wins}) / {closed_signals} ]")
         report.append(f"Total P&L (Clean Data): ${total_pnl:+.2f}")
-        report.append(f"Avg TP Duration: {avg_tp_duration_summary} | Avg SL Duration: {avg_sl_duration_summary}")
-        report.append(f"Avg TIMEOUT Duration: 15min={avg_timeout_15min} | 30min={avg_timeout_30min} | 1h={avg_timeout_1h}")
+        report.append(f"Avg TP Duration (Clean): {avg_tp_duration_summary} | Avg SL Duration (Clean): {avg_sl_duration_summary}")
+        report.append(f"Max TIMEOUT Window: 15min={timeout_window_15min} | 30min={timeout_window_30min} | 1h={timeout_window_1h}")
         
         if stale_timeout_count > 0:
             report.append("")
