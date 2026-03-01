@@ -1169,13 +1169,13 @@ class PECEnhancedReporter:
                     if assigned_tier:
                         break
             
-            # Assign to tier list
+            # Assign to tier list (STORE CLEAN COMBO NAMES WITHOUT SUFFIX for tier_lookup.py matching)
             if assigned_tier == "Tier-1":
-                tiers['tier1'].append(f"{combo_name} ({assigned_level})")
+                tiers['tier1'].append(combo_name)
             elif assigned_tier == "Tier-2":
-                tiers['tier2'].append(f"{combo_name} ({assigned_level})")
+                tiers['tier2'].append(combo_name)
             elif assigned_tier == "Tier-3":
-                tiers['tier3'].append(f"{combo_name} ({assigned_level})")
+                tiers['tier3'].append(combo_name)
             else:
                 tiers['tierx'].append(combo_name)
         
