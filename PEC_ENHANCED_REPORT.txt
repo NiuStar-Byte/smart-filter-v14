@@ -310,7 +310,7 @@ TF       | Route                | Regime   | Total  | TP   | SL   | TIMEOUT  | C
 
 ==================================================================================================================================================================================================================================================================================================
 📋 DETAILED SIGNAL LIST: FIXED POSITION SIZE $100, LEVERAGE 10x
-Report Generated: 2026-03-02 01:39:26 GMT+7
+Report Generated: 2026-03-02 01:50:42 GMT+7
 Total Signals Loaded: 593
 
 ⚠️  NOTE: Signals marked 'STALE_TIMEOUT' in Data Quality column are EXCLUDED from Aggregates/Summary/Hierarchy
@@ -621,297 +621,297 @@ LINK-USDT    1h       LONG   REVERSAL             BULL   83%    MAIN_BLOCKC  TIM
 AVAX-USDT    30min    LONG   TREND CONTINUATION   BEAR   83%    MAIN_BLOCKC  TP_HIT     8.938930     9.192000     $+28.3110  01:54:40     05:22:56           03:28:15     ✓ CLEAN                     
 XPL-USDT     30min    LONG   TREND CONTINUATION   BULL   77%    MID_ALTS     TP_HIT     0.095295     0.098500     $+33.6302  01:54:28     02:40:39           00:46:11     ✓ CLEAN                     
 AAVE-USDT    1h       LONG   REVERSAL             BEAR   83%    LOW_ALTS     TIMEOUT    110.369259   111.898000   $+13.8511  01:54:10     06:58:25           05:00:00     ✓ CLEAN                     
-EPT-USDT     1h       LONG   TREND CONTINUATION   BULL   86%    LOW_ALTS     SL_HIT     0.000924     0.000852     $-77.8452  01:46:12     02:10:00           00:23:48     ✓ CLEAN                     
-EPT-USDT     30min    LONG   TREND CONTINUATION   BULL   86%    LOW_ALTS     SL_HIT     0.000924     0.000879     $-48.6220  01:46:10     01:49:35           00:03:24     ✓ CLEAN                     
-XPL-USDT     15min    LONG   TREND CONTINUATION   BULL   83%    MID_ALTS     SL_HIT     0.095295     0.094400     $-9.3940   01:41:29     02:04:53           00:23:23     ✓ CLEAN                     
-UNI-USDT     1h       LONG   TREND CONTINUATION   BULL   83%    LOW_ALTS     TIMEOUT    3.752349     3.804100     $+13.7917  01:41:06     06:42:32           05:00:00     ✓ CLEAN                     
-EIGEN-USDT   15min    LONG   REVERSAL             BEAR   83%    LOW_ALTS     SL_HIT     0.176176     0.175000     $-6.6751   01:41:03     02:04:53           00:23:50     ✓ CLEAN                     
-ADA-USDT     1h       LONG   REVERSAL             BEAR   83%    MAIN_BLOCKC  TP_HIT     0.272472     0.282900     $+38.2711  01:40:07     05:38:55           03:58:48     ✓ CLEAN                     
-BERA-USDT    15min    LONG   TREND CONTINUATION   BULL   82%    MID_ALTS     TIMEOUT    0.607407     0.617900     $+17.2754  01:38:23     05:28:16           03:45:00     ✓ CLEAN                     
-KAS-USDT     15min    LONG   TREND CONTINUATION   BEAR   82%    LOW_ALTS     SL_HIT     0.029560     0.029340     $-7.4267   01:38:09     02:25:19           00:47:10     ✓ CLEAN                     
-POL-USDT     15min    LONG   TREND CONTINUATION   BEAR   82%    MAIN_BLOCKC  TP_HIT     0.105405     0.106800     $+13.2318  01:37:12     02:40:38           01:03:26     ✓ CLEAN                     
-ROAM-USDT    30min    LONG   TREND CONTINUATION   BULL   77%    TOP_ALTS     SL_HIT     0.028251     0.027663     $-20.8212  01:09:25     01:24:01           00:14:35     ✓ CLEAN                     
-CROSS-USDT   1h       LONG   TREND CONTINUATION   BULL   82%    MID_ALTS     TP_HIT     0.101281     0.103230     $+19.2417  01:05:42     06:10:48           05:05:06     ✓ CLEAN                     
-EPT-USDT     30min    LONG   TREND CONTINUATION   BULL   76%    LOW_ALTS     SL_HIT     0.000927     0.000846     $-87.3058  01:05:28     01:08:38           00:03:09     ✓ CLEAN                     
-XRP-USDT     15min    LONG   TREND CONTINUATION   BEAR   82%    MAIN_BLOCKC  TP_HIT     1.330599     1.352870     $+16.7374  00:59:20     02:35:31           01:36:11     ✓ CLEAN                     
-SUI-USDT     15min    LONG   TREND CONTINUATION   BEAR   83%    LOW_ALTS     TP_HIT     0.861861     0.883200     $+24.7592  00:58:36     01:54:39           00:56:02     ✓ CLEAN                     
-VOXEL-USDT   1h       LONG   TREND CONTINUATION   BULL   82%    LOW_ALTS     TIMEOUT    0.008559     0.008690     $+15.3589  00:53:06     05:54:52           05:00:00     ✓ CLEAN                     
-XPL-USDT     15min    LONG   TREND CONTINUATION   BULL   82%    MID_ALTS     TP_HIT     0.092492     0.094100     $+17.3809  00:51:58     01:13:45           00:21:46     ✓ CLEAN                     
-AVAX-USDT    15min    LONG   TREND CONTINUATION   BEAR   81%    MAIN_BLOCKC  TP_HIT     8.703695     8.922000     $+25.0819  00:30:03     01:54:39           01:24:36     ✓ CLEAN                     
-FUN-USDT     30min    LONG   TREND CONTINUATION   RANGE  77%    MID_ALTS     TIMEOUT    0.049630     0.050090     $+9.2771   00:26:42     05:28:15           05:00:00     ✓ CLEAN                     
-HYPE-USDT    30min    LONG   TREND CONTINUATION   BULL   77%    LOW_ALTS     TP_HIT     28.987959    29.772000    $+27.0471  00:17:31     03:11:46           02:54:15     ✓ CLEAN                     
-KAS-USDT     15min    LONG   TREND CONTINUATION   BEAR   80%    LOW_ALTS     SL_HIT     0.029479     0.029230     $-8.4618   00:06:53     00:17:09           00:10:16     ✓ CLEAN                     
-KAITO-USDT   1h       LONG   TREND CONTINUATION   BULL   83%    LOW_ALTS     SL_HIT     0.342752     0.334230     $-24.8646  23:53:46     01:18:52           01:25:05     ✓ CLEAN                     
-KAITO-USDT   30min    LONG   TREND CONTINUATION   BULL   80%    LOW_ALTS     SL_HIT     0.342762     0.334230     $-24.8931  23:53:43     01:18:52           01:25:08     ✓ CLEAN                     
-KAITO-USDT   15min    LONG   TREND CONTINUATION   BULL   80%    LOW_ALTS     SL_HIT     0.342692     0.334230     $-24.6937  23:53:40     01:18:52           01:25:11     ✓ CLEAN                     
-DUCK-USDT    1h       LONG   REVERSAL             BULL   82%    LOW_ALTS     SL_HIT     0.001124     0.001117     $-6.3365   23:52:29     00:48:09           00:55:39     ✓ CLEAN                     
-RAY-USDT     15min    LONG   TREND CONTINUATION   BEAR   81%    LOW_ALTS     TP_HIT     0.575275     0.586500     $+19.5129  23:51:32     01:39:19           01:47:47     ✓ CLEAN                     
-AAVE-USDT    15min    LONG   TREND CONTINUATION   BEAR   83%    LOW_ALTS     TP_HIT     108.278170   110.720000   $+22.5515  23:44:40     02:35:31           02:50:51     ✓ CLEAN                     
-ENA-USDT     15min    LONG   TREND CONTINUATION   BEAR   82%    MID_ALTS     TP_HIT     0.098999     0.101700     $+27.2841  23:44:26     01:54:38           02:10:11     ✓ CLEAN                     
-ETH-USDT     15min    LONG   TREND CONTINUATION   BEAR   82%    MAIN_BLOCKC  SL_HIT     1907.906000  1889.760000  $-9.5110   23:43:03     00:42:59           00:59:55     ✓ CLEAN                     
-VOXEL-USDT   1h       LONG   TREND CONTINUATION   BULL   82%    LOW_ALTS     SL_HIT     0.008739     0.008460     $-31.8959  23:31:48     01:59:43           02:27:55     ✓ CLEAN                     
-FUEL-USDT    30min    LONG   TREND CONTINUATION   BEAR   78%    MID_ALTS     SL_HIT     0.001232     0.001217     $-12.3605  23:29:27     23:30:20           00:00:53     ✓ CLEAN                     
-VIRTUAL-USD  15min    LONG   TREND CONTINUATION   BEAR   80%    LOW_ALTS     TP_HIT     0.656256     0.674800     $+28.2579  23:27:37     01:54:37           02:27:00     ✓ CLEAN                     
-AERO-USDT    15min    LONG   TREND CONTINUATION   BEAR   81%    LOW_ALTS     TP_HIT     0.332332     0.340800     $+25.4805  23:15:09     01:44:25           02:29:15     ✓ CLEAN                     
-ROAM-USDT    30min    LONG   TREND CONTINUATION   BULL   77%    TOP_ALTS     TP_HIT     0.027902     0.028924     $+36.6329  23:14:06     02:35:31           03:21:24     ✓ CLEAN                     
-DOGE-USDT    15min    LONG   TREND CONTINUATION   BEAR   82%    LOW_ALTS     TP_HIT     0.090971     0.092770     $+19.7769  23:12:37     02:35:30           03:22:53     ✓ CLEAN                     
-AVAX-USDT    15min    LONG   TREND CONTINUATION   BEAR   82%    MAIN_BLOCKC  TP_HIT     8.665657     8.869000     $+23.4654  23:11:44     01:49:31           02:37:46     ✓ CLEAN                     
-ETH-USDT     15min    LONG   TREND CONTINUATION   BEAR   82%    MAIN_BLOCKC  TP_HIT     1902.080180  1940.750000  $+20.3303  23:11:38     01:54:37           02:42:58     ✓ CLEAN                     
-VOXEL-USDT   30min    LONG   TREND CONTINUATION   BULL   82%    LOW_ALTS     SL_HIT     0.008719     0.008460     $-29.6730  23:10:51     01:59:43           02:48:51     ✓ CLEAN                     
-BTC-USDT     15min    LONG   TREND CONTINUATION   BEAR   86%    MAIN_BLOCKC  TP_HIT     64872.90810  65721.60000  $+13.0824  22:43:20     01:49:30           03:06:09     ✓ CLEAN                     
-EPT-USDT     30min    LONG   TREND CONTINUATION   BULL   76%    LOW_ALTS     SL_HIT     0.000861     0.000820     $-47.4642  22:33:04     22:34:09           00:01:04     ✓ CLEAN                     
-CFX-USDT     15min    LONG   TREND CONTINUATION   BEAR   82%    LOW_ALTS     SL_HIT     0.046827     0.046440     $-8.2598   22:30:10     23:09:52           00:39:41     ✓ CLEAN                     
-HIPPO-USDT   15min    LONG   TREND CONTINUATION   BEAR   82%    LOW_ALTS     SL_HIT     0.000544     0.000539     $-8.3581   22:29:58     23:09:52           00:39:53     ✓ CLEAN                     
-ZORA-USDT    15min    LONG   TREND CONTINUATION   BEAR   82%    LOW_ALTS     SL_HIT     0.018197     0.018018     $-9.8465   22:29:44     00:42:56           02:13:12     ✓ CLEAN                     
-ARK-USDT     15min    LONG   TREND CONTINUATION   BEAR   87%    LOW_ALTS     OPEN       0.174100     N/A          OPEN       22:29:30     -                  -            ✓ CLEAN                     
-RAY-USDT     15min    LONG   TREND CONTINUATION   BEAR   87%    LOW_ALTS     TP_HIT     0.575675     0.586500     $+18.8038  22:29:03     01:39:17           03:10:13     ✓ CLEAN                     
-LA-USDT      15min    LONG   REVERSAL             BEAR   84%    LOW_ALTS     SL_HIT     0.220460     0.218750     $-7.7576   22:28:50     22:44:19           00:15:28     ✓ CLEAN                     
-POL-USDT     15min    LONG   TREND CONTINUATION   BEAR   84%    MAIN_BLOCKC  SL_HIT     0.104905     0.103900     $-9.5782   22:28:45     23:20:01           00:51:16     ✓ CLEAN                     
-AVAX-USDT    15min    LONG   TREND CONTINUATION   BEAR   84%    MAIN_BLOCKC  TP_HIT     8.662654     8.869000     $+23.8202  22:28:40     01:49:30           03:20:49     ✓ CLEAN                     
-ETH-USDT     15min    LONG   TREND CONTINUATION   BEAR   83%    MAIN_BLOCKC  TP_HIT     1903.851950  1939.830000  $+18.8975  22:28:33     01:54:36           03:26:03     ✓ CLEAN                     
-AVNT-USDT    15min    LONG   TREND CONTINUATION   BEAR   87%    LOW_ALTS     SL_HIT     0.170620     0.168980     $-9.6146   22:28:22     00:42:54           02:14:31     ✓ CLEAN                     
-ARKM-USDT    15min    LONG   AMBIGUOUS            BEAR   82%    LOW_ALTS     SL_HIT     0.102502     0.101300     $-11.7305  22:28:12     23:04:44           00:36:31     ✓ CLEAN                     
-EPT-USDT     15min    LONG   REVERSAL             BEAR   80%    LOW_ALTS     SL_HIT     0.000818     0.000724     $-114.716  22:26:47     22:29:01           00:02:14     ✓ CLEAN                     
-SOL-USDT     15min    LONG   TREND CONTINUATION   BEAR   83%    MAIN_BLOCKC  TP_HIT     80.520440    82.150000    $+20.2378  22:26:27     01:39:16           03:12:48     ✓ CLEAN                     
-ONDO-USDT    15min    LONG   TREND CONTINUATION   BEAR   84%    LOW_ALTS     TP_HIT     0.246036     0.251520     $+22.2903  22:24:26     01:39:16           03:14:50     ✓ CLEAN                     
-VOXEL-USDT   30min    LONG   TREND CONTINUATION   BEAR   77%    LOW_ALTS     SL_HIT     0.008699     0.008460     $-27.4398  22:24:06     01:59:42           03:35:36     ✓ CLEAN                     
-FUEL-USDT    15min    LONG   TREND CONTINUATION   BEAR   82%    MID_ALTS     TIMEOUT    0.001220     0.001229     $+7.1962   22:24:02     02:09:57           03:45:00     ✓ CLEAN                     
-ORDER-USDT   15min    LONG   TREND CONTINUATION   BEAR   82%    LOW_ALTS     TP_HIT     0.053073     0.053980     $+17.0893  22:20:04     01:39:15           03:19:11     ✓ CLEAN                     
-BTC-USDT     30min    SHORT  TREND CONTINUATION   BEAR   74%    MAIN_BLOCKC  SL_HIT     64383.15240  64864.50000  $-7.4208   21:52:21     23:09:49           01:17:27     ✓ CLEAN                     
-XRP-USDT     15min    LONG   TREND CONTINUATION   BEAR   83%    MAIN_BLOCKC  SL_HIT     1.336375     1.319060     $-12.9567  21:45:02     21:53:42           00:08:40     ✓ CLEAN                     
-ONDO-USDT    15min    LONG   TREND CONTINUATION   BEAR   82%    LOW_ALTS     SL_HIT     0.248738     0.245340     $-13.6629  21:42:56     21:53:42           00:10:45     ✓ CLEAN                     
-ADA-USDT     15min    LONG   TREND CONTINUATION   BEAR   82%    MAIN_BLOCKC  SL_HIT     0.269569     0.267500     $-7.6763   21:41:49     21:48:38           00:06:48     ✓ CLEAN                     
-BTC-USDT     15min    LONG   TREND CONTINUATION   BEAR   86%    MAIN_BLOCKC  SL_HIT     65027.36240  64476.40000  $-8.4728   21:41:44     21:53:42           00:11:58     ✓ CLEAN                     
-AAVE-USDT    15min    LONG   TREND CONTINUATION   BEAR   87%    LOW_ALTS     SL_HIT     108.944836   107.880000   $-9.7741   21:41:19     21:48:37           00:07:17     ✓ CLEAN                     
-VIRTUAL-USD  15min    LONG   TREND CONTINUATION   BEAR   80%    LOW_ALTS     SL_HIT     0.658858     0.651700     $-10.8646  21:17:33     21:53:41           00:36:08     ✓ CLEAN                     
-BTC-USDT     15min    LONG   TREND CONTINUATION   BEAR   84%    MAIN_BLOCKC  SL_HIT     64818.75400  64502.10000  $-4.8852   20:56:43     21:53:41           00:56:58     ✓ CLEAN                     
-LINK-USDT    15min    LONG   TREND CONTINUATION   BEAR   84%    MAIN_BLOCKC  SL_HIT     8.454947     8.399500     $-6.5579   20:55:10     21:58:45           01:03:34     ✓ CLEAN                     
-ASTER-USDT   1h       LONG   NONE                 BULL   83%    LOW_ALTS     TIMEOUT    0.696796     0.706800     $+14.3570  20:53:16     01:54:36           05:00:00     ✓ CLEAN                     
-UNI-USDT     15min    LONG   TREND CONTINUATION   BEAR   84%    LOW_ALTS     SL_HIT     3.668265     3.637100     $-8.4957   20:51:18     21:53:41           01:02:22     ✓ CLEAN                     
-DOGE-USDT    15min    LONG   TREND CONTINUATION   BEAR   84%    LOW_ALTS     SL_HIT     0.090961     0.090340     $-6.8257   20:51:06     21:53:40           01:02:34     ✓ CLEAN                     
-ARK-USDT     15min    LONG   TREND CONTINUATION   BEAR   84%    LOW_ALTS     OPEN       0.173900     N/A          OPEN       20:50:45     -                  -            ✓ CLEAN                     
-XRP-USDT     15min    LONG   TREND CONTINUATION   BEAR   84%    MAIN_BLOCKC  SL_HIT     1.327146     1.317120     $-7.5544   20:50:11     22:18:55           01:28:43     ✓ CLEAN                     
-SOL-USDT     15min    LONG   TREND CONTINUATION   BEAR   84%    MAIN_BLOCKC  TIMEOUT    80.250170    80.970000    $+8.9698   20:50:09     00:37:42           03:45:00     ✓ CLEAN                     
-ETH-USDT     15min    LONG   TREND CONTINUATION   BEAR   85%    MAIN_BLOCKC  SL_HIT     1892.700810  1882.060000  $-5.6220   20:50:06     22:18:54           01:28:48     ✓ CLEAN                     
-XPL-USDT     15min    LONG   TREND CONTINUATION   BEAR   83%    MID_ALTS     SL_HIT     0.092292     0.091300     $-10.7506  20:49:55     22:54:27           02:04:32     ✓ CLEAN                     
-FUEL-USDT    15min    LONG   TREND CONTINUATION   BULL   82%    MID_ALTS     SL_HIT     0.001217     0.001205     $-10.0360  20:49:15     20:52:58           00:03:43     ✓ CLEAN                     
-FUEL-USDT    15min    LONG   TREND CONTINUATION   BULL   82%    MID_ALTS     SL_HIT     0.001214     0.001198     $-13.3527  20:20:06     20:22:20           00:02:13     ✓ CLEAN                     
-FUN-USDT     30min    LONG   NONE                 RANGE  78%    MID_ALTS     TIMEOUT    0.048218     0.049410     $+24.7174  19:46:56     00:48:02           05:00:00     ✓ CLEAN                     
-FUEL-USDT    30min    LONG   NONE                 RANGE  78%    MID_ALTS     SL_HIT     0.001229     0.001213     $-13.2018  19:40:11     19:56:49           00:16:38     ✓ CLEAN                     
-FUEL-USDT    15min    LONG   NONE                 RANGE  82%    MID_ALTS     SL_HIT     0.001229     0.001213     $-13.2018  19:40:08     19:56:49           00:16:40     ✓ CLEAN                     
-PROMPT-USDT  30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.042238     0.042950     $-16.5839  19:11:00     20:52:58           01:41:58     ✓ CLEAN                     
-SAHARA-USDT  30min    SHORT  TREND CONTINUATION   BULL   76%    TOP_ALTS     SL_HIT     0.019191     0.020260     $-52.7744  18:21:13     21:58:43           03:37:30     ✓ CLEAN                     
-FUEL-USDT    30min    SHORT  TREND CONTINUATION   RANGE  75%    MID_ALTS     SL_HIT     0.001196     0.001210     $-11.7331  17:55:18     19:31:11           01:35:52     ✓ CLEAN                     
-VOXEL-USDT   15min    LONG   TREND CONTINUATION   BULL   83%    LOW_ALTS     SL_HIT     0.008989     0.008820     $-18.7986  17:53:48     17:58:58           00:05:09     ✓ CLEAN                     
-VOXEL-USDT   30min    LONG   REVERSAL             BEAR   79%    LOW_ALTS     SL_HIT     0.008899     0.008740     $-17.8550  17:49:42     17:58:58           00:09:15     ✓ CLEAN                     
-VOXEL-USDT   1h       LONG   REVERSAL             BULL   86%    LOW_ALTS     SL_HIT     0.008829     0.008570     $-29.3154  17:46:58     18:40:00           00:53:02     ✓ CLEAN                     
-BERA-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    MID_ALTS     SL_HIT     0.576723     0.586900     $-17.3408  17:31:21     18:14:23           00:43:02     ✓ CLEAN                     
-BERA-USDT    15min    SHORT  TREND CONTINUATION   BEAR   82%    MID_ALTS     SL_HIT     0.573426     0.586900     $-22.9579  17:13:59     18:14:23           01:00:24     ✓ CLEAN                     
-XAUT-USDT    15min    LONG   TREND CONTINUATION   BULL   82%    TOP_ALTS     SL_HIT     5457.892440  5414.540000  $-7.9431   17:09:55     17:17:42           00:07:46     ✓ CLEAN                     
-ETH-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    MAIN_BLOCKC  SL_HIT     1851.196950  1874.030000  $-12.1839  17:02:38     18:04:06           01:01:28     ✓ CLEAN                     
-BTC-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    MAIN_BLOCKC  SL_HIT     63540.09630  64201.50000  $-10.3020  17:02:35     18:04:06           01:01:31     ✓ CLEAN                     
-PUMP-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.001751     0.001790     $-21.6497  17:00:49     20:52:58           03:52:08     ✓ CLEAN                     
-LINK-USDT    1h       SHORT  TREND CONTINUATION   BEAR   79%    MAIN_BLOCKC  SL_HIT     8.255037     8.361300     $-12.7089  16:55:41     20:47:54           03:52:12     ✓ CLEAN                     
-XAUT-USDT    1h       LONG   TREND CONTINUATION   BULL   85%    TOP_ALTS     SL_HIT     5432.507080  5380.230000  $-9.6230   16:53:20     18:24:38           01:31:17     ✓ CLEAN                     
-XAUT-USDT    30min    LONG   TREND CONTINUATION   BULL   85%    TOP_ALTS     SL_HIT     5431.536110  5380.230000  $-9.4460   16:53:17     18:24:38           01:31:20     ✓ CLEAN                     
-TON-USDT     1h       SHORT  TREND CONTINUATION   BEAR   80%    LOW_ALTS     SL_HIT     1.233066     1.255200     $-17.6341  16:52:43     20:52:57           04:00:14     ✓ CLEAN                     
-HIPPO-USDT   30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.000536     0.000545     $-15.6642  16:37:28     21:03:04           04:25:35     ✓ CLEAN                     
-PROMPT-USDT  30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.042388     0.043040     $-15.1587  16:35:34     18:14:22           01:38:47     ✓ CLEAN                     
-FUN-USDT     30min    SHORT  TREND CONTINUATION   RANGE  75%    MID_ALTS     SL_HIT     0.046773     0.047870     $-22.9125  16:35:02     16:56:59           00:21:57     ✓ CLEAN                     
-AVNT-USDT    30min    SHORT  REVERSAL             BEAR   75%    LOW_ALTS     SL_HIT     0.166693     0.170210     $-20.6619  16:33:25     20:52:57           04:19:31     ✓ CLEAN                     
-ARKM-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.100499     0.102100     $-15.6768  16:33:16     20:52:57           04:19:40     ✓ CLEAN                     
-WIF-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.186214     0.189300     $-16.3043  16:33:10     20:52:57           04:19:46     ✓ CLEAN                     
-SPK-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TP_HIT     0.018931     0.018380     $+29.9810  16:31:52     17:43:27           01:11:35     ✓ CLEAN                     
-BERA-USDT    30min    SHORT  REVERSAL             BEAR   75%    MID_ALTS     SL_HIT     0.580719     0.598000     $-28.8985  16:31:22     20:52:56           04:21:34     ✓ CLEAN                     
-TON-USDT     30min    SHORT  REVERSAL             BEAR   75%    LOW_ALTS     SL_HIT     1.240358     1.254300     $-11.1150  16:31:04     20:52:56           04:21:52     ✓ CLEAN                     
-SUI-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.839859     0.858200     $-21.3711  16:30:57     20:52:56           04:21:58     ✓ CLEAN                     
-XAUT-USDT    15min    LONG   TREND CONTINUATION   BULL   80%    TOP_ALTS     TP_HIT     5397.542150  5462.070000  $+11.9550  16:27:44     17:07:17           00:39:33     ✓ CLEAN                     
-FUN-USDT     30min    LONG   REVERSAL             RANGE  83%    MID_ALTS     SL_HIT     0.048138     0.047000     $-23.6422  16:21:38     16:36:03           00:14:24     ✓ CLEAN                     
-AERO-USDT    1h       SHORT  TREND CONTINUATION   BEAR   80%    LOW_ALTS     SL_HIT     0.318481     0.324700     $-19.1524  16:19:46     20:52:56           04:33:09     ✓ CLEAN                     
-PEPE-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.000003     0.000003     $-13.5948  16:12:20     20:47:52           04:35:31     ✓ CLEAN                     
-XAUT-USDT    30min    LONG   TREND CONTINUATION   BULL   73%    TOP_ALTS     TP_HIT     5375.219850  5441.550000  $+12.3400  16:11:13     16:56:56           00:45:42     ✓ CLEAN                     
-SOL-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    MAIN_BLOCKC  SL_HIT     77.732190    78.630000    $-11.4182  16:09:36     16:25:42           00:16:05     ✓ CLEAN                     
-XPL-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    MID_ALTS     SL_HIT     0.087113     0.088700     $-17.8940  16:09:25     16:25:41           00:16:15     ✓ CLEAN                     
-UNI-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     3.580616     3.671300     $-24.7008  16:08:58     20:52:56           04:43:57     ✓ CLEAN                     
-PUMP-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.001751     0.001790     $-21.6497  16:07:36     20:52:55           04:45:19     ✓ CLEAN                     
-IP-USDT      30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.878191     0.893910     $-17.5846  15:58:29     20:52:55           04:54:26     ✓ CLEAN                     
-ETH-USDT     1h       SHORT  TREND CONTINUATION   BEAR   80%    MAIN_BLOCKC  SL_HIT     1850.177970  1874.540000  $-12.9963  15:52:22     18:04:03           02:11:40     ✓ CLEAN                     
-BTC-USDT     1h       SHORT  TREND CONTINUATION   BEAR   80%    MAIN_BLOCKC  SL_HIT     63436.69980  64002.20000  $-8.8356   15:52:19     17:38:16           01:45:57     ✓ CLEAN                     
-VIRTUAL-USD  30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TIMEOUT    0.638061     0.639500     $-2.2497   15:46:17     20:47:51           05:00:00     ✓ CLEAN                     
-LQTY-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TIMEOUT    0.266733     0.265700     $+3.8878   15:45:14     20:47:51           05:00:00     ✓ CLEAN                     
-PARTI-USDT   30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TIMEOUT    0.094006     0.092000     $+21.8033  15:33:23     20:37:31           05:00:00     ✓ CLEAN                     
-ASTER-USDT   30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.683915     0.691700     $-11.2543  15:32:11     18:04:02           02:31:51     ✓ CLEAN                     
-BNB-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    MAIN_BLOCKC  SL_HIT     593.036370   598.026000   $-8.3435   15:30:36     18:29:42           02:59:06     ✓ CLEAN                     
-AERO-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TIMEOUT    0.320379     0.316600     $+11.9371  15:27:14     20:27:21           05:00:00     ✓ CLEAN                     
-XAUT-USDT    15min    LONG   TREND CONTINUATION   BULL   81%    TOP_ALTS     TP_HIT     5347.422080  5402.760000  $+10.3485  15:26:55     16:41:14           01:14:18     ✓ CLEAN                     
-XAUT-USDT    30min    LONG   TREND CONTINUATION   BULL   88%    TOP_ALTS     TP_HIT     5349.243900  5425.780000  $+14.3078  15:25:07     16:46:27           01:21:20     ✓ CLEAN                     
-UNI-USDT     30min    SHORT  TREND CONTINUATION   BEAR   76%    LOW_ALTS     TIMEOUT    3.610086     3.596300     $+3.8335   15:24:12     20:27:20           05:00:00     ✓ CLEAN                     
-PEPE-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TIMEOUT    0.000003     0.000003     $-1.5756   15:19:58     20:22:15           05:00:00     ✓ CLEAN                     
-IP-USDT      30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TIMEOUT    0.881308     0.882790     $-1.6790   15:15:06     20:17:09           05:00:00     ✓ CLEAN                     
-ROAM-USDT    30min    SHORT  TREND CONTINUATION   RANGE  75%    TOP_ALTS     SL_HIT     0.025468     0.025935     $-18.0256  15:13:48     16:05:04           00:51:15     ✓ CLEAN                     
-ETH-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    MAIN_BLOCKC  SL_HIT     1857.250890  1875.110000  $-9.5243   15:09:14     18:04:00           02:54:46     ✓ CLEAN                     
-ARB-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TP_HIT     0.094006     0.091200     $+30.7664  15:08:59     19:05:31           03:56:31     ✓ CLEAN                     
-LQTY-USDT    30min    SHORT  REVERSAL             BEAR   75%    LOW_ALTS     TIMEOUT    0.270729     0.266700     $+15.1069  15:04:13     20:06:57           05:00:00     ✓ CLEAN                     
-AVAX-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    MAIN_BLOCKC  TIMEOUT    8.576415     8.517000     $+6.9760   15:04:01     20:06:57           05:00:00     ✓ CLEAN                     
-GALA-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     OPEN       0.003480     N/A          OPEN       15:03:35     -                  -            ✓ CLEAN                     
-ZORA-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TIMEOUT    0.017925     0.017755     $+9.5780   15:02:59     20:06:57           05:00:00     ✓ CLEAN                     
-LINK-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    MAIN_BLOCKC  TIMEOUT    8.306385     8.316000     $-1.1562   15:02:13     20:06:57           05:00:00     ✓ CLEAN                     
-XPL-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    MID_ALTS     SL_HIT     0.087512     0.088800     $-14.5000  15:01:58     16:30:45           01:28:47     ✓ CLEAN                     
-ARKM-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TP_HIT     0.101399     0.099100     $+23.1937  15:01:50     19:10:37           04:08:46     ✓ CLEAN                     
-DYDX-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TP_HIT     0.089510     0.087400     $+24.1465  15:01:46     17:07:12           02:05:26     ✓ CLEAN                     
-PUMP-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TIMEOUT    0.001757     0.001748     $+5.2866   15:01:41     20:01:50           05:00:00     ✓ CLEAN                     
-EIGEN-USDT   30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TP_HIT     0.177922     0.173900     $+23.1277  15:01:23     16:41:06           01:39:43     ✓ CLEAN                     
-SUI-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TIMEOUT    0.844854     0.836800     $+9.6251   15:01:20     20:01:50           05:00:00     ✓ CLEAN                     
-CFX-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TIMEOUT    0.045874     0.045780     $+2.0550   15:01:15     20:01:50           05:00:00     ✓ CLEAN                     
-POL-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    MAIN_BLOCKC  TP_HIT     0.102997     0.100700     $+22.8093  15:00:17     17:07:11           02:06:54     ✓ CLEAN                     
-PARTI-USDT   30min    LONG   REVERSAL             BULL   82%    LOW_ALTS     SL_HIT     0.098498     0.096500     $-20.2887  14:57:40     15:03:45           00:06:04     ✓ CLEAN                     
-ROAM-USDT    30min    LONG   REVERSAL             BULL   79%    TOP_ALTS     SL_HIT     0.026240     0.025773     $-17.8053  14:56:04     15:03:44           00:07:40     ✓ CLEAN                     
-XAUT-USDT    15min    LONG   TREND CONTINUATION   BULL   81%    TOP_ALTS     TP_HIT     5319.314000  5374.020000  $+10.2844  14:55:03     16:05:00           01:09:56     ✓ CLEAN                     
-PUMP-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.001728     0.001763     $-19.6994  13:52:07     14:38:37           00:46:29     ✓ CLEAN                     
-ASTER-USDT   30min    SHORT  TREND CONTINUATION   BEAR   78%    LOW_ALTS     SL_HIT     0.673825     0.680800     $-10.2446  13:50:19     14:03:22           00:13:02     ✓ CLEAN                     
-SOL-USDT     30min    SHORT  TREND CONTINUATION   BEAR   77%    MAIN_BLOCKC  SL_HIT     78.431490    79.320000    $-11.2016  13:48:37     14:43:38           00:55:01     ✓ CLEAN                     
-MAGIC-USDT   30min    SHORT  TREND CONTINUATION   BEAR   78%    LOW_ALTS     TP_HIT     0.060739     0.059400     $+22.5455  13:45:24     16:15:16           02:29:51     ✓ CLEAN                     
-XRP-USDT     30min    SHORT  TREND CONTINUATION   BEAR   78%    MAIN_BLOCKC  TP_HIT     1.319499     1.294070     $+19.6505  13:42:56     13:58:18           00:15:21     ✓ CLEAN                     
-POL-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    MAIN_BLOCKC  TP_HIT     0.103696     0.102000     $+16.6294  13:40:37     13:58:18           00:17:40     ✓ CLEAN                     
-FUN-USDT     15min    LONG   TREND CONTINUATION   BEAR   80%    MID_ALTS     SL_HIT     0.049580     0.047860     $-34.6823  13:24:13     13:38:09           00:13:55     ✓ CLEAN                     
-XAUT-USDT    1h       LONG   TREND CONTINUATION   BULL   83%    TOP_ALTS     TP_HIT     5301.275980  5363.820000  $+11.7979  13:21:54     15:59:51           02:37:56     ✓ CLEAN                     
-XAUT-USDT    30min    LONG   TREND CONTINUATION   BULL   83%    TOP_ALTS     TP_HIT     5301.496200  5348.420000  $+8.8510   13:21:52     15:49:38           02:27:46     ✓ CLEAN                     
-XAUT-USDT    15min    LONG   REVERSAL             BULL   83%    TOP_ALTS     TP_HIT     5301.195900  5334.940000  $+6.3654   13:21:49     15:13:53           01:52:03     ✓ CLEAN                     
-BERA-USDT    15min    LONG   TREND CONTINUATION   BEAR   83%    MID_ALTS     SL_HIT     0.612612     0.602800     $-16.0167  13:21:33     13:28:02           00:06:29     ✓ CLEAN                     
-X-USDT       30min    SHORT  TREND CONTINUATION   BEAR   76%    LOW_ALTS     TP_HIT     0.000013     0.000012     $+46.1382  13:19:09     13:38:08           00:18:58     ✓ CLEAN                     
-ALU-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TP_HIT     0.005235     0.005150     $+16.4583  13:16:56     13:38:07           00:21:10     ✓ CLEAN                     
-SOL-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    MAIN_BLOCKC  TP_HIT     81.318600    80.430000    $+11.0481  13:05:14     13:17:54           00:12:39     ✓ CLEAN                     
-MAGIC-USDT   15min    LONG   TREND CONTINUATION   RANGE  82%    LOW_ALTS     SL_HIT     0.063563     0.062600     $-15.1581  12:58:35     13:17:54           00:19:18     ✓ CLEAN                     
-SAHARA-USDT  30min    LONG   TREND CONTINUATION   BULL   82%    TOP_ALTS     SL_HIT     0.022913     0.020920     $-86.9768  12:57:39     13:38:07           00:40:28     ✓ CLEAN                     
-ATH-USDT     30min    LONG   TREND CONTINUATION   BULL   83%    LOW_ALTS     SL_HIT     0.006413     0.006044     $-57.5992  12:44:19     13:38:07           00:53:47     ✓ CLEAN                     
-ZORA-USDT    30min    SHORT  TREND CONTINUATION   BEAR   73%    LOW_ALTS     TP_HIT     0.018560     0.018266     $+16.1185  12:28:51     13:17:53           00:49:02     ✓ CLEAN                     
-AUCTION-USD  30min    LONG   REVERSAL             RANGE  76%    LOW_ALTS     SL_HIT     4.904900     4.860000     $-9.1541   12:08:58     12:17:04           00:08:06     ✓ CLEAN                     
-AUCTION-USD  15min    LONG   REVERSAL             BEAR   82%    LOW_ALTS     TP_HIT     4.874870     4.910000     $+7.2063   12:05:38     12:11:59           00:06:20     ✓ CLEAN                     
-BNB-USDT     30min    SHORT  TREND CONTINUATION   BEAR   78%    MAIN_BLOCKC  TP_HIT     611.606781   606.480000   $+8.4533   11:57:29     13:17:53           01:20:24     ✓ CLEAN                     
-SAHARA-USDT  30min    LONG   TREND CONTINUATION   BULL   76%    TOP_ALTS     SL_HIT     0.023704     0.022170     $-64.7022  11:53:13     13:07:44           01:14:31     ✓ CLEAN                     
-MAGIC-USDT   30min    LONG   REVERSAL             BEAR   76%    LOW_ALTS     SL_HIT     0.063664     0.062600     $-16.7066  11:41:56     13:17:53           01:35:56     ✓ CLEAN                     
-MAGIC-USDT   15min    LONG   REVERSAL             RANGE  86%    LOW_ALTS     SL_HIT     0.063463     0.062600     $-13.6047  11:41:54     13:17:53           01:35:58     ✓ CLEAN                     
-ORDER-USDT   30min    SHORT  NONE                 BEAR   75%    LOW_ALTS     TP_HIT     0.054416     0.053400     $+19.0174  11:30:57     13:17:52           01:46:55     ✓ CLEAN                     
-PENGU-USDT   30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TP_HIT     0.006737     0.006620     $+17.7124  11:30:23     13:17:52           01:47:29     ✓ CLEAN                     
-HBAR-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TP_HIT     0.099520     0.097890     $+16.6552  11:30:00     13:28:01           01:58:01     ✓ CLEAN                     
-XRP-USDT     15min    LONG   TREND CONTINUATION   BEAR   83%    MAIN_BLOCKC  SL_HIT     1.359478     1.350690     $-6.4643   11:29:18     11:31:22           00:02:03     ✓ CLEAN                     
-SKATE-USDT   15min    LONG   TREND CONTINUATION   BULL   80%    LOW_ALTS     SL_HIT     0.001572     0.001550     $-13.7251  11:23:41     11:41:30           00:17:49     ✓ CLEAN                     
-SPK-USDT     30min    SHORT  TREND CONTINUATION   BEAR   73%    LOW_ALTS     TP_HIT     0.020190     0.019540     $+33.2544  11:16:41     13:33:04           02:16:22     ✓ CLEAN                     
-LA-USDT      15min    LONG   REVERSAL             RANGE  81%    LOW_ALTS     SL_HIT     0.235655     0.233840     $-7.7037   11:15:21     11:21:15           00:05:53     ✓ CLEAN                     
-X-USDT       30min    SHORT  TREND CONTINUATION   BEAR   73%    LOW_ALTS     TP_HIT     0.000013     0.000012     $+32.1383  10:45:26     13:28:00           02:42:34     ✓ CLEAN                     
-SPK-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TP_HIT     0.020250     0.020070     $+8.9552   10:33:47     13:17:51           02:44:04     ✓ CLEAN                     
-HBAR-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TP_HIT     0.099820     0.097890     $+19.7168  10:33:09     13:28:00           02:54:51     ✓ CLEAN                     
-ATH-USDT     30min    LONG   TREND CONTINUATION   BULL   76%    LOW_ALTS     SL_HIT     0.006310     0.006020     $-46.0048  10:26:59     14:23:30           03:56:31     ✓ CLEAN                     
-BERA-USDT    15min    LONG   TREND CONTINUATION   BEAR   84%    MID_ALTS     SL_HIT     0.610510     0.604100     $-10.4993  10:09:16     10:35:39           00:26:23     ✓ CLEAN                     
-ASTER-USDT   30min    LONG   TREND CONTINUATION   BULL   82%    LOW_ALTS     SL_HIT     0.703202     0.698400     $-6.8295   09:59:28     10:25:31           00:26:03     ✓ CLEAN                     
-ZORA-USDT    15min    LONG   TREND CONTINUATION   BEAR   82%    LOW_ALTS     SL_HIT     0.018817     0.018765     $-2.7528   09:58:39     10:05:15           00:06:35     ✓ CLEAN                     
-ZKJ-USDT     30min    LONG   TREND CONTINUATION   BULL   83%    TOP_ALTS     SL_HIT     0.026046     0.025130     $-35.1693  09:57:54     12:17:01           02:19:06     ✓ CLEAN                     
-PUMP-USDT    1h       LONG   REVERSAL             RANGE  82%    LOW_ALTS     SL_HIT     0.001848     0.001814     $-18.3165  09:55:32     12:37:19           02:41:46     ✓ CLEAN                     
-SAHARA-USDT  30min    LONG   REVERSAL             BULL   79%    TOP_ALTS     SL_HIT     0.023243     0.021770     $-63.3828  09:51:34     13:17:51           03:26:16     ✓ CLEAN                     
-ARK-USDT     1h       LONG   TREND CONTINUATION   BEAR   83%    LOW_ALTS     OPEN       0.181800     N/A          OPEN       09:50:05     -                  -            ✓ CLEAN                     
-ZKJ-USDT     15min    LONG   TREND CONTINUATION   BULL   83%    TOP_ALTS     SL_HIT     0.026727     0.026050     $-25.3193  09:49:24     10:00:10           00:10:46     ✓ CLEAN                     
-ZKJ-USDT     1h       LONG   TREND CONTINUATION   BULL   82%    TOP_ALTS     SL_HIT     0.026436     0.025220     $-46.0127  09:46:06     11:16:09           01:30:03     ✓ CLEAN                     
-DOT-USDT     30min    LONG   AMBIGUOUS            BEAR   79%    MID_ALTS     SL_HIT     1.612211     1.580700     $-19.5450  09:26:02     10:45:46           01:19:43     ✓ CLEAN                     
-TON-USDT     30min    LONG   AMBIGUOUS            BULL   77%    LOW_ALTS     SL_HIT     1.298197     1.290800     $-5.6978   09:24:26     12:37:18           03:12:52     ✓ CLEAN                     
-ERA-USDT     30min    LONG   TREND CONTINUATION   BULL   82%    LOW_ALTS     SL_HIT     0.151351     0.149200     $-14.2133  09:19:09     10:40:41           01:21:32     ✓ CLEAN                     
-ZKJ-USDT     30min    LONG   TREND CONTINUATION   BULL   79%    TOP_ALTS     SL_HIT     0.026086     0.025220     $-33.2001  09:16:33     11:16:09           01:59:35     ✓ CLEAN                     
-ZKJ-USDT     15min    LONG   REVERSAL             BULL   82%    TOP_ALTS     TP_HIT     0.025465     0.026350     $+34.7357  09:12:36     09:39:56           00:27:19     ✓ CLEAN                     
-BIO-USDT     30min    SHORT  TREND CONTINUATION   RANGE  75%    LOW_ALTS     TP_HIT     0.022428     0.021450     $+45.5734  09:06:40     13:33:04           04:26:23     ✓ CLEAN                     
-ORDER-USDT   30min    SHORT  REVERSAL             BEAR   75%    LOW_ALTS     SL_HIT     0.054226     0.054630     $-7.4003   09:04:49     09:29:49           00:24:59     ✓ CLEAN                     
-PEPE-USDT    15min    SHORT  TREND CONTINUATION   BEAR   83%    LOW_ALTS     SL_HIT     0.000004     0.000004     $-6.1719   08:42:13     09:34:52           00:52:39     ✓ CLEAN                     
-KNC-USDT     1h       LONG   AMBIGUOUS            BULL   83%    LOW_ALTS     SL_HIT     0.138438     0.137300     $-8.2224   08:24:21     08:34:21           00:09:59     ✓ CLEAN                     
-KNC-USDT     30min    LONG   NONE                 BULL   79%    LOW_ALTS     SL_HIT     0.138438     0.137300     $-8.2224   08:24:19     08:34:20           00:10:01     ✓ CLEAN                     
-PROMPT-USDT  30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TIMEOUT    0.044935     0.044730     $+4.5835   08:19:26     13:22:55           05:00:00     ✓ CLEAN                     
-X-USDT       15min    LONG   TREND CONTINUATION   BEAR   83%    LOW_ALTS     SL_HIT     0.000013     0.000013     $-13.8552  08:13:09     08:14:10           00:01:01     ✓ CLEAN                     
-KAITO-USDT   15min    LONG   AMBIGUOUS            BULL   83%    LOW_ALTS     SL_HIT     0.338979     0.336230     $-8.1086   07:59:51     08:24:15           00:24:24     ✓ CLEAN                     
-LA-USDT      30min    LONG   NONE                 RANGE  83%    LOW_ALTS     SL_HIT     0.239609     0.237240     $-9.8885   07:51:10     08:19:13           00:28:03     ✓ CLEAN                     
-LA-USDT      1h       LONG   TREND CONTINUATION   BULL   83%    LOW_ALTS     SL_HIT     0.238108     0.234330     $-15.8662  07:48:10     08:59:31           01:11:20     ✓ CLEAN                     
-KNC-USDT     30min    LONG   NONE                 BEAR   79%    LOW_ALTS     SL_HIT     0.138038     0.136800     $-8.9678   07:41:13     11:06:01           03:24:47     ✓ CLEAN                     
-ATH-USDT     1h       LONG   TREND CONTINUATION   BULL   86%    LOW_ALTS     TIMEOUT    0.006461     0.006312     $-23.1302  07:14:54     12:16:59           05:00:00     ✓ CLEAN                     
-ATH-USDT     30min    LONG   TREND CONTINUATION   BULL   76%    LOW_ALTS     TP_HIT     0.006087     0.006387     $+49.2714  07:01:41     07:13:47           00:12:06     ✓ CLEAN                     
-ATH-USDT     15min    LONG   TREND CONTINUATION   BULL   80%    LOW_ALTS     TP_HIT     0.006086     0.006274     $+30.8770  07:01:35     07:08:45           00:07:09     ✓ CLEAN                     
-KNC-USDT     1h       LONG   REVERSAL             BULL   86%    LOW_ALTS     SL_HIT     0.139740     0.137800     $-13.8801  07:00:45     07:03:42           00:02:56     ✓ CLEAN                     
-KNC-USDT     30min    LONG   TREND CONTINUATION   BULL   76%    LOW_ALTS     SL_HIT     0.139740     0.137800     $-13.8801  07:00:43     07:03:41           00:02:58     ✓ CLEAN                     
-LQTY-USDT    30min    LONG   TREND CONTINUATION   BULL   80%    LOW_ALTS     SL_HIT     0.295595     0.292900     $-9.1182   06:51:31     07:03:41           00:12:10     ✓ CLEAN                     
-ERA-USDT     30min    LONG   TREND CONTINUATION   BULL   77%    LOW_ALTS     TP_HIT     0.149449     0.152300     $+19.0747  06:49:23     07:38:55           00:49:32     ✓ CLEAN                     
-LA-USDT      30min    SHORT  TREND CONTINUATION   RANGE  75%    LOW_ALTS     SL_HIT     0.231199     0.234660     $-14.7508  06:42:25     07:23:51           00:41:25     ✓ CLEAN                     
-LQTY-USDT    15min    LONG   TREND CONTINUATION   BULL   80%    LOW_ALTS     TP_HIT     0.293493     0.297000     $+11.9485  06:26:39     06:38:28           00:11:49     ✓ CLEAN                     
-CROSS-USDT   30min    LONG   TREND CONTINUATION   BULL   77%    MID_ALTS     TIMEOUT    0.103483     0.103200     $-2.7384   06:25:22     11:26:15           05:00:00     ✓ CLEAN                     
-ENA-USDT     15min    LONG   TREND CONTINUATION   BEAR   83%    MID_ALTS     SL_HIT     0.103003     0.102400     $-5.8532   06:11:17     06:48:33           00:37:16     ✓ CLEAN                     
-IP-USDT      30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.936842     0.946010     $-9.6910   06:03:21     06:23:20           00:19:58     ✓ CLEAN                     
-PORTAL-USDT  30min    LONG   TREND CONTINUATION   BULL   76%    LOW_ALTS     TIMEOUT    0.013403     0.012740     $-49.4942  05:57:37     11:00:56           05:00:00     ✓ CLEAN                     
-ATH-USDT     1h       LONG   TREND CONTINUATION   BULL   80%    LOW_ALTS     TP_HIT     0.005835     0.006721     $+151.876  05:50:32     07:23:50           01:33:18     ✓ CLEAN                     
-LQTY-USDT    30min    LONG   TREND CONTINUATION   BULL   77%    LOW_ALTS     TP_HIT     0.291892     0.297000     $+17.5010  05:48:07     06:38:27           00:50:19     ✓ CLEAN                     
-FUN-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    MID_ALTS     SL_HIT     0.047313     0.048460     $-23.6764  05:41:16     08:14:08           02:32:52     ✓ CLEAN                     
-FUN-USDT     15min    SHORT  REVERSAL             BEAR   82%    MID_ALTS     SL_HIT     0.047273     0.047980     $-14.7420  05:41:13     06:13:14           00:32:01     ✓ CLEAN                     
-ROAM-USDT    15min    SHORT  TREND CONTINUATION   BULL   81%    TOP_ALTS     TIMEOUT    0.026222     0.025978     $+9.3830   05:38:45     09:24:44           03:45:00     ✓ CLEAN                     
-ALU-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.005155     0.005230     $-14.3709  05:30:36     05:53:04           00:22:27     ✓ CLEAN                     
-ROAM-USDT    30min    LONG   TREND CONTINUATION   BULL   79%    TOP_ALTS     SL_HIT     0.026847     0.026161     $-25.5457  05:26:04     05:37:56           00:11:52     ✓ CLEAN                     
-ROAM-USDT    15min    LONG   NONE                 BULL   83%    TOP_ALTS     SL_HIT     0.026847     0.026499     $-12.9557  05:26:02     05:27:50           00:01:48     ✓ CLEAN                     
-FUN-USDT     30min    LONG   REVERSAL             BULL   79%    MID_ALTS     SL_HIT     0.048589     0.047190     $-28.7833  05:21:33     05:37:56           00:16:23     ✓ CLEAN                     
-LQTY-USDT    30min    LONG   TREND CONTINUATION   BULL   77%    LOW_ALTS     SL_HIT     0.290190     0.288400     $-6.1680   05:06:20     05:07:41           00:01:20     ✓ CLEAN                     
-CROSS-USDT   30min    LONG   TREND CONTINUATION   BULL   82%    MID_ALTS     TIMEOUT    0.102853     0.103190     $+3.2790   04:56:53     10:00:07           05:00:00     ✓ CLEAN                     
-NEWT-USDT    30min    LONG   TREND CONTINUATION   BULL   76%    LOW_ALTS     SL_HIT     0.076647     0.073690     $-38.5741  04:54:21     07:13:45           02:19:24     ✓ CLEAN                     
-ZKJ-USDT     1h       LONG   TREND CONTINUATION   BULL   82%    TOP_ALTS     SL_HIT     0.026196     0.025230     $-36.8821  04:43:46     05:53:03           01:09:16     ✓ CLEAN                     
-ZKJ-USDT     15min    LONG   TREND CONTINUATION   BULL   80%    TOP_ALTS     SL_HIT     0.025946     0.025410     $-20.6553  04:41:06     05:37:55           00:56:49     ✓ CLEAN                     
-ROAM-USDT    30min    LONG   TREND CONTINUATION   BULL   76%    TOP_ALTS     SL_HIT     0.027093     0.026612     $-17.7561  04:17:38     04:52:33           00:34:54     ✓ CLEAN                     
-BIO-USDT     15min    LONG   REVERSAL             RANGE  82%    LOW_ALTS     SL_HIT     0.022983     0.022810     $-7.5256   04:10:02     04:17:11           00:07:09     ✓ CLEAN                     
-ROAM-USDT    15min    LONG   NONE                 BULL   82%    TOP_ALTS     SL_HIT     0.026811     0.026612     $-7.4143   04:06:47     04:52:33           00:45:45     ✓ CLEAN                     
-AIN-USDT     30min    LONG   TREND CONTINUATION   BULL   83%    LOW_ALTS     SL_HIT     0.046837     0.044740     $-44.7680  03:57:10     04:02:00           00:04:49     ✓ CLEAN                     
-ZKJ-USDT     30min    LONG   TREND CONTINUATION   BULL   79%    TOP_ALTS     TP_HIT     0.024845     0.026290     $+58.1683  03:27:10     04:52:32           01:25:22     ✓ CLEAN                     
-ZKJ-USDT     15min    LONG   TREND CONTINUATION   BULL   83%    TOP_ALTS     TP_HIT     0.025075     0.025730     $+26.1196  03:25:20     04:27:18           01:01:57     ✓ CLEAN                     
-LQTY-USDT    1h       LONG   TREND CONTINUATION   BULL   86%    LOW_ALTS     TP_HIT     0.279179     0.283900     $+16.9107  03:05:33     03:56:55           00:51:21     ✓ CLEAN                     
-ICNT-USDT    1h       LONG   AMBIGUOUS            BEAR   82%    LOW_ALTS     SL_HIT     0.390971     0.385620     $-13.6854  02:55:27     04:17:11           01:21:43     ✓ CLEAN                     
-ZKJ-USDT     15min    LONG   TREND CONTINUATION   BULL   80%    TOP_ALTS     TP_HIT     0.024514     0.025350     $+34.0823  02:54:54     03:51:49           00:56:55     ✓ CLEAN                     
-FUEL-USDT    30min    LONG   REVERSAL             BEAR   78%    MID_ALTS     SL_HIT     0.001225     0.001202     $-18.9549  02:46:16     07:23:49           04:37:33     ✓ CLEAN                     
-ICNT-USDT    30min    LONG   TREND CONTINUATION   BULL   76%    LOW_ALTS     SL_HIT     0.387727     0.383500     $-10.9029  02:41:15     04:22:14           01:40:59     ✓ CLEAN                     
-CROSS-USDT   15min    LONG   TREND CONTINUATION   RANGE  82%    MID_ALTS     TIMEOUT    0.102212     0.102870     $+6.4365   02:30:39     06:18:16           03:45:00     ✓ CLEAN                     
-NEWT-USDT    1h       LONG   TREND CONTINUATION   BULL   83%    LOW_ALTS     SL_HIT     0.082663     0.076540     $-74.0671  02:27:54     02:35:36           00:07:41     ✓ CLEAN                     
-DOT-USDT     15min    LONG   TREND CONTINUATION   BULL   83%    MID_ALTS     TP_HIT     1.604903     1.644200     $+24.4854  02:27:51     03:26:20           00:58:29     ✓ CLEAN                     
-NEWT-USDT    30min    LONG   TREND CONTINUATION   BULL   77%    LOW_ALTS     SL_HIT     0.076476     0.074520     $-25.5817  02:22:48     03:36:33           01:13:44     ✓ CLEAN                     
-NEWT-USDT    15min    LONG   NONE                 BULL   82%    LOW_ALTS     SL_HIT     0.075706     0.074520     $-15.6611  02:21:08     03:36:33           01:15:24     ✓ CLEAN                     
-CROSS-USDT   30min    LONG   TREND CONTINUATION   BULL   77%    MID_ALTS     TIMEOUT    0.102372     0.103480     $+10.8206  02:10:23     07:13:45           05:00:00     ✓ CLEAN                     
-CROSS-USDT   15min    LONG   TREND CONTINUATION   RANGE  82%    MID_ALTS     TIMEOUT    0.102312     0.103120     $+7.8953   02:10:20     05:58:05           03:45:00     ✓ CLEAN                     
-LA-USDT      30min    SHORT  TREND CONTINUATION   RANGE  73%    LOW_ALTS     SL_HIT     0.231588     0.234560     $-12.6698  02:08:16     02:55:58           00:47:41     ✓ CLEAN                     
-ZKJ-USDT     15min    LONG   TREND CONTINUATION   BULL   83%    TOP_ALTS     SL_HIT     0.025005     0.024470     $-21.3949  02:00:06     02:25:23           00:25:17     ✓ CLEAN                     
-XAUT-USDT    30min    LONG   TREND CONTINUATION   BULL   76%    TOP_ALTS     TIMEOUT    5238.913680  5260.550000  $+4.1299   01:54:43     06:58:36           05:00:00     ✓ CLEAN                     
-LQTY-USDT    1h       LONG   TREND CONTINUATION   BULL   81%    LOW_ALTS     TP_HIT     0.280180     0.286500     $+22.5573  01:44:55     04:01:58           02:17:02     ✓ CLEAN                     
-LQTY-USDT    30min    LONG   TREND CONTINUATION   BULL   86%    LOW_ALTS     TP_HIT     0.280180     0.283900     $+13.2775  01:44:53     03:56:53           02:12:00     ✓ CLEAN                     
-LQTY-USDT    15min    LONG   TREND CONTINUATION   BULL   82%    LOW_ALTS     TP_HIT     0.280380     0.283900     $+12.5540  01:44:50     03:56:53           02:12:03     ✓ CLEAN                     
-ZKJ-USDT     1h       LONG   TREND CONTINUATION   BULL   82%    TOP_ALTS     TP_HIT     0.024795     0.026290     $+60.3042  01:36:49     04:52:31           03:15:41     ✓ CLEAN                     
-ZKJ-USDT     30min    LONG   TREND CONTINUATION   BULL   80%    TOP_ALTS     TP_HIT     0.024334     0.025480     $+47.0813  01:22:05     04:22:13           03:00:07     ✓ CLEAN                     
-PORTAL-USDT  30min    LONG   TREND CONTINUATION   BULL   77%    LOW_ALTS     TP_HIT     0.013584     0.015010     $+105.011  01:09:20     01:14:18           00:04:58     ✓ CLEAN                     
-KNC-USDT     15min    LONG   REVERSAL             BULL   82%    LOW_ALTS     SL_HIT     0.138038     0.137500     $-3.8968   00:59:51     01:04:10           00:04:19     ✓ CLEAN                     
-DOT-USDT     30min    LONG   REVERSAL             RANGE  76%    MID_ALTS     TIMEOUT    1.593792     1.584300     $-5.9557   00:56:37     05:58:05           05:00:00     ✓ CLEAN                     
-ERA-USDT     30min    LONG   TREND CONTINUATION   BULL   82%    LOW_ALTS     SL_HIT     0.150550     0.147900     $-17.6047  00:53:00     05:12:41           04:19:41     ✓ CLEAN                     
-PROMPT-USDT  15min    LONG   REVERSAL             RANGE  82%    LOW_ALTS     SL_HIT     0.046226     0.045680     $-11.8154  00:45:42     01:44:42           00:58:59     ✓ CLEAN                     
-CROSS-USDT   30min    LONG   TREND CONTINUATION   BULL   79%    MID_ALTS     SL_HIT     0.103223     0.101930     $-12.5274  00:26:32     02:50:50           02:24:18     ✓ CLEAN                     
-PORTAL-USDT  15min    LONG   TREND CONTINUATION   BULL   83%    LOW_ALTS     TP_HIT     0.012412     0.012730     $+25.5873  00:24:50     01:04:09           00:39:19     ✓ CLEAN                     
-AIN-USDT     30min    LONG   TREND CONTINUATION   BULL   76%    LOW_ALTS     SL_HIT     0.046116     0.045260     $-18.5634  00:22:56     02:10:05           01:47:08     ✓ CLEAN                     
-ICNT-USDT    15min    LONG   TREND CONTINUATION   BEAR   84%    LOW_ALTS     SL_HIT     0.388358     0.385640     $-6.9986   00:12:52     00:33:46           00:20:54     ✓ CLEAN                     
-ZKJ-USDT     15min    LONG   TREND CONTINUATION   BULL   81%    TOP_ALTS     TP_HIT     0.024244     0.025350     $+45.6100  00:07:21     03:51:47           03:44:25     ✓ CLEAN                     
-BERA-USDT    30min    SHORT  REVERSAL             BEAR   75%    MID_ALTS     TIMEOUT    0.612287     0.597700     $+24.4054  00:01:45     05:02:36           05:00:00     ✓ CLEAN                     
-SAHARA-USDT  30min    LONG   TREND CONTINUATION   BULL   75%    TOP_ALTS     TIMEOUT    0.024635     0.023230     $-57.0177  23:59:35     05:02:36           05:00:00     ✓ CLEAN                     
-XPL-USDT     30min    SHORT  TREND CONTINUATION   BEAR   73%    MID_ALTS     TP_HIT     0.094505     0.092100     $+26.1173  23:47:59     02:10:04           02:22:05     ✓ CLEAN                     
-SAHARA-USDT  1h       LONG   TREND CONTINUATION   BULL   83%    TOP_ALTS     TIMEOUT    0.023784     0.022910     $-36.7377  23:47:25     04:47:27           05:00:00     ✓ CLEAN                     
-PARTI-USDT   30min    LONG   TREND CONTINUATION   BULL   76%    LOW_ALTS     SL_HIT     0.100300     0.099000     $-12.9631  23:37:09     00:18:34           00:41:24     ✓ CLEAN                     
-AIN-USDT     1h       LONG   TREND CONTINUATION   BULL   82%    LOW_ALTS     TIMEOUT    0.044955     0.044550     $-9.0070   23:30:24     04:32:19           05:00:00     ✓ CLEAN                     
-NMR-USDT     30min    LONG   REVERSAL             BEAR   76%    LOW_ALTS     SL_HIT     7.966959     7.912000     $-6.8984   23:29:40     23:48:15           00:18:34     ✓ CLEAN                     
-ERA-USDT     30min    LONG   TREND CONTINUATION   BULL   80%    LOW_ALTS     SL_HIT     0.151051     0.148700     $-15.5636  23:29:12     23:58:22           00:29:09     ✓ CLEAN                     
-PARTI-USDT   15min    LONG   TREND CONTINUATION   BULL   82%    LOW_ALTS     SL_HIT     0.100500     0.099500     $-9.9542   23:28:51     23:53:19           00:24:27     ✓ CLEAN                     
-NMR-USDT     1h       LONG   AMBIGUOUS            RANGE  82%    LOW_ALTS     SL_HIT     7.961954     7.892000     $-8.7860   23:27:50     23:53:18           00:25:28     ✓ CLEAN                     
-TON-USDT     30min    LONG   NONE                 BULL   82%    LOW_ALTS     SL_HIT     1.308507     1.296700     $-9.0234   23:25:45     23:48:14           00:22:28     ✓ CLEAN                     
-LA-USDT      15min    LONG   TREND CONTINUATION   BEAR   82%    LOW_ALTS     TP_HIT     0.236066     0.238810     $+11.6246  23:23:03     23:33:00           00:09:57     ✓ CLEAN                     
-NMR-USDT     15min    LONG   REVERSAL             BULL   83%    LOW_ALTS     TP_HIT     7.903896     7.957000     $+6.7187   23:14:20     23:27:56           00:13:36     ✓ CLEAN                     
-AVNT-USDT    30min    LONG   NONE                 BULL   76%    LOW_ALTS     SL_HIT     0.184234     0.181650     $-14.0259  23:07:44     23:58:21           00:50:37     ✓ CLEAN                     
-AVNT-USDT    15min    LONG   AMBIGUOUS            RANGE  82%    LOW_ALTS     SL_HIT     0.184234     0.182400     $-9.9550   23:07:42     23:12:50           00:05:07     ✓ CLEAN                     
-IP-USDT      30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TIMEOUT    0.969240     0.960190     $+9.4250   23:06:19     04:07:00           05:00:00     ✓ CLEAN                     
-VIRTUAL-USD  30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TIMEOUT    0.685414     0.675200     $+15.1272  23:05:35     04:07:00           05:00:00     ✓ CLEAN                     
-ENA-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    MID_ALTS     TIMEOUT    0.103696     0.102500     $+11.6702  23:05:24     04:07:00           05:00:00     ✓ CLEAN                     
-ALGO-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.086114     0.087000     $-10.1862  23:03:28     01:34:31           02:31:03     ✓ CLEAN                     
-HBAR-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TIMEOUT    0.100080     0.099640     $+4.4141   23:01:53     04:01:56           05:00:00     ✓ CLEAN                     
-PROMPT-USDT  30min    LONG   NONE                 BEAR   78%    LOW_ALTS     SL_HIT     0.046396     0.045420     $-21.0437  22:58:09     23:17:50           00:19:41     ✓ CLEAN                     
-MAGIC-USDT   30min    LONG   TREND CONTINUATION   BEAR   78%    LOW_ALTS     SL_HIT     0.063864     0.063100     $-11.9598  22:55:36     00:03:23           01:07:46     ✓ CLEAN                     
+EPT-USDT     1h       LONG   TREND CONTINUATION   BULL   86%    LOW_ALTS     SL_HIT     0.000924     0.000852     $-77.8452  Mar-01 01:46:12 02:10:00           00:23:48     ✓ CLEAN                     
+EPT-USDT     30min    LONG   TREND CONTINUATION   BULL   86%    LOW_ALTS     SL_HIT     0.000924     0.000879     $-48.6220  Mar-01 01:46:10 Mar-01 01:49:35    00:03:24     ✓ CLEAN                     
+XPL-USDT     15min    LONG   TREND CONTINUATION   BULL   83%    MID_ALTS     SL_HIT     0.095295     0.094400     $-9.3940   Mar-01 01:41:29 02:04:53           00:23:23     ✓ CLEAN                     
+UNI-USDT     1h       LONG   TREND CONTINUATION   BULL   83%    LOW_ALTS     TIMEOUT    3.752349     3.804100     $+13.7917  Mar-01 01:41:06 06:42:32           05:00:00     ✓ CLEAN                     
+EIGEN-USDT   15min    LONG   REVERSAL             BEAR   83%    LOW_ALTS     SL_HIT     0.176176     0.175000     $-6.6751   Mar-01 01:41:03 02:04:53           00:23:50     ✓ CLEAN                     
+ADA-USDT     1h       LONG   REVERSAL             BEAR   83%    MAIN_BLOCKC  TP_HIT     0.272472     0.282900     $+38.2711  Mar-01 01:40:07 05:38:55           03:58:48     ✓ CLEAN                     
+BERA-USDT    15min    LONG   TREND CONTINUATION   BULL   82%    MID_ALTS     TIMEOUT    0.607407     0.617900     $+17.2754  Mar-01 01:38:23 05:28:16           03:45:00     ✓ CLEAN                     
+KAS-USDT     15min    LONG   TREND CONTINUATION   BEAR   82%    LOW_ALTS     SL_HIT     0.029560     0.029340     $-7.4267   Mar-01 01:38:09 02:25:19           00:47:10     ✓ CLEAN                     
+POL-USDT     15min    LONG   TREND CONTINUATION   BEAR   82%    MAIN_BLOCKC  TP_HIT     0.105405     0.106800     $+13.2318  Mar-01 01:37:12 02:40:38           01:03:26     ✓ CLEAN                     
+ROAM-USDT    30min    LONG   TREND CONTINUATION   BULL   77%    TOP_ALTS     SL_HIT     0.028251     0.027663     $-20.8212  Mar-01 01:09:25 Mar-01 01:24:01    00:14:35     ✓ CLEAN                     
+CROSS-USDT   1h       LONG   TREND CONTINUATION   BULL   82%    MID_ALTS     TP_HIT     0.101281     0.103230     $+19.2417  Mar-01 01:05:42 06:10:48           05:05:06     ✓ CLEAN                     
+EPT-USDT     30min    LONG   TREND CONTINUATION   BULL   76%    LOW_ALTS     SL_HIT     0.000927     0.000846     $-87.3058  Mar-01 01:05:28 Mar-01 01:08:38    00:03:09     ✓ CLEAN                     
+XRP-USDT     15min    LONG   TREND CONTINUATION   BEAR   82%    MAIN_BLOCKC  TP_HIT     1.330599     1.352870     $+16.7374  Mar-01 00:59:20 02:35:31           01:36:11     ✓ CLEAN                     
+SUI-USDT     15min    LONG   TREND CONTINUATION   BEAR   83%    LOW_ALTS     TP_HIT     0.861861     0.883200     $+24.7592  Mar-01 00:58:36 01:54:39           00:56:02     ✓ CLEAN                     
+VOXEL-USDT   1h       LONG   TREND CONTINUATION   BULL   82%    LOW_ALTS     TIMEOUT    0.008559     0.008690     $+15.3589  Mar-01 00:53:06 05:54:52           05:00:00     ✓ CLEAN                     
+XPL-USDT     15min    LONG   TREND CONTINUATION   BULL   82%    MID_ALTS     TP_HIT     0.092492     0.094100     $+17.3809  Mar-01 00:51:58 Mar-01 01:13:45    00:21:46     ✓ CLEAN                     
+AVAX-USDT    15min    LONG   TREND CONTINUATION   BEAR   81%    MAIN_BLOCKC  TP_HIT     8.703695     8.922000     $+25.0819  Mar-01 00:30:03 01:54:39           01:24:36     ✓ CLEAN                     
+FUN-USDT     30min    LONG   TREND CONTINUATION   RANGE  77%    MID_ALTS     TIMEOUT    0.049630     0.050090     $+9.2771   Mar-01 00:26:42 05:28:15           05:00:00     ✓ CLEAN                     
+HYPE-USDT    30min    LONG   TREND CONTINUATION   BULL   77%    LOW_ALTS     TP_HIT     28.987959    29.772000    $+27.0471  Mar-01 00:17:31 03:11:46           02:54:15     ✓ CLEAN                     
+KAS-USDT     15min    LONG   TREND CONTINUATION   BEAR   80%    LOW_ALTS     SL_HIT     0.029479     0.029230     $-8.4618   Mar-01 00:06:53 Mar-01 00:17:09    00:10:16     ✓ CLEAN                     
+KAITO-USDT   1h       LONG   TREND CONTINUATION   BULL   83%    LOW_ALTS     SL_HIT     0.342752     0.334230     $-24.8646  Feb-28 23:53:46 Mar-01 01:18:52    01:25:05     ✓ CLEAN                     
+KAITO-USDT   30min    LONG   TREND CONTINUATION   BULL   80%    LOW_ALTS     SL_HIT     0.342762     0.334230     $-24.8931  Feb-28 23:53:43 Mar-01 01:18:52    01:25:08     ✓ CLEAN                     
+KAITO-USDT   15min    LONG   TREND CONTINUATION   BULL   80%    LOW_ALTS     SL_HIT     0.342692     0.334230     $-24.6937  Feb-28 23:53:40 Mar-01 01:18:52    01:25:11     ✓ CLEAN                     
+DUCK-USDT    1h       LONG   REVERSAL             BULL   82%    LOW_ALTS     SL_HIT     0.001124     0.001117     $-6.3365   Feb-28 23:52:29 Mar-01 00:48:09    00:55:39     ✓ CLEAN                     
+RAY-USDT     15min    LONG   TREND CONTINUATION   BEAR   81%    LOW_ALTS     TP_HIT     0.575275     0.586500     $+19.5129  Feb-28 23:51:32 Mar-01 01:39:19    01:47:47     ✓ CLEAN                     
+AAVE-USDT    15min    LONG   TREND CONTINUATION   BEAR   83%    LOW_ALTS     TP_HIT     108.278170   110.720000   $+22.5515  Feb-28 23:44:40 02:35:31           02:50:51     ✓ CLEAN                     
+ENA-USDT     15min    LONG   TREND CONTINUATION   BEAR   82%    MID_ALTS     TP_HIT     0.098999     0.101700     $+27.2841  Feb-28 23:44:26 01:54:38           02:10:11     ✓ CLEAN                     
+ETH-USDT     15min    LONG   TREND CONTINUATION   BEAR   82%    MAIN_BLOCKC  SL_HIT     1907.906000  1889.760000  $-9.5110   Feb-28 23:43:03 Mar-01 00:42:59    00:59:55     ✓ CLEAN                     
+VOXEL-USDT   1h       LONG   TREND CONTINUATION   BULL   82%    LOW_ALTS     SL_HIT     0.008739     0.008460     $-31.8959  Feb-28 23:31:48 01:59:43           02:27:55     ✓ CLEAN                     
+FUEL-USDT    30min    LONG   TREND CONTINUATION   BEAR   78%    MID_ALTS     SL_HIT     0.001232     0.001217     $-12.3605  Feb-28 23:29:27 Feb-28 23:30:20    00:00:53     ✓ CLEAN                     
+VIRTUAL-USD  15min    LONG   TREND CONTINUATION   BEAR   80%    LOW_ALTS     TP_HIT     0.656256     0.674800     $+28.2579  Feb-28 23:27:37 01:54:37           02:27:00     ✓ CLEAN                     
+AERO-USDT    15min    LONG   TREND CONTINUATION   BEAR   81%    LOW_ALTS     TP_HIT     0.332332     0.340800     $+25.4805  Feb-28 23:15:09 Mar-01 01:44:25    02:29:15     ✓ CLEAN                     
+ROAM-USDT    30min    LONG   TREND CONTINUATION   BULL   77%    TOP_ALTS     TP_HIT     0.027902     0.028924     $+36.6329  Feb-28 23:14:06 02:35:31           03:21:24     ✓ CLEAN                     
+DOGE-USDT    15min    LONG   TREND CONTINUATION   BEAR   82%    LOW_ALTS     TP_HIT     0.090971     0.092770     $+19.7769  Feb-28 23:12:37 02:35:30           03:22:53     ✓ CLEAN                     
+AVAX-USDT    15min    LONG   TREND CONTINUATION   BEAR   82%    MAIN_BLOCKC  TP_HIT     8.665657     8.869000     $+23.4654  Feb-28 23:11:44 Mar-01 01:49:31    02:37:46     ✓ CLEAN                     
+ETH-USDT     15min    LONG   TREND CONTINUATION   BEAR   82%    MAIN_BLOCKC  TP_HIT     1902.080180  1940.750000  $+20.3303  Feb-28 23:11:38 01:54:37           02:42:58     ✓ CLEAN                     
+VOXEL-USDT   30min    LONG   TREND CONTINUATION   BULL   82%    LOW_ALTS     SL_HIT     0.008719     0.008460     $-29.6730  Feb-28 23:10:51 01:59:43           02:48:51     ✓ CLEAN                     
+BTC-USDT     15min    LONG   TREND CONTINUATION   BEAR   86%    MAIN_BLOCKC  TP_HIT     64872.90810  65721.60000  $+13.0824  Feb-28 22:43:20 Mar-01 01:49:30    03:06:09     ✓ CLEAN                     
+EPT-USDT     30min    LONG   TREND CONTINUATION   BULL   76%    LOW_ALTS     SL_HIT     0.000861     0.000820     $-47.4642  Feb-28 22:33:04 Feb-28 22:34:09    00:01:04     ✓ CLEAN                     
+CFX-USDT     15min    LONG   TREND CONTINUATION   BEAR   82%    LOW_ALTS     SL_HIT     0.046827     0.046440     $-8.2598   Feb-28 22:30:10 Feb-28 23:09:52    00:39:41     ✓ CLEAN                     
+HIPPO-USDT   15min    LONG   TREND CONTINUATION   BEAR   82%    LOW_ALTS     SL_HIT     0.000544     0.000539     $-8.3581   Feb-28 22:29:58 Feb-28 23:09:52    00:39:53     ✓ CLEAN                     
+ZORA-USDT    15min    LONG   TREND CONTINUATION   BEAR   82%    LOW_ALTS     SL_HIT     0.018197     0.018018     $-9.8465   Feb-28 22:29:44 Mar-01 00:42:56    02:13:12     ✓ CLEAN                     
+ARK-USDT     15min    LONG   TREND CONTINUATION   BEAR   87%    LOW_ALTS     OPEN       0.174100     N/A          OPEN       Feb-28 22:29:30 -                  -            ✓ CLEAN                     
+RAY-USDT     15min    LONG   TREND CONTINUATION   BEAR   87%    LOW_ALTS     TP_HIT     0.575675     0.586500     $+18.8038  Feb-28 22:29:03 Mar-01 01:39:17    03:10:13     ✓ CLEAN                     
+LA-USDT      15min    LONG   REVERSAL             BEAR   84%    LOW_ALTS     SL_HIT     0.220460     0.218750     $-7.7576   Feb-28 22:28:50 Feb-28 22:44:19    00:15:28     ✓ CLEAN                     
+POL-USDT     15min    LONG   TREND CONTINUATION   BEAR   84%    MAIN_BLOCKC  SL_HIT     0.104905     0.103900     $-9.5782   Feb-28 22:28:45 Feb-28 23:20:01    00:51:16     ✓ CLEAN                     
+AVAX-USDT    15min    LONG   TREND CONTINUATION   BEAR   84%    MAIN_BLOCKC  TP_HIT     8.662654     8.869000     $+23.8202  Feb-28 22:28:40 Mar-01 01:49:30    03:20:49     ✓ CLEAN                     
+ETH-USDT     15min    LONG   TREND CONTINUATION   BEAR   83%    MAIN_BLOCKC  TP_HIT     1903.851950  1939.830000  $+18.8975  Feb-28 22:28:33 01:54:36           03:26:03     ✓ CLEAN                     
+AVNT-USDT    15min    LONG   TREND CONTINUATION   BEAR   87%    LOW_ALTS     SL_HIT     0.170620     0.168980     $-9.6146   Feb-28 22:28:22 Mar-01 00:42:54    02:14:31     ✓ CLEAN                     
+ARKM-USDT    15min    LONG   AMBIGUOUS            BEAR   82%    LOW_ALTS     SL_HIT     0.102502     0.101300     $-11.7305  Feb-28 22:28:12 Feb-28 23:04:44    00:36:31     ✓ CLEAN                     
+EPT-USDT     15min    LONG   REVERSAL             BEAR   80%    LOW_ALTS     SL_HIT     0.000818     0.000724     $-114.716  Feb-28 22:26:47 Feb-28 22:29:01    00:02:14     ✓ CLEAN                     
+SOL-USDT     15min    LONG   TREND CONTINUATION   BEAR   83%    MAIN_BLOCKC  TP_HIT     80.520440    82.150000    $+20.2378  Feb-28 22:26:27 Mar-01 01:39:16    03:12:48     ✓ CLEAN                     
+ONDO-USDT    15min    LONG   TREND CONTINUATION   BEAR   84%    LOW_ALTS     TP_HIT     0.246036     0.251520     $+22.2903  Feb-28 22:24:26 Mar-01 01:39:16    03:14:50     ✓ CLEAN                     
+VOXEL-USDT   30min    LONG   TREND CONTINUATION   BEAR   77%    LOW_ALTS     SL_HIT     0.008699     0.008460     $-27.4398  Feb-28 22:24:06 01:59:42           03:35:36     ✓ CLEAN                     
+FUEL-USDT    15min    LONG   TREND CONTINUATION   BEAR   82%    MID_ALTS     TIMEOUT    0.001220     0.001229     $+7.1962   Feb-28 22:24:02 02:09:57           03:45:00     ✓ CLEAN                     
+ORDER-USDT   15min    LONG   TREND CONTINUATION   BEAR   82%    LOW_ALTS     TP_HIT     0.053073     0.053980     $+17.0893  Feb-28 22:20:04 Mar-01 01:39:15    03:19:11     ✓ CLEAN                     
+BTC-USDT     30min    SHORT  TREND CONTINUATION   BEAR   74%    MAIN_BLOCKC  SL_HIT     64383.15240  64864.50000  $-7.4208   Feb-28 21:52:21 Feb-28 23:09:49    01:17:27     ✓ CLEAN                     
+XRP-USDT     15min    LONG   TREND CONTINUATION   BEAR   83%    MAIN_BLOCKC  SL_HIT     1.336375     1.319060     $-12.9567  Feb-28 21:45:02 Feb-28 21:53:42    00:08:40     ✓ CLEAN                     
+ONDO-USDT    15min    LONG   TREND CONTINUATION   BEAR   82%    LOW_ALTS     SL_HIT     0.248738     0.245340     $-13.6629  Feb-28 21:42:56 Feb-28 21:53:42    00:10:45     ✓ CLEAN                     
+ADA-USDT     15min    LONG   TREND CONTINUATION   BEAR   82%    MAIN_BLOCKC  SL_HIT     0.269569     0.267500     $-7.6763   Feb-28 21:41:49 Feb-28 21:48:38    00:06:48     ✓ CLEAN                     
+BTC-USDT     15min    LONG   TREND CONTINUATION   BEAR   86%    MAIN_BLOCKC  SL_HIT     65027.36240  64476.40000  $-8.4728   Feb-28 21:41:44 Feb-28 21:53:42    00:11:58     ✓ CLEAN                     
+AAVE-USDT    15min    LONG   TREND CONTINUATION   BEAR   87%    LOW_ALTS     SL_HIT     108.944836   107.880000   $-9.7741   Feb-28 21:41:19 Feb-28 21:48:37    00:07:17     ✓ CLEAN                     
+VIRTUAL-USD  15min    LONG   TREND CONTINUATION   BEAR   80%    LOW_ALTS     SL_HIT     0.658858     0.651700     $-10.8646  Feb-28 21:17:33 Feb-28 21:53:41    00:36:08     ✓ CLEAN                     
+BTC-USDT     15min    LONG   TREND CONTINUATION   BEAR   84%    MAIN_BLOCKC  SL_HIT     64818.75400  64502.10000  $-4.8852   Feb-28 20:56:43 Feb-28 21:53:41    00:56:58     ✓ CLEAN                     
+LINK-USDT    15min    LONG   TREND CONTINUATION   BEAR   84%    MAIN_BLOCKC  SL_HIT     8.454947     8.399500     $-6.5579   Feb-28 20:55:10 Feb-28 21:58:45    01:03:34     ✓ CLEAN                     
+ASTER-USDT   1h       LONG   NONE                 BULL   83%    LOW_ALTS     TIMEOUT    0.696796     0.706800     $+14.3570  Feb-28 20:53:16 01:54:36           05:00:00     ✓ CLEAN                     
+UNI-USDT     15min    LONG   TREND CONTINUATION   BEAR   84%    LOW_ALTS     SL_HIT     3.668265     3.637100     $-8.4957   Feb-28 20:51:18 Feb-28 21:53:41    01:02:22     ✓ CLEAN                     
+DOGE-USDT    15min    LONG   TREND CONTINUATION   BEAR   84%    LOW_ALTS     SL_HIT     0.090961     0.090340     $-6.8257   Feb-28 20:51:06 Feb-28 21:53:40    01:02:34     ✓ CLEAN                     
+ARK-USDT     15min    LONG   TREND CONTINUATION   BEAR   84%    LOW_ALTS     OPEN       0.173900     N/A          OPEN       Feb-28 20:50:45 -                  -            ✓ CLEAN                     
+XRP-USDT     15min    LONG   TREND CONTINUATION   BEAR   84%    MAIN_BLOCKC  SL_HIT     1.327146     1.317120     $-7.5544   Feb-28 20:50:11 Feb-28 22:18:55    01:28:43     ✓ CLEAN                     
+SOL-USDT     15min    LONG   TREND CONTINUATION   BEAR   84%    MAIN_BLOCKC  TIMEOUT    80.250170    80.970000    $+8.9698   Feb-28 20:50:09 Mar-01 00:37:42    03:45:00     ✓ CLEAN                     
+ETH-USDT     15min    LONG   TREND CONTINUATION   BEAR   85%    MAIN_BLOCKC  SL_HIT     1892.700810  1882.060000  $-5.6220   Feb-28 20:50:06 Feb-28 22:18:54    01:28:48     ✓ CLEAN                     
+XPL-USDT     15min    LONG   TREND CONTINUATION   BEAR   83%    MID_ALTS     SL_HIT     0.092292     0.091300     $-10.7506  Feb-28 20:49:55 Feb-28 22:54:27    02:04:32     ✓ CLEAN                     
+FUEL-USDT    15min    LONG   TREND CONTINUATION   BULL   82%    MID_ALTS     SL_HIT     0.001217     0.001205     $-10.0360  Feb-28 20:49:15 Feb-28 20:52:58    00:03:43     ✓ CLEAN                     
+FUEL-USDT    15min    LONG   TREND CONTINUATION   BULL   82%    MID_ALTS     SL_HIT     0.001214     0.001198     $-13.3527  Feb-28 20:20:06 Feb-28 20:22:20    00:02:13     ✓ CLEAN                     
+FUN-USDT     30min    LONG   NONE                 RANGE  78%    MID_ALTS     TIMEOUT    0.048218     0.049410     $+24.7174  Feb-28 19:46:56 Mar-01 00:48:02    05:00:00     ✓ CLEAN                     
+FUEL-USDT    30min    LONG   NONE                 RANGE  78%    MID_ALTS     SL_HIT     0.001229     0.001213     $-13.2018  Feb-28 19:40:11 Feb-28 19:56:49    00:16:38     ✓ CLEAN                     
+FUEL-USDT    15min    LONG   NONE                 RANGE  82%    MID_ALTS     SL_HIT     0.001229     0.001213     $-13.2018  Feb-28 19:40:08 Feb-28 19:56:49    00:16:40     ✓ CLEAN                     
+PROMPT-USDT  30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.042238     0.042950     $-16.5839  Feb-28 19:11:00 Feb-28 20:52:58    01:41:58     ✓ CLEAN                     
+SAHARA-USDT  30min    SHORT  TREND CONTINUATION   BULL   76%    TOP_ALTS     SL_HIT     0.019191     0.020260     $-52.7744  Feb-28 18:21:13 Feb-28 21:58:43    03:37:30     ✓ CLEAN                     
+FUEL-USDT    30min    SHORT  TREND CONTINUATION   RANGE  75%    MID_ALTS     SL_HIT     0.001196     0.001210     $-11.7331  Feb-28 17:55:18 Feb-28 19:31:11    01:35:52     ✓ CLEAN                     
+VOXEL-USDT   15min    LONG   TREND CONTINUATION   BULL   83%    LOW_ALTS     SL_HIT     0.008989     0.008820     $-18.7986  Feb-28 17:53:48 Feb-28 17:58:58    00:05:09     ✓ CLEAN                     
+VOXEL-USDT   30min    LONG   REVERSAL             BEAR   79%    LOW_ALTS     SL_HIT     0.008899     0.008740     $-17.8550  Feb-28 17:49:42 Feb-28 17:58:58    00:09:15     ✓ CLEAN                     
+VOXEL-USDT   1h       LONG   REVERSAL             BULL   86%    LOW_ALTS     SL_HIT     0.008829     0.008570     $-29.3154  Feb-28 17:46:58 Feb-28 18:40:00    00:53:02     ✓ CLEAN                     
+BERA-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    MID_ALTS     SL_HIT     0.576723     0.586900     $-17.3408  Feb-28 17:31:21 Feb-28 18:14:23    00:43:02     ✓ CLEAN                     
+BERA-USDT    15min    SHORT  TREND CONTINUATION   BEAR   82%    MID_ALTS     SL_HIT     0.573426     0.586900     $-22.9579  Feb-28 17:13:59 Feb-28 18:14:23    01:00:24     ✓ CLEAN                     
+XAUT-USDT    15min    LONG   TREND CONTINUATION   BULL   82%    TOP_ALTS     SL_HIT     5457.892440  5414.540000  $-7.9431   Feb-28 17:09:55 Feb-28 17:17:42    00:07:46     ✓ CLEAN                     
+ETH-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    MAIN_BLOCKC  SL_HIT     1851.196950  1874.030000  $-12.1839  Feb-28 17:02:38 Feb-28 18:04:06    01:01:28     ✓ CLEAN                     
+BTC-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    MAIN_BLOCKC  SL_HIT     63540.09630  64201.50000  $-10.3020  Feb-28 17:02:35 Feb-28 18:04:06    01:01:31     ✓ CLEAN                     
+PUMP-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.001751     0.001790     $-21.6497  Feb-28 17:00:49 Feb-28 20:52:58    03:52:08     ✓ CLEAN                     
+LINK-USDT    1h       SHORT  TREND CONTINUATION   BEAR   79%    MAIN_BLOCKC  SL_HIT     8.255037     8.361300     $-12.7089  Feb-28 16:55:41 Feb-28 20:47:54    03:52:12     ✓ CLEAN                     
+XAUT-USDT    1h       LONG   TREND CONTINUATION   BULL   85%    TOP_ALTS     SL_HIT     5432.507080  5380.230000  $-9.6230   Feb-28 16:53:20 Feb-28 18:24:38    01:31:17     ✓ CLEAN                     
+XAUT-USDT    30min    LONG   TREND CONTINUATION   BULL   85%    TOP_ALTS     SL_HIT     5431.536110  5380.230000  $-9.4460   Feb-28 16:53:17 Feb-28 18:24:38    01:31:20     ✓ CLEAN                     
+TON-USDT     1h       SHORT  TREND CONTINUATION   BEAR   80%    LOW_ALTS     SL_HIT     1.233066     1.255200     $-17.6341  Feb-28 16:52:43 Feb-28 20:52:57    04:00:14     ✓ CLEAN                     
+HIPPO-USDT   30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.000536     0.000545     $-15.6642  Feb-28 16:37:28 Feb-28 21:03:04    04:25:35     ✓ CLEAN                     
+PROMPT-USDT  30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.042388     0.043040     $-15.1587  Feb-28 16:35:34 Feb-28 18:14:22    01:38:47     ✓ CLEAN                     
+FUN-USDT     30min    SHORT  TREND CONTINUATION   RANGE  75%    MID_ALTS     SL_HIT     0.046773     0.047870     $-22.9125  Feb-28 16:35:02 Feb-28 16:56:59    00:21:57     ✓ CLEAN                     
+AVNT-USDT    30min    SHORT  REVERSAL             BEAR   75%    LOW_ALTS     SL_HIT     0.166693     0.170210     $-20.6619  Feb-28 16:33:25 Feb-28 20:52:57    04:19:31     ✓ CLEAN                     
+ARKM-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.100499     0.102100     $-15.6768  Feb-28 16:33:16 Feb-28 20:52:57    04:19:40     ✓ CLEAN                     
+WIF-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.186214     0.189300     $-16.3043  Feb-28 16:33:10 Feb-28 20:52:57    04:19:46     ✓ CLEAN                     
+SPK-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TP_HIT     0.018931     0.018380     $+29.9810  Feb-28 16:31:52 Feb-28 17:43:27    01:11:35     ✓ CLEAN                     
+BERA-USDT    30min    SHORT  REVERSAL             BEAR   75%    MID_ALTS     SL_HIT     0.580719     0.598000     $-28.8985  Feb-28 16:31:22 Feb-28 20:52:56    04:21:34     ✓ CLEAN                     
+TON-USDT     30min    SHORT  REVERSAL             BEAR   75%    LOW_ALTS     SL_HIT     1.240358     1.254300     $-11.1150  Feb-28 16:31:04 Feb-28 20:52:56    04:21:52     ✓ CLEAN                     
+SUI-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.839859     0.858200     $-21.3711  Feb-28 16:30:57 Feb-28 20:52:56    04:21:58     ✓ CLEAN                     
+XAUT-USDT    15min    LONG   TREND CONTINUATION   BULL   80%    TOP_ALTS     TP_HIT     5397.542150  5462.070000  $+11.9550  Feb-28 16:27:44 Feb-28 17:07:17    00:39:33     ✓ CLEAN                     
+FUN-USDT     30min    LONG   REVERSAL             RANGE  83%    MID_ALTS     SL_HIT     0.048138     0.047000     $-23.6422  Feb-28 16:21:38 Feb-28 16:36:03    00:14:24     ✓ CLEAN                     
+AERO-USDT    1h       SHORT  TREND CONTINUATION   BEAR   80%    LOW_ALTS     SL_HIT     0.318481     0.324700     $-19.1524  Feb-28 16:19:46 Feb-28 20:52:56    04:33:09     ✓ CLEAN                     
+PEPE-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.000003     0.000003     $-13.5948  Feb-28 16:12:20 Feb-28 20:47:52    04:35:31     ✓ CLEAN                     
+XAUT-USDT    30min    LONG   TREND CONTINUATION   BULL   73%    TOP_ALTS     TP_HIT     5375.219850  5441.550000  $+12.3400  Feb-28 16:11:13 Feb-28 16:56:56    00:45:42     ✓ CLEAN                     
+SOL-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    MAIN_BLOCKC  SL_HIT     77.732190    78.630000    $-11.4182  Feb-28 16:09:36 Feb-28 16:25:42    00:16:05     ✓ CLEAN                     
+XPL-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    MID_ALTS     SL_HIT     0.087113     0.088700     $-17.8940  Feb-28 16:09:25 Feb-28 16:25:41    00:16:15     ✓ CLEAN                     
+UNI-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     3.580616     3.671300     $-24.7008  Feb-28 16:08:58 Feb-28 20:52:56    04:43:57     ✓ CLEAN                     
+PUMP-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.001751     0.001790     $-21.6497  Feb-28 16:07:36 Feb-28 20:52:55    04:45:19     ✓ CLEAN                     
+IP-USDT      30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.878191     0.893910     $-17.5846  Feb-28 15:58:29 Feb-28 20:52:55    04:54:26     ✓ CLEAN                     
+ETH-USDT     1h       SHORT  TREND CONTINUATION   BEAR   80%    MAIN_BLOCKC  SL_HIT     1850.177970  1874.540000  $-12.9963  Feb-28 15:52:22 Feb-28 18:04:03    02:11:40     ✓ CLEAN                     
+BTC-USDT     1h       SHORT  TREND CONTINUATION   BEAR   80%    MAIN_BLOCKC  SL_HIT     63436.69980  64002.20000  $-8.8356   Feb-28 15:52:19 Feb-28 17:38:16    01:45:57     ✓ CLEAN                     
+VIRTUAL-USD  30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TIMEOUT    0.638061     0.639500     $-2.2497   Feb-28 15:46:17 Feb-28 20:47:51    05:00:00     ✓ CLEAN                     
+LQTY-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TIMEOUT    0.266733     0.265700     $+3.8878   Feb-28 15:45:14 Feb-28 20:47:51    05:00:00     ✓ CLEAN                     
+PARTI-USDT   30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TIMEOUT    0.094006     0.092000     $+21.8033  Feb-28 15:33:23 Feb-28 20:37:31    05:00:00     ✓ CLEAN                     
+ASTER-USDT   30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.683915     0.691700     $-11.2543  Feb-28 15:32:11 Feb-28 18:04:02    02:31:51     ✓ CLEAN                     
+BNB-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    MAIN_BLOCKC  SL_HIT     593.036370   598.026000   $-8.3435   Feb-28 15:30:36 Feb-28 18:29:42    02:59:06     ✓ CLEAN                     
+AERO-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TIMEOUT    0.320379     0.316600     $+11.9371  Feb-28 15:27:14 Feb-28 20:27:21    05:00:00     ✓ CLEAN                     
+XAUT-USDT    15min    LONG   TREND CONTINUATION   BULL   81%    TOP_ALTS     TP_HIT     5347.422080  5402.760000  $+10.3485  Feb-28 15:26:55 Feb-28 16:41:14    01:14:18     ✓ CLEAN                     
+XAUT-USDT    30min    LONG   TREND CONTINUATION   BULL   88%    TOP_ALTS     TP_HIT     5349.243900  5425.780000  $+14.3078  Feb-28 15:25:07 Feb-28 16:46:27    01:21:20     ✓ CLEAN                     
+UNI-USDT     30min    SHORT  TREND CONTINUATION   BEAR   76%    LOW_ALTS     TIMEOUT    3.610086     3.596300     $+3.8335   Feb-28 15:24:12 Feb-28 20:27:20    05:00:00     ✓ CLEAN                     
+PEPE-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TIMEOUT    0.000003     0.000003     $-1.5756   Feb-28 15:19:58 Feb-28 20:22:15    05:00:00     ✓ CLEAN                     
+IP-USDT      30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TIMEOUT    0.881308     0.882790     $-1.6790   Feb-28 15:15:06 Feb-28 20:17:09    05:00:00     ✓ CLEAN                     
+ROAM-USDT    30min    SHORT  TREND CONTINUATION   RANGE  75%    TOP_ALTS     SL_HIT     0.025468     0.025935     $-18.0256  Feb-28 15:13:48 Feb-28 16:05:04    00:51:15     ✓ CLEAN                     
+ETH-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    MAIN_BLOCKC  SL_HIT     1857.250890  1875.110000  $-9.5243   Feb-28 15:09:14 Feb-28 18:04:00    02:54:46     ✓ CLEAN                     
+ARB-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TP_HIT     0.094006     0.091200     $+30.7664  Feb-28 15:08:59 Feb-28 19:05:31    03:56:31     ✓ CLEAN                     
+LQTY-USDT    30min    SHORT  REVERSAL             BEAR   75%    LOW_ALTS     TIMEOUT    0.270729     0.266700     $+15.1069  Feb-28 15:04:13 Feb-28 20:06:57    05:00:00     ✓ CLEAN                     
+AVAX-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    MAIN_BLOCKC  TIMEOUT    8.576415     8.517000     $+6.9760   Feb-28 15:04:01 Feb-28 20:06:57    05:00:00     ✓ CLEAN                     
+GALA-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     OPEN       0.003480     N/A          OPEN       Feb-28 15:03:35 -                  -            ✓ CLEAN                     
+ZORA-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TIMEOUT    0.017925     0.017755     $+9.5780   Feb-28 15:02:59 Feb-28 20:06:57    05:00:00     ✓ CLEAN                     
+LINK-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    MAIN_BLOCKC  TIMEOUT    8.306385     8.316000     $-1.1562   Feb-28 15:02:13 Feb-28 20:06:57    05:00:00     ✓ CLEAN                     
+XPL-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    MID_ALTS     SL_HIT     0.087512     0.088800     $-14.5000  Feb-28 15:01:58 Feb-28 16:30:45    01:28:47     ✓ CLEAN                     
+ARKM-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TP_HIT     0.101399     0.099100     $+23.1937  Feb-28 15:01:50 Feb-28 19:10:37    04:08:46     ✓ CLEAN                     
+DYDX-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TP_HIT     0.089510     0.087400     $+24.1465  Feb-28 15:01:46 Feb-28 17:07:12    02:05:26     ✓ CLEAN                     
+PUMP-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TIMEOUT    0.001757     0.001748     $+5.2866   Feb-28 15:01:41 Feb-28 20:01:50    05:00:00     ✓ CLEAN                     
+EIGEN-USDT   30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TP_HIT     0.177922     0.173900     $+23.1277  Feb-28 15:01:23 Feb-28 16:41:06    01:39:43     ✓ CLEAN                     
+SUI-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TIMEOUT    0.844854     0.836800     $+9.6251   Feb-28 15:01:20 Feb-28 20:01:50    05:00:00     ✓ CLEAN                     
+CFX-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TIMEOUT    0.045874     0.045780     $+2.0550   Feb-28 15:01:15 Feb-28 20:01:50    05:00:00     ✓ CLEAN                     
+POL-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    MAIN_BLOCKC  TP_HIT     0.102997     0.100700     $+22.8093  Feb-28 15:00:17 Feb-28 17:07:11    02:06:54     ✓ CLEAN                     
+PARTI-USDT   30min    LONG   REVERSAL             BULL   82%    LOW_ALTS     SL_HIT     0.098498     0.096500     $-20.2887  Feb-28 14:57:40 Feb-28 15:03:45    00:06:04     ✓ CLEAN                     
+ROAM-USDT    30min    LONG   REVERSAL             BULL   79%    TOP_ALTS     SL_HIT     0.026240     0.025773     $-17.8053  Feb-28 14:56:04 Feb-28 15:03:44    00:07:40     ✓ CLEAN                     
+XAUT-USDT    15min    LONG   TREND CONTINUATION   BULL   81%    TOP_ALTS     TP_HIT     5319.314000  5374.020000  $+10.2844  Feb-28 14:55:03 Feb-28 16:05:00    01:09:56     ✓ CLEAN                     
+PUMP-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.001728     0.001763     $-19.6994  Feb-28 13:52:07 Feb-28 14:38:37    00:46:29     ✓ CLEAN                     
+ASTER-USDT   30min    SHORT  TREND CONTINUATION   BEAR   78%    LOW_ALTS     SL_HIT     0.673825     0.680800     $-10.2446  Feb-28 13:50:19 Feb-28 14:03:22    00:13:02     ✓ CLEAN                     
+SOL-USDT     30min    SHORT  TREND CONTINUATION   BEAR   77%    MAIN_BLOCKC  SL_HIT     78.431490    79.320000    $-11.2016  Feb-28 13:48:37 Feb-28 14:43:38    00:55:01     ✓ CLEAN                     
+MAGIC-USDT   30min    SHORT  TREND CONTINUATION   BEAR   78%    LOW_ALTS     TP_HIT     0.060739     0.059400     $+22.5455  Feb-28 13:45:24 Feb-28 16:15:16    02:29:51     ✓ CLEAN                     
+XRP-USDT     30min    SHORT  TREND CONTINUATION   BEAR   78%    MAIN_BLOCKC  TP_HIT     1.319499     1.294070     $+19.6505  Feb-28 13:42:56 Feb-28 13:58:18    00:15:21     ✓ CLEAN                     
+POL-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    MAIN_BLOCKC  TP_HIT     0.103696     0.102000     $+16.6294  Feb-28 13:40:37 Feb-28 13:58:18    00:17:40     ✓ CLEAN                     
+FUN-USDT     15min    LONG   TREND CONTINUATION   BEAR   80%    MID_ALTS     SL_HIT     0.049580     0.047860     $-34.6823  Feb-28 13:24:13 Feb-28 13:38:09    00:13:55     ✓ CLEAN                     
+XAUT-USDT    1h       LONG   TREND CONTINUATION   BULL   83%    TOP_ALTS     TP_HIT     5301.275980  5363.820000  $+11.7979  Feb-28 13:21:54 Feb-28 15:59:51    02:37:56     ✓ CLEAN                     
+XAUT-USDT    30min    LONG   TREND CONTINUATION   BULL   83%    TOP_ALTS     TP_HIT     5301.496200  5348.420000  $+8.8510   Feb-28 13:21:52 Feb-28 15:49:38    02:27:46     ✓ CLEAN                     
+XAUT-USDT    15min    LONG   REVERSAL             BULL   83%    TOP_ALTS     TP_HIT     5301.195900  5334.940000  $+6.3654   Feb-28 13:21:49 Feb-28 15:13:53    01:52:03     ✓ CLEAN                     
+BERA-USDT    15min    LONG   TREND CONTINUATION   BEAR   83%    MID_ALTS     SL_HIT     0.612612     0.602800     $-16.0167  Feb-28 13:21:33 Feb-28 13:28:02    00:06:29     ✓ CLEAN                     
+X-USDT       30min    SHORT  TREND CONTINUATION   BEAR   76%    LOW_ALTS     TP_HIT     0.000013     0.000012     $+46.1382  Feb-28 13:19:09 Feb-28 13:38:08    00:18:58     ✓ CLEAN                     
+ALU-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TP_HIT     0.005235     0.005150     $+16.4583  Feb-28 13:16:56 Feb-28 13:38:07    00:21:10     ✓ CLEAN                     
+SOL-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    MAIN_BLOCKC  TP_HIT     81.318600    80.430000    $+11.0481  Feb-28 13:05:14 Feb-28 13:17:54    00:12:39     ✓ CLEAN                     
+MAGIC-USDT   15min    LONG   TREND CONTINUATION   RANGE  82%    LOW_ALTS     SL_HIT     0.063563     0.062600     $-15.1581  Feb-28 12:58:35 Feb-28 13:17:54    00:19:18     ✓ CLEAN                     
+SAHARA-USDT  30min    LONG   TREND CONTINUATION   BULL   82%    TOP_ALTS     SL_HIT     0.022913     0.020920     $-86.9768  Feb-28 12:57:39 Feb-28 13:38:07    00:40:28     ✓ CLEAN                     
+ATH-USDT     30min    LONG   TREND CONTINUATION   BULL   83%    LOW_ALTS     SL_HIT     0.006413     0.006044     $-57.5992  Feb-28 12:44:19 Feb-28 13:38:07    00:53:47     ✓ CLEAN                     
+ZORA-USDT    30min    SHORT  TREND CONTINUATION   BEAR   73%    LOW_ALTS     TP_HIT     0.018560     0.018266     $+16.1185  Feb-28 12:28:51 Feb-28 13:17:53    00:49:02     ✓ CLEAN                     
+AUCTION-USD  30min    LONG   REVERSAL             RANGE  76%    LOW_ALTS     SL_HIT     4.904900     4.860000     $-9.1541   Feb-28 12:08:58 Feb-28 12:17:04    00:08:06     ✓ CLEAN                     
+AUCTION-USD  15min    LONG   REVERSAL             BEAR   82%    LOW_ALTS     TP_HIT     4.874870     4.910000     $+7.2063   Feb-28 12:05:38 Feb-28 12:11:59    00:06:20     ✓ CLEAN                     
+BNB-USDT     30min    SHORT  TREND CONTINUATION   BEAR   78%    MAIN_BLOCKC  TP_HIT     611.606781   606.480000   $+8.4533   Feb-28 11:57:29 Feb-28 13:17:53    01:20:24     ✓ CLEAN                     
+SAHARA-USDT  30min    LONG   TREND CONTINUATION   BULL   76%    TOP_ALTS     SL_HIT     0.023704     0.022170     $-64.7022  Feb-28 11:53:13 Feb-28 13:07:44    01:14:31     ✓ CLEAN                     
+MAGIC-USDT   30min    LONG   REVERSAL             BEAR   76%    LOW_ALTS     SL_HIT     0.063664     0.062600     $-16.7066  Feb-28 11:41:56 Feb-28 13:17:53    01:35:56     ✓ CLEAN                     
+MAGIC-USDT   15min    LONG   REVERSAL             RANGE  86%    LOW_ALTS     SL_HIT     0.063463     0.062600     $-13.6047  Feb-28 11:41:54 Feb-28 13:17:53    01:35:58     ✓ CLEAN                     
+ORDER-USDT   30min    SHORT  NONE                 BEAR   75%    LOW_ALTS     TP_HIT     0.054416     0.053400     $+19.0174  Feb-28 11:30:57 Feb-28 13:17:52    01:46:55     ✓ CLEAN                     
+PENGU-USDT   30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TP_HIT     0.006737     0.006620     $+17.7124  Feb-28 11:30:23 Feb-28 13:17:52    01:47:29     ✓ CLEAN                     
+HBAR-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TP_HIT     0.099520     0.097890     $+16.6552  Feb-28 11:30:00 Feb-28 13:28:01    01:58:01     ✓ CLEAN                     
+XRP-USDT     15min    LONG   TREND CONTINUATION   BEAR   83%    MAIN_BLOCKC  SL_HIT     1.359478     1.350690     $-6.4643   Feb-28 11:29:18 Feb-28 11:31:22    00:02:03     ✓ CLEAN                     
+SKATE-USDT   15min    LONG   TREND CONTINUATION   BULL   80%    LOW_ALTS     SL_HIT     0.001572     0.001550     $-13.7251  Feb-28 11:23:41 Feb-28 11:41:30    00:17:49     ✓ CLEAN                     
+SPK-USDT     30min    SHORT  TREND CONTINUATION   BEAR   73%    LOW_ALTS     TP_HIT     0.020190     0.019540     $+33.2544  Feb-28 11:16:41 Feb-28 13:33:04    02:16:22     ✓ CLEAN                     
+LA-USDT      15min    LONG   REVERSAL             RANGE  81%    LOW_ALTS     SL_HIT     0.235655     0.233840     $-7.7037   Feb-28 11:15:21 Feb-28 11:21:15    00:05:53     ✓ CLEAN                     
+X-USDT       30min    SHORT  TREND CONTINUATION   BEAR   73%    LOW_ALTS     TP_HIT     0.000013     0.000012     $+32.1383  Feb-28 10:45:26 Feb-28 13:28:00    02:42:34     ✓ CLEAN                     
+SPK-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TP_HIT     0.020250     0.020070     $+8.9552   Feb-28 10:33:47 Feb-28 13:17:51    02:44:04     ✓ CLEAN                     
+HBAR-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TP_HIT     0.099820     0.097890     $+19.7168  Feb-28 10:33:09 Feb-28 13:28:00    02:54:51     ✓ CLEAN                     
+ATH-USDT     30min    LONG   TREND CONTINUATION   BULL   76%    LOW_ALTS     SL_HIT     0.006310     0.006020     $-46.0048  Feb-28 10:26:59 Feb-28 14:23:30    03:56:31     ✓ CLEAN                     
+BERA-USDT    15min    LONG   TREND CONTINUATION   BEAR   84%    MID_ALTS     SL_HIT     0.610510     0.604100     $-10.4993  Feb-28 10:09:16 Feb-28 10:35:39    00:26:23     ✓ CLEAN                     
+ASTER-USDT   30min    LONG   TREND CONTINUATION   BULL   82%    LOW_ALTS     SL_HIT     0.703202     0.698400     $-6.8295   Feb-28 09:59:28 Feb-28 10:25:31    00:26:03     ✓ CLEAN                     
+ZORA-USDT    15min    LONG   TREND CONTINUATION   BEAR   82%    LOW_ALTS     SL_HIT     0.018817     0.018765     $-2.7528   Feb-28 09:58:39 Feb-28 10:05:15    00:06:35     ✓ CLEAN                     
+ZKJ-USDT     30min    LONG   TREND CONTINUATION   BULL   83%    TOP_ALTS     SL_HIT     0.026046     0.025130     $-35.1693  Feb-28 09:57:54 Feb-28 12:17:01    02:19:06     ✓ CLEAN                     
+PUMP-USDT    1h       LONG   REVERSAL             RANGE  82%    LOW_ALTS     SL_HIT     0.001848     0.001814     $-18.3165  Feb-28 09:55:32 Feb-28 12:37:19    02:41:46     ✓ CLEAN                     
+SAHARA-USDT  30min    LONG   REVERSAL             BULL   79%    TOP_ALTS     SL_HIT     0.023243     0.021770     $-63.3828  Feb-28 09:51:34 Feb-28 13:17:51    03:26:16     ✓ CLEAN                     
+ARK-USDT     1h       LONG   TREND CONTINUATION   BEAR   83%    LOW_ALTS     OPEN       0.181800     N/A          OPEN       Feb-28 09:50:05 -                  -            ✓ CLEAN                     
+ZKJ-USDT     15min    LONG   TREND CONTINUATION   BULL   83%    TOP_ALTS     SL_HIT     0.026727     0.026050     $-25.3193  Feb-28 09:49:24 Feb-28 10:00:10    00:10:46     ✓ CLEAN                     
+ZKJ-USDT     1h       LONG   TREND CONTINUATION   BULL   82%    TOP_ALTS     SL_HIT     0.026436     0.025220     $-46.0127  Feb-28 09:46:06 Feb-28 11:16:09    01:30:03     ✓ CLEAN                     
+DOT-USDT     30min    LONG   AMBIGUOUS            BEAR   79%    MID_ALTS     SL_HIT     1.612211     1.580700     $-19.5450  Feb-28 09:26:02 Feb-28 10:45:46    01:19:43     ✓ CLEAN                     
+TON-USDT     30min    LONG   AMBIGUOUS            BULL   77%    LOW_ALTS     SL_HIT     1.298197     1.290800     $-5.6978   Feb-28 09:24:26 Feb-28 12:37:18    03:12:52     ✓ CLEAN                     
+ERA-USDT     30min    LONG   TREND CONTINUATION   BULL   82%    LOW_ALTS     SL_HIT     0.151351     0.149200     $-14.2133  Feb-28 09:19:09 Feb-28 10:40:41    01:21:32     ✓ CLEAN                     
+ZKJ-USDT     30min    LONG   TREND CONTINUATION   BULL   79%    TOP_ALTS     SL_HIT     0.026086     0.025220     $-33.2001  Feb-28 09:16:33 Feb-28 11:16:09    01:59:35     ✓ CLEAN                     
+ZKJ-USDT     15min    LONG   REVERSAL             BULL   82%    TOP_ALTS     TP_HIT     0.025465     0.026350     $+34.7357  Feb-28 09:12:36 Feb-28 09:39:56    00:27:19     ✓ CLEAN                     
+BIO-USDT     30min    SHORT  TREND CONTINUATION   RANGE  75%    LOW_ALTS     TP_HIT     0.022428     0.021450     $+45.5734  Feb-28 09:06:40 Feb-28 13:33:04    04:26:23     ✓ CLEAN                     
+ORDER-USDT   30min    SHORT  REVERSAL             BEAR   75%    LOW_ALTS     SL_HIT     0.054226     0.054630     $-7.4003   Feb-28 09:04:49 Feb-28 09:29:49    00:24:59     ✓ CLEAN                     
+PEPE-USDT    15min    SHORT  TREND CONTINUATION   BEAR   83%    LOW_ALTS     SL_HIT     0.000004     0.000004     $-6.1719   Feb-28 08:42:13 Feb-28 09:34:52    00:52:39     ✓ CLEAN                     
+KNC-USDT     1h       LONG   AMBIGUOUS            BULL   83%    LOW_ALTS     SL_HIT     0.138438     0.137300     $-8.2224   Feb-28 08:24:21 Feb-28 08:34:21    00:09:59     ✓ CLEAN                     
+KNC-USDT     30min    LONG   NONE                 BULL   79%    LOW_ALTS     SL_HIT     0.138438     0.137300     $-8.2224   Feb-28 08:24:19 Feb-28 08:34:20    00:10:01     ✓ CLEAN                     
+PROMPT-USDT  30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TIMEOUT    0.044935     0.044730     $+4.5835   Feb-28 08:19:26 Feb-28 13:22:55    05:00:00     ✓ CLEAN                     
+X-USDT       15min    LONG   TREND CONTINUATION   BEAR   83%    LOW_ALTS     SL_HIT     0.000013     0.000013     $-13.8552  Feb-28 08:13:09 Feb-28 08:14:10    00:01:01     ✓ CLEAN                     
+KAITO-USDT   15min    LONG   AMBIGUOUS            BULL   83%    LOW_ALTS     SL_HIT     0.338979     0.336230     $-8.1086   Feb-28 07:59:51 Feb-28 08:24:15    00:24:24     ✓ CLEAN                     
+LA-USDT      30min    LONG   NONE                 RANGE  83%    LOW_ALTS     SL_HIT     0.239609     0.237240     $-9.8885   Feb-28 07:51:10 Feb-28 08:19:13    00:28:03     ✓ CLEAN                     
+LA-USDT      1h       LONG   TREND CONTINUATION   BULL   83%    LOW_ALTS     SL_HIT     0.238108     0.234330     $-15.8662  Feb-28 07:48:10 Feb-28 08:59:31    01:11:20     ✓ CLEAN                     
+KNC-USDT     30min    LONG   NONE                 BEAR   79%    LOW_ALTS     SL_HIT     0.138038     0.136800     $-8.9678   Feb-28 07:41:13 Feb-28 11:06:01    03:24:47     ✓ CLEAN                     
+ATH-USDT     1h       LONG   TREND CONTINUATION   BULL   86%    LOW_ALTS     TIMEOUT    0.006461     0.006312     $-23.1302  Feb-28 07:14:54 Feb-28 12:16:59    05:00:00     ✓ CLEAN                     
+ATH-USDT     30min    LONG   TREND CONTINUATION   BULL   76%    LOW_ALTS     TP_HIT     0.006087     0.006387     $+49.2714  Feb-28 07:01:41 Feb-28 07:13:47    00:12:06     ✓ CLEAN                     
+ATH-USDT     15min    LONG   TREND CONTINUATION   BULL   80%    LOW_ALTS     TP_HIT     0.006086     0.006274     $+30.8770  Feb-28 07:01:35 Feb-28 07:08:45    00:07:09     ✓ CLEAN                     
+KNC-USDT     1h       LONG   REVERSAL             BULL   86%    LOW_ALTS     SL_HIT     0.139740     0.137800     $-13.8801  Feb-28 07:00:45 Feb-28 07:03:42    00:02:56     ✓ CLEAN                     
+KNC-USDT     30min    LONG   TREND CONTINUATION   BULL   76%    LOW_ALTS     SL_HIT     0.139740     0.137800     $-13.8801  Feb-28 07:00:43 Feb-28 07:03:41    00:02:58     ✓ CLEAN                     
+LQTY-USDT    30min    LONG   TREND CONTINUATION   BULL   80%    LOW_ALTS     SL_HIT     0.295595     0.292900     $-9.1182   Feb-28 06:51:31 Feb-28 07:03:41    00:12:10     ✓ CLEAN                     
+ERA-USDT     30min    LONG   TREND CONTINUATION   BULL   77%    LOW_ALTS     TP_HIT     0.149449     0.152300     $+19.0747  Feb-28 06:49:23 Feb-28 07:38:55    00:49:32     ✓ CLEAN                     
+LA-USDT      30min    SHORT  TREND CONTINUATION   RANGE  75%    LOW_ALTS     SL_HIT     0.231199     0.234660     $-14.7508  Feb-28 06:42:25 Feb-28 07:23:51    00:41:25     ✓ CLEAN                     
+LQTY-USDT    15min    LONG   TREND CONTINUATION   BULL   80%    LOW_ALTS     TP_HIT     0.293493     0.297000     $+11.9485  Feb-28 06:26:39 Feb-28 06:38:28    00:11:49     ✓ CLEAN                     
+CROSS-USDT   30min    LONG   TREND CONTINUATION   BULL   77%    MID_ALTS     TIMEOUT    0.103483     0.103200     $-2.7384   Feb-28 06:25:22 Feb-28 11:26:15    05:00:00     ✓ CLEAN                     
+ENA-USDT     15min    LONG   TREND CONTINUATION   BEAR   83%    MID_ALTS     SL_HIT     0.103003     0.102400     $-5.8532   Feb-28 06:11:17 Feb-28 06:48:33    00:37:16     ✓ CLEAN                     
+IP-USDT      30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.936842     0.946010     $-9.6910   Feb-28 06:03:21 Feb-28 06:23:20    00:19:58     ✓ CLEAN                     
+PORTAL-USDT  30min    LONG   TREND CONTINUATION   BULL   76%    LOW_ALTS     TIMEOUT    0.013403     0.012740     $-49.4942  Feb-28 05:57:37 Feb-28 11:00:56    05:00:00     ✓ CLEAN                     
+ATH-USDT     1h       LONG   TREND CONTINUATION   BULL   80%    LOW_ALTS     TP_HIT     0.005835     0.006721     $+151.876  Feb-28 05:50:32 Feb-28 07:23:50    01:33:18     ✓ CLEAN                     
+LQTY-USDT    30min    LONG   TREND CONTINUATION   BULL   77%    LOW_ALTS     TP_HIT     0.291892     0.297000     $+17.5010  Feb-28 05:48:07 Feb-28 06:38:27    00:50:19     ✓ CLEAN                     
+FUN-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    MID_ALTS     SL_HIT     0.047313     0.048460     $-23.6764  Feb-28 05:41:16 Feb-28 08:14:08    02:32:52     ✓ CLEAN                     
+FUN-USDT     15min    SHORT  REVERSAL             BEAR   82%    MID_ALTS     SL_HIT     0.047273     0.047980     $-14.7420  Feb-28 05:41:13 Feb-28 06:13:14    00:32:01     ✓ CLEAN                     
+ROAM-USDT    15min    SHORT  TREND CONTINUATION   BULL   81%    TOP_ALTS     TIMEOUT    0.026222     0.025978     $+9.3830   Feb-28 05:38:45 Feb-28 09:24:44    03:45:00     ✓ CLEAN                     
+ALU-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.005155     0.005230     $-14.3709  Feb-28 05:30:36 Feb-28 05:53:04    00:22:27     ✓ CLEAN                     
+ROAM-USDT    30min    LONG   TREND CONTINUATION   BULL   79%    TOP_ALTS     SL_HIT     0.026847     0.026161     $-25.5457  Feb-28 05:26:04 Feb-28 05:37:56    00:11:52     ✓ CLEAN                     
+ROAM-USDT    15min    LONG   NONE                 BULL   83%    TOP_ALTS     SL_HIT     0.026847     0.026499     $-12.9557  Feb-28 05:26:02 Feb-28 05:27:50    00:01:48     ✓ CLEAN                     
+FUN-USDT     30min    LONG   REVERSAL             BULL   79%    MID_ALTS     SL_HIT     0.048589     0.047190     $-28.7833  Feb-28 05:21:33 Feb-28 05:37:56    00:16:23     ✓ CLEAN                     
+LQTY-USDT    30min    LONG   TREND CONTINUATION   BULL   77%    LOW_ALTS     SL_HIT     0.290190     0.288400     $-6.1680   Feb-28 05:06:20 Feb-28 05:07:41    00:01:20     ✓ CLEAN                     
+CROSS-USDT   30min    LONG   TREND CONTINUATION   BULL   82%    MID_ALTS     TIMEOUT    0.102853     0.103190     $+3.2790   Feb-28 04:56:53 Feb-28 10:00:07    05:00:00     ✓ CLEAN                     
+NEWT-USDT    30min    LONG   TREND CONTINUATION   BULL   76%    LOW_ALTS     SL_HIT     0.076647     0.073690     $-38.5741  Feb-28 04:54:21 Feb-28 07:13:45    02:19:24     ✓ CLEAN                     
+ZKJ-USDT     1h       LONG   TREND CONTINUATION   BULL   82%    TOP_ALTS     SL_HIT     0.026196     0.025230     $-36.8821  Feb-28 04:43:46 Feb-28 05:53:03    01:09:16     ✓ CLEAN                     
+ZKJ-USDT     15min    LONG   TREND CONTINUATION   BULL   80%    TOP_ALTS     SL_HIT     0.025946     0.025410     $-20.6553  Feb-28 04:41:06 Feb-28 05:37:55    00:56:49     ✓ CLEAN                     
+ROAM-USDT    30min    LONG   TREND CONTINUATION   BULL   76%    TOP_ALTS     SL_HIT     0.027093     0.026612     $-17.7561  Feb-28 04:17:38 Feb-28 04:52:33    00:34:54     ✓ CLEAN                     
+BIO-USDT     15min    LONG   REVERSAL             RANGE  82%    LOW_ALTS     SL_HIT     0.022983     0.022810     $-7.5256   Feb-28 04:10:02 Feb-28 04:17:11    00:07:09     ✓ CLEAN                     
+ROAM-USDT    15min    LONG   NONE                 BULL   82%    TOP_ALTS     SL_HIT     0.026811     0.026612     $-7.4143   Feb-28 04:06:47 Feb-28 04:52:33    00:45:45     ✓ CLEAN                     
+AIN-USDT     30min    LONG   TREND CONTINUATION   BULL   83%    LOW_ALTS     SL_HIT     0.046837     0.044740     $-44.7680  Feb-28 03:57:10 Feb-28 04:02:00    00:04:49     ✓ CLEAN                     
+ZKJ-USDT     30min    LONG   TREND CONTINUATION   BULL   79%    TOP_ALTS     TP_HIT     0.024845     0.026290     $+58.1683  Feb-28 03:27:10 Feb-28 04:52:32    01:25:22     ✓ CLEAN                     
+ZKJ-USDT     15min    LONG   TREND CONTINUATION   BULL   83%    TOP_ALTS     TP_HIT     0.025075     0.025730     $+26.1196  Feb-28 03:25:20 Feb-28 04:27:18    01:01:57     ✓ CLEAN                     
+LQTY-USDT    1h       LONG   TREND CONTINUATION   BULL   86%    LOW_ALTS     TP_HIT     0.279179     0.283900     $+16.9107  Feb-28 03:05:33 Feb-28 03:56:55    00:51:21     ✓ CLEAN                     
+ICNT-USDT    1h       LONG   AMBIGUOUS            BEAR   82%    LOW_ALTS     SL_HIT     0.390971     0.385620     $-13.6854  Feb-28 02:55:27 Feb-28 04:17:11    01:21:43     ✓ CLEAN                     
+ZKJ-USDT     15min    LONG   TREND CONTINUATION   BULL   80%    TOP_ALTS     TP_HIT     0.024514     0.025350     $+34.0823  Feb-28 02:54:54 Feb-28 03:51:49    00:56:55     ✓ CLEAN                     
+FUEL-USDT    30min    LONG   REVERSAL             BEAR   78%    MID_ALTS     SL_HIT     0.001225     0.001202     $-18.9549  Feb-28 02:46:16 Feb-28 07:23:49    04:37:33     ✓ CLEAN                     
+ICNT-USDT    30min    LONG   TREND CONTINUATION   BULL   76%    LOW_ALTS     SL_HIT     0.387727     0.383500     $-10.9029  Feb-28 02:41:15 Feb-28 04:22:14    01:40:59     ✓ CLEAN                     
+CROSS-USDT   15min    LONG   TREND CONTINUATION   RANGE  82%    MID_ALTS     TIMEOUT    0.102212     0.102870     $+6.4365   Feb-28 02:30:39 Feb-28 06:18:16    03:45:00     ✓ CLEAN                     
+NEWT-USDT    1h       LONG   TREND CONTINUATION   BULL   83%    LOW_ALTS     SL_HIT     0.082663     0.076540     $-74.0671  Feb-28 02:27:54 Feb-28 02:35:36    00:07:41     ✓ CLEAN                     
+DOT-USDT     15min    LONG   TREND CONTINUATION   BULL   83%    MID_ALTS     TP_HIT     1.604903     1.644200     $+24.4854  Feb-28 02:27:51 Feb-28 03:26:20    00:58:29     ✓ CLEAN                     
+NEWT-USDT    30min    LONG   TREND CONTINUATION   BULL   77%    LOW_ALTS     SL_HIT     0.076476     0.074520     $-25.5817  Feb-28 02:22:48 Feb-28 03:36:33    01:13:44     ✓ CLEAN                     
+NEWT-USDT    15min    LONG   NONE                 BULL   82%    LOW_ALTS     SL_HIT     0.075706     0.074520     $-15.6611  Feb-28 02:21:08 Feb-28 03:36:33    01:15:24     ✓ CLEAN                     
+CROSS-USDT   30min    LONG   TREND CONTINUATION   BULL   77%    MID_ALTS     TIMEOUT    0.102372     0.103480     $+10.8206  Feb-28 02:10:23 Feb-28 07:13:45    05:00:00     ✓ CLEAN                     
+CROSS-USDT   15min    LONG   TREND CONTINUATION   RANGE  82%    MID_ALTS     TIMEOUT    0.102312     0.103120     $+7.8953   Feb-28 02:10:20 Feb-28 05:58:05    03:45:00     ✓ CLEAN                     
+LA-USDT      30min    SHORT  TREND CONTINUATION   RANGE  73%    LOW_ALTS     SL_HIT     0.231588     0.234560     $-12.6698  Feb-28 02:08:16 Feb-28 02:55:58    00:47:41     ✓ CLEAN                     
+ZKJ-USDT     15min    LONG   TREND CONTINUATION   BULL   83%    TOP_ALTS     SL_HIT     0.025005     0.024470     $-21.3949  Feb-28 02:00:06 Feb-28 02:25:23    00:25:17     ✓ CLEAN                     
+XAUT-USDT    30min    LONG   TREND CONTINUATION   BULL   76%    TOP_ALTS     TIMEOUT    5238.913680  5260.550000  $+4.1299   Feb-28 01:54:43 Feb-28 06:58:36    05:00:00     ✓ CLEAN                     
+LQTY-USDT    1h       LONG   TREND CONTINUATION   BULL   81%    LOW_ALTS     TP_HIT     0.280180     0.286500     $+22.5573  Feb-28 01:44:55 Feb-28 04:01:58    02:17:02     ✓ CLEAN                     
+LQTY-USDT    30min    LONG   TREND CONTINUATION   BULL   86%    LOW_ALTS     TP_HIT     0.280180     0.283900     $+13.2775  Feb-28 01:44:53 Feb-28 03:56:53    02:12:00     ✓ CLEAN                     
+LQTY-USDT    15min    LONG   TREND CONTINUATION   BULL   82%    LOW_ALTS     TP_HIT     0.280380     0.283900     $+12.5540  Feb-28 01:44:50 Feb-28 03:56:53    02:12:03     ✓ CLEAN                     
+ZKJ-USDT     1h       LONG   TREND CONTINUATION   BULL   82%    TOP_ALTS     TP_HIT     0.024795     0.026290     $+60.3042  Feb-28 01:36:49 Feb-28 04:52:31    03:15:41     ✓ CLEAN                     
+ZKJ-USDT     30min    LONG   TREND CONTINUATION   BULL   80%    TOP_ALTS     TP_HIT     0.024334     0.025480     $+47.0813  Feb-28 01:22:05 Feb-28 04:22:13    03:00:07     ✓ CLEAN                     
+PORTAL-USDT  30min    LONG   TREND CONTINUATION   BULL   77%    LOW_ALTS     TP_HIT     0.013584     0.015010     $+105.011  Feb-28 01:09:20 Feb-28 01:14:18    00:04:58     ✓ CLEAN                     
+KNC-USDT     15min    LONG   REVERSAL             BULL   82%    LOW_ALTS     SL_HIT     0.138038     0.137500     $-3.8968   Feb-28 00:59:51 Feb-28 01:04:10    00:04:19     ✓ CLEAN                     
+DOT-USDT     30min    LONG   REVERSAL             RANGE  76%    MID_ALTS     TIMEOUT    1.593792     1.584300     $-5.9557   Feb-28 00:56:37 Feb-28 05:58:05    05:00:00     ✓ CLEAN                     
+ERA-USDT     30min    LONG   TREND CONTINUATION   BULL   82%    LOW_ALTS     SL_HIT     0.150550     0.147900     $-17.6047  Feb-28 00:53:00 Feb-28 05:12:41    04:19:41     ✓ CLEAN                     
+PROMPT-USDT  15min    LONG   REVERSAL             RANGE  82%    LOW_ALTS     SL_HIT     0.046226     0.045680     $-11.8154  Feb-28 00:45:42 Feb-28 01:44:42    00:58:59     ✓ CLEAN                     
+CROSS-USDT   30min    LONG   TREND CONTINUATION   BULL   79%    MID_ALTS     SL_HIT     0.103223     0.101930     $-12.5274  Feb-28 00:26:32 Feb-28 02:50:50    02:24:18     ✓ CLEAN                     
+PORTAL-USDT  15min    LONG   TREND CONTINUATION   BULL   83%    LOW_ALTS     TP_HIT     0.012412     0.012730     $+25.5873  Feb-28 00:24:50 Feb-28 01:04:09    00:39:19     ✓ CLEAN                     
+AIN-USDT     30min    LONG   TREND CONTINUATION   BULL   76%    LOW_ALTS     SL_HIT     0.046116     0.045260     $-18.5634  Feb-28 00:22:56 Feb-28 02:10:05    01:47:08     ✓ CLEAN                     
+ICNT-USDT    15min    LONG   TREND CONTINUATION   BEAR   84%    LOW_ALTS     SL_HIT     0.388358     0.385640     $-6.9986   Feb-28 00:12:52 Feb-28 00:33:46    00:20:54     ✓ CLEAN                     
+ZKJ-USDT     15min    LONG   TREND CONTINUATION   BULL   81%    TOP_ALTS     TP_HIT     0.024244     0.025350     $+45.6100  Feb-28 00:07:21 Feb-28 03:51:47    03:44:25     ✓ CLEAN                     
+BERA-USDT    30min    SHORT  REVERSAL             BEAR   75%    MID_ALTS     TIMEOUT    0.612287     0.597700     $+24.4054  Feb-28 00:01:45 Feb-28 05:02:36    05:00:00     ✓ CLEAN                     
+SAHARA-USDT  30min    LONG   TREND CONTINUATION   BULL   75%    TOP_ALTS     TIMEOUT    0.024635     0.023230     $-57.0177  Feb-27 23:59:35 Feb-28 05:02:36    05:00:00     ✓ CLEAN                     
+XPL-USDT     30min    SHORT  TREND CONTINUATION   BEAR   73%    MID_ALTS     TP_HIT     0.094505     0.092100     $+26.1173  Feb-27 23:47:59 Feb-28 02:10:04    02:22:05     ✓ CLEAN                     
+SAHARA-USDT  1h       LONG   TREND CONTINUATION   BULL   83%    TOP_ALTS     TIMEOUT    0.023784     0.022910     $-36.7377  Feb-27 23:47:25 Feb-28 04:47:27    05:00:00     ✓ CLEAN                     
+PARTI-USDT   30min    LONG   TREND CONTINUATION   BULL   76%    LOW_ALTS     SL_HIT     0.100300     0.099000     $-12.9631  Feb-27 23:37:09 Feb-28 00:18:34    00:41:24     ✓ CLEAN                     
+AIN-USDT     1h       LONG   TREND CONTINUATION   BULL   82%    LOW_ALTS     TIMEOUT    0.044955     0.044550     $-9.0070   Feb-27 23:30:24 Feb-28 04:32:19    05:00:00     ✓ CLEAN                     
+NMR-USDT     30min    LONG   REVERSAL             BEAR   76%    LOW_ALTS     SL_HIT     7.966959     7.912000     $-6.8984   Feb-27 23:29:40 Feb-27 23:48:15    00:18:34     ✓ CLEAN                     
+ERA-USDT     30min    LONG   TREND CONTINUATION   BULL   80%    LOW_ALTS     SL_HIT     0.151051     0.148700     $-15.5636  Feb-27 23:29:12 Feb-27 23:58:22    00:29:09     ✓ CLEAN                     
+PARTI-USDT   15min    LONG   TREND CONTINUATION   BULL   82%    LOW_ALTS     SL_HIT     0.100500     0.099500     $-9.9542   Feb-27 23:28:51 Feb-27 23:53:19    00:24:27     ✓ CLEAN                     
+NMR-USDT     1h       LONG   AMBIGUOUS            RANGE  82%    LOW_ALTS     SL_HIT     7.961954     7.892000     $-8.7860   Feb-27 23:27:50 Feb-27 23:53:18    00:25:28     ✓ CLEAN                     
+TON-USDT     30min    LONG   NONE                 BULL   82%    LOW_ALTS     SL_HIT     1.308507     1.296700     $-9.0234   Feb-27 23:25:45 Feb-27 23:48:14    00:22:28     ✓ CLEAN                     
+LA-USDT      15min    LONG   TREND CONTINUATION   BEAR   82%    LOW_ALTS     TP_HIT     0.236066     0.238810     $+11.6246  Feb-27 23:23:03 Feb-27 23:33:00    00:09:57     ✓ CLEAN                     
+NMR-USDT     15min    LONG   REVERSAL             BULL   83%    LOW_ALTS     TP_HIT     7.903896     7.957000     $+6.7187   Feb-27 23:14:20 Feb-27 23:27:56    00:13:36     ✓ CLEAN                     
+AVNT-USDT    30min    LONG   NONE                 BULL   76%    LOW_ALTS     SL_HIT     0.184234     0.181650     $-14.0259  Feb-27 23:07:44 Feb-27 23:58:21    00:50:37     ✓ CLEAN                     
+AVNT-USDT    15min    LONG   AMBIGUOUS            RANGE  82%    LOW_ALTS     SL_HIT     0.184234     0.182400     $-9.9550   Feb-27 23:07:42 Feb-27 23:12:50    00:05:07     ✓ CLEAN                     
+IP-USDT      30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TIMEOUT    0.969240     0.960190     $+9.4250   Feb-27 23:06:19 Feb-28 04:07:00    05:00:00     ✓ CLEAN                     
+VIRTUAL-USD  30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TIMEOUT    0.685414     0.675200     $+15.1272  Feb-27 23:05:35 Feb-28 04:07:00    05:00:00     ✓ CLEAN                     
+ENA-USDT     30min    SHORT  TREND CONTINUATION   BEAR   75%    MID_ALTS     TIMEOUT    0.103696     0.102500     $+11.6702  Feb-27 23:05:24 Feb-28 04:07:00    05:00:00     ✓ CLEAN                     
+ALGO-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     SL_HIT     0.086114     0.087000     $-10.1862  Feb-27 23:03:28 Feb-28 01:34:31    02:31:03     ✓ CLEAN                     
+HBAR-USDT    30min    SHORT  TREND CONTINUATION   BEAR   75%    LOW_ALTS     TIMEOUT    0.100080     0.099640     $+4.4141   Feb-27 23:01:53 Feb-28 04:01:56    05:00:00     ✓ CLEAN                     
+PROMPT-USDT  30min    LONG   NONE                 BEAR   78%    LOW_ALTS     SL_HIT     0.046396     0.045420     $-21.0437  Feb-27 22:58:09 Feb-27 23:17:50    00:19:41     ✓ CLEAN                     
+MAGIC-USDT   30min    LONG   TREND CONTINUATION   BEAR   78%    LOW_ALTS     SL_HIT     0.063864     0.063100     $-11.9598  Feb-27 22:55:36 Feb-28 00:03:23    01:07:46     ✓ CLEAN                     
 
 ========================================================================================================================================================================================================
 📊 SUMMARY

@@ -61,7 +61,9 @@ class PECEnhancedReporter:
         return "LOW_ALTS"  # Default for unmapped symbols
     
     def get_gmt7_time(self, utc_time_str):
-        """Convert UTC time string to GMT+7 (Bangkok) time"""
+        """Convert UTC time string to GMT+7 (Bangkok) time
+        For OPEN signals older than 24h, include date to prevent confusion.
+        """
         if not utc_time_str:
             return "N/A"
         try:
@@ -76,7 +78,17 @@ class PECEnhancedReporter:
             
             # Convert to GMT+7
             gmt7 = dt.astimezone(timezone(timedelta(hours=7)))
-            return gmt7.strftime('%H:%M:%S')
+            
+            # Calculate age: if >24h old, include date to prevent confusion
+            now_utc = datetime.now(timezone.utc)
+            age_hours = (now_utc - dt).total_seconds() / 3600
+            
+            if age_hours > 24:
+                # Older than 24h - show date for clarity (e.g., "Feb-28 09:50:05")
+                return gmt7.strftime('%b-%d %H:%M:%S')
+            else:
+                # Within 24h - just show time (original behavior)
+                return gmt7.strftime('%H:%M:%S')
         except:
             return str(utc_time_str)[:19]
     
