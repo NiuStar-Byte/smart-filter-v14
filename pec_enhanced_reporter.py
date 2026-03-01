@@ -182,18 +182,21 @@ class PECEnhancedReporter:
         
         # Main header for detailed signal list
         detail_lines.append("")
-        detail_lines.append("=" * 200)
-        detail_lines.append("📋 DETAILED SIGNAL LIST: FIX POSITION SIZE $100, LEVERAGE 10x")
+        detail_lines.append("=" * 290)
+        detail_lines.append("📋 DETAILED SIGNAL LIST: FIXED POSITION SIZE $100, LEVERAGE 10x")
         detail_lines.append(f"Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S GMT+7')}")
         detail_lines.append(f"Total Signals Loaded: {len(self.signals)}")
         detail_lines.append("")
+        detail_lines.append("⚠️  NOTE: Signals marked 'STALE_TIMEOUT' in Data Quality column are EXCLUDED from Aggregates/Summary/Hierarchy")
+        detail_lines.append("    (They appear here for audit trail only, but don't affect backtest P&L calculations)")
+        detail_lines.append("")
         
         # Column headers
-        detail_lines.append("─" * 250)
+        detail_lines.append("─" * 290)
         detail_lines.append(f"{'Symbol':<12} {'TF':<8} {'Dir':<6} {'Route':<20} {'Regime':<6} {'Conf':<6} {'Sym Grp':<12} "
                            f"{'Status':<10} {'Entry':<12} {'Exit':<12} {'PnL':<10} "
-                           f"{'Fired Time':<12} {'Exit Time/TimeOut':<18} {'Duration':<12}")
-        detail_lines.append("─" * 250)
+                           f"{'Fired Time':<12} {'Exit Time/TimeOut':<18} {'Duration':<12} {'Data Quality':<28}")
+        detail_lines.append("─" * 290)
         
         for signal in sorted(self.signals, key=lambda s: s.get('fired_time_utc', ''), reverse=True):
             symbol = signal.get('symbol', 'N/A')[:11]
@@ -255,9 +258,21 @@ class PECEnhancedReporter:
                 # Trade is still open - show dash
                 duration = "-"
             
+            # Add data quality flag column
+            data_quality_flag = signal.get('data_quality_flag', '')
+            if data_quality_flag:
+                if 'STALE_TIMEOUT' in data_quality_flag:
+                    # Extract hours overdue from flag
+                    hours_match = data_quality_flag.split('_')[-2]  # Gets the "Xh" part
+                    quality_str = f"⚠️  {data_quality_flag[:27]}"  # Truncate if too long
+                else:
+                    quality_str = "✓ CLEAN"
+            else:
+                quality_str = "✓ CLEAN"
+            
             detail_lines.append(f"{symbol:<12} {tf:<8} {direction:<6} {route:<20} {regime:<6} {confidence:<6} {symbol_group:<12} "
                               f"{status:<10} {entry:<12} {exit_str:<12} {pnl_str:<10} "
-                              f"{fired_time:<12} {exit_time:<18} {duration:<12}")
+                              f"{fired_time:<12} {exit_time:<18} {duration:<12} {quality_str:<28}")
         
         return detail_lines
     
@@ -789,15 +804,18 @@ class PECEnhancedReporter:
         report.append("📊 SUMMARY")
         report.append("=" * 200)
         
-        # Count signals by status
+        # Count signals by status (EXCLUDING stale timeouts from backtest)
         total_signals = len(self.signals)
-        total_tp = sum(1 for s in self.signals if s.get('status') == 'TP_HIT')
-        total_sl = sum(1 for s in self.signals if s.get('status') == 'SL_HIT')
+        total_tp = sum(1 for s in self.signals if s.get('status') == 'TP_HIT' and not (s.get('data_quality_flag') and 'STALE_TIMEOUT' in s.get('data_quality_flag')))
+        total_sl = sum(1 for s in self.signals if s.get('status') == 'SL_HIT' and not (s.get('data_quality_flag') and 'STALE_TIMEOUT' in s.get('data_quality_flag')))
         
-        # Separate TIMEOUT into wins and losses based on P&L
+        # Separate TIMEOUT into wins and losses based on P&L (EXCLUDING stale)
         timeout_wins = 0
         timeout_losses = 0
         for s in self.signals:
+            # Skip stale timeouts from metrics
+            if s.get('data_quality_flag') and 'STALE_TIMEOUT' in s.get('data_quality_flag'):
+                continue
             if s.get('status') == 'TIMEOUT' and s.get('actual_exit_price'):
                 pnl_calc = self._calculate_pnl_usd(
                     s.get('entry_price'),
@@ -820,9 +838,12 @@ class PECEnhancedReporter:
         win_count = total_tp + timeout_wins
         overall_wr = (win_count / closed_signals * 100) if closed_signals > 0 else 0
         
-        # RECALCULATE total P&L using notional position of $1,000
+        # RECALCULATE total P&L using notional position of $1,000 (EXCLUDING stale timeouts)
         total_pnl = 0.0
         for s in self.signals:
+            # Skip stale timeouts from backtest P&L
+            if s.get('data_quality_flag') and 'STALE_TIMEOUT' in s.get('data_quality_flag'):
+                continue
             if s.get('status') in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
                 pnl_calc = self._calculate_pnl_usd(
                     s.get('entry_price'),
@@ -841,13 +862,23 @@ class PECEnhancedReporter:
         avg_timeout_30min = self._calculate_avg_timeout_by_timeframe('30min')
         avg_timeout_1h = self._calculate_avg_timeout_by_timeframe('1h')
         
-        # Display Summary
-        report.append(f"Total Signals: {total_signals} (Count Win = {total_tp}; Count Loss = {total_sl}; Count TimeOut = {total_timeout}; Count Open = {total_open})")
-        report.append(f"Closed Trades: {closed_signals} (TP: {total_tp}, SL: {total_sl}; TimeOut Win = {timeout_wins}; TimeOut Loss = {timeout_losses})")
+        # Display Summary (with stale timeout exclusion note)
+        stale_timeout_count = sum(1 for s in self.signals if s.get('data_quality_flag') and 'STALE_TIMEOUT' in s.get('data_quality_flag'))
+        
+        report.append(f"Total Signals: {total_signals} (Count Win = {total_tp}; Count Loss = {total_sl}; Count TimeOut = {total_timeout}; Count Open = {total_open}; Stale Timeouts Excluded = {stale_timeout_count})")
+        report.append(f"Closed Trades (Clean Data): {closed_signals} (TP: {total_tp}, SL: {total_sl}; TimeOut Win = {timeout_wins}; TimeOut Loss = {timeout_losses})")
         report.append(f"Overall Win Rate: {overall_wr:.2f}% >> [ (count TP + Count TimeOut Win) / (Closed Trades) ] = [ ({total_tp}+{timeout_wins}) / {closed_signals} ]")
-        report.append(f"Total P&L: ${total_pnl:+.2f}")
+        report.append(f"Total P&L (Clean Data): ${total_pnl:+.2f}")
         report.append(f"Avg TP Duration: {avg_tp_duration_summary} | Avg SL Duration: {avg_sl_duration_summary}")
         report.append(f"Avg TIMEOUT Duration: 15min={avg_timeout_15min} | 30min={avg_timeout_30min} | 1h={avg_timeout_1h}")
+        
+        if stale_timeout_count > 0:
+            report.append("")
+            report.append(f"⚠️  DATA QUALITY NOTE:")
+            report.append(f"    {stale_timeout_count} signals marked as 'STALE_TIMEOUT' (closed >150% past deadline)")
+            report.append(f"    These are EXCLUDED from all above metrics to preserve backtest accuracy.")
+            report.append(f"    See DETAILED SIGNAL LIST for individual stale timeout records.")
+        
         report.append("")
         
         # === NEW: HIERARCHY RANKING SECTION ===
@@ -867,6 +898,10 @@ class PECEnhancedReporter:
         stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout_win': 0, 'timeout_loss': 0, 'pnl': 0.0})
         
         for signal in self.signals:
+            # SKIP stale timeouts (data quality issue) - exclude from backtest P&L
+            if signal.get('data_quality_flag') and 'STALE_TIMEOUT' in signal.get('data_quality_flag'):
+                continue
+            
             # Get the key value for this dimension
             key = signal.get(dimension, 'N/A')
             
@@ -908,6 +943,10 @@ class PECEnhancedReporter:
         stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout_win': 0, 'timeout_loss': 0, 'pnl': 0.0})
         
         for signal in self.signals:
+            # SKIP stale timeouts (data quality issue) - exclude from backtest P&L
+            if signal.get('data_quality_flag') and 'STALE_TIMEOUT' in signal.get('data_quality_flag'):
+                continue
+            
             # Build tuple key from multiple dimensions
             key_parts = []
             for dim in dimensions:
@@ -963,6 +1002,10 @@ class PECEnhancedReporter:
         stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout_win': 0, 'timeout_loss': 0, 'pnl': 0.0})
         
         for signal in self.signals:
+            # SKIP stale timeouts (data quality issue) - exclude from backtest P&L
+            if signal.get('data_quality_flag') and 'STALE_TIMEOUT' in signal.get('data_quality_flag'):
+                continue
+            
             # Build tuple key from dimensions + symbol_group
             key_parts = []
             for dim in dimensions:

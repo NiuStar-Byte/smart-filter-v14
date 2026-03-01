@@ -13,7 +13,7 @@ REFACTORED (2026-02-27): Uses consolidated P&L calculation from calculations.py
 
 import json
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 import requests
 
@@ -135,7 +135,8 @@ class PECExecutor:
             max_bars = self.max_bars.get(timeframe, 5)
             
             # Calculate bars elapsed since signal fired
-            now = datetime.utcnow()
+            # FIX: Use timezone-aware UTC now to match fired_time timezone
+            now = datetime.utcnow().replace(tzinfo=timezone.utc) if fired_time.tzinfo else datetime.utcnow()
             time_delta_minutes = (now - fired_time).total_seconds() / 60
             bars_elapsed = int(time_delta_minutes / tf_minutes)
             
@@ -152,11 +153,17 @@ class PECExecutor:
                 # Use consolidated P&L calculation
                 pnl_result = calculate_pnl(entry_price, current_price, signal.get('signal_type'), NOTIONAL_POSITION)
                 
+                # Check if this is a STALE timeout (>150% overdue)
+                is_stale = bars_elapsed > max_bars * 1.5
+                hours_overdue = int((bars_elapsed - max_bars) * tf_minutes / 60)
+                
                 return {
                     'status': 'TIMEOUT',
                     'exit_price': current_price,  # timeout_price = current_price
                     'pnl_usd': pnl_result['pnl_usd'],
-                    'pnl_pct': pnl_result['pnl_pct']
+                    'pnl_pct': pnl_result['pnl_pct'],
+                    'is_stale_timeout': is_stale,
+                    'hours_overdue': hours_overdue
                 }
         except Exception as e:
             print(f"[PEC-TIMEOUT-ERROR] {symbol}: {e}", flush=True)
@@ -202,6 +209,12 @@ class PECExecutor:
                         record['pnl_usd'] = round(result['pnl_usd'], 4)
                         record['pnl_pct'] = round(result['pnl_pct'], 2)
                         record['closed_at'] = datetime.utcnow().isoformat()
+                        
+                        # Add data quality flag for stale timeouts
+                        if result.get('is_stale_timeout'):
+                            record['data_quality_flag'] = f'STALE_TIMEOUT_{result.get("hours_overdue", 0)}h_overdue'
+                        else:
+                            record['data_quality_flag'] = None
                         
                         # Track summary (include timestamp when signal fired)
                         fired_time = record.get('fired_time_utc', '')
