@@ -853,11 +853,10 @@ class PECEnhancedReporter:
                 if pnl_calc is not None:
                     total_pnl += pnl_calc
         
-        # Calculate average durations for summary (EXCLUDING stale timeouts from TP/SL)
-        # Filter signals to exclude stale timeouts
-        clean_signals = [s for s in self.signals if not (s.get('data_quality_flag') and 'STALE_TIMEOUT' in s.get('data_quality_flag'))]
-        avg_tp_duration_summary = self._calculate_avg_duration_by_status(clean_signals, 'TP_HIT')
-        avg_sl_duration_summary = self._calculate_avg_duration_by_status(clean_signals, 'SL_HIT')
+        # Calculate average durations for summary (TP/SL only - stale timeouts already excluded by status)
+        # Note: Stale timeouts have status='TIMEOUT', not 'TP_HIT'/'SL_HIT', so they never appear in these calculations
+        avg_tp_duration_summary = self._calculate_avg_duration_by_status(self.signals, 'TP_HIT')
+        avg_sl_duration_summary = self._calculate_avg_duration_by_status(self.signals, 'SL_HIT')
         
         # Calculate TIMEOUT WINDOW durations by timeframe (max_bars × tf_minutes, NOT actual closure duration)
         timeout_window_15min = self._format_duration_hm(15 * 15 * 60)  # 15 bars × 15 min = 225 min = 3h 45m
