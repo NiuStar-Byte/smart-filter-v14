@@ -57,6 +57,9 @@ class PECExecutor:
         """
         Check if signal should be marked TP_HIT/SL_HIT/TIMEOUT
         Returns: {'status': 'TP_HIT'|'SL_HIT'|'TIMEOUT'|None, 'exit_price': float, 'pnl': float}
+        
+        **CRITICAL:** Check TIMEOUT first, then TP/SL. A signal past max_bars should ALWAYS
+        be TIMEOUT, even if price hit TP/SL. Otherwise 18-hour trades get marked SL_HIT instead.
         """
         if signal.get('status') != 'OPEN':
             return None  # Already closed
@@ -66,8 +69,9 @@ class PECExecutor:
         tp_target = signal.get('tp_target')
         sl_target = signal.get('sl_target')
         fired_time_str = signal.get('fired_time_utc')
+        timeframe = signal.get('timeframe', '')
         
-        if not all([symbol, entry_price, tp_target, sl_target]):
+        if not all([symbol, entry_price, tp_target, sl_target, fired_time_str]):
             return None
         
         # Get current price
@@ -75,10 +79,56 @@ class PECExecutor:
         if current_price is None:
             return None
         
-        # Check TP hit
+        # CRITICAL FIX: Check TIMEOUT **FIRST** before TP/SL
+        # If signal is past max_bars, mark TIMEOUT regardless of price levels
+        try:
+            fired_time = datetime.fromisoformat(fired_time_str.replace('Z', '+00:00'))
+            
+            # Convert timeframe to minutes
+            tf_minutes = {
+                '15min': 15,
+                '30min': 30,
+                '1h': 60
+            }.get(timeframe, 60)
+            
+            # Get max bars for this timeframe
+            max_bars = self.max_bars.get(timeframe, 5)
+            
+            # Calculate bars elapsed since signal fired
+            now = datetime.utcnow().replace(tzinfo=timezone.utc) if fired_time.tzinfo else datetime.utcnow()
+            time_delta_minutes = (now - fired_time).total_seconds() / 60
+            bars_elapsed = int(time_delta_minutes / tf_minutes)
+            
+            # DEBUG: Log timeout calculation for signals near timeout
+            if bars_elapsed >= max_bars - 2:
+                print(f"[PEC-TIMEOUT-DEBUG] {symbol} {timeframe}: bars={bars_elapsed}/{max_bars}, "
+                      f"fired={fired_time_str}, now={now}, delta_min={time_delta_minutes:.1f}", flush=True)
+            
+            # If bars exceed max, mark as TIMEOUT (ignore TP/SL prices)
+            if bars_elapsed >= max_bars:
+                print(f"[PEC-TIMEOUT-HIT] {symbol} {timeframe}: {bars_elapsed} bars >= {max_bars} max", flush=True)
+                # FIXED POSITION SIZE: $100 with 10x leverage = $1,000 notional
+                NOTIONAL_POSITION = 1000.0  # $100 position × 10x leverage
+                # Use consolidated P&L calculation (use current_price at timeout)
+                pnl_result = calculate_pnl(entry_price, current_price, signal.get('signal_type'), NOTIONAL_POSITION)
+                
+                # Check if this is a STALE timeout (>150% overdue)
+                is_stale = bars_elapsed > max_bars * 1.5
+                hours_overdue = int((bars_elapsed - max_bars) * tf_minutes / 60)
+                
+                return {
+                    'status': 'TIMEOUT',
+                    'exit_price': current_price,  # timeout_price = current_price
+                    'pnl_usd': pnl_result['pnl_usd'],
+                    'pnl_pct': pnl_result['pnl_pct'],
+                    'is_stale_timeout': is_stale,
+                    'hours_overdue': hours_overdue
+                }
+        except Exception as e:
+            print(f"[PEC-TIMEOUT-ERROR] {symbol}: {e}", flush=True)
+        
+        # ONLY check TP/SL if signal is STILL within timeout window
         # FIXED POSITION SIZE: $100 with 10x leverage = $1,000 notional exposure
-        # P&L formula: (exit_price - entry_price) / entry_price * notional_position
-        # This isolates signal quality from position sizing decisions
         NOTIONAL_POSITION = 1000.0  # $100 position × 10x leverage
         signal_type = signal.get('signal_type')
         
@@ -118,55 +168,6 @@ class PECExecutor:
                     'pnl_usd': pnl_result['pnl_usd'],
                     'pnl_pct': pnl_result['pnl_pct']
                 }
-        
-        # Check TIMEOUT (max bars reached for this timeframe)
-        try:
-            timeframe = signal.get('timeframe', '')
-            fired_time = datetime.fromisoformat(fired_time_str.replace('Z', '+00:00'))
-            
-            # Convert timeframe to minutes
-            tf_minutes = {
-                '15min': 15,
-                '30min': 30,
-                '1h': 60
-            }.get(timeframe, 60)
-            
-            # Get max bars for this timeframe
-            max_bars = self.max_bars.get(timeframe, 5)
-            
-            # Calculate bars elapsed since signal fired
-            # FIX: Use timezone-aware UTC now to match fired_time timezone
-            now = datetime.utcnow().replace(tzinfo=timezone.utc) if fired_time.tzinfo else datetime.utcnow()
-            time_delta_minutes = (now - fired_time).total_seconds() / 60
-            bars_elapsed = int(time_delta_minutes / tf_minutes)
-            
-            # DEBUG: Log timeout calculation for signals near timeout
-            if bars_elapsed >= max_bars - 2:
-                print(f"[PEC-TIMEOUT-DEBUG] {symbol} {timeframe}: bars={bars_elapsed}/{max_bars}, "
-                      f"fired={fired_time_str}, now={now}, delta_min={time_delta_minutes:.1f}", flush=True)
-            
-            # If bars exceed max, mark as TIMEOUT
-            if bars_elapsed >= max_bars:
-                print(f"[PEC-TIMEOUT-HIT] {symbol} {timeframe}: {bars_elapsed} bars >= {max_bars} max", flush=True)
-                # FIXED POSITION SIZE: $100 with 10x leverage = $1,000 notional
-                NOTIONAL_POSITION = 1000.0  # $100 position × 10x leverage
-                # Use consolidated P&L calculation
-                pnl_result = calculate_pnl(entry_price, current_price, signal.get('signal_type'), NOTIONAL_POSITION)
-                
-                # Check if this is a STALE timeout (>150% overdue)
-                is_stale = bars_elapsed > max_bars * 1.5
-                hours_overdue = int((bars_elapsed - max_bars) * tf_minutes / 60)
-                
-                return {
-                    'status': 'TIMEOUT',
-                    'exit_price': current_price,  # timeout_price = current_price
-                    'pnl_usd': pnl_result['pnl_usd'],
-                    'pnl_pct': pnl_result['pnl_pct'],
-                    'is_stale_timeout': is_stale,
-                    'hours_overdue': hours_overdue
-                }
-        except Exception as e:
-            print(f"[PEC-TIMEOUT-ERROR] {symbol}: {e}", flush=True)
         
         return None  # Still open
     
