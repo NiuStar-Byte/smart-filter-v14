@@ -15,6 +15,21 @@ from collections import defaultdict
 import os
 from tier_config import TIER_THRESHOLDS
 
+# === SYMBOL GROUPING (5D DIMENSION) ===
+SYMBOL_GROUPS = {
+    "MAIN_BLOCKCHAIN": [
+        "BTC-USDT", "ETH-USDT", "SOL-USDT", "XRP-USDT", "ADA-USDT",
+        "AVAX-USDT", "BNB-USDT", "XLM-USDT", "LINK-USDT", "POL-USDT"
+    ],
+    "TOP_ALTS": [
+        "ZKJ-USDT", "ROAM-USDT", "XAUT-USDT", "SAHARA-USDT"
+    ],
+    "MID_ALTS": [
+        "XPL-USDT", "DOT-USDT", "FUEL-USDT", "VIRTUAL-USDT", "BERA-USDT",
+        "CROSS-USDT", "FUN-USDT", "ENA-USDT", "SOL-USDT", "AVAX-USDT"
+    ]
+}
+
 class PECEnhancedReporter:
     def __init__(self, sent_signals_file="SENT_SIGNALS.jsonl"):
         self.sent_signals_file = sent_signals_file
@@ -37,6 +52,13 @@ class PECEnhancedReporter:
                         pass
         except Exception as e:
             print(f"[WARN] Error loading signals: {e}")
+    
+    def get_symbol_group(self, symbol: str) -> str:
+        """Map a symbol to its group"""
+        for group_name, symbols in SYMBOL_GROUPS.items():
+            if symbol in symbols:
+                return group_name
+        return "LOW_ALTS"  # Default for unmapped symbols
     
     def get_gmt7_time(self, utc_time_str):
         """Convert UTC time string to GMT+7 (Bangkok) time"""
@@ -167,11 +189,11 @@ class PECEnhancedReporter:
         detail_lines.append("")
         
         # Column headers
-        detail_lines.append("─" * 220)
-        detail_lines.append(f"{'Symbol':<12} {'TF':<8} {'Dir':<6} {'Route':<20} {'Regime':<6} {'Conf':<6} "
+        detail_lines.append("─" * 250)
+        detail_lines.append(f"{'Symbol':<12} {'TF':<8} {'Dir':<6} {'Route':<20} {'Regime':<6} {'Conf':<6} {'Sym Grp':<12} "
                            f"{'Status':<10} {'Entry':<12} {'Exit':<12} {'PnL':<10} "
                            f"{'Fired Time':<12} {'Exit Time/TimeOut':<18} {'Duration':<12}")
-        detail_lines.append("─" * 220)
+        detail_lines.append("─" * 250)
         
         for signal in sorted(self.signals, key=lambda s: s.get('fired_time_utc', ''), reverse=True):
             symbol = signal.get('symbol', 'N/A')[:11]
@@ -180,6 +202,7 @@ class PECEnhancedReporter:
             route = signal.get('route', 'N/A')[:19]  # FIXED: lowercase 'route'
             regime = signal.get('regime', 'N/A')[:5]
             confidence = f"{signal.get('confidence', 0):.0f}%"[:5]
+            symbol_group = self.get_symbol_group(symbol)[:11]
             status = signal.get('status', 'OPEN')[:9]
             entry = f"{signal.get('entry_price', 0):.6f}"[:11]
             
@@ -232,7 +255,7 @@ class PECEnhancedReporter:
                 # Trade is still open - show dash
                 duration = "-"
             
-            detail_lines.append(f"{symbol:<12} {tf:<8} {direction:<6} {route:<20} {regime:<6} {confidence:<6} "
+            detail_lines.append(f"{symbol:<12} {tf:<8} {direction:<6} {route:<20} {regime:<6} {confidence:<6} {symbol_group:<12} "
                               f"{status:<10} {entry:<12} {exit_str:<12} {pnl_str:<10} "
                               f"{fired_time:<12} {exit_time:<18} {duration:<12}")
         
@@ -339,6 +362,64 @@ class PECEnhancedReporter:
             report.append(f"{key:<12} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {total_timeout:<8} | {closed:<7} | {open_count:<6} | {wr:>6.1f}% | ${stats['pnl']:>+8.2f} | {avg_tp_dur:<17} | {avg_sl_dur:<17}")
         report.append("")
         
+        # By Symbol Group
+        report.append("💰 BY SYMBOL GROUP")
+        report.append("─" * 175)
+        report.append(f"{'Symbol Group':<20} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<8} | {'Closed':<7} | {'Open':<6} | {'WR':<8} | {'P&L':<10} | {'Avg TP Duration':<17} | {'Avg SL Duration':<17}")
+        report.append("─" * 175)
+        
+        # Aggregate by symbol group
+        symbol_group_stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout_win': 0, 'timeout_loss': 0, 'pnl': 0.0})
+        for signal in self.signals:
+            symbol = signal.get('symbol', 'UNKNOWN')
+            group = self.get_symbol_group(symbol)
+            
+            symbol_group_stats[group]['count'] += 1
+            
+            status = signal.get('status', 'OPEN')
+            if status == 'TP_HIT':
+                symbol_group_stats[group]['tp'] += 1
+            elif status == 'SL_HIT':
+                symbol_group_stats[group]['sl'] += 1
+            elif status == 'TIMEOUT':
+                if signal.get('actual_exit_price'):
+                    pnl_calc = self._calculate_pnl_usd(
+                        signal.get('entry_price'),
+                        signal.get('actual_exit_price'),
+                        signal.get('signal_type')
+                    )
+                    if pnl_calc is not None:
+                        if pnl_calc > 0:
+                            symbol_group_stats[group]['timeout_win'] += 1
+                        elif pnl_calc < 0:
+                            symbol_group_stats[group]['timeout_loss'] += 1
+            
+            # P&L calculation
+            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                pnl_calc = self._calculate_pnl_usd(
+                    signal.get('entry_price'),
+                    signal.get('actual_exit_price'),
+                    signal.get('signal_type')
+                )
+                if pnl_calc is not None:
+                    symbol_group_stats[group]['pnl'] += pnl_calc
+        
+        for group in sorted(symbol_group_stats.keys()):
+            stats = symbol_group_stats[group]
+            closed = stats['tp'] + stats['sl'] + stats['timeout_win'] + stats['timeout_loss']
+            open_count = stats['count'] - closed
+            win_count = stats['tp'] + stats['timeout_win']
+            wr = (win_count / closed * 100) if closed > 0 else 0
+            total_timeout = stats['timeout_win'] + stats['timeout_loss']
+            
+            # Duration metrics
+            group_signals = [s for s in self.signals if self.get_symbol_group(s.get('symbol', 'UNKNOWN')) == group]
+            avg_tp_dur = self._calculate_avg_duration_by_status(group_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(group_signals, 'SL_HIT')
+            
+            report.append(f"{group:<20} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {total_timeout:<8} | {closed:<7} | {open_count:<6} | {wr:>6.1f}% | ${stats['pnl']:>+8.2f} | {avg_tp_dur:<17} | {avg_sl_dur:<17}")
+        report.append("")
+        
         # By Confidence
         report.append("💡 BY CONFIDENCE LEVEL")
         report.append("─" * 175)
@@ -399,6 +480,48 @@ class PECEnhancedReporter:
         report.append("=" * 200)
         report.append("📊 MULTI-DIMENSIONAL AGGREGATES")
         report.append("=" * 200)
+        report.append("")
+        
+        # By TimeFrame x Symbol Group
+        report.append("🕐💰 BY TIMEFRAME x SYMBOL_GROUP")
+        report.append("─" * 205)
+        report.append(f"{'TF':<8} | {'Symbol Group':<18} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<8} | {'Closed':<7} | {'Open':<6} | {'WR':<8} | {'P&L':<10} | {'Avg TP Duration':<17} | {'Avg SL Duration':<17}")
+        report.append("─" * 205)
+        tf_symbol_stats = self._aggregate_by_dimensions_with_symbol(['timeframe'])
+        for key, stat in sorted(tf_symbol_stats.items()):
+            closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
+            open_count = stat['count'] - closed
+            win_count = stat['tp'] + stat['timeout_win']
+            wr = (win_count / closed * 100) if closed > 0 else 0
+            total_timeout = stat['timeout_win'] + stat['timeout_loss']
+            
+            # Duration metrics
+            combo_signals = [s for s in self.signals if s.get('timeframe') == key[0] and self.get_symbol_group(s.get('symbol', 'UNKNOWN')) == key[1]]
+            avg_tp_dur = self._calculate_avg_duration_by_status(combo_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(combo_signals, 'SL_HIT')
+            
+            report.append(f"{key[0]:<8} | {key[1]:<18} | {stat['count']:<6} | {stat['tp']:<4} | {stat['sl']:<4} | {total_timeout:<8} | {closed:<7} | {open_count:<6} | {wr:>6.1f}% | ${stat['pnl']:>+8.2f} | {avg_tp_dur:<17} | {avg_sl_dur:<17}")
+        report.append("")
+        
+        # By Direction x Symbol Group
+        report.append("📈💰 BY DIRECTION x SYMBOL_GROUP")
+        report.append("─" * 205)
+        report.append(f"{'Dir':<6} | {'Symbol Group':<18} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<8} | {'Closed':<7} | {'Open':<6} | {'WR':<8} | {'P&L':<10} | {'Avg TP Duration':<17} | {'Avg SL Duration':<17}")
+        report.append("─" * 205)
+        dir_symbol_stats = self._aggregate_by_dimensions_with_symbol(['signal_type'])
+        for key, stat in sorted(dir_symbol_stats.items()):
+            closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
+            open_count = stat['count'] - closed
+            win_count = stat['tp'] + stat['timeout_win']
+            wr = (win_count / closed * 100) if closed > 0 else 0
+            total_timeout = stat['timeout_win'] + stat['timeout_loss']
+            
+            # Duration metrics
+            combo_signals = [s for s in self.signals if s.get('signal_type') == key[0] and self.get_symbol_group(s.get('symbol', 'UNKNOWN')) == key[1]]
+            avg_tp_dur = self._calculate_avg_duration_by_status(combo_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(combo_signals, 'SL_HIT')
+            
+            report.append(f"{key[0]:<6} | {key[1]:<18} | {stat['count']:<6} | {stat['tp']:<4} | {stat['sl']:<4} | {total_timeout:<8} | {closed:<7} | {open_count:<6} | {wr:>6.1f}% | ${stat['pnl']:>+8.2f} | {avg_tp_dur:<17} | {avg_sl_dur:<17}")
         report.append("")
         
         # By TimeFrame x Direction
@@ -504,6 +627,48 @@ class PECEnhancedReporter:
             avg_sl_dur = self._calculate_avg_duration_by_status(combo_signals, 'SL_HIT')
             
             report.append(f"{key[0]:<20} | {key[1]:<8} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {total_timeout:<8} | {closed:<7} | {open_count:<6} | {wr:>6.1f}% | ${stats['pnl']:>+8.2f} | {avg_tp_dur:<17} | {avg_sl_dur:<17}")
+        report.append("")
+        
+        # By Route x Symbol Group
+        report.append("🛣️ 💰 BY ROUTE x SYMBOL_GROUP")
+        report.append("─" * 225)
+        report.append(f"{'Route':<20} | {'Symbol Group':<18} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<8} | {'Closed':<7} | {'Open':<6} | {'WR':<8} | {'P&L':<10} | {'Avg TP Duration':<17} | {'Avg SL Duration':<17}")
+        report.append("─" * 225)
+        route_symbol_stats = self._aggregate_by_dimensions_with_symbol(['route'])
+        for key, stat in sorted(route_symbol_stats.items()):
+            closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
+            open_count = stat['count'] - closed
+            win_count = stat['tp'] + stat['timeout_win']
+            wr = (win_count / closed * 100) if closed > 0 else 0
+            total_timeout = stat['timeout_win'] + stat['timeout_loss']
+            
+            # Duration metrics
+            combo_signals = [s for s in self.signals if s.get('route') == key[0] and self.get_symbol_group(s.get('symbol', 'UNKNOWN')) == key[1]]
+            avg_tp_dur = self._calculate_avg_duration_by_status(combo_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(combo_signals, 'SL_HIT')
+            
+            report.append(f"{key[0]:<20} | {key[1]:<18} | {stat['count']:<6} | {stat['tp']:<4} | {stat['sl']:<4} | {total_timeout:<8} | {closed:<7} | {open_count:<6} | {wr:>6.1f}% | ${stat['pnl']:>+8.2f} | {avg_tp_dur:<17} | {avg_sl_dur:<17}")
+        report.append("")
+        
+        # By Regime x Symbol Group
+        report.append("🌊💰 BY REGIME x SYMBOL_GROUP")
+        report.append("─" * 225)
+        report.append(f"{'Regime':<8} | {'Symbol Group':<18} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<8} | {'Closed':<7} | {'Open':<6} | {'WR':<8} | {'P&L':<10} | {'Avg TP Duration':<17} | {'Avg SL Duration':<17}")
+        report.append("─" * 225)
+        regime_symbol_stats = self._aggregate_by_dimensions_with_symbol(['regime'])
+        for key, stat in sorted(regime_symbol_stats.items()):
+            closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
+            open_count = stat['count'] - closed
+            win_count = stat['tp'] + stat['timeout_win']
+            wr = (win_count / closed * 100) if closed > 0 else 0
+            total_timeout = stat['timeout_win'] + stat['timeout_loss']
+            
+            # Duration metrics
+            combo_signals = [s for s in self.signals if s.get('regime') == key[0] and self.get_symbol_group(s.get('symbol', 'UNKNOWN')) == key[1]]
+            avg_tp_dur = self._calculate_avg_duration_by_status(combo_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(combo_signals, 'SL_HIT')
+            
+            report.append(f"{key[0]:<8} | {key[1]:<18} | {stat['count']:<6} | {stat['tp']:<4} | {stat['sl']:<4} | {total_timeout:<8} | {closed:<7} | {open_count:<6} | {wr:>6.1f}% | ${stat['pnl']:>+8.2f} | {avg_tp_dur:<17} | {avg_sl_dur:<17}")
         report.append("")
         
         # By TimeFrame x Direction x Route
@@ -687,7 +852,7 @@ class PECEnhancedReporter:
         
         # === NEW: HIERARCHY RANKING SECTION ===
         report.append("=" * 200)
-        report.append("🎯 HIERARCHY RANKING - 2D / 3D / 4D PERFORMANCE TRACKING")
+        report.append("🎯 HIERARCHY RANKING - 5D / 4D / 3D / 2D PERFORMANCE TRACKING")
         report.append("=" * 200)
         report.append("")
         
@@ -793,33 +958,168 @@ class PECEnhancedReporter:
         
         return stats
     
+    def _aggregate_by_dimensions_with_symbol(self, dimensions):
+        """Aggregate by 4D dimensions PLUS symbol_group (5D)"""
+        stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout_win': 0, 'timeout_loss': 0, 'pnl': 0.0})
+        
+        for signal in self.signals:
+            # Build tuple key from dimensions + symbol_group
+            key_parts = []
+            for dim in dimensions:
+                if dim == 'confidence_level':
+                    conf = signal.get('confidence', 0)
+                    if conf >= 76:
+                        key_parts.append('HIGH')
+                    elif 51 <= conf < 76:
+                        key_parts.append('MID')
+                    else:
+                        key_parts.append('LOW')
+                else:
+                    key_parts.append(str(signal.get(dim, 'N/A')))
+            
+            # Add symbol_group as 5th dimension
+            symbol = signal.get('symbol', 'UNKNOWN')
+            symbol_group = self.get_symbol_group(symbol)
+            key_parts.append(symbol_group)
+            
+            key = tuple(key_parts)
+            
+            stats[key]['count'] += 1
+            
+            status = signal.get('status', 'OPEN')
+            if status == 'TP_HIT':
+                stats[key]['tp'] += 1
+            elif status == 'SL_HIT':
+                stats[key]['sl'] += 1
+            elif status == 'TIMEOUT':
+                if signal.get('actual_exit_price'):
+                    pnl_calc = self._calculate_pnl_usd(
+                        signal.get('entry_price'),
+                        signal.get('actual_exit_price'),
+                        signal.get('signal_type')
+                    )
+                    if pnl_calc is not None:
+                        if pnl_calc > 0:
+                            stats[key]['timeout_win'] += 1
+                        elif pnl_calc < 0:
+                            stats[key]['timeout_loss'] += 1
+            
+            # RECALCULATE P&L using notional position of $1,000
+            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                pnl_calc = self._calculate_pnl_usd(
+                    signal.get('entry_price'),
+                    signal.get('actual_exit_price'),
+                    signal.get('signal_type')
+                )
+                if pnl_calc is not None:
+                    stats[key]['pnl'] += pnl_calc
+        
+        return stats
+    
+    def _check_tier_qualification(self, wr, avg_pnl, closed_trades, tier_level):
+        """
+        Check if a combo qualifies for a specific tier level.
+        Returns: tier_name or None
+        """
+        th = TIER_THRESHOLDS
+        
+        if tier_level == 1:
+            min_trades = th.get("tier1_min_trades", 60)
+            min_wr = th.get("tier1_wr", 0.60)
+            min_pnl = th.get("tier1_pnl", 5.50)
+            if closed_trades >= min_trades and wr >= min_wr and avg_pnl >= min_pnl:
+                return "Tier-1"
+        
+        elif tier_level == 2:
+            min_trades = th.get("tier2_min_trades", 50)
+            min_wr = th.get("tier2_wr", 0.50)
+            min_pnl = th.get("tier2_pnl", 3.50)
+            if closed_trades >= min_trades and wr >= min_wr and avg_pnl >= min_pnl:
+                return "Tier-2"
+        
+        elif tier_level == 3:
+            min_trades = th.get("tier3_min_trades", 40)
+            min_wr = th.get("tier3_wr", 0.40)
+            min_pnl = th.get("tier3_pnl", 2.00)
+            if closed_trades >= min_trades and wr >= min_wr and avg_pnl >= min_pnl:
+                return "Tier-3"
+        
+        return None
+    
     def generate_signal_tiers(self):
         """
-        Generate SIGNAL_TIERS.json based on PEC aggregates.
-        Evaluates all dimension combos against configurable tier criteria.
+        Generate SIGNAL_TIERS.json using CONSENSUS CASCADE strategy:
+        1. Evaluate 5D first (finest granularity)
+        2. If 5D qualifies for ANY tier (1/2/3), assign and STOP
+        3. If 5D fails, try 4D
+        4. If 4D fails, try 3D
+        5. If 3D fails, try 2D
+        6. If all fail, assign Tier-X
         
-        Criteria loaded from tier_config.py (TIER_THRESHOLDS):
-        - min_trades: Minimum closed trades required
-        - tier1_wr: Win rate threshold for Tier-1
-        - tier1_pnl: Avg P&L per trade for Tier-1
-        - tier2_wr_min: Min win rate for Tier-2
-        - tier2_pnl: Avg P&L per trade for Tier-2
-        - tier3_min_pnl: Min P&L for Tier-3
+        Within each tier check: verify Tier-1 first (hardest), then Tier-2, then Tier-3
         """
         tiers = {'tier1': [], 'tier2': [], 'tier3': [], 'tierx': []}
+        tier_details = {}  # Store which level each combo qualified at
         
-        # Get dynamic thresholds from config
         th = TIER_THRESHOLDS
-        min_trades = th.get("min_trades", 25)
-        tier1_wr = th.get("tier1_wr", 0.60)
-        tier1_pnl = th.get("tier1_pnl", 5.0)
-        tier2_wr_min = th.get("tier2_wr_min", 0.40)
-        tier2_pnl = th.get("tier2_pnl", 2.0)
-        tier3_min_pnl = th.get("tier3_min_pnl", 0.00)
+        print(f"[TIER-CONFIG] Consensus Cascade + Option B", flush=True)
+        print(f"  Tier-1: {th.get('tier1_wr')*100:.0f}% WR, ${th.get('tier1_pnl'):.2f}+ avg, {th.get('tier1_min_trades')}+ trades", flush=True)
+        print(f"  Tier-2: {th.get('tier2_wr')*100:.0f}% WR, ${th.get('tier2_pnl'):.2f}+ avg, {th.get('tier2_min_trades')}+ trades", flush=True)
+        print(f"  Tier-3: {th.get('tier3_wr')*100:.0f}% WR, ${th.get('tier3_pnl'):.2f}+ avg, {th.get('tier3_min_trades')}+ trades", flush=True)
         
-        print(f"[TIER-CONFIG] min_trades={min_trades}, tier1_wr={tier1_wr}, tier1_pnl={tier1_pnl}, tier2_wr_min={tier2_wr_min}, tier2_pnl={tier2_pnl}", flush=True)
+        # ===== CONSENSUS CASCADE LOGIC =====
+        # Build all combos with their stats at each dimension
+        all_combos_by_dimension = {
+            '5D': {},
+            '4D': {},
+            '3D': {},
+            '2D': {}
+        }
         
-        # Evaluate all 2-dimensional combos
+        # Get 5D stats
+        stats_5d = self._aggregate_by_dimensions_with_symbol(['timeframe', 'signal_type', 'route', 'regime'])
+        for key, stat in stats_5d.items():
+            closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
+            win_count = stat['tp'] + stat['timeout_win']
+            wr = (win_count / closed) if closed > 0 else 0
+            avg_pnl = stat['pnl'] / closed if closed > 0 else 0
+            combo_name = f"{key[0]}_{key[1]}_{key[2]}_{key[3]}_{key[4]}"
+            all_combos_by_dimension['5D'][combo_name] = {
+                'wr': wr, 'avg_pnl': avg_pnl, 'pnl': stat['pnl'], 'closed': closed
+            }
+        
+        # Get 4D stats
+        stats_4d = self._aggregate_by_dimensions(['timeframe', 'signal_type', 'route', 'regime'])
+        for key, stat in stats_4d.items():
+            closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
+            win_count = stat['tp'] + stat['timeout_win']
+            wr = (win_count / closed) if closed > 0 else 0
+            avg_pnl = stat['pnl'] / closed if closed > 0 else 0
+            combo_name = f"{key[0]}_{key[1]}_{key[2]}_{key[3]}"
+            all_combos_by_dimension['4D'][combo_name] = {
+                'wr': wr, 'avg_pnl': avg_pnl, 'pnl': stat['pnl'], 'closed': closed
+            }
+        
+        # Get 3D stats (all types)
+        combos_3d = [
+            (['timeframe', 'signal_type', 'route'], 'TF_DIR_ROUTE'),
+            (['timeframe', 'signal_type', 'regime'], 'TF_DIR_REGIME'),
+            (['signal_type', 'route', 'regime'], 'DIR_ROUTE_REGIME'),
+            (['timeframe', 'route', 'regime'], 'TF_ROUTE_REGIME'),
+        ]
+        for dimensions, label in combos_3d:
+            stats = self._aggregate_by_dimensions(dimensions)
+            for key, stat in stats.items():
+                closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
+                win_count = stat['tp'] + stat['timeout_win']
+                wr = (win_count / closed) if closed > 0 else 0
+                avg_pnl = stat['pnl'] / closed if closed > 0 else 0
+                combo_name = f"{label}_{key[0]}_{key[1]}_{key[2]}"
+                all_combos_by_dimension['3D'][combo_name] = {
+                    'wr': wr, 'avg_pnl': avg_pnl, 'pnl': stat['pnl'], 'closed': closed
+                }
+        
+        # Get 2D stats
         combos_2d = [
             (['timeframe', 'signal_type'], 'TF_DIR'),
             (['timeframe', 'regime'], 'TF_REGIME'),
@@ -827,160 +1127,108 @@ class PECEnhancedReporter:
             (['signal_type', 'route'], 'DIR_ROUTE'),
             (['route', 'regime'], 'ROUTE_REGIME'),
         ]
-        
         for dimensions, label in combos_2d:
             stats = self._aggregate_by_dimensions(dimensions)
             for key, stat in stats.items():
+                closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
+                win_count = stat['tp'] + stat['timeout_win']
+                wr = (win_count / closed) if closed > 0 else 0
+                avg_pnl = stat['pnl'] / closed if closed > 0 else 0
                 combo_name = f"{label}_{key[0]}_{key[1]}"
-                closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
-                
-                if closed < min_trades:
-                    tiers['tierx'].append(combo_name)
-                else:
-                    win_count = stat['tp'] + stat['timeout_win']
-                    wr = (win_count / closed) if closed > 0 else 0
-                    avg_pnl_per_trade = stat['pnl'] / closed if closed > 0 else 0
-                    
-                    if wr >= tier1_wr and avg_pnl_per_trade >= tier1_pnl:
-                        tiers['tier1'].append(combo_name)
-                    elif tier2_wr_min <= wr < tier1_wr and avg_pnl_per_trade >= tier2_pnl:
-                        tiers['tier2'].append(combo_name)
-                    elif avg_pnl_per_trade >= tier3_min_pnl:
-                        tiers['tier3'].append(combo_name)
-                    else:
-                        tiers['tierx'].append(combo_name)
+                all_combos_by_dimension['2D'][combo_name] = {
+                    'wr': wr, 'avg_pnl': avg_pnl, 'pnl': stat['pnl'], 'closed': closed
+                }
         
-        # Evaluate all 3-dimensional combos
-        combos_3d = [
-            (['timeframe', 'signal_type', 'route'], 'TF_DIR_ROUTE'),
-            (['timeframe', 'signal_type', 'regime'], 'TF_DIR_REGIME'),
-            (['signal_type', 'route', 'regime'], 'DIR_ROUTE_REGIME'),
-            (['timeframe', 'route', 'regime'], 'TF_ROUTE_REGIME'),
-        ]
+        # ===== CONSENSUS CASCADE: Assign tiers =====
+        all_combo_names = set()
+        all_combo_names.update(all_combos_by_dimension['5D'].keys())
+        all_combo_names.update(all_combos_by_dimension['4D'].keys())
+        all_combo_names.update(all_combos_by_dimension['3D'].keys())
+        all_combo_names.update(all_combos_by_dimension['2D'].keys())
         
-        for dimensions, label in combos_3d:
-            stats = self._aggregate_by_dimensions(dimensions)
-            for key, stat in stats.items():
-                combo_name = f"{label}_{key[0]}_{key[1]}_{key[2]}"
-                closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
-                
-                if closed < min_trades:
-                    tiers['tierx'].append(combo_name)
-                else:
-                    win_count = stat['tp'] + stat['timeout_win']
-                    wr = (win_count / closed) if closed > 0 else 0
-                    avg_pnl_per_trade = stat['pnl'] / closed if closed > 0 else 0
+        for combo_name in sorted(all_combo_names):
+            assigned_tier = None
+            assigned_level = None
+            
+            # CASCADE: Check 5D → 4D → 3D → 2D
+            for dimension in ['5D', '4D', '3D', '2D']:
+                if combo_name in all_combos_by_dimension[dimension]:
+                    stats = all_combos_by_dimension[dimension][combo_name]
+                    wr = stats['wr']
+                    avg_pnl = stats['avg_pnl']
+                    closed = stats['closed']
                     
-                    if wr >= tier1_wr and avg_pnl_per_trade >= tier1_pnl:
-                        tiers['tier1'].append(combo_name)
-                    elif tier2_wr_min <= wr < tier1_wr and avg_pnl_per_trade >= tier2_pnl:
-                        tiers['tier2'].append(combo_name)
-                    elif avg_pnl_per_trade >= tier3_min_pnl:
-                        tiers['tier3'].append(combo_name)
-                    else:
-                        tiers['tierx'].append(combo_name)
+                    # Check Tier-1, then Tier-2, then Tier-3
+                    for tier_level in [1, 2, 3]:
+                        tier_name = self._check_tier_qualification(wr, avg_pnl, closed, tier_level)
+                        if tier_name:
+                            assigned_tier = tier_name
+                            assigned_level = dimension
+                            break
+                    
+                    if assigned_tier:
+                        break
+            
+            # Assign to tier list
+            if assigned_tier == "Tier-1":
+                tiers['tier1'].append(f"{combo_name} ({assigned_level})")
+            elif assigned_tier == "Tier-2":
+                tiers['tier2'].append(f"{combo_name} ({assigned_level})")
+            elif assigned_tier == "Tier-3":
+                tiers['tier3'].append(f"{combo_name} ({assigned_level})")
+            else:
+                tiers['tierx'].append(combo_name)
         
         # Add timestamp and config version
         tiers['generated_at'] = datetime.now(timezone(timedelta(hours=7))).strftime('%Y-%m-%d %H:%M:%S GMT+7')
-        tiers['config_version'] = 'A (LOOSE - DEMO)' if min_trades == 5 else 'B (AGREED)' if min_trades == 25 else 'C (STRICT)'
+        tiers['config_version'] = 'C (CONSENSUS CASCADE + OPTION B)'
         
         return tiers
     
     def _generate_hierarchy_ranking(self):
-        """Generate 2D, 3D, 4D hierarchy ranking for decision-making"""
+        """Generate 5D, 4D, 3D, 2D hierarchy ranking for decision-making (top to bottom)"""
         output = []
-        
-        # Get 2D aggregates
-        combos_2d = [
-            (['timeframe', 'signal_type'], 'TF_DIR'),
-            (['timeframe', 'regime'], 'TF_REGIME'),
-            (['signal_type', 'regime'], 'DIR_REGIME'),
-            (['signal_type', 'route'], 'DIR_ROUTE'),
-            (['route', 'regime'], 'ROUTE_REGIME'),
-        ]
-        
-        output.append("📊 2-DIMENSIONAL COMBOS (Top Performers)")
-        output.append("─" * 140)
-        
-        for dimensions, label in combos_2d:
-            stats = self._aggregate_by_dimensions(dimensions)
-            min_trades = TIER_THRESHOLDS.get("min_trades", 25)
-            
-            # Filter & rank by WR then P&L
-            valid_combos = []
-            for key, stat in stats.items():
-                closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
-                if closed >= min_trades:
-                    win_count = stat['tp'] + stat['timeout_win']
-                    wr = (win_count / closed) if closed > 0 else 0
-                    avg_pnl = stat['pnl'] / closed if closed > 0 else 0
-                    valid_combos.append({
-                        'name': f"{label}_{key[0]}_{key[1]}",
-                        'wr': wr,
-                        'pnl': stat['pnl'],
-                        'avg_pnl': avg_pnl,
-                        'closed': closed,
-                        'tp': stat['tp'],
-                        'sl': stat['sl']
-                    })
-            
-            # Sort by WR descending, then by P&L
-            valid_combos.sort(key=lambda x: (x['wr'], x['pnl']), reverse=True)
-            
-            if valid_combos:
-                output.append(f"\n  {label}:")
-                for combo in valid_combos[:3]:  # Top 3 per category
-                    output.append(f"    ✓ {combo['name']:40} | WR: {combo['wr']*100:5.1f}% | P&L: ${combo['pnl']:+8.2f} | Avg: ${combo['avg_pnl']:+.2f} | Closed: {combo['closed']}")
-        
-        output.append("")
-        output.append("📊 3-DIMENSIONAL COMBOS (Top Performers)")
-        output.append("─" * 140)
-        
-        # Get 3D aggregates
-        combos_3d = [
-            (['timeframe', 'signal_type', 'route'], 'TF_DIR_ROUTE'),
-            (['timeframe', 'signal_type', 'regime'], 'TF_DIR_REGIME'),
-            (['signal_type', 'route', 'regime'], 'DIR_ROUTE_REGIME'),
-            (['timeframe', 'route', 'regime'], 'TF_ROUTE_REGIME'),
-        ]
-        
-        all_3d = []
-        for dimensions, label in combos_3d:
-            stats = self._aggregate_by_dimensions(dimensions)
-            min_trades = TIER_THRESHOLDS.get("min_trades", 25)
-            
-            for key, stat in stats.items():
-                closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
-                if closed >= min_trades:
-                    win_count = stat['tp'] + stat['timeout_win']
-                    wr = (win_count / closed) if closed > 0 else 0
-                    avg_pnl = stat['pnl'] / closed if closed > 0 else 0
-                    all_3d.append({
-                        'name': f"{label}_{key[0]}_{key[1]}_{key[2]}",
-                        'wr': wr,
-                        'pnl': stat['pnl'],
-                        'avg_pnl': avg_pnl,
-                        'closed': closed,
-                        'tp': stat['tp'],
-                        'sl': stat['sl']
-                    })
-        
-        all_3d.sort(key=lambda x: (x['wr'], x['pnl']), reverse=True)
-        
-        if all_3d:
-            output.append("\n  Top 5 3D Combos by WR:")
-            for combo in all_3d[:5]:
-                output.append(f"    ✓ {combo['name']:55} | WR: {combo['wr']*100:5.1f}% | P&L: ${combo['pnl']:+8.2f} | Avg: ${combo['avg_pnl']:+.2f} | Closed: {combo['closed']}")
-        else:
-            output.append("\n  No 3D combos meet minimum trade threshold yet.")
-        
-        output.append("")
-        output.append("📊 4-DIMENSIONAL COMBOS (Top Performers)")
-        output.append("─" * 140)
-        
-        # Get 4D aggregate (TF x Direction x Route x Regime)
-        stats_4d = self._aggregate_by_dimensions(['timeframe', 'signal_type', 'route', 'regime'])
         min_trades = TIER_THRESHOLDS.get("min_trades", 25)
+        
+        # ===== 5D COMBOS (MOST GRANULAR) =====
+        output.append("📊 5-DIMENSIONAL COMBOS (TimeFrame × Direction × Route × Regime × Symbol_Group)")
+        output.append("─" * 160)
+        
+        stats_5d = self._aggregate_by_dimensions_with_symbol(['timeframe', 'signal_type', 'route', 'regime'])
+        
+        all_5d = []
+        for key, stat in stats_5d.items():
+            closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
+            if closed >= min_trades:
+                win_count = stat['tp'] + stat['timeout_win']
+                wr = (win_count / closed) if closed > 0 else 0
+                avg_pnl = stat['pnl'] / closed if closed > 0 else 0
+                all_5d.append({
+                    'name': f"TF_DIR_ROUTE_REGIME_SG_{key[0]}_{key[1]}_{key[2]}_{key[3]}_{key[4]}",
+                    'wr': wr,
+                    'pnl': stat['pnl'],
+                    'avg_pnl': avg_pnl,
+                    'closed': closed,
+                    'tp': stat['tp'],
+                    'sl': stat['sl']
+                })
+        
+        all_5d.sort(key=lambda x: (x['wr'], x['pnl']), reverse=True)
+        
+        if all_5d:
+            output.append("\n  Top 10 5D Combos by WR:")
+            for combo in all_5d[:10]:
+                output.append(f"    ✓ {combo['name']:80} | WR: {combo['wr']*100:5.1f}% | P&L: ${combo['pnl']:+8.2f} | Avg: ${combo['avg_pnl']:+.2f} | Closed: {combo['closed']}")
+        else:
+            output.append("\n  No 5D combos meet minimum trade threshold yet.")
+        
+        output.append("")
+        
+        # ===== 4D COMBOS =====
+        output.append("📊 4-DIMENSIONAL COMBOS (TimeFrame × Direction × Route × Regime)")
+        output.append("─" * 160)
+        
+        stats_4d = self._aggregate_by_dimensions(['timeframe', 'signal_type', 'route', 'regime'])
         
         all_4d = []
         for key, stat in stats_4d.items():
@@ -1009,7 +1257,92 @@ class PECEnhancedReporter:
             output.append("\n  No 4D combos meet minimum trade threshold yet.")
         
         output.append("")
-        output.append("=" * 140)
+        
+        # ===== 3D COMBOS =====
+        output.append("📊 3-DIMENSIONAL COMBOS (Sample: TF_DIR_ROUTE, TF_DIR_REGIME, DIR_ROUTE_REGIME, TF_ROUTE_REGIME)")
+        output.append("─" * 160)
+        
+        combos_3d = [
+            (['timeframe', 'signal_type', 'route'], 'TF_DIR_ROUTE'),
+            (['timeframe', 'signal_type', 'regime'], 'TF_DIR_REGIME'),
+            (['signal_type', 'route', 'regime'], 'DIR_ROUTE_REGIME'),
+            (['timeframe', 'route', 'regime'], 'TF_ROUTE_REGIME'),
+        ]
+        
+        all_3d = []
+        for dimensions, label in combos_3d:
+            stats = self._aggregate_by_dimensions(dimensions)
+            
+            for key, stat in stats.items():
+                closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
+                if closed >= min_trades:
+                    win_count = stat['tp'] + stat['timeout_win']
+                    wr = (win_count / closed) if closed > 0 else 0
+                    avg_pnl = stat['pnl'] / closed if closed > 0 else 0
+                    all_3d.append({
+                        'name': f"{label}_{key[0]}_{key[1]}_{key[2]}",
+                        'wr': wr,
+                        'pnl': stat['pnl'],
+                        'avg_pnl': avg_pnl,
+                        'closed': closed,
+                        'tp': stat['tp'],
+                        'sl': stat['sl']
+                    })
+        
+        all_3d.sort(key=lambda x: (x['wr'], x['pnl']), reverse=True)
+        
+        if all_3d:
+            output.append("\n  Top 5 3D Combos by WR:")
+            for combo in all_3d[:5]:
+                output.append(f"    ✓ {combo['name']:55} | WR: {combo['wr']*100:5.1f}% | P&L: ${combo['pnl']:+8.2f} | Avg: ${combo['avg_pnl']:+.2f} | Closed: {combo['closed']}")
+        else:
+            output.append("\n  No 3D combos meet minimum trade threshold yet.")
+        
+        output.append("")
+        
+        # ===== 2D COMBOS (BROADEST) =====
+        output.append("📊 2-DIMENSIONAL COMBOS (TF_DIR, TF_REGIME, DIR_REGIME, DIR_ROUTE, ROUTE_REGIME)")
+        output.append("─" * 160)
+        
+        combos_2d = [
+            (['timeframe', 'signal_type'], 'TF_DIR'),
+            (['timeframe', 'regime'], 'TF_REGIME'),
+            (['signal_type', 'regime'], 'DIR_REGIME'),
+            (['signal_type', 'route'], 'DIR_ROUTE'),
+            (['route', 'regime'], 'ROUTE_REGIME'),
+        ]
+        
+        all_2d = []
+        for dimensions, label in combos_2d:
+            stats = self._aggregate_by_dimensions(dimensions)
+            
+            for key, stat in stats.items():
+                closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
+                if closed >= min_trades:
+                    win_count = stat['tp'] + stat['timeout_win']
+                    wr = (win_count / closed) if closed > 0 else 0
+                    avg_pnl = stat['pnl'] / closed if closed > 0 else 0
+                    all_2d.append({
+                        'name': f"{label}_{key[0]}_{key[1]}",
+                        'wr': wr,
+                        'pnl': stat['pnl'],
+                        'avg_pnl': avg_pnl,
+                        'closed': closed,
+                        'tp': stat['tp'],
+                        'sl': stat['sl']
+                    })
+        
+        all_2d.sort(key=lambda x: (x['wr'], x['pnl']), reverse=True)
+        
+        if all_2d:
+            output.append("\n  Top 8 2D Combos by WR:")
+            for combo in all_2d[:8]:
+                output.append(f"    ✓ {combo['name']:45} | WR: {combo['wr']*100:5.1f}% | P&L: ${combo['pnl']:+8.2f} | Avg: ${combo['avg_pnl']:+.2f} | Closed: {combo['closed']}")
+        else:
+            output.append("\n  No 2D combos meet minimum trade threshold yet.")
+        
+        output.append("")
+        output.append("=" * 160)
         
         return "\n".join(output)
     
