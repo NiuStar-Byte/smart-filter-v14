@@ -32,6 +32,11 @@ from signal_logger import SignalLogger
 from signal_sent_tracker import get_signal_sent_tracker  # PEC: Track SENT signals only
 from pathlib import Path
 
+# ===== PHASE 2 IMPORTS (Stage 2 - Hard Gates + Regime Adjustments) =====
+from hard_gatekeeper import HardGatekeeper
+from regime_adjustments import adjust_score_for_regime, calculate_minimum_threshold
+# ===== END PHASE 2 IMPORTS =====
+
 # === INITIALIZE SIGNAL STORAGE (EARLY & ROBUST) ===
 try:
     _signal_store = get_signal_store(SIGNALS_JSONL_PATH)
@@ -533,6 +538,30 @@ def run_cycle():
                     res15 = sf15.analyze()
 
                 if isinstance(res15, dict) and res15.get("filters_ok") is True:
+                    
+                    # ===== PHASE 2: HARD GATEKEEPER CHECK (Stage 2) =====
+                    signal_type = res15.get("bias", "UNKNOWN")
+                    try:
+                        gates_passed, gate_results = HardGatekeeper.check_all_gates(
+                            df15,
+                            direction=signal_type,
+                            regime=regime15,
+                            debug=False
+                        )
+                        
+                        if not gates_passed:
+                            print(f"[HARD-GATES] 15min {symbol} {signal_type} REJECTED - "
+                                  f"failed gates: {gate_results}", flush=True)
+                            continue  # Skip to next symbol
+                        else:
+                            print(f"[HARD-GATES] 15min {symbol} {signal_type} APPROVED - "
+                                  f"all gates passed", flush=True)
+                    except Exception as e:
+                        print(f"[HARD-GATES] Error checking gates for {symbol}: {e}", flush=True)
+                        # Fail gracefully - still allow signal if gates can't be checked
+                        pass
+                    # ===== END HARD GATES =====
+                    
                     last15 = last_sent.get(key15, 0)
                     if now - last15 >= COOLDOWN["15min"]:
                         numbered_signal = f"{idx}.A"
@@ -696,6 +725,39 @@ def run_cycle():
                             print(f"[WARN] log_fired_signal raised: {e}", flush=True)
                             traceback.print_exc()
 
+                        # ===== PHASE 2: REGIME-AWARE SCORE ADJUSTMENT (Stage 2) - 15min =====
+                        try:
+                            adjusted_score = adjust_score_for_regime(
+                                score,
+                                regime,
+                                signal_type,
+                                debug=False
+                            )
+                            
+                            min_threshold, threshold_reason = calculate_minimum_threshold(
+                                Route,
+                                regime,
+                                signal_type,
+                                debug=False
+                            )
+                            
+                            print(f"[SCORE-ADJUSTED] 15min {symbol}: raw={score:.1f} → "
+                                  f"adjusted={adjusted_score:.1f} | threshold={min_threshold} | "
+                                  f"{threshold_reason}", flush=True)
+                            
+                            if adjusted_score < min_threshold:
+                                print(f"[SCORE-REJECT] 15min {symbol} {signal_type}: "
+                                      f"{adjusted_score:.1f} < {min_threshold} ({Route})", flush=True)
+                                continue  # Skip signal
+                            
+                            score = adjusted_score  # Use adjusted score for subsequent checks
+                        
+                        except Exception as e:
+                            print(f"[SCORE-ADJUST] Error in 15min: {e}", flush=True)
+                            # Continue with original score if error
+                            pass
+                        # ===== END REGIME-AWARE ADJUSTMENT =====
+
                         # ===== RR FILTERING (Enhanced PEC) ===== (regime already calculated earlier)
                         achieved_rr_value = tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None
                         
@@ -833,6 +895,29 @@ def run_cycle():
                     res30 = sf30.analyze()
 
                 if isinstance(res30, dict) and res30.get("filters_ok") is True:
+                    
+                    # ===== PHASE 2: HARD GATEKEEPER CHECK (Stage 2) - 30min =====
+                    signal_type = res30.get("bias", "UNKNOWN")
+                    try:
+                        gates_passed, gate_results = HardGatekeeper.check_all_gates(
+                            df30,
+                            direction=signal_type,
+                            regime=regime30,
+                            debug=False
+                        )
+                        
+                        if not gates_passed:
+                            print(f"[HARD-GATES] 30min {symbol} {signal_type} REJECTED - "
+                                  f"failed gates: {gate_results}", flush=True)
+                            continue  # Skip to next symbol
+                        else:
+                            print(f"[HARD-GATES] 30min {symbol} {signal_type} APPROVED - "
+                                  f"all gates passed", flush=True)
+                    except Exception as e:
+                        print(f"[HARD-GATES] Error checking gates for {symbol}: {e}", flush=True)
+                        pass
+                    # ===== END HARD GATES =====
+                    
                     last30 = last_sent.get(key30, 0)
                     if now - last30 >= COOLDOWN["30min"]:
                         numbered_signal = f"{idx}.B"
@@ -984,6 +1069,38 @@ def run_cycle():
                         except Exception as e:
                             print(f"[WARN] log_fired_signal raised: {e}", flush=True)
                             traceback.print_exc()
+
+                        # ===== PHASE 2: REGIME-AWARE SCORE ADJUSTMENT (Stage 2) - 30min =====
+                        try:
+                            adjusted_score = adjust_score_for_regime(
+                                score,
+                                regime,
+                                signal_type,
+                                debug=False
+                            )
+                            
+                            min_threshold, threshold_reason = calculate_minimum_threshold(
+                                Route,
+                                regime,
+                                signal_type,
+                                debug=False
+                            )
+                            
+                            print(f"[SCORE-ADJUSTED] 30min {symbol}: raw={score:.1f} → "
+                                  f"adjusted={adjusted_score:.1f} | threshold={min_threshold} | "
+                                  f"{threshold_reason}", flush=True)
+                            
+                            if adjusted_score < min_threshold:
+                                print(f"[SCORE-REJECT] 30min {symbol} {signal_type}: "
+                                      f"{adjusted_score:.1f} < {min_threshold} ({Route})", flush=True)
+                                continue  # Skip signal
+                            
+                            score = adjusted_score  # Use adjusted score for subsequent checks
+                        
+                        except Exception as e:
+                            print(f"[SCORE-ADJUST] Error in 30min: {e}", flush=True)
+                            pass
+                        # ===== END REGIME-AWARE ADJUSTMENT =====
 
                         # ===== RR FILTERING (Enhanced PEC) ===== (regime already calculated earlier)
                         achieved_rr_value = tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None
@@ -1154,6 +1271,29 @@ def run_cycle():
                     res1h = sf1h.analyze()
 
                 if isinstance(res1h, dict) and res1h.get("filters_ok") is True:
+                    
+                    # ===== PHASE 2: HARD GATEKEEPER CHECK (Stage 2) - 1h =====
+                    signal_type = res1h.get("bias", "UNKNOWN")
+                    try:
+                        gates_passed, gate_results = HardGatekeeper.check_all_gates(
+                            df1h,
+                            direction=signal_type,
+                            regime=regime1h,
+                            debug=False
+                        )
+                        
+                        if not gates_passed:
+                            print(f"[HARD-GATES] 1h {symbol} {signal_type} REJECTED - "
+                                  f"failed gates: {gate_results}", flush=True)
+                            continue  # Skip to next symbol
+                        else:
+                            print(f"[HARD-GATES] 1h {symbol} {signal_type} APPROVED - "
+                                  f"all gates passed", flush=True)
+                    except Exception as e:
+                        print(f"[HARD-GATES] Error checking gates for {symbol}: {e}", flush=True)
+                        pass
+                    # ===== END HARD GATES =====
+                    
                     last1h = last_sent.get(key1h, 0)
                     if now - last1h >= COOLDOWN["1h"]:
                         numbered_signal = f"{idx}.C"
@@ -1305,6 +1445,38 @@ def run_cycle():
                         except Exception as e:
                             print(f"[WARN] log_fired_signal raised: {e}", flush=True)
                             traceback.print_exc()
+
+                        # ===== PHASE 2: REGIME-AWARE SCORE ADJUSTMENT (Stage 2) - 1h =====
+                        try:
+                            adjusted_score = adjust_score_for_regime(
+                                score,
+                                regime,
+                                signal_type,
+                                debug=False
+                            )
+                            
+                            min_threshold, threshold_reason = calculate_minimum_threshold(
+                                Route,
+                                regime,
+                                signal_type,
+                                debug=False
+                            )
+                            
+                            print(f"[SCORE-ADJUSTED] 1h {symbol}: raw={score:.1f} → "
+                                  f"adjusted={adjusted_score:.1f} | threshold={min_threshold} | "
+                                  f"{threshold_reason}", flush=True)
+                            
+                            if adjusted_score < min_threshold:
+                                print(f"[SCORE-REJECT] 1h {symbol} {signal_type}: "
+                                      f"{adjusted_score:.1f} < {min_threshold} ({Route})", flush=True)
+                                continue  # Skip signal
+                            
+                            score = adjusted_score  # Use adjusted score for subsequent checks
+                        
+                        except Exception as e:
+                            print(f"[SCORE-ADJUST] Error in 1h: {e}", flush=True)
+                            pass
+                        # ===== END REGIME-AWARE ADJUSTMENT =====
 
                         # ===== RR FILTERING (Enhanced PEC) ===== (regime already calculated earlier)
                         achieved_rr_value = tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None
