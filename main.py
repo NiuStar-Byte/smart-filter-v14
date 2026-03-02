@@ -110,6 +110,45 @@ def check_multitf_alignment_30_1h(symbol, ohlcv_data):
         return (True, "ERROR", "ERROR", f"[PHASE4A-S4] Error checking alignment: {str(e)[:50]} (allowing signal)")
 # ===== END PHASE 4A =====
 
+# ===== PHASE 4A-EXTENDED: Ultra-Premium 1h Signals (1h + 4h confirmation) =====
+def check_multitf_alignment_1h_4h(symbol, ohlcv_data):
+    """
+    PHASE 4A-EXTENDED: Check if 1h trend aligns with 4h trend
+    
+    Ultra-premium filter for 1h signals: requires 1h + 4h consensus
+    Creates highest-conviction entry tier
+    
+    Args:
+        symbol: Trading symbol (e.g., "BTC-USDT")
+        ohlcv_data: Dict from safe_fetch_ohlcv_by_tf with keys "1h", "4h"
+    
+    Returns:
+        (should_allow_signal, trend_1h, trend_4h, reason_log)
+    """
+    try:
+        # Get 1h and 4h dataframes
+        df1h = ohlcv_data.get("1h")
+        df4h = ohlcv_data.get("4h")
+        
+        if df1h is None or df4h is None or len(df1h) < 1 or len(df4h) < 1:
+            # Cannot check alignment without data - allow as fallback
+            return (True, "NONE", "NONE", "[PHASE4A-EXT] Insufficient 4h data, allowing signal")
+        
+        # Detect trends (close > MA20 for both)
+        trend_1h = "LONG" if len(df1h) >= 20 and df1h['close'].iloc[-1] > df1h['close'].iloc[-20:].mean() else "SHORT"
+        trend_4h = "LONG" if len(df4h) >= 20 and df4h['close'].iloc[-1] > df4h['close'].iloc[-20:].mean() else "SHORT"
+        
+        # Check alignment
+        if trend_1h == trend_4h:
+            return (True, trend_1h, trend_4h, f"[PHASE4A-EXT] ✅ Ultra-Premium: 1h={trend_1h}, 4h={trend_4h} CONFIRMED")
+        else:
+            return (False, trend_1h, trend_4h, f"[PHASE4A-EXT] ❌ 1h+4h Mismatch: 1h={trend_1h}, 4h={trend_4h} (FILTERED)")
+    
+    except Exception as e:
+        # If error during check, allow signal (fail-safe)
+        return (True, "ERROR", "ERROR", f"[PHASE4A-EXT] Error checking 1h+4h: {str(e)[:50]} (allowing signal)")
+# ===== END PHASE 4A-EXTENDED =====
+
 # === INITIALIZE SIGNAL STORAGE (EARLY & ROBUST) ===
 try:
     _signal_store = get_signal_store(SIGNALS_JSONL_PATH)
@@ -1642,6 +1681,14 @@ def run_cycle():
                         
                         if not alignment_allowed:
                             print(f"[PHASE4A-S4-FILTERED] 1h {symbol_val} {signal_type}: Rejected by 30min+1h filter", flush=True)
+                            continue
+
+                        # PHASE 4A-EXTENDED: Check 1h+4h alignment (Ultra-premium 1h signals)
+                        alignment_allowed_1h_4h, trend_1h_ext, trend_4h, alignment_reason_1h_4h = check_multitf_alignment_1h_4h(symbol_val, ohlcv_data)
+                        print(f"[PHASE4A-EXT] 1h {symbol_val}: {alignment_reason_1h_4h}", flush=True)
+                        
+                        if not alignment_allowed_1h_4h:
+                            print(f"[PHASE4A-EXT-FILTERED] 1h {symbol_val} {signal_type}: Rejected by 1h+4h ultra-premium filter", flush=True)
                             continue
 
                         # IN-MEMORY DEDUP: Check if sent in THIS CYCLE (prevents rapid duplicates)
