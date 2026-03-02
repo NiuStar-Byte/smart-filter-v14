@@ -724,26 +724,251 @@
 🔍 PHASE 2 + PHASE 3 HEALTH REPORT
 ====================================================================================================
 
-[1] PROCESS HEALTH
-03-03 00:17:05 GMT+7] ❌ main.py NOT RUNNING
+[1] PROCESS H[2026-03-03 00:17:05 GMT+7] ❌ main.py NOT RUNNING
 [2026-03-03 00:17:05 GMT+7] ❌ pec_executor.py NOT RUNNING
-[2026-03-03 00:21:44 GMT+7] ❌ main.py NOT RUNNING
-[2026-03-03 00:21:44 GMT+7] ❌ pec_executor.py NOT RUNNING
+
+[2] RECENT LOG ACTIVITY (last 500 lines)
+  Phase 2 Gates Fired:       0 times
+  Phase 2 Score Adjustments: 0 times
+  Phase 3 TREND Signals:     0 times
+  Phase 3 REVERSAL Signals:  0 times
+  Phase 3 Filtered:          0 times
+  Errors:                    0 times
+
+[3] PHASE 2 METRICS (Mar 2 18:04 - 21:30 GMT+7)
+  Total Signals:   35
+  Closed Trades:   35
+  Overall WR:      17.14% (target: 35%+)
+  LONG WR:         20.00%
+  Total P&L:       $-198.37
+  Status:          ✅ ON TRACK
+
+[4] PHASE 3 METRICS (Mar 2 21:30+ GMT+7)
+  Total Signals:   91
+  Closed Trades:   91/20 (target for decision)
+  Overall WR:      53.85% (target: 36%+)
+  Total P&L:       $674.29
+  Status:          ✅ ON TRACK
+
+  Route Breakdown:
+    REVERSAL: 83.9% WR (31 trades)
+    NONE: 100.0% WR (3 trades)
+    TREND CONTINUATION: 30.2% WR (53 trades)
+    AMBIGUOUS: 100.0% WR (4 trades)
+
+====================================================================================================
+
+
+====================================================================================================
+🔍 PHASE 2 + PHASE 3 HEALTH REPORT
+====================================================================================================
+
+[1] PROCESS HEALTH
 [2026-03-03 00:22:05 GMT+7] ❌ main.py NOT RUNNING
 [2026-03-03 00:22:05 GMT+7] ❌ pec_executor.py NOT RUNNING
-[2026-03-03 00:26:44 GMT+7] ❌ main.py NOT RUNNING
-[2026-03-03 00:26:44 GMT+7] ❌ pec_executor.py NOT RUNNING
+
+[2] RECENT LOG ACTIVITY (last 500 lines)
+  Phase 2 Gates Fired:       0 times
+  Phase 2 Score Adjustments: 0 times
+  Phase 3 TREND Signals:     0 times
+  Phase 3 REVERSAL Signals:  0 times
+  Phase 3 Filtered:          0 times
+  Errors:                    0 times
+
+[3] PHASE 2 METRICS (Mar 2 18:04 - 21:30 GMT+7)
+  Total Signals:   35
+  Closed Trades:   35
+  Overall WR:      17.14% (target: 35%+)
+  LONG WR:         20.00%
+  Total P&L:       $-198.37
+  Status:          ✅ ON TRACK
+
+[4] PHASE 3 METRICS (Mar 2 21:30+ GMT+7)
+  Total Signals:   100
+  Closed Trades:   100/20 (target for decision)
+  Overall WR:      49.00% (target: 36%+)
+  Total P&L:       $559.64
+  Status:          ✅ ON TRACK
+
+  Route Breakdown:
+    REVERSAL: 81.2% WR (32 trades)
+    NONE: 100.0% WR (3 trades)
+    TREND CONTINUATION: 26.2% WR (61 trades)
+    AMBIGUOUS: 100.0% WR (4 trades)
+
+====================================================================================================
+
+
+====================================================================================================
+🔍 PHASE 2 + PHASE 3 HEALTH REPORT
+====================================================================================================
+
+[1] PROCESS HEALTH
 [2026-03-03 00:27:05 GMT+7] ❌ main.py NOT RUNNING
 [2026-03-03 00:27:05 GMT+7] ❌ pec_executor.py NOT RUNNING
-[2026-03-03 00:31:45 GMT+7] ❌ main.py NOT RUNNING
-[2026-03-03 00:31:45 GMT+7] ❌ pec_executor.py NOT RUNNING
+
+[2] RECENT LOG ACTIVITY (last 500 lines)
+  Phase 2 Gates Fired:       0 times
+  Phase 2 Score Adjustments: 0 times
+  Phase 3 TREND Signals:     0 times
+  Phase 3 REVERSAL Signals:  0 times
+  Phase 3 Filtered:          0 times
+  Errors:                    0 times
+
+[3] PHASE 2 METRICS (Mar 2 18:04 - 21:30 GMT+7)
+  Total Signals:   35
+  Closed Trades:   35
+  Overall WR:      17.14% (target: 35%+)
+  LONG WR:         20.00%
+  Total P&L:       $-198.37
+  Status:          ✅ ON TRACK
+
+[4] PHASE 3 METRICS (Mar 2 21:30+ GMT+7)
+  Total Signals:   100
+  Closed Trades:   100/20 (target for decision)
+  Overall WR:      49.00% (target: 36%+)
+  Total P&L:       $559.64
+  Status:          ✅ ON TRACK
+
+  Route Breakdown:
+    REVERSAL: 81.2% WR (32 trades)
+    NONE: 100.0% WR (3 trades)
+    TREND CONTINUATION: 26.2% WR (61 trades)
+    AMBIGUOUS: 100.0% WR (4 trades)
+
+====================================================================================================
+
+
+====================================================================================================
+🔍 PHASE 2 + PHASE 3 HEALTH REPORT
+====================================================================================================
+
+[1] PROCESS HEALTH
 [2026-03-03 00:32:06 GMT+7] ❌ main.py NOT RUNNING
 [2026-03-03 00:32:06 GMT+7] ❌ pec_executor.py NOT RUNNING
-[2026-03-03 00:36:45 GMT+7] ❌ main.py NOT RUNNING
-[2026-03-03 00:36:45 GMT+7] ❌ pec_executor.py NOT RUNNING
+
+[2] RECENT LOG ACTIVITY (last 500 lines)
+  Phase 2 Gates Fired:       0 times
+  Phase 2 Score Adjustments: 0 times
+  Phase 3 TREND Signals:     0 times
+  Phase 3 REVERSAL Signals:  0 times
+  Phase 3 Filtered:          0 times
+  Errors:                    0 times
+
+[3] PHASE 2 METRICS (Mar 2 18:04 - 21:30 GMT+7)
+  Total Signals:   35
+  Closed Trades:   35
+  Overall WR:      17.14% (target: 35%+)
+  LONG WR:         20.00%
+  Total P&L:       $-198.37
+  Status:          ✅ ON TRACK
+
+[4] PHASE 3 METRICS (Mar 2 21:30+ GMT+7)
+  Total Signals:   100
+  Closed Trades:   100/20 (target for decision)
+  Overall WR:      49.00% (target: 36%+)
+  Total P&L:       $559.64
+  Status:          ✅ ON TRACK
+
+  Route Breakdown:
+    REVERSAL: 81.2% WR (32 trades)
+    NONE: 100.0% WR (3 trades)
+    TREND CONTINUATION: 26.2% WR (61 trades)
+    AMBIGUOUS: 100.0% WR (4 trades)
+
+====================================================================================================
+
+
+====================================================================================================
+🔍 PHASE 2 + PHASE 3 HEALTH REPORT
+====================================================================================================
+
+[1] PROCESS HEALTH
 [2026-03-03 00:37:06 GMT+7] ❌ main.py NOT RUNNING
 [2026-03-03 00:37:06 GMT+7] ❌ pec_executor.py NOT RUNNING
-[2026-03-03 00:41:45 GMT+7] ❌ main.py NOT RUNNING
-[2026-03-03 00:41:45 GMT+7] ❌ pec_executor.py NOT RUNNING
+
+[2] RECENT LOG ACTIVITY (last 500 lines)
+  Phase 2 Gates Fired:       0 times
+  Phase 2 Score Adjustments: 0 times
+  Phase 3 TREND Signals:     0 times
+  Phase 3 REVERSAL Signals:  0 times
+  Phase 3 Filtered:          0 times
+  Errors:                    0 times
+
+[3] PHASE 2 METRICS (Mar 2 18:04 - 21:30 GMT+7)
+  Total Signals:   35
+  Closed Trades:   35
+  Overall WR:      17.14% (target: 35%+)
+  LONG WR:         20.00%
+  Total P&L:       $-198.37
+  Status:          ✅ ON TRACK
+
+[4] PHASE 3 METRICS (Mar 2 21:30+ GMT+7)
+  Total Signals:   103
+  Closed Trades:   103/20 (target for decision)
+  Overall WR:      48.54% (target: 36%+)
+  Total P&L:       $514.29
+  Status:          ✅ ON TRACK
+
+  Route Breakdown:
+    REVERSAL: 81.2% WR (32 trades)
+    NONE: 100.0% WR (3 trades)
+    TREND CONTINUATION: 26.6% WR (64 trades)
+    AMBIGUOUS: 100.0% WR (4 trades)
+
+====================================================================================================
+
+
+====================================================================================================
+🔍 PHASE 2 + PHASE 3 HEALTH REPORT
+====================================================================================================
+
+[1] PROCESS HEALTH
 [2026-03-03 00:42:06 GMT+7] ❌ main.py NOT RUNNING
 [2026-03-03 00:42:06 GMT+7] ❌ pec_executor.py NOT RUNNING
+
+[2] RECENT LOG ACTIVITY (last 500 lines)
+  Phase 2 Gates Fired:       0 times
+  Phase 2 Score Adjustments: 0 times
+  Phase 3 TREND Signals:     0 times
+  Phase 3 REVERSAL Signals:  0 times
+  Phase 3 Filtered:          0 times
+  Errors:                    0 times
+
+[3] PHASE 2 METRICS (Mar 2 18:04 - 21:30 GMT+7)
+  Total Signals:   35
+  Closed Trades:   35
+  Overall WR:      17.14% (target: 35%+)
+  LONG WR:         20.00%
+  Total P&L:       $-198.37
+  Status:          ✅ ON TRACK
+
+[4] PHASE 3 METRICS (Mar 2 21:30+ GMT+7)
+  Total Signals:   110
+  Closed Trades:   110/20 (target for decision)
+  Overall WR:      45.45% (target: 36%+)
+  Total P&L:       $409.31
+  Status:          ✅ ON TRACK
+
+  Route Breakdown:
+    REVERSAL: 81.2% WR (32 trades)
+    NONE: 75.0% WR (4 trades)
+    TREND CONTINUATION: 24.3% WR (70 trades)
+    AMBIGUOUS: 100.0% WR (4 trades)
+
+====================================================================================================
+
+
+====================================================================================================
+🔍 PHASE 2 + PHASE 3 HEALTH REPORT
+====================================================================================================
+
+[1] PROCESS HEALTH
+[2026-03-03 00:47:06 GMT+7] ❌ main.py NOT RUNNING
+[2026-03-03 00:47:06 GMT+7] ❌ pec_executor.py NOT RUNNING
+
+[2] RECENT LOG ACTIVITY (last 500 lines)
+[2026-03-03 00:51:45 GMT+7] ❌ main.py NOT RUNNING
+[2026-03-03 00:51:45 GMT+7] ❌ pec_executor.py NOT RUNNING
+[2026-03-03 00:52:06 GMT+7] ❌ main.py NOT RUNNING
+[2026-03-03 00:52:06 GMT+7] ❌ pec_executor.py NOT RUNNING
