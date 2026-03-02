@@ -1,0 +1,43 @@
+
+================================================================================
+FILTER PERFORMANCE AUDIT REPORT
+Generated: 2026-03-02 17:58:19 GMT
+Data Source: SENT_SIGNALS.jsonl (live execution log)
+================================================================================
+
+EXECUTIVE SUMMARY
+================================================================================
+Total Filters Analyzed: 9
+Keeper Filters (WR ≥ 50%): 7
+Marginal Filters (40-50% WR): 2
+Delete Filters (WR < 40%): 0
+
+RECOMMENDATIONS
+================================================================================
+1. INCREASE WEIGHT on keeper filters in smart_filter.py
+2. INVESTIGATE direction asymmetry (LONG vs SHORT performance gap)
+3. REMOVE delete filters - they are net-negative
+4. IMPLEMENT hard gatekeepers to catch false positives
+5. TEST revised system on next 100 signals before Phase 3
+
+================================================================================
+DETAILED FILTER RANKINGS
+================================================================================
+
+KEEPER FILTERS (>50% WR):
+  ✓ HH/LL Trend: 58.2% (612 signals)
+  ✓ ADX: 58.2% (612 signals)
+  ✓ MACD: 54.6% (806 signals)
+  ✓ Volume Spike: 54.6% (806 signals)
+  ✓ Candle Confirmation: 54.6% (806 signals)
+  ✓ Support/Resistance: 54.6% (806 signals)
+  ✓ Trend Alignment: 54.6% (806 signals)
+
+MARGINAL FILTERS (40-50% WR):
+  ⚠ EMA Reversal: 41.8% (98 signals)
+  ⚠ Divergence: 41.8% (98 signals)
+
+DELETE FILTERS (<40% WR):
+
+
+================================================================================

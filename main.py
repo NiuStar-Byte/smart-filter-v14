@@ -72,6 +72,44 @@ def enforce_route_direction(signal_type, route, route_direction):
     return (True, f"{route}: No restriction")
 # ===== END PHASE 3A =====
 
+# ===== PHASE 4A FUNCTION: Multi-TF Alignment (Scenario 4: 30min + 1h) =====
+def check_multitf_alignment_30_1h(symbol, ohlcv_data):
+    """
+    PHASE 4A Scenario 4: Check if 30min trend aligns with 1h trend
+    
+    This acts as a consensus filter: only allow signals if higher timeframes agree
+    
+    Args:
+        symbol: Trading symbol (e.g., "BTC-USDT")
+        ohlcv_data: Dict from safe_fetch_ohlcv_by_tf with keys "15min", "30min", "1h"
+    
+    Returns:
+        (should_allow_signal, trend_30min, trend_1h, reason_log)
+    """
+    try:
+        # Get 30min and 1h dataframes
+        df30 = ohlcv_data.get("30min")
+        df1h = ohlcv_data.get("1h")
+        
+        if df30 is None or df1h is None or len(df30) < 1 or len(df1h) < 1:
+            # Cannot check alignment without data
+            return (True, "NONE", "NONE", "[PHASE4A-S4] Insufficient TF data, allowing signal")
+        
+        # Detect trends (close > MA20)
+        trend_30 = "LONG" if len(df30) >= 20 and df30['close'].iloc[-1] > df30['close'].iloc[-20:].mean() else "SHORT"
+        trend_1h = "LONG" if len(df1h) >= 20 and df1h['close'].iloc[-1] > df1h['close'].iloc[-20:].mean() else "SHORT"
+        
+        # Check alignment
+        if trend_30 == trend_1h:
+            return (True, trend_30, trend_1h, f"[PHASE4A-S4] ✅ Aligned: 30min={trend_30}, 1h={trend_1h}")
+        else:
+            return (False, trend_30, trend_1h, f"[PHASE4A-S4] ❌ Misaligned: 30min={trend_30}, 1h={trend_1h} (FILTERED)")
+    
+    except Exception as e:
+        # If error during check, allow signal (fail-safe)
+        return (True, "ERROR", "ERROR", f"[PHASE4A-S4] Error checking alignment: {str(e)[:50]} (allowing signal)")
+# ===== END PHASE 4A =====
+
 # === INITIALIZE SIGNAL STORAGE (EARLY & ROBUST) ===
 try:
     _signal_store = get_signal_store(SIGNALS_JSONL_PATH)
@@ -849,6 +887,14 @@ def run_cycle():
                             print(f"[DEDUP-CYCLE] 15min {symbol_val} {signal_type}: Already sent in THIS CYCLE. SKIPPING.", flush=True)
                             continue
                         
+                        # PHASE 4A: Check 30min+1h alignment (Scenario 4)
+                        alignment_allowed, trend_30, trend_1h, alignment_reason = check_multitf_alignment_30_1h(symbol_val, ohlcv_data)
+                        print(f"[PHASE4A-S4] 15min {symbol_val}: {alignment_reason}", flush=True)
+                        
+                        if not alignment_allowed:
+                            print(f"[PHASE4A-S4-FILTERED] 15min {symbol_val} {signal_type}: Rejected by 30min+1h filter", flush=True)
+                            continue
+                        
                         # CRITICAL: Deduplication check (prevent duplicate within DEDUP_WINDOWS)
                         if is_duplicate_signal(symbol_val, "15min", signal_type):
                             continue
@@ -1196,6 +1242,14 @@ def run_cycle():
                             print(f"[WARN] Signal {symbol_val} (30min) REJECTED - duplicate within 120s. NOT sending Telegram alert.", flush=True)
                             continue
 
+                        # PHASE 4A: Check 30min+1h alignment (Scenario 4)
+                        alignment_allowed, trend_30, trend_1h, alignment_reason = check_multitf_alignment_30_1h(symbol_val, ohlcv_data)
+                        print(f"[PHASE4A-S4] 30min {symbol_val}: {alignment_reason}", flush=True)
+                        
+                        if not alignment_allowed:
+                            print(f"[PHASE4A-S4-FILTERED] 30min {symbol_val} {signal_type}: Rejected by 30min+1h filter", flush=True)
+                            continue
+                        
                         # IN-MEMORY DEDUP: Check if sent in THIS CYCLE (prevents rapid duplicates)
                         cycle_key = f"{symbol_val}|30min|{signal_type}"
                         if cycle_key in signals_sent_this_cycle:
@@ -1579,6 +1633,15 @@ def run_cycle():
                         
                         if not signal_uuid:
                             print(f"[WARN] Signal {symbol_val} (1h) REJECTED - duplicate within 120s. NOT sending Telegram alert.", flush=True)
+                            continue
+
+                        # PHASE 4A: Check 30min+1h alignment (Scenario 4)
+                        # Note: For 1h signals, we check if 30min aligns with 1h (we're already at 1h, so both TFs must agree)
+                        alignment_allowed, trend_30, trend_1h, alignment_reason = check_multitf_alignment_30_1h(symbol_val, ohlcv_data)
+                        print(f"[PHASE4A-S4] 1h {symbol_val}: {alignment_reason}", flush=True)
+                        
+                        if not alignment_allowed:
+                            print(f"[PHASE4A-S4-FILTERED] 1h {symbol_val} {signal_type}: Rejected by 30min+1h filter", flush=True)
                             continue
 
                         # IN-MEMORY DEDUP: Check if sent in THIS CYCLE (prevents rapid duplicates)
