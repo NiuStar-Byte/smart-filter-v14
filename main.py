@@ -37,6 +37,41 @@ from hard_gatekeeper import HardGatekeeper
 from regime_adjustments import adjust_score_for_regime, calculate_minimum_threshold
 # ===== END PHASE 2 IMPORTS =====
 
+# ===== PHASE 3A FUNCTION: Route Direction Enforcement =====
+def enforce_route_direction(signal_type, route, route_direction):
+    """
+    PHASE 3A: Enforce that route direction matches signal direction
+    
+    If REVERSAL route says "BULLISH", only allow LONG signals
+    If REVERSAL route says "BEARISH", only allow SHORT signals
+    For TREND_CONTINUATION, allow both (no restriction)
+    
+    Args:
+        signal_type: "LONG" or "SHORT"
+        route: "REVERSAL", "TREND CONTINUATION", "NONE", etc.
+        route_direction: "BULLISH", "BEARISH", or None
+    
+    Returns:
+        (should_allow_signal, reason_log)
+    """
+    if route == "TREND CONTINUATION":
+        # No restriction for trend continuation (allow both)
+        return (True, "TREND_CONTINUATION: No direction enforcement")
+    
+    if route == "REVERSAL" and route_direction:
+        if route_direction == "BULLISH" and signal_type == "LONG":
+            return (True, f"REVERSAL BULLISH + LONG: Direction aligned ✓")
+        elif route_direction == "BULLISH" and signal_type == "SHORT":
+            return (False, f"[DIRECTION-BLOCK] REVERSAL BULLISH but SHORT signal generated (conflict)")
+        elif route_direction == "BEARISH" and signal_type == "SHORT":
+            return (True, f"REVERSAL BEARISH + SHORT: Direction aligned ✓")
+        elif route_direction == "BEARISH" and signal_type == "LONG":
+            return (False, f"[DIRECTION-BLOCK] REVERSAL BEARISH but LONG signal generated (conflict)")
+    
+    # For NONE or unknown, allow (will redirect to TREND_CONTINUATION anyway)
+    return (True, f"{route}: No restriction")
+# ===== END PHASE 3A =====
+
 # === INITIALIZE SIGNAL STORAGE (EARLY & ROBUST) ===
 try:
     _signal_store = get_signal_store(SIGNALS_JSONL_PATH)
@@ -649,6 +684,7 @@ def run_cycle():
                         passed_weight = res15.get("passed_weight", 0.0)
                         total_weight = res15.get("total_weight", 0.0)
                         Route = res15.get("Route", None)
+                        route_direction = res15.get("route_direction") if isinstance(res15, dict) else None
                         signal_type = bias
                         tf_val = res15.get("tf", "15min")
                         symbol_val = res15.get("symbol", symbol)
@@ -657,6 +693,14 @@ def run_cycle():
                         except Exception:
                             confidence = 0.0
                         entry_idx = df15.index.get_loc(df15.index[-1])
+
+                        # ===== PHASE 3A: Route Direction Enforcement (15min) =====
+                        direction_allowed, direction_reason = enforce_route_direction(signal_type, Route, route_direction)
+                        if not direction_allowed:
+                            print(f"[PHASE3A] 15min {symbol_val}: {direction_reason}", flush=True)
+                            continue  # Skip this signal - direction mismatch
+                        print(f"[PHASE3A-OK] 15min {symbol_val}: {direction_reason}", flush=True)
+                        # ===== END PHASE 3A =====
 
                         # Log signal generated (passes SmartFilter)
                         logger.signal_generated(symbol_val, tf_val, signal_type, score, entry_price)
@@ -998,6 +1042,7 @@ def run_cycle():
                         passed_weight = res30.get("passed_weight", 0.0)
                         total_weight = res30.get("total_weight", 0.0)
                         Route = res30.get("Route", None)
+                        route_direction = res30.get("route_direction") if isinstance(res30, dict) else None
                         signal_type = bias
                         tf_val = res30.get("tf", "30min")
                         symbol_val = res30.get("symbol", symbol)
@@ -1006,6 +1051,14 @@ def run_cycle():
                         except Exception:
                             confidence = 0.0
                         entry_idx = df30.index.get_loc(df30.index[-1])
+
+                        # ===== PHASE 3A: Route Direction Enforcement (30min) =====
+                        direction_allowed, direction_reason = enforce_route_direction(signal_type, Route, route_direction)
+                        if not direction_allowed:
+                            print(f"[PHASE3A] 30min {symbol_val}: {direction_reason}", flush=True)
+                            continue  # Skip this signal - direction mismatch
+                        print(f"[PHASE3A-OK] 30min {symbol_val}: {direction_reason}", flush=True)
+                        # ===== END PHASE 3A =====
 
                         # Log signal generated (passes SmartFilter)
                         logger.signal_generated(symbol_val, tf_val, signal_type, score, entry_price)
@@ -1374,6 +1427,7 @@ def run_cycle():
                         passed_weight = res1h.get("passed_weight", 0.0)
                         total_weight = res1h.get("total_weight", 0.0)
                         Route = res1h.get("Route", None)
+                        route_direction = res1h.get("route_direction") if isinstance(res1h, dict) else None
                         signal_type = bias
                         tf_val = res1h.get("tf", "1h")
                         symbol_val = res1h.get("symbol", symbol)
@@ -1382,6 +1436,14 @@ def run_cycle():
                         except Exception:
                             confidence = 0.0
                         entry_idx = df1h.index.get_loc(df1h.index[-1])
+
+                        # ===== PHASE 3A: Route Direction Enforcement (1h) =====
+                        direction_allowed, direction_reason = enforce_route_direction(signal_type, Route, route_direction)
+                        if not direction_allowed:
+                            print(f"[PHASE3A] 1h {symbol_val}: {direction_reason}", flush=True)
+                            continue  # Skip this signal - direction mismatch
+                        print(f"[PHASE3A-OK] 1h {symbol_val}: {direction_reason}", flush=True)
+                        # ===== END PHASE 3A =====
 
                         # Log signal generated (passes SmartFilter)
                         logger.signal_generated(symbol_val, tf_val, signal_type, score, entry_price)
