@@ -5,20 +5,21 @@
     "end": "2026-03-02T18:04:00Z",
     "duration_hours": 119.65,
     "file": "SENT_SIGNALS_PHASE1_BASELINE.jsonl",
-    "signals_total": 764,
-    "signals_closed": 619,
-    "signals_open": 22,
-    "signals_stale": 123,
+    "signals_total": 813,
+    "signals_closed": 777,
+    "signals_breakdown": {
+      "tp_hit": 153,
+      "sl_hit": 332,
+      "timeout": 291
+    },
     "metrics": {
-      "win_rate_pct": 31.5,
-      "win_rate_long_pct": 27.6,
-      "win_rate_short_pct": 50.5,
-      "p_and_l_usd": -4318.17,
-      "avg_trade_duration_hours": 2.0,
-      "sharpe_ratio": -0.72,
-      "max_drawdown_pct": -8.6,
-      "profit_factor": 0.26,
-      "avg_signal_per_day": 65
+      "win_rate_pct": 57.1,
+      "note_win_rate": "Includes TIMEOUT as wins (TP_HIT + TIMEOUT / Closed)",
+      "win_rate_long_pct": 56.7,
+      "win_rate_short_pct": 59.3,
+      "p_and_l_usd": -5575.43,
+      "profit_factor": 0.62,
+      "avg_signal_per_day": 68.3
     },
     "archived_at": "2026-03-02T18:25:00Z"
   },
@@ -62,12 +63,11 @@
     }
   },
   "expected_improvements": {
-    "win_rate_improvement_pct": "+3.5 to +8.5",
-    "long_wr_improvement_pct": "+7.4+",
-    "p_and_l_improvement_usd": "+3500 to +4500",
-    "sharpe_improvement": "+0.5 to +0.9",
-    "drawdown_improvement_pct": "+4.6 to +5.6",
-    "signal_volume_reduction_pct": "-60 (quality over quantity)"
+    "win_rate_improvement_pct": "+2 to +5 (target: 59-62% from baseline 57.1%)",
+    "long_wr_improvement_pct": "+2 to +5 (target: 59-62% from baseline 56.7%)",
+    "p_and_l_improvement_usd": "reduce losses (target: -$3000 to -$4000 from baseline -$5575)",
+    "profit_factor_improvement": "+0.1 to +0.3 (target: 0.72-0.92 from baseline 0.62)",
+    "signal_volume_reduction_pct": "-40 (fewer false positives due to hard gates)"
   },
   "reporting_schedule": {
     "day_1": "2026-03-03 - Daily snapshot (DAILY_PHASE2_DAY_1.txt)",
@@ -80,9 +80,9 @@
     "decision_point": "2026-03-09T18:04:00Z - Proceed to Phase 3 or iterate?"
   },
   "decision_criteria": {
-    "proceed_to_phase3": "WR improved to 35%+ (from 31.5%)",
-    "minor_improvement": "WR improved to 32-35% (review gates, tweak parameters)",
-    "revert_investigate": "WR not improved (filters fundamentally broken, rollback)"
+    "proceed_to_phase3": "WR improved to 59%+ (from baseline 57.1%), or P&L reduced losses by $800+",
+    "minor_improvement": "WR improved to 58-59% (gates working but need tweaking)",
+    "revert_investigate": "WR < 58% or P&L worse (gates too aggressive or filters broken, rollback)"
   },
   "created_at": "2026-03-02T18:25:00Z"
 }

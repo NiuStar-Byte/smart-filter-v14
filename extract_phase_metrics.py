@@ -43,7 +43,8 @@ def extract_by_phase(signals, cutoff=PHASE1_CUTOFF):
     
     for sig in signals:
         try:
-            fired_str = sig.get('fired_at', '')
+            # Try both field names (fired_at from new signals, fired_time_utc from old)
+            fired_str = sig.get('fired_at') or sig.get('fired_time_utc') or sig.get('sent_time_utc', '')
             if not fired_str:
                 continue
             
@@ -55,7 +56,6 @@ def extract_by_phase(signals, cutoff=PHASE1_CUTOFF):
             else:
                 phase2.append(sig)
         except Exception as e:
-            print(f"⚠️  Error parsing signal: {e}")
             continue
     
     return phase1, phase2
@@ -88,18 +88,18 @@ def calculate_metrics(signals):
     
     wr = (wins + timeouts) / len(closed) if closed else 0
     
-    # P&L (sum of p_and_l field if available, else estimate from TP/SL)
+    # P&L (sum of pnl_usd or p_and_l field if available)
     pnl = 0
     for s in closed:
-        if 'p_and_l' in s:
-            try:
-                pnl += float(s['p_and_l'])
-            except:
-                pass
+        pnl_val = s.get('pnl_usd') or s.get('p_and_l') or 0
+        try:
+            pnl += float(pnl_val)
+        except:
+            pass
     
-    # Direction breakdown
-    long_signals = [s for s in closed if s.get('direction') == 'LONG']
-    short_signals = [s for s in closed if s.get('direction') == 'SHORT']
+    # Direction breakdown (signal_type contains LONG/SHORT)
+    long_signals = [s for s in closed if s.get('signal_type') == 'LONG']
+    short_signals = [s for s in closed if s.get('signal_type') == 'SHORT']
     
     long_wr = (len([s for s in long_signals if s.get('status') == 'TP_HIT']) + 
                len([s for s in long_signals if s.get('status') == 'TIMEOUT'])) / len(long_signals) if long_signals else 0
@@ -182,6 +182,7 @@ def print_comparison():
         
         status_wr = "✅" if wr_imp > 0 else "❌"
         status_long = "✅" if long_imp > 0 else "⚠️"
+        status_short = "✅" if short_imp > 0 else "⚠️"
         status_pnl = "✅" if pnl_imp > 0 else "⚠️"
         
         print(f"  Win Rate:           {status_wr} {wr_imp:+.1f}% ({phase1_metrics.get('win_rate_pct', 0):.1f}% → {phase2_metrics.get('win_rate_pct', 0):.1f}%)")
