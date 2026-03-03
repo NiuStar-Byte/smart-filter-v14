@@ -1,9 +1,19 @@
 import os
 import requests
-from tg_config import BOT_TOKEN, CHAT_ID
+from typing import Any, Optional
+
+# Try to import Telegram config; if missing, use dummy values (Telegram disabled)
+try:
+    from tg_config import BOT_TOKEN, CHAT_ID
+    TELEGRAM_ENABLED = True
+except ImportError:
+    BOT_TOKEN = "DUMMY_TOKEN_CONFIGURE_TG_CONFIG"
+    CHAT_ID = "DUMMY_CHAT_ID_CONFIGURE_TG_CONFIG"
+    TELEGRAM_ENABLED = False
+    print("[WARNING] tg_config.py not found - Telegram alerts disabled. Copy tg_config_example.py to tg_config.py and add credentials.", flush=True)
+
 # Temporarily disabled due to SSL issue with Binance
 # from check_symbols import get_token_blockchain_info
-from typing import Any, Optional
 
 # Fallback: Return None if get_token_blockchain_info not available
 def get_token_blockchain_info(*args, **kwargs):
@@ -112,9 +122,9 @@ def send_telegram_alert(
     Accepts optional tp_sl dict (as returned from calculate_tp_sl) or chosen_ratio/achieved_rr params.
     """
 
-    if not BOT_TOKEN or not CHAT_ID:
-        print("[Telegram] BOT_TOKEN or CHAT_ID not configured (tg_config).", flush=True)
-        return False
+    # Skip if Telegram not enabled or not configured
+    if not TELEGRAM_ENABLED or "DUMMY" in BOT_TOKEN or "DUMMY" in CHAT_ID:
+        return False  # Silently skip if not configured
 
     # Normalize numeric-like inputs
     try:
@@ -345,6 +355,10 @@ def send_telegram_file(filepath: str, caption: Optional[str] = None) -> bool:
     """
     Send a local file to the Telegram group as a document. Returns True on success.
     """
+    # Skip if Telegram not enabled
+    if not TELEGRAM_ENABLED or "DUMMY" in BOT_TOKEN or "DUMMY" in CHAT_ID:
+        return False  # Silently skip if not configured
+    
     if not os.path.exists(filepath):
         print(f"[ERROR] File not found: {filepath}", flush=True)
         return False

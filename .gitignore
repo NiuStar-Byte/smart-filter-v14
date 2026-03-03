@@ -27,7 +27,7 @@ MANIFEST
 *.swp
 *.swo
 
-# Environment
+# Environment & Secrets
 .env
 .venv
 env/
@@ -35,7 +35,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-tg_config.py
+tg_config.py  # DO NOT COMMIT - Contains Telegram secrets. Copy from tg_config_example.py and add your credentials
 
 # Testing
 .pytest_cache/
