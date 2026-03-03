@@ -396,11 +396,16 @@ class SmartFilter:
             print(f"[SUMMARY] Reversal decision: BEARISH (Detectors: {bearish})")
             return ("REVERSAL", "BEARISH")
         elif bullish > 0 and bearish > 0:
+<<<<<<< HEAD
+            print(f"[SUMMARY] Reversal decision: AMBIGUOUS (Bullish: {bullish}, Bearish: {bearish})")
+            return ("AMBIGUOUS", ["BULLISH", "BEARISH"])
+=======
             # PHASE 3A FIX: Conflicting signals = unclear entry = reject
             # Was: return ("AMBIGUOUS", ["BULLISH", "BEARISH"])
             # Now: Treat as NONE → becomes TREND_CONTINUATION
             print(f"[SUMMARY] Reversal decision: NONE (Conflicting: Bullish={bullish}, Bearish={bearish})")
             return ("NONE", None)
+>>>>>>> origin/main
         else:
             print("[SUMMARY] Reversal decision: NONE")
             return ("NONE", None)
@@ -943,7 +948,10 @@ class SmartFilter:
             "Route": route,
             "regime": regime,
             "reversal_side": reversal_side,
+<<<<<<< HEAD
+=======
             "route_direction": reversal_side if route == "REVERSAL" else None,  # PHASE 3A: For direction enforcement
+>>>>>>> origin/main
             "message": message,
             "debug_sums": getattr(self, '_debug_sums', {}),
             "results_long": results_long,
