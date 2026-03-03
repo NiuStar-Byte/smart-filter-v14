@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """
-<<<<<<< HEAD
 A/B TEST COMPARISON SCRIPT - Phase 1 (A) vs Phase 2-FIXED (B)
 Uses EXACT same calculation method as pec_enhanced_reporter.py
 
@@ -15,12 +14,6 @@ Timeline:
   10:36 UTC: Phase 2-FIXED deployed (gates broken)
   13:16 UTC: Critical fixes applied (momentum + threshold logic)
   → Only count signals from 13:16 UTC onwards (FRESH data)
-=======
-A/B TEST COMPARISON SCRIPT - Phase 1 (A) vs Phase 2 (B)
-Uses EXACT same calculation method as pec_enhanced_reporter.py
-
-Split point: 2026-03-02 11:04 UTC (18:04 GMT+7)
->>>>>>> origin/main
 
 Usage:
   python3 COMPARE_AB_TEST.py --once           (single run)
@@ -31,14 +24,9 @@ import json
 from datetime import datetime, timezone, timedelta
 import os
 import sys
-<<<<<<< HEAD
 import time
 
 PHASE1_CUTOFF = datetime(2026, 3, 3, 13, 16, 0, tzinfo=timezone.utc)  # Mar 03 20:16 GMT+7 = 13:16 UTC - CRITICAL FIXES APPLIED (Fresh signals only)
-=======
-
-PHASE1_CUTOFF = datetime(2026, 3, 2, 11, 4, 0)  # Mar 02 18:04 GMT+7 = 11:04 UTC
->>>>>>> origin/main
 SIGNALS_FILE = "SENT_SIGNALS.jsonl"
 
 def load_and_split_signals():
@@ -58,14 +46,10 @@ def load_and_split_signals():
                     if not fired_str:
                         continue
                     
-<<<<<<< HEAD
                     # Parse the datetime and ensure it's UTC-aware
                     fired = datetime.fromisoformat(fired_str.replace('Z', '+00:00'))
                     if fired.tzinfo is None:
                         fired = fired.replace(tzinfo=timezone.utc)
-=======
-                    fired = datetime.fromisoformat(fired_str.replace('Z', '+00:00'))
->>>>>>> origin/main
                     
                     if fired < PHASE1_CUTOFF:
                         phase1.append(sig)
@@ -251,17 +235,10 @@ def calculate_detailed_metrics(signals, phase_name=""):
 def print_comparison():
     """Print formatted A/B test comparison"""
     print("\n" + "="*200)
-<<<<<<< HEAD
     print("🧪 A/B TEST COMPARISON - PHASE 1 (BASELINE) vs PHASE 2-FIXED (CHALLENGER w/ Critical Fixes)")
     print("="*200)
     print(f"Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S GMT+7')}")
     print(f"Split Point: 2026-03-03 20:16 GMT+7 (13:16 UTC) - CRITICAL FIXES APPLIED (Fresh signals only)")
-=======
-    print("🧪 A/B TEST COMPARISON - PHASE 1 (BASELINE) vs PHASE 2 (CHALLENGER)")
-    print("="*200)
-    print(f"Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S GMT+7')}")
-    print(f"Split Point: 2026-03-02 18:04 GMT+7 (11:04 UTC)")
->>>>>>> origin/main
     print(f"Data Source: {SIGNALS_FILE} (All signals = Phase 1 + Phase 2 = TOTAL)")
     print("="*200)
     print()
@@ -279,11 +256,7 @@ def print_comparison():
     # ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
     # TABLE HEADER
     # ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-<<<<<<< HEAD
     print("METRIC                               │   PHASE 1 (A)     │ PHASE 2-FIXED (B) │   TOTAL (A+B) │   DELTA       │ STATUS")
-=======
-    print("METRIC                               │   PHASE 1 (A)     │   PHASE 2 (B)     │   TOTAL (A+B) │   DELTA       │ STATUS")
->>>>>>> origin/main
     print("═"*200)
     
     # ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
@@ -444,11 +417,7 @@ def print_comparison():
             print(f"   Phase 2 (B) PROGRESS: {m2['total_signals']} signals fired, {m2['closed_trades']} closed trades | P&L: ${m2['total_pnl']:.2f}")
         print(f"   Rerun this script to track Phase 2 metrics as trades close.")
     else:
-<<<<<<< HEAD
         print(f"Phase 2-FIXED (B) has {m2['closed_trades']} closed trades.")
-=======
-        print(f"Phase 2 (B) has {m2['closed_trades']} closed trades.")
->>>>>>> origin/main
         wr_delta = (m2["overall_wr"] - m1["overall_wr"])
         if wr_delta >= 4.0:
             print(f"✅ Overall WR improved by {wr_delta:.2f}% - ON TRACK for Phase 2 success")

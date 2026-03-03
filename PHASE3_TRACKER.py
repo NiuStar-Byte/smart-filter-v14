@@ -2,7 +2,6 @@
 """
 PHASE 3 TRACKER - Unified Route Optimization Performance Monitor
 
-<<<<<<< HEAD
 ⚠️ CRITICAL: PHASE 1 BASELINE LOCKED AT 1,205 SIGNALS
 
 Compares Phase 1 (Baseline - LOCKED) vs Phase 3 (Route-Optimized)
@@ -18,11 +17,6 @@ PHASE 3 (B):
   - Route-optimized (AMBIGUOUS disabled, NONE disabled)
   - Reverted but tracked for analysis
 
-=======
-Compares Phase 1 (Baseline) vs Phase 3 (Route-Optimized)
-Tracks impact of: AMBIGUOUS disable, NONE disable, direction enforcement, REVERSAL audit
-
->>>>>>> origin/main
 Usage:
   python3 PHASE3_TRACKER.py
 
@@ -38,7 +32,6 @@ import json
 from collections import defaultdict
 from datetime import datetime, timezone, timedelta
 
-<<<<<<< HEAD
 PHASE1_CUTOFF = datetime(2026, 3, 3, 13, 16, 0, tzinfo=timezone.utc)  # Mar 03 20:16 GMT+7 = 13:16 UTC (CRITICAL FIXES) - LOCKED BASELINE
 PHASE3_START = datetime(2026, 3, 2, 14, 30, 0, tzinfo=timezone.utc)  # Mar 2 21:30 GMT+7 = 14:30 UTC
 PHASE3_END = datetime(2026, 3, 3, 13, 16, 0, tzinfo=timezone.utc)    # Mar 03 20:16 GMT+7 = 13:16 UTC (when Phase 2-FIXED critical fixes deployed)
@@ -54,12 +47,6 @@ PHASE1_LOCKED = {
     "short_wr": 43.51
 }
 
-=======
-PHASE1_CUTOFF = datetime(2026, 3, 2, 11, 4, 0, tzinfo=timezone.utc)  # Mar 2 18:04 GMT+7 = 11:04 UTC
-PHASE3_START = datetime(2026, 3, 2, 14, 30, 0, tzinfo=timezone.utc)  # Mar 2 21:30 GMT+7 = 14:30 UTC
-SIGNALS_FILE = "SENT_SIGNALS.jsonl"
-
->>>>>>> origin/main
 class Phase3Tracker:
     def __init__(self):
         self.phase1_signals = []
@@ -87,17 +74,11 @@ class Phase3Tracker:
                         # Parse as naive datetime and make UTC
                         fired = datetime.fromisoformat(fired_str.split('+')[0]).replace(tzinfo=timezone.utc)
                         
-<<<<<<< HEAD
                         # PHASE 1: Everything BEFORE 13:16 UTC Mar 3 (LOCKED BASELINE - 1,205 signals)
                         if fired < PHASE1_CUTOFF:
                             self.phase1_signals.append(sig)
                         # PHASE 3: From 14:30 UTC Mar 2 TO 13:16 UTC Mar 3 (Route-optimized period)
                         elif PHASE3_START <= fired < PHASE3_END:
-=======
-                        if fired < PHASE1_CUTOFF:
-                            self.phase1_signals.append(sig)
-                        elif fired >= PHASE3_START:
->>>>>>> origin/main
                             self.phase3_signals.append(sig)
                     except Exception as e:
                         continue
@@ -204,7 +185,6 @@ class Phase3Tracker:
         print("📊 PHASE 3: UNIFIED ROUTE OPTIMIZATION - TRACKING REPORT")
         print("="*180)
         print(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S GMT+7')}")
-<<<<<<< HEAD
         print(f"Phase 1 Baseline: All signals BEFORE Mar 3 20:16 GMT+7 (LOCKED - 1,205 signals)")
         print(f"Phase 3 Window: Mar 2 21:30 GMT+7 to Mar 3 20:16 GMT+7 (Route-optimized)")
         print("="*180)
@@ -226,18 +206,6 @@ class Phase3Tracker:
         
         if not m1:
             print("❌ Phase 1 baseline not available")
-=======
-        print(f"Phase 1 Baseline: Feb 27 - Mar 2 18:04 GMT+7")
-        print(f"Phase 3 Live: Mar 2 21:30 GMT+7 onwards")
-        print("="*180)
-        print()
-        
-        m1 = self.calculate_metrics(self.phase1_signals, "PHASE 1")
-        m3 = self.calculate_metrics(self.phase3_signals, "PHASE 3")
-        
-        if not m1:
-            print("❌ Phase 1 data not found")
->>>>>>> origin/main
             return
         
         print("METRIC                          │   PHASE 1 (Baseline)  │   PHASE 3 (Optimized) │   DELTA      │ STATUS")

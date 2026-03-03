@@ -32,7 +32,6 @@ from signal_logger import SignalLogger
 from signal_sent_tracker import get_signal_sent_tracker  # PEC: Track SENT signals only
 from pathlib import Path
 
-<<<<<<< HEAD
 # ===== PHASE 2 IMPORTS (Stage 2 - Direction-Aware Gatekeepers + Regime Adjustments) =====
 from direction_aware_gatekeeper import DirectionAwareGatekeeper
 from direction_aware_regime_adjustments import calculate_direction_aware_threshold
@@ -42,47 +41,6 @@ from direction_aware_regime_adjustments import calculate_direction_aware_thresho
 from reversal_quality_gate import check_reversal_quality
 from direction_aware_route_optimizer import calculate_route_score, get_route_recommendation
 # ===== END PHASE 3B IMPORTS =====
-=======
-# ===== PHASE 2 IMPORTS (Stage 2 - Hard Gates + Regime Adjustments) =====
-from hard_gatekeeper import HardGatekeeper
-from regime_adjustments import adjust_score_for_regime, calculate_minimum_threshold
-# ===== END PHASE 2 IMPORTS =====
-
-# ===== PHASE 3A FUNCTION: Route Direction Enforcement =====
-def enforce_route_direction(signal_type, route, route_direction):
-    """
-    PHASE 3A: Enforce that route direction matches signal direction
-    
-    If REVERSAL route says "BULLISH", only allow LONG signals
-    If REVERSAL route says "BEARISH", only allow SHORT signals
-    For TREND_CONTINUATION, allow both (no restriction)
-    
-    Args:
-        signal_type: "LONG" or "SHORT"
-        route: "REVERSAL", "TREND CONTINUATION", "NONE", etc.
-        route_direction: "BULLISH", "BEARISH", or None
-    
-    Returns:
-        (should_allow_signal, reason_log)
-    """
-    if route == "TREND CONTINUATION":
-        # No restriction for trend continuation (allow both)
-        return (True, "TREND_CONTINUATION: No direction enforcement")
-    
-    if route == "REVERSAL" and route_direction:
-        if route_direction == "BULLISH" and signal_type == "LONG":
-            return (True, f"REVERSAL BULLISH + LONG: Direction aligned ✓")
-        elif route_direction == "BULLISH" and signal_type == "SHORT":
-            return (False, f"[DIRECTION-BLOCK] REVERSAL BULLISH but SHORT signal generated (conflict)")
-        elif route_direction == "BEARISH" and signal_type == "SHORT":
-            return (True, f"REVERSAL BEARISH + SHORT: Direction aligned ✓")
-        elif route_direction == "BEARISH" and signal_type == "LONG":
-            return (False, f"[DIRECTION-BLOCK] REVERSAL BEARISH but LONG signal generated (conflict)")
-    
-    # For NONE or unknown, allow (will redirect to TREND_CONTINUATION anyway)
-    return (True, f"{route}: No restriction")
-# ===== END PHASE 3A =====
->>>>>>> origin/main
 
 # ===== PHASE 4A FUNCTION: Multi-TF Alignment (Scenario 4: 30min + 1h) =====
 def check_multitf_alignment_30_1h(symbol, ohlcv_data):
@@ -328,10 +286,7 @@ def create_and_store_signal(symbol, timeframe, signal_type, fired_time_utc, entr
             "symbol": symbol,
             "timeframe": timeframe,
             "signal_type": signal_type,
-<<<<<<< HEAD
             "direction": signal_type,  # CRITICAL: direction = signal_type (LONG/SHORT) for Phase 3B RQ4 gate validation
-=======
->>>>>>> origin/main
             "fired_time_utc": fired_time_utc.isoformat() if hasattr(fired_time_utc, 'isoformat') else str(fired_time_utc),
             "entry_price": float(entry_price),
             "tp_target": float(tp_target),
@@ -628,17 +583,10 @@ def run_cycle():
 
                 if isinstance(res15, dict) and res15.get("filters_ok") is True:
                     
-<<<<<<< HEAD
                     # ===== PHASE 2-FIXED: DIRECTION-AWARE GATEKEEPER CHECK =====
                     signal_type = res15.get("bias", "UNKNOWN")
                     try:
                         gates_passed, gate_results = DirectionAwareGatekeeper.check_all_gates(
-=======
-                    # ===== PHASE 2: HARD GATEKEEPER CHECK (Stage 2) =====
-                    signal_type = res15.get("bias", "UNKNOWN")
-                    try:
-                        gates_passed, gate_results = HardGatekeeper.check_all_gates(
->>>>>>> origin/main
                             df15,
                             direction=signal_type,
                             regime=regime15,
@@ -646,7 +594,6 @@ def run_cycle():
                         )
                         
                         if not gates_passed:
-<<<<<<< HEAD
                             failed_gates = [k for k, v in gate_results.items() if not v]
                             print(f"[PHASE2-FIXED] 15min {symbol} {signal_type} REJECTED - "
                                   f"failed: {failed_gates}", flush=True)
@@ -658,19 +605,6 @@ def run_cycle():
                         # Fail gracefully - still allow signal if gates can't be checked
                         pass
                     # ===== END PHASE 2-FIXED GATES =====
-=======
-                            print(f"[HARD-GATES] 15min {symbol} {signal_type} REJECTED - "
-                                  f"failed gates: {gate_results}", flush=True)
-                            continue  # Skip to next symbol
-                        else:
-                            print(f"[HARD-GATES] 15min {symbol} {signal_type} APPROVED - "
-                                  f"all gates passed", flush=True)
-                    except Exception as e:
-                        print(f"[HARD-GATES] Error checking gates for {symbol}: {e}", flush=True)
-                        # Fail gracefully - still allow signal if gates can't be checked
-                        pass
-                    # ===== END HARD GATES =====
->>>>>>> origin/main
                     
                     last15 = last_sent.get(key15, 0)
                     if now - last15 >= COOLDOWN["15min"]:
@@ -759,10 +693,6 @@ def run_cycle():
                         passed_weight = res15.get("passed_weight", 0.0)
                         total_weight = res15.get("total_weight", 0.0)
                         Route = res15.get("Route", None)
-<<<<<<< HEAD
-=======
-                        route_direction = res15.get("route_direction") if isinstance(res15, dict) else None
->>>>>>> origin/main
                         signal_type = bias
                         tf_val = res15.get("tf", "15min")
                         symbol_val = res15.get("symbol", symbol)
@@ -772,23 +702,11 @@ def run_cycle():
                             confidence = 0.0
                         entry_idx = df15.index.get_loc(df15.index[-1])
 
-<<<<<<< HEAD
-=======
-                        # ===== PHASE 3A: Route Direction Enforcement (15min) =====
-                        direction_allowed, direction_reason = enforce_route_direction(signal_type, Route, route_direction)
-                        if not direction_allowed:
-                            print(f"[PHASE3A] 15min {symbol_val}: {direction_reason}", flush=True)
-                            continue  # Skip this signal - direction mismatch
-                        print(f"[PHASE3A-OK] 15min {symbol_val}: {direction_reason}", flush=True)
-                        # ===== END PHASE 3A =====
-
->>>>>>> origin/main
                         # Log signal generated (passes SmartFilter)
                         logger.signal_generated(symbol_val, tf_val, signal_type, score, entry_price)
 
                         # Get market regime EARLY (needed for Option C: RANGE TP scaling)
                         regime = sf15._market_regime() if hasattr(sf15, "_market_regime") else None
-<<<<<<< HEAD
                         
                         # ===== PHASE 3B: REVERSAL QUALITY GATE (15min block) =====
                         if Route == "REVERSAL":
@@ -818,8 +736,6 @@ def run_cycle():
                         route_rec = get_route_recommendation(Route, signal_type, regime)
                         print(f"[PHASE3B-SCORE] 15min {symbol_val}: {route_rec} (score: {route_score})", flush=True)
                         # ===== END PHASE 3B: 15min block =====
-=======
->>>>>>> origin/main
 
                         # Recompute TP/SL against the final live entry_price so TP/SL match execution price
                         tp_sl = None
@@ -882,44 +798,21 @@ def run_cycle():
                             print(f"[WARN] log_fired_signal raised: {e}", flush=True)
                             traceback.print_exc()
 
-<<<<<<< HEAD
                         # ===== PHASE 2-FIXED: DIRECTION-AWARE THRESHOLD CHECK (15min) =====
                         try:
                             min_threshold, threshold_reason = calculate_direction_aware_threshold(
-=======
-                        # ===== PHASE 2: REGIME-AWARE SCORE ADJUSTMENT (Stage 2) - 15min =====
-                        try:
-                            adjusted_score = adjust_score_for_regime(
-                                score,
-                                regime,
-                                signal_type,
-                                debug=False
-                            )
-                            
-                            min_threshold, threshold_reason = calculate_minimum_threshold(
->>>>>>> origin/main
                                 Route,
                                 regime,
                                 signal_type,
                                 debug=False
                             )
                             
-<<<<<<< HEAD
                             print(f"[PHASE2-FIXED-THRESHOLD] 15min {symbol}: score={score:.1f} | "
                                   f"threshold={min_threshold} | {threshold_reason}", flush=True)
                             
                             if score < min_threshold:
                                 print(f"[PHASE2-FIXED-REJECT] 15min {symbol} {signal_type}: "
                                       f"{score:.1f} < {min_threshold} (below {Route} threshold)", flush=True)
-=======
-                            print(f"[SCORE-ADJUSTED] 15min {symbol}: raw={score:.1f} → "
-                                  f"adjusted={adjusted_score:.1f} | threshold={min_threshold} | "
-                                  f"{threshold_reason}", flush=True)
-                            
-                            if adjusted_score < min_threshold:
-                                print(f"[SCORE-REJECT] 15min {symbol} {signal_type}: "
-                                      f"{adjusted_score:.1f} < {min_threshold} ({Route})", flush=True)
->>>>>>> origin/main
                                 continue  # Skip signal
                             
                             score = adjusted_score  # Use adjusted score for subsequent checks
@@ -1076,17 +969,10 @@ def run_cycle():
 
                 if isinstance(res30, dict) and res30.get("filters_ok") is True:
                     
-<<<<<<< HEAD
                     # ===== PHASE 2-FIXED: DIRECTION-AWARE GATEKEEPER CHECK - 30min =====
                     signal_type = res30.get("bias", "UNKNOWN")
                     try:
                         gates_passed, gate_results = DirectionAwareGatekeeper.check_all_gates(
-=======
-                    # ===== PHASE 2: HARD GATEKEEPER CHECK (Stage 2) - 30min =====
-                    signal_type = res30.get("bias", "UNKNOWN")
-                    try:
-                        gates_passed, gate_results = HardGatekeeper.check_all_gates(
->>>>>>> origin/main
                             df30,
                             direction=signal_type,
                             regime=regime30,
@@ -1094,7 +980,6 @@ def run_cycle():
                         )
                         
                         if not gates_passed:
-<<<<<<< HEAD
                             failed_gates = [k for k, v in gate_results.items() if not v]
                             print(f"[PHASE2-FIXED] 30min {symbol} {signal_type} REJECTED - "
                                   f"failed: {failed_gates}", flush=True)
@@ -1105,18 +990,6 @@ def run_cycle():
                         print(f"[PHASE2-FIXED] Error checking gates for {symbol}: {e}", flush=True)
                         pass
                     # ===== END PHASE 2-FIXED GATES =====
-=======
-                            print(f"[HARD-GATES] 30min {symbol} {signal_type} REJECTED - "
-                                  f"failed gates: {gate_results}", flush=True)
-                            continue  # Skip to next symbol
-                        else:
-                            print(f"[HARD-GATES] 30min {symbol} {signal_type} APPROVED - "
-                                  f"all gates passed", flush=True)
-                    except Exception as e:
-                        print(f"[HARD-GATES] Error checking gates for {symbol}: {e}", flush=True)
-                        pass
-                    # ===== END HARD GATES =====
->>>>>>> origin/main
                     
                     last30 = last_sent.get(key30, 0)
                     if now - last30 >= COOLDOWN["30min"]:
@@ -1198,10 +1071,6 @@ def run_cycle():
                         passed_weight = res30.get("passed_weight", 0.0)
                         total_weight = res30.get("total_weight", 0.0)
                         Route = res30.get("Route", None)
-<<<<<<< HEAD
-=======
-                        route_direction = res30.get("route_direction") if isinstance(res30, dict) else None
->>>>>>> origin/main
                         signal_type = bias
                         tf_val = res30.get("tf", "30min")
                         symbol_val = res30.get("symbol", symbol)
@@ -1211,23 +1080,11 @@ def run_cycle():
                             confidence = 0.0
                         entry_idx = df30.index.get_loc(df30.index[-1])
 
-<<<<<<< HEAD
-=======
-                        # ===== PHASE 3A: Route Direction Enforcement (30min) =====
-                        direction_allowed, direction_reason = enforce_route_direction(signal_type, Route, route_direction)
-                        if not direction_allowed:
-                            print(f"[PHASE3A] 30min {symbol_val}: {direction_reason}", flush=True)
-                            continue  # Skip this signal - direction mismatch
-                        print(f"[PHASE3A-OK] 30min {symbol_val}: {direction_reason}", flush=True)
-                        # ===== END PHASE 3A =====
-
->>>>>>> origin/main
                         # Log signal generated (passes SmartFilter)
                         logger.signal_generated(symbol_val, tf_val, signal_type, score, entry_price)
 
                         # Get market regime EARLY (needed for Option C: RANGE TP scaling)
                         regime = sf30._market_regime() if hasattr(sf30, "_market_regime") else None
-<<<<<<< HEAD
                         
                         # ===== PHASE 3B: REVERSAL QUALITY GATE (30min block) =====
                         if Route == "REVERSAL":
@@ -1257,8 +1114,6 @@ def run_cycle():
                         route_rec = get_route_recommendation(Route, signal_type, regime)
                         print(f"[PHASE3B-SCORE] 30min {symbol_val}: {route_rec} (score: {route_score})", flush=True)
                         # ===== END PHASE 3B: 30min block =====
-=======
->>>>>>> origin/main
 
                         tp_sl = None
                         tp = None
@@ -1317,29 +1172,15 @@ def run_cycle():
                             print(f"[WARN] log_fired_signal raised: {e}", flush=True)
                             traceback.print_exc()
 
-<<<<<<< HEAD
                         # ===== PHASE 2-FIXED: DIRECTION-AWARE THRESHOLD CHECK - 30min =====
                         try:
                             min_threshold, threshold_reason = calculate_direction_aware_threshold(
-=======
-                        # ===== PHASE 2: REGIME-AWARE SCORE ADJUSTMENT (Stage 2) - 30min =====
-                        try:
-                            adjusted_score = adjust_score_for_regime(
-                                score,
-                                regime,
-                                signal_type,
-                                debug=False
-                            )
-                            
-                            min_threshold, threshold_reason = calculate_minimum_threshold(
->>>>>>> origin/main
                                 Route,
                                 regime,
                                 signal_type,
                                 debug=False
                             )
                             
-<<<<<<< HEAD
                             print(f"[PHASE2-FIXED-THRESHOLD] 30min {symbol}: score={score:.1f} | "
                                   f"threshold={min_threshold} | {threshold_reason}", flush=True)
                             
@@ -1352,23 +1193,6 @@ def run_cycle():
                             print(f"[PHASE2-FIXED] Error in 30min threshold: {e}", flush=True)
                             pass
                         # ===== END PHASE 2-FIXED THRESHOLD =====
-=======
-                            print(f"[SCORE-ADJUSTED] 30min {symbol}: raw={score:.1f} → "
-                                  f"adjusted={adjusted_score:.1f} | threshold={min_threshold} | "
-                                  f"{threshold_reason}", flush=True)
-                            
-                            if adjusted_score < min_threshold:
-                                print(f"[SCORE-REJECT] 30min {symbol} {signal_type}: "
-                                      f"{adjusted_score:.1f} < {min_threshold} ({Route})", flush=True)
-                                continue  # Skip signal
-                            
-                            score = adjusted_score  # Use adjusted score for subsequent checks
-                        
-                        except Exception as e:
-                            print(f"[SCORE-ADJUST] Error in 30min: {e}", flush=True)
-                            pass
-                        # ===== END REGIME-AWARE ADJUSTMENT =====
->>>>>>> origin/main
 
                         # ===== RR FILTERING (Enhanced PEC) ===== (regime already calculated earlier)
                         achieved_rr_value = tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None
@@ -1548,17 +1372,10 @@ def run_cycle():
 
                 if isinstance(res1h, dict) and res1h.get("filters_ok") is True:
                     
-<<<<<<< HEAD
                     # ===== PHASE 2-FIXED: DIRECTION-AWARE GATEKEEPER CHECK - 1h =====
                     signal_type = res1h.get("bias", "UNKNOWN")
                     try:
                         gates_passed, gate_results = DirectionAwareGatekeeper.check_all_gates(
-=======
-                    # ===== PHASE 2: HARD GATEKEEPER CHECK (Stage 2) - 1h =====
-                    signal_type = res1h.get("bias", "UNKNOWN")
-                    try:
-                        gates_passed, gate_results = HardGatekeeper.check_all_gates(
->>>>>>> origin/main
                             df1h,
                             direction=signal_type,
                             regime=regime1h,
@@ -1566,7 +1383,6 @@ def run_cycle():
                         )
                         
                         if not gates_passed:
-<<<<<<< HEAD
                             failed_gates = [k for k, v in gate_results.items() if not v]
                             print(f"[PHASE2-FIXED] 1h {symbol} {signal_type} REJECTED - "
                                   f"failed: {failed_gates}", flush=True)
@@ -1577,18 +1393,6 @@ def run_cycle():
                         print(f"[PHASE2-FIXED] Error checking gates for {symbol}: {e}", flush=True)
                         pass
                     # ===== END PHASE 2-FIXED GATES =====
-=======
-                            print(f"[HARD-GATES] 1h {symbol} {signal_type} REJECTED - "
-                                  f"failed gates: {gate_results}", flush=True)
-                            continue  # Skip to next symbol
-                        else:
-                            print(f"[HARD-GATES] 1h {symbol} {signal_type} APPROVED - "
-                                  f"all gates passed", flush=True)
-                    except Exception as e:
-                        print(f"[HARD-GATES] Error checking gates for {symbol}: {e}", flush=True)
-                        pass
-                    # ===== END HARD GATES =====
->>>>>>> origin/main
                     
                     last1h = last_sent.get(key1h, 0)
                     if now - last1h >= COOLDOWN["1h"]:
@@ -1670,10 +1474,6 @@ def run_cycle():
                         passed_weight = res1h.get("passed_weight", 0.0)
                         total_weight = res1h.get("total_weight", 0.0)
                         Route = res1h.get("Route", None)
-<<<<<<< HEAD
-=======
-                        route_direction = res1h.get("route_direction") if isinstance(res1h, dict) else None
->>>>>>> origin/main
                         signal_type = bias
                         tf_val = res1h.get("tf", "1h")
                         symbol_val = res1h.get("symbol", symbol)
@@ -1683,23 +1483,11 @@ def run_cycle():
                             confidence = 0.0
                         entry_idx = df1h.index.get_loc(df1h.index[-1])
 
-<<<<<<< HEAD
-=======
-                        # ===== PHASE 3A: Route Direction Enforcement (1h) =====
-                        direction_allowed, direction_reason = enforce_route_direction(signal_type, Route, route_direction)
-                        if not direction_allowed:
-                            print(f"[PHASE3A] 1h {symbol_val}: {direction_reason}", flush=True)
-                            continue  # Skip this signal - direction mismatch
-                        print(f"[PHASE3A-OK] 1h {symbol_val}: {direction_reason}", flush=True)
-                        # ===== END PHASE 3A =====
-
->>>>>>> origin/main
                         # Log signal generated (passes SmartFilter)
                         logger.signal_generated(symbol_val, tf_val, signal_type, score, entry_price)
 
                         # Get market regime EARLY (needed for Option C: RANGE TP scaling)
                         regime = sf1h._market_regime() if hasattr(sf1h, "_market_regime") else None
-<<<<<<< HEAD
                         
                         # ===== PHASE 3B: REVERSAL QUALITY GATE (1h block) =====
                         if Route == "REVERSAL":
@@ -1729,8 +1517,6 @@ def run_cycle():
                         route_rec = get_route_recommendation(Route, signal_type, regime)
                         print(f"[PHASE3B-SCORE] 1h {symbol_val}: {route_rec} (score: {route_score})", flush=True)
                         # ===== END PHASE 3B: 1h block =====
-=======
->>>>>>> origin/main
 
                         tp_sl = None
                         tp = None
@@ -1789,29 +1575,15 @@ def run_cycle():
                             print(f"[WARN] log_fired_signal raised: {e}", flush=True)
                             traceback.print_exc()
 
-<<<<<<< HEAD
                         # ===== PHASE 2-FIXED: DIRECTION-AWARE THRESHOLD CHECK - 1h =====
                         try:
                             min_threshold, threshold_reason = calculate_direction_aware_threshold(
-=======
-                        # ===== PHASE 2: REGIME-AWARE SCORE ADJUSTMENT (Stage 2) - 1h =====
-                        try:
-                            adjusted_score = adjust_score_for_regime(
-                                score,
-                                regime,
-                                signal_type,
-                                debug=False
-                            )
-                            
-                            min_threshold, threshold_reason = calculate_minimum_threshold(
->>>>>>> origin/main
                                 Route,
                                 regime,
                                 signal_type,
                                 debug=False
                             )
                             
-<<<<<<< HEAD
                             print(f"[PHASE2-FIXED-THRESHOLD] 1h {symbol}: score={score:.1f} | "
                                   f"threshold={min_threshold} | {threshold_reason}", flush=True)
                             
@@ -1824,23 +1596,6 @@ def run_cycle():
                             print(f"[PHASE2-FIXED] Error in 1h threshold: {e}", flush=True)
                             pass
                         # ===== END PHASE 2-FIXED THRESHOLD =====
-=======
-                            print(f"[SCORE-ADJUSTED] 1h {symbol}: raw={score:.1f} → "
-                                  f"adjusted={adjusted_score:.1f} | threshold={min_threshold} | "
-                                  f"{threshold_reason}", flush=True)
-                            
-                            if adjusted_score < min_threshold:
-                                print(f"[SCORE-REJECT] 1h {symbol} {signal_type}: "
-                                      f"{adjusted_score:.1f} < {min_threshold} ({Route})", flush=True)
-                                continue  # Skip signal
-                            
-                            score = adjusted_score  # Use adjusted score for subsequent checks
-                        
-                        except Exception as e:
-                            print(f"[SCORE-ADJUST] Error in 1h: {e}", flush=True)
-                            pass
-                        # ===== END REGIME-AWARE ADJUSTMENT =====
->>>>>>> origin/main
 
                         # ===== RR FILTERING (Enhanced PEC) ===== (regime already calculated earlier)
                         achieved_rr_value = tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None
