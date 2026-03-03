@@ -17,7 +17,7 @@ def calculate_route_score(route, direction, regime, reversal_strength_score=None
     - LONG in BEAR: -25 (unfavorable, LONG counter-trend)
     
     Args:
-        route (str): "REVERSAL", "TREND_CONTINUATION", "AMBIGUOUS", or "NONE"
+        route (str): "REVERSAL", "TREND_CONTINUATION" or "TREND CONTINUATION", "AMBIGUOUS", or "NONE"
         direction (str): "LONG" or "SHORT"
         regime (str): "BULL", "BEAR", or "RANGE"
         reversal_strength_score (float): 0-100, from reversal_quality_gate
@@ -25,6 +25,9 @@ def calculate_route_score(route, direction, regime, reversal_strength_score=None
     Returns:
         int: Route score (0-100+)
     """
+    
+    # Normalize route name (convert "TREND CONTINUATION" to "TREND_CONTINUATION")
+    route = route.replace(" ", "_") if route else ""
     
     # Base scores
     if route == "TREND_CONTINUATION":
@@ -75,7 +78,7 @@ def get_route_recommendation(route, direction, regime, reversal_strength_score=N
     Returns a recommendation string for route selection.
     
     Args:
-        route (str): The selected route
+        route (str): The selected route (may be "TREND CONTINUATION" or "TREND_CONTINUATION")
         direction (str): LONG or SHORT
         regime (str): BULL, BEAR, or RANGE
         reversal_strength_score (float): 0-100 from reversal_quality_gate
@@ -83,6 +86,9 @@ def get_route_recommendation(route, direction, regime, reversal_strength_score=N
     Returns:
         str: Human-readable recommendation
     """
+    
+    # Normalize route name
+    route = route.replace(" ", "_") if route else ""
     
     combo = f"{direction}_{regime}"
     
@@ -124,7 +130,7 @@ def route_filtering_rules(route, direction, regime):
     - WARN (sent but with warning)
     
     Args:
-        route (str): REVERSAL, TREND_CONTINUATION, etc.
+        route (str): REVERSAL, TREND_CONTINUATION or TREND CONTINUATION, etc.
         direction (str): LONG or SHORT
         regime (str): BULL, BEAR, RANGE
     
@@ -134,6 +140,9 @@ def route_filtering_rules(route, direction, regime):
             "reason": "explanation"
         }
     """
+    
+    # Normalize route name
+    route = route.replace(" ", "_") if route else ""
     
     rules = {
         # TREND_CONTINUATION: Always allowed (primary route)
