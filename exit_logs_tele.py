@@ -1,14 +1,16 @@
 import logging
 from telegram import Bot
 
-# Try to import Telegram config; if missing, use dummy values (Telegram disabled)
-try:
-    from tg_config import BOT_TOKEN, CHAT_ID
-    TELEGRAM_ENABLED = True
-except ImportError:
-    BOT_TOKEN = "DUMMY_TOKEN_CONFIGURE_TG_CONFIG"
-    CHAT_ID = "DUMMY_CHAT_ID_CONFIGURE_TG_CONFIG"
-    TELEGRAM_ENABLED = False
+# Import Telegram config
+from tg_config import BOT_TOKEN, CHAT_ID
+
+# Check if Telegram is properly configured (not placeholder values)
+TELEGRAM_ENABLED = (
+    BOT_TOKEN and 
+    CHAT_ID and 
+    "YOUR_BOT_TOKEN" not in BOT_TOKEN and 
+    "YOUR_CHAT_ID" not in CHAT_ID
+)
 
 # Set up logging to a text file
 logging.basicConfig(
@@ -23,7 +25,7 @@ def send_logs_to_telegram(message):
     Gracefully skips if Telegram not configured.
     """
     # Skip if Telegram not enabled or not configured
-    if not TELEGRAM_ENABLED or "DUMMY" in BOT_TOKEN or "DUMMY" in CHAT_ID:
+    if not TELEGRAM_ENABLED:
         return  # Silently skip if not configured
     
     try:

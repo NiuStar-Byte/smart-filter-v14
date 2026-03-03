@@ -20,7 +20,10 @@ from tier_lookup import get_signal_tier
 from kucoin_orderbook import get_order_wall_delta
 from pec_engine import run_pec_check, export_pec_log
 from tp_sl_retracement import calculate_tp_sl
-from test_filters import run_all_filter_tests
+try:
+    from test_filters import run_all_filter_tests
+except ImportError:
+    run_all_filter_tests = None  # test_filters optional (development only)
 from signal_store import get_signal_store
 from pec_config import MIN_ACCEPTED_RR, SIGNALS_JSONL_PATH
 import math
