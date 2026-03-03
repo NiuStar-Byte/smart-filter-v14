@@ -1,0 +1,44 @@
+🔒 PHASE 1 BASELINE - IMMUTABLE LOCK
+=====================================
+
+LOCKED: 2026-03-04 01:54 GMT+7
+BY: Nox (Personal Assistant)
+STATUS: ✅ DO NOT TOUCH
+
+PHASE 1 BASELINE (FROZEN):
+  Total Signals:        853
+  Closed Trades:        830
+  Win Rate:             25.7%
+  LONG WR:              29.6%
+  SHORT WR:             46.2%
+  Total P&L:            -$5,498.59
+
+CUTOFF TIMESTAMP: 2026-03-03 13:16 UTC (Mar 3 20:16 GMT+7)
+
+THIS BASELINE WILL NEVER CHANGE.
+IT IS THE IMMUTABLE REFERENCE FOR ALL COMPARISONS.
+
+If you see different numbers, DO NOT recalculate.
+Use these locked values instead:
+  - COMPARE_AB_TEST_LOCKED.py
+  - track_phase3b_simple.py
+  - Any comparison scripts
+
+PROTECTION RULES:
+  ❌ DO NOT modify SENT_SIGNALS.jsonl cutoff dates
+  ❌ DO NOT recalculate Phase 1 metrics
+  ❌ DO NOT change the 853 / 25.7% / 830 numbers
+  ❌ DO NOT remove signals from the baseline
+
+AUTHORIZED CHANGES: NONE
+All baseline values are LOCKED and IMMUTABLE.
+
+7-DAY MONITORING WINDOW:
+  Start: 2026-03-03 13:16 UTC
+  End:   2026-03-10 14:30 UTC (Day 7 decision)
+  Phase: Phase 2-FIXED + Phase 3B fresh data only
+  
+Success Criterion: Phase 2-FIXED WR ≥ 25.7%
+
+=====================================
+This file is read-only. Do not modify.
