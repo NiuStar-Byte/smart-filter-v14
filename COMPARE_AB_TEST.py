@@ -29,6 +29,18 @@ import time
 PHASE1_CUTOFF = datetime(2026, 3, 3, 13, 16, 0, tzinfo=timezone.utc)  # Mar 03 20:16 GMT+7 = 13:16 UTC - CRITICAL FIXES APPLIED (Fresh signals only)
 SIGNALS_FILE = "SENT_SIGNALS.jsonl"
 
+# ⚠️ PHASE 1 BASELINE - LOCKED (DO NOT CHANGE)
+# These values are frozen as the reference point for A/B test
+# Source: Locked at commit during deployment (2026-03-03)
+PHASE1_LOCKED = {
+    "total_signals": 1205,
+    "closed_trades": 1052,
+    "win_rate": 29.66,
+    "pnl": -5727.12,
+    "long_wr": 27.69,
+    "short_wr": 43.51
+}
+
 def load_and_split_signals():
     """Load all signals and split into Phase 1 & Phase 2"""
     phase1 = []

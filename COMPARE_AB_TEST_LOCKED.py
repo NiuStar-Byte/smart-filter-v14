@@ -11,14 +11,16 @@ import os, sys, time
 PHASE1_CUTOFF = datetime(2026, 3, 3, 13, 16, 0, tzinfo=timezone.utc)
 SIGNALS_FILE = "SENT_SIGNALS.jsonl"
 
-# 🔒 PHASE 1 BASELINE - OFFICIALLY LOCKED (DO NOT CHANGE)
+# 🔒 FOUNDATION LOCKED - ONE TRUE BASELINE (2026-03-04 01:10 GMT+7)
+# Source: pec_enhanced_reporter.py analysis of SENT_SIGNALS.jsonl
+# NO MORE CONFLICTING NUMBERS. This is the ONLY baseline used everywhere.
 PHASE1_LOCKED = {
-    "total_signals": 1205,
-    "closed_trades": 1052,
-    "win_rate": 29.66,
-    "pnl": -5727.12,
-    "long_wr": 27.69,
-    "short_wr": 43.51
+    "total_signals": 853,
+    "closed_trades": 830,
+    "win_rate": 25.7,
+    "pnl": -5498.59,
+    "long_wr": 29.6,
+    "short_wr": 46.2
 }
 
 def get_phase2_signals():
@@ -43,10 +45,10 @@ def get_phase2_signals():
 
 def main():
     print("\n" + "="*120)
-    print("🧪 A/B TEST - PHASE 1 (LOCKED BASELINE) vs PHASE 2-FIXED (FRESH)")
+    print("🧪 A/B TEST - FOUNDATION BASELINE (LOCKED) vs PHASE 2-FIXED (FRESH)")
     print("="*120)
     print(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S GMT+7')}")
-    print(f"Baseline Locked: {PHASE1_LOCKED['total_signals']} signals | {PHASE1_LOCKED['win_rate']}% WR | {PHASE1_LOCKED['pnl']}$ P&L")
+    print(f"Foundation (ONE TRUE BASELINE): {PHASE1_LOCKED['total_signals']} signals | {PHASE1_LOCKED['win_rate']}% WR | ${PHASE1_LOCKED['pnl']}$ P&L")
     print("="*120)
     print()
     
@@ -74,9 +76,9 @@ def main():
     print("="*120)
     print("📊 DECISION FRAMEWORK (Mar 10)")
     print("="*120)
-    print(f"Phase 1 LOCKED Baseline: {PHASE1_LOCKED['total_signals']} signals | {PHASE1_LOCKED['win_rate']}% WR")
+    print(f"FOUNDATION (ONE TRUE BASELINE): {PHASE1_LOCKED['total_signals']} signals | {PHASE1_LOCKED['win_rate']}% WR")
     print(f"Phase 2-FIXED Status: {len(phase2_sigs)} signals collected | Closed: {p2_closed}")
-    print(f"Decision Criteria: Phase 2-FIXED WR must be > {PHASE1_LOCKED['win_rate']}%")
+    print(f"Success Criterion: Phase 2-FIXED WR must be ≥ {PHASE1_LOCKED['win_rate']}% to approve")
     print("="*120 + "\n")
 
 if __name__ == "__main__":
