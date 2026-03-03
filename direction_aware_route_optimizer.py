@@ -104,10 +104,14 @@ def get_route_recommendation(route, direction, regime, reversal_strength_score=N
         elif combo == "LONG_BULL":
             return "✅ TREND_CONT: LONG trend continuation in BULL (favorable)"
         else:
-            return f"⚠️ TREND_CONT: {combo} (fallback route)"
+            return f"✅ TREND_CONT: {combo} (always allowed as fallback)"
     
+    elif route == "AMBIGUOUS":
+        return "❌ AMBIGUOUS (disabled in Phase 3B)"
+    elif route == "NONE":
+        return "❌ NONE (disabled in Phase 3B)"
     else:
-        return f"❌ {route} (disabled in Phase 3B)"
+        return f"❌ {route} (unknown route)"
 
 
 def route_filtering_rules(route, direction, regime):
@@ -156,8 +160,13 @@ def route_filtering_rules(route, direction, regime):
     if key in rules:
         return rules[key]
     
-    # Wildcard fallback (catch-all)
-    return {"action": "FILTER", "reason": f"Unknown combo: {key}"}
+    # Fallback for unknown combos (TREND_CONTINUATION always allowed as fallback)
+    if route == "TREND_CONTINUATION":
+        return {"action": "ALLOW", "reason": "Always allowed as fallback route"}
+    elif route == "AMBIGUOUS" or route == "NONE":
+        return {"action": "FILTER", "reason": f"{route} disabled in Phase 3B"}
+    else:
+        return {"action": "FILTER", "reason": f"Unknown route: {route}"}
 
 
 def format_route_log_tag(route, direction, regime, score):
