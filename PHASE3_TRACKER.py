@@ -1,31 +1,29 @@
 #!/usr/bin/env python3
 """
-PHASE 3 TRACKER - Unified Route Optimization Performance Monitor
+🔒 PHASE 3 TRACKER - HISTORICAL REFERENCE ONLY
 
-⚠️ CRITICAL: PHASE 1 BASELINE LOCKED AT 1,205 SIGNALS
+⚠️ STATUS: PHASE 3 WAS REVERTED (2026-03-03 14:50 GMT+7)
+   Phase 3 (route optimization) was found to collapse SHORT signals
+   Now running Phase 2-FIXED + Phase 3B instead
 
-Compares Phase 1 (Baseline - LOCKED) vs Phase 3 (Route-Optimized)
-Tracks impact of: AMBIGUOUS disable, NONE disable, direction enforcement, REVERSAL audit
+🔒 FOUNDATION BASELINE - LOCKED AT 853 SIGNALS (2026-03-04 01:10 GMT+7):
+  - All signals in current dataset analyzed by pec_enhanced_reporter.py
+  - 25.7% WR (locked, never changes)
+  - Used across ALL comparisons (COMPARE_AB_TEST_LOCKED, Phase 3, Phase 4A)
 
-PHASE 1 BASELINE (A - LOCKED):
-  - All signals BEFORE 2026-03-03 13:16 UTC (1,205 signals)
-  - 29.66% WR (locked, never changes)
-  - Used across all comparisons (A/B test, Phase 3, Phase 4A)
+⚠️ PHASE 3 WINDOW (Historical - Empty):
+  - Time window: Mar 2 14:30 UTC to Mar 3 13:16 UTC
+  - Status: REVERTED - not actively running
+  - Signals in this window: 0 (we're now collecting Phase 2-FIXED from 13:16 UTC onwards)
+  - This tracker shows historical data only (for reference/analysis)
 
-PHASE 3 (B):
-  - All signals from 2026-03-02 14:30 UTC to 2026-03-03 13:16 UTC
-  - Route-optimized (AMBIGUOUS disabled, NONE disabled)
-  - Reverted but tracked for analysis
+Current Active Phases:
+  ✅ Phase 2-FIXED - Direction-aware gates (live from Mar 3 13:16 UTC)
+  ✅ Phase 3B - Reversal quality gates (parallel with Phase 2-FIXED)
+  ✅ Phase 4A - Multi-TF alignment filter (independent)
 
 Usage:
-  python3 PHASE3_TRACKER.py
-
-Output:
-  - Phase 3 performance metrics
-  - Route distribution change
-  - Win rate improvement per route
-  - Direction enforcement effectiveness
-  - REVERSAL audit recommendation
+  python3 PHASE3_TRACKER.py --once
 """
 
 import json
@@ -37,14 +35,15 @@ PHASE3_START = datetime(2026, 3, 2, 14, 30, 0, tzinfo=timezone.utc)  # Mar 2 21:
 PHASE3_END = datetime(2026, 3, 3, 13, 16, 0, tzinfo=timezone.utc)    # Mar 03 20:16 GMT+7 = 13:16 UTC (when Phase 2-FIXED critical fixes deployed)
 SIGNALS_FILE = "SENT_SIGNALS.jsonl"
 
-# PHASE 1 BASELINE LOCKED VALUES (1,205 signals)
+# 🔒 FOUNDATION BASELINE LOCKED (2026-03-04 01:10 GMT+7)
+# NO MORE CONFLICTING NUMBERS - THIS IS THE ONLY BASELINE USED
 PHASE1_LOCKED = {
-    "total_signals": 1205,
-    "closed_trades": 1052,
-    "win_rate": 29.66,
-    "pnl": -5727.12,
-    "long_wr": 27.69,
-    "short_wr": 43.51
+    "total_signals": 853,
+    "closed_trades": 830,
+    "win_rate": 25.7,
+    "pnl": -5498.59,
+    "long_wr": 29.6,
+    "short_wr": 46.2
 }
 
 class Phase3Tracker:
@@ -74,7 +73,7 @@ class Phase3Tracker:
                         # Parse as naive datetime and make UTC
                         fired = datetime.fromisoformat(fired_str.split('+')[0]).replace(tzinfo=timezone.utc)
                         
-                        # PHASE 1: Everything BEFORE 13:16 UTC Mar 3 (LOCKED BASELINE - 1,205 signals)
+                        # PHASE 1: Everything BEFORE 13:16 UTC Mar 3 (LOCKED FOUNDATION - 853 signals)
                         if fired < PHASE1_CUTOFF:
                             self.phase1_signals.append(sig)
                         # PHASE 3: From 14:30 UTC Mar 2 TO 13:16 UTC Mar 3 (Route-optimized period)
@@ -185,8 +184,8 @@ class Phase3Tracker:
         print("📊 PHASE 3: UNIFIED ROUTE OPTIMIZATION - TRACKING REPORT")
         print("="*180)
         print(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S GMT+7')}")
-        print(f"Phase 1 Baseline: All signals BEFORE Mar 3 20:16 GMT+7 (LOCKED - 1,205 signals)")
-        print(f"Phase 3 Window: Mar 2 21:30 GMT+7 to Mar 3 20:16 GMT+7 (Route-optimized)")
+        print(f"🔒 FOUNDATION BASELINE (LOCKED): 853 signals @ 25.7% WR (2026-03-04 01:10 GMT+7)")
+        print(f"⚠️ PHASE 3 WINDOW: Mar 2 21:30 - Mar 3 20:16 GMT+7 (REVERTED - Historical reference)")
         print("="*180)
         print()
         
@@ -208,7 +207,7 @@ class Phase3Tracker:
             print("❌ Phase 1 baseline not available")
             return
         
-        print("METRIC                          │   PHASE 1 (Baseline)  │   PHASE 3 (Optimized) │   DELTA      │ STATUS")
+        print("METRIC                          │   FOUNDATION (Locked)  │   PHASE 3 (Reverted)  │   DELTA      │ STATUS")
         print("─"*180)
         
         # Overall metrics
@@ -258,7 +257,7 @@ class Phase3Tracker:
         
         print()
         print("="*180)
-        print("🛣️ ROUTE BREAKDOWN (Phase 1 - Baseline)")
+        print("🛣️ ROUTE BREAKDOWN (FOUNDATION - 853 Signals Locked)")
         print("="*180)
         print()
         
@@ -267,7 +266,7 @@ class Phase3Tracker:
         if m3 and m3['closed_trades'] > 0:
             print()
             print("="*180)
-            print("🛣️ ROUTE BREAKDOWN (Phase 3 - Route-Optimized)")
+            print("🛣️ ROUTE BREAKDOWN (Phase 3 - Reverted Window / Empty)")
             print("="*180)
             print()
             
