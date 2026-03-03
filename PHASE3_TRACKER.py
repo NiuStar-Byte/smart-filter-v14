@@ -303,28 +303,37 @@ class Phase3Tracker:
 if __name__ == "__main__":
     import sys
     import time
+    import os
     
-    # Check for --once flag (single run)
-    once_mode = '--once' in sys.argv
+    # PHASE 3 REVERTED - This script is historical reference only
+    print("\n" + "="*100)
+    print("⚠️  PHASE 3 TRACKER - HISTORICAL REFERENCE ONLY")
+    print("="*100)
+    print()
+    print("📌 STATUS: Phase 3 was REVERTED on 2026-03-03 14:50 GMT+7")
+    print()
+    print("🔄 CURRENT ACTIVE PHASES:")
+    print("   ✅ Phase 2-FIXED   → python3 COMPARE_AB_TEST_LOCKED.py")
+    print("   ✅ Phase 3B        → python3 track_phase3b_simple.py")
+    print("   ✅ Phase 4A        → (running independently)")
+    print()
+    print("📊 PHASE 3 WINDOW (HISTORICAL):")
+    print("   Time Range: Mar 2 21:30 UTC → Mar 3 20:16 UTC")
+    print("   Status: REVERTED (no signals collected)")
+    print("   Reason: Route optimization was found to collapse SHORT signals")
+    print()
+    print("💡 RECOMMENDATION:")
+    print("   Use COMPARE_AB_TEST_LOCKED.py to track Phase 2-FIXED progress")
+    print("   Use track_phase3b_simple.py to monitor Phase 3B quality gates")
+    print()
+    print("="*100 + "\n")
     
-    if once_mode:
+    # Optional: Show historical data if user wants
+    once_mode = '--once' in sys.argv or '--history' in sys.argv
+    
+    if '--history' in sys.argv:
+        print("📋 SHOWING HISTORICAL PHASE 3 DATA...\n")
         tracker = Phase3Tracker()
         tracker.print_report()
-    else:
-        # Live mode: refresh every 5 seconds
-        try:
-            while True:
-                # Clear screen
-                import os
-                os.system('clear' if os.name != 'nt' else 'cls')
-                
-                # Run tracker
-                tracker = Phase3Tracker()
-                tracker.print_report()
-                
-                # Print refresh info
-                print("\n[Refreshing in 5 seconds... Press Ctrl+C to stop]")
-                time.sleep(5)
-        except KeyboardInterrupt:
-            print("\n[Tracker stopped]")
-            sys.exit(0)
+    
+    sys.exit(0)
