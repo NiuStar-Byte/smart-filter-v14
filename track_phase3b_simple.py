@@ -10,6 +10,7 @@ from collections import defaultdict
 import sys
 import time
 import os
+import re
 
 def parse_phase3b_actual():
     """Parse ACTUAL Phase 3B logs from main_daemon.log"""
@@ -40,8 +41,17 @@ def parse_phase3b_actual():
             tf = parts[idx + 1]  # 15min, 30min, 1h
             symbol = parts[idx + 2].rstrip(':')
             
-            # Extract route decision and score
-            if "✅" in line or "✓" in line:
+            # Extract score from "(score: X.X)" at end of line
+            score_match = re.search(r'\(score:\s*([-\d.]+)\)', line)
+            score = 0.0
+            if score_match:
+                try:
+                    score = float(score_match.group(1))
+                except:
+                    score = 0.0
+            
+            # Approve if score > 0 (signal will be sent)
+            if score > 0:
                 metrics["approved"] += 1
                 route_indicator = "APPROVED"
             else:
@@ -131,7 +141,13 @@ def print_report(metrics):
     print("="*100)
     print(f"  Phase 3B has processed {total} signal checks")
     print(f"  Approval rate: {approved_pct:.1f}%")
-    if approved_pct > 60:
+    
+    # Check if logs are stale (all TREND_CONT with score 0 = old logs from before fix)
+    if approved_pct == 0.0 and metrics["by_route"].get("TREND_CONT", 0) == total:
+        print("  ⚠️  LOGS ARE STALE - All TREND_CONT have score 0 (from before fix was deployed)")
+        print("  📌 SOLUTION: Restart daemon with fresh code")
+        print("     Run: bash RESTART_DAEMON.sh")
+    elif approved_pct > 60:
         print("  ✅ Good - Quality gates are working, filtering out weak signals")
     elif approved_pct > 40:
         print("  ⚠️  Moderate - Gates filtering moderately, check if too strict")
