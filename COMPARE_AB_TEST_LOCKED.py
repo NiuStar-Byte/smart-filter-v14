@@ -7,6 +7,7 @@ One True Baseline. No conflicting numbers.
 import json
 from datetime import datetime, timezone
 import os, sys, time
+import subprocess
 
 # 🔒 FOUNDATION - THE ONLY BASELINE (LOCKED 2026-03-04 01:10 GMT+7)
 FOUNDATION = {
@@ -20,6 +21,10 @@ FOUNDATION = {
 
 SIGNALS_FILE = "SENT_SIGNALS.jsonl"
 PHASE2_CUTOFF = datetime(2026, 3, 3, 13, 16, 0, tzinfo=timezone.utc)
+
+def clear_screen():
+    """Clear terminal screen (cross-platform)"""
+    subprocess.call('clear' if os.name == 'posix' else 'cls', shell=True)
 
 def get_phase2_signals():
     """Load Phase 2-FIXED signals (after 13:16 UTC cutoff)"""
@@ -82,7 +87,9 @@ if __name__ == "__main__":
     else:
         try:
             while True:
+                clear_screen()
                 main()
                 time.sleep(5)
         except KeyboardInterrupt:
-            print("\n✅ Stopped")
+            clear_screen()
+            print("✅ Stopped\n")
