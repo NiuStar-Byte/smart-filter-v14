@@ -15,10 +15,6 @@ from collections import defaultdict
 import os
 from tier_config import TIER_THRESHOLDS
 
-# === PHASE 1 BASELINE CUTOFF (A/B Test Boundary) ===
-# Phase 1 baseline: All signals BEFORE 2026-03-03 13:16 UTC (when Phase 2-FIXED deployed)
-PHASE1_CUTOFF = datetime(2026, 3, 3, 13, 16, 0, tzinfo=timezone.utc)
-
 # === SYMBOL GROUPING (5D DIMENSION) ===
 SYMBOL_GROUPS = {
     "MAIN_BLOCKCHAIN": [
@@ -41,7 +37,7 @@ class PECEnhancedReporter:
         self.load_signals()
     
     def load_signals(self):
-        """Load PHASE 1 BASELINE signals from SENT_SIGNALS.jsonl (before A/B test cutoff)"""
+        """Load ALL signals from SENT_SIGNALS.jsonl (accumulate all fired signals)"""
         if not os.path.exists(self.sent_signals_file):
             print(f"[WARN] {self.sent_signals_file} not found")
             return
@@ -51,20 +47,7 @@ class PECEnhancedReporter:
                 for line in f:
                     try:
                         signal = json.loads(line.strip())
-                        # Only include Phase 1 baseline signals (before 2026-03-03 13:16 UTC)
-                        fired_str = signal.get('fired_time_utc', '')
-                        if fired_str:
-                            try:
-                                fired = datetime.fromisoformat(fired_str.replace('Z', '+00:00'))
-                                if fired.tzinfo is None:
-                                    fired = fired.replace(tzinfo=timezone.utc)
-                                if fired < PHASE1_CUTOFF:  # Only Phase 1 baseline
-                                    self.signals.append(signal)
-                            except:
-                                # If we can't parse, include it (legacy signals)
-                                self.signals.append(signal)
-                        else:
-                            self.signals.append(signal)
+                        self.signals.append(signal)
                     except:
                         pass
         except Exception as e:
