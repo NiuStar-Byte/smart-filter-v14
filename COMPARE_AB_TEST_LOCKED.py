@@ -51,9 +51,13 @@ def main():
     p2_closed = len([s for s in phase2_sigs if s.get('status') in ['TP_HIT', 'SL_HIT', 'TIMEOUT']])
     p2_wins = len([s for s in phase2_sigs if s.get('status') == 'TP_HIT'])
     p2_wr = (p2_wins / p2_closed * 100) if p2_closed > 0 else 0
-    p2_longs = len([s for s in phase2_sigs if s.get('direction') == 'LONG' and s.get('status') in ['TP_HIT', 'SL_HIT', 'TIMEOUT']])
-    p2_long_wins = len([s for s in phase2_sigs if s.get('direction') == 'LONG' and s.get('status') == 'TP_HIT'])
+    p2_longs = len([s for s in phase2_sigs if s.get('signal_type') == 'LONG' and s.get('status') in ['TP_HIT', 'SL_HIT', 'TIMEOUT']])
+    p2_long_wins = len([s for s in phase2_sigs if s.get('signal_type') == 'LONG' and s.get('status') == 'TP_HIT'])
     p2_long_wr = (p2_long_wins / p2_longs * 100) if p2_longs > 0 else 0
+    
+    p2_shorts = len([s for s in phase2_sigs if s.get('signal_type') == 'SHORT' and s.get('status') in ['TP_HIT', 'SL_HIT', 'TIMEOUT']])
+    p2_short_wins = len([s for s in phase2_sigs if s.get('signal_type') == 'SHORT' and s.get('status') == 'TP_HIT'])
+    p2_short_wr = (p2_short_wins / p2_shorts * 100) if p2_shorts > 0 else 0
     
     print("\n" + "="*100)
     print("🧪 A/B TEST - FOUNDATION vs PHASE 2-FIXED")
@@ -70,8 +74,8 @@ def main():
     print(f"Closed Trades       │  {FOUNDATION['closed_trades']:>6d}          │ {p2_closed:>6d}         │ {'✅' if p2_closed > 0 else '⏳'}")
     print("─"*100)
     print(f"Win Rate            │  {FOUNDATION['win_rate']:>6.1f}%         │ {p2_wr:>6.1f}%        │ {'✅ APPROVE' if p2_wr >= FOUNDATION['win_rate'] else '⏳ COLLECTING'}")
-    print(f"LONG WR             │  {FOUNDATION['long_wr']:>6.1f}%         │ {p2_long_wr:>6.1f}%        │ TBD")
-    print(f"SHORT WR            │  {FOUNDATION['short_wr']:>6.1f}%         │   TBD        │ TBD")
+    print(f"LONG WR             │  {FOUNDATION['long_wr']:>6.1f}%         │ {p2_long_wr:>6.1f}%        │ {'📈' if p2_longs > 10 else '⏳' if p2_longs > 0 else '⏸️'}")
+    print(f"SHORT WR            │  {FOUNDATION['short_wr']:>6.1f}%         │ {p2_short_wr:>6.1f}%        │ {'📈' if p2_shorts > 10 else '⏳' if p2_shorts > 0 else '⏸️'}")
     print("─"*100)
     print(f"Total P&L           │  ${FOUNDATION['pnl']:>9.2f}      │  TBD         │ TBD")
     print()
@@ -79,6 +83,7 @@ def main():
     print(f"📌 Success Criterion: Phase 2-FIXED WR ≥ {FOUNDATION['win_rate']}%")
     print(f"📌 Decision Date: Mar 10, 2026 14:30 GMT+7 (Day 7)")
     print(f"📌 Current Progress: {len(phase2_sigs)} signals collected | {p2_closed} closed")
+    print(f"   → LONG: {p2_longs} closed ({p2_long_wins} TP) | SHORT: {p2_shorts} closed ({p2_short_wins} TP)")
     print("="*100 + "\n")
 
 if __name__ == "__main__":
