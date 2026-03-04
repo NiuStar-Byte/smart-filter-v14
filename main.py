@@ -111,12 +111,23 @@ except Exception as e:
     print(f"[ERROR] Signal tracker init failed: {e}. Tracking disabled.", flush=True)
 
 # --- Configuration ---
-# Expanded 285-symbol perpetual list for maximum signal diversity
-# Cycle time: ~85-100 seconds (under 2-minute target)
-# === IMPORT SYMBOLS FROM SEPARATE CONFIG FILE (crash-safe separation) ===
-# Symbols now live in symbol_config_prod.py - if main.py crashes, symbols are protected
-from symbol_config_prod import get_active_symbols
-TOKENS = get_active_symbols()
+# Full liquid pairs from kucoin_orderbook.py - 90+ symbols
+TOKENS = [
+    "BTC-USDT", "ETH-USDT", "SOL-USDT", "XRP-USDT", "ADA-USDT", "AVAX-USDT", 
+    "XLM-USDT", "LINK-USDT", "POL-USDT", "BNB-USDT", "SKATE-USDT", "LA-USDT", 
+    "SPK-USDT", "ZKJ-USDT", "IP-USDT", "AERO-USDT", "BMT-USDT", "LQTY-USDT", 
+    "X-USDT", "RAY-USDT", "EPT-USDT", "ELDE-USDT", "MAGIC-USDT", "ACTSOL-USDT", 
+    "FUN-USDT", "CROSS-USDT", "KNC-USDT", "AIN-USDT", "ARK-USDT", "PORTAL-USDT", 
+    "ICNT-USDT", "OMNI-USDT", "PARTI-USDT", "VINE-USDT", "ZORA-USDT", "DUCK-USDT", 
+    "AUCTION-USDT", "ROAM-USDT", "FUEL-USDT", "TUT-USDT", "VOXEL-USDT", "ALU-USDT", 
+    "TURBO-USDT", "PROMPT-USDT", "HIPPO-USDT", "DOGE-USDT", "ALGO-USDT", "DOT-USDT", 
+    "NEWT-USDT", "SAHARA-USDT", "PEPE-USDT", "ERA-USDT", "PENGU-USDT", "CFX-USDT", 
+    "ENA-USDT", "SUI-USDT", "EIGEN-USDT", "UNI-USDT", "HYPE-USDT", "TON-USDT", 
+    "KAS-USDT", "HBAR-USDT", "ONDO-USDT", "VIRTUAL-USDT", "AAVE-USDT", "GALA-USDT", 
+    "PUMP-USDT", "WIF-USDT", "BERA-USDT", "DYDX-USDT", "KAITO-USDT", "ARKM-USDT", 
+    "ATH-USDT", "NMR-USDT", "ARB-USDT", "WLFI-USDT", "BIO-USDT", "ASTER-USDT", 
+    "XPL-USDT", "AVNT-USDT", "ORDER-USDT", "XAUT-USDT"
+]
 
 COOLDOWN = {"15min": 120, "30min": 240, "1h": 600}
 last_sent = {}
@@ -206,8 +217,6 @@ EMA_CONFIG = {
 }
 
 # cycle sleep can be controlled via environment variable (seconds)
-# INCREASED: 60s → 300s to allow 234-symbol workload + JSONL write completion
-# At 254s average cycle time, 300s provides buffer for signal storage
 CYCLE_SLEEP = int(os.getenv("CYCLE_SLEEP", "60"))
 
 # --- SuperGK helper: main_supergk_ok left for compatibility but main will bypass ---
