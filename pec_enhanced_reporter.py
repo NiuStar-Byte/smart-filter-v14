@@ -31,7 +31,7 @@ SYMBOL_GROUPS = {
 }
 
 class PECEnhancedReporter:
-    def __init__(self, sent_signals_file="SENT_SIGNALS.jsonl"):
+    def __init__(self, sent_signals_file="/Users/geniustarigan/.openclaw/workspace/SENT_SIGNALS.jsonl"):  # Daemon writes to workspace root
         self.sent_signals_file = sent_signals_file
         self.signals = []
         self.load_signals()

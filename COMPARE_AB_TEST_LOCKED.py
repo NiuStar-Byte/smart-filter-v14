@@ -19,7 +19,7 @@ FOUNDATION = {
     "pnl": -5498.59
 }
 
-SIGNALS_FILE = "SENT_SIGNALS.jsonl"
+SIGNALS_FILE = "/Users/geniustarigan/.openclaw/workspace/SENT_SIGNALS.jsonl"  # Daemon writes to workspace root
 PHASE2_CUTOFF = datetime(2026, 3, 3, 13, 16, 0, tzinfo=timezone.utc)
 
 def clear_screen():

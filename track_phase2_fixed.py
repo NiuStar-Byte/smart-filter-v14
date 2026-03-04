@@ -27,7 +27,7 @@ import subprocess
 import time
 import os
 
-SIGNALS_FILE = "SENT_SIGNALS.jsonl"
+SIGNALS_FILE = "/Users/geniustarigan/.openclaw/workspace/SENT_SIGNALS.jsonl"  # Daemon writes to workspace root
 
 # A/B Test Cutoff: 2026-03-03 20:16 GMT+7 = 2026-03-03 13:16 UTC (not deployment time!)
 PHASE2_FIXED_START = datetime(2026, 3, 3, 13, 16, 0, tzinfo=timezone.utc)  # A/B Test cutoff UTC
