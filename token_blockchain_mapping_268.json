@@ -1,0 +1,614 @@
+{
+  "BTC-USDT": {
+    "blockchain": "Bitcoin",
+    "consensus": "PoW"
+  },
+  "ETH-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "SOL-USDT": {
+    "blockchain": "Solana",
+    "consensus": "PoH"
+  },
+  "XRP-USDT": {
+    "blockchain": "Ripple",
+    "consensus": "XRPL"
+  },
+  "ADA-USDT": {
+    "blockchain": "Cardano",
+    "consensus": "PoS"
+  },
+  "AVAX-USDT": {
+    "blockchain": "Avalanche",
+    "consensus": "PoS"
+  },
+  "XLM-USDT": {
+    "blockchain": "Stellar",
+    "consensus": "Federated"
+  },
+  "LINK-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "POL-USDT": {
+    "blockchain": "Polygon",
+    "consensus": "PoS"
+  },
+  "BNB-USDT": {
+    "blockchain": "Binance",
+    "consensus": "PoS"
+  },
+  "SKATE-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "LA-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "SPK-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "ZKJ-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "IP-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "AERO-USDT": {
+    "blockchain": "Base",
+    "consensus": "L2"
+  },
+  "BMT-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "LQTY-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "X-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "RAY-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "EPT-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "ELDE-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "MAGIC-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "ACTSOL-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "FUN-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "CROSS-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "KNC-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "AIN-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "ARK-USDT": {
+    "blockchain": "Arweave",
+    "consensus": "PoW"
+  },
+  "PORTAL-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "ICNT-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "OMNI-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "PARTI-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "VINE-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "ZORA-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "DUCK-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "AUCTION-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "ROAM-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "FUEL-USDT": {
+    "blockchain": "Fuel",
+    "consensus": "PoS"
+  },
+  "TUT-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "VOXEL-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "ALU-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "TURBO-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "PROMPT-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "HIPPO-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "DOGE-USDT": {
+    "blockchain": "Dogecoin",
+    "consensus": "PoW"
+  },
+  "ALGO-USDT": {
+    "blockchain": "Algorand",
+    "consensus": "PoS"
+  },
+  "DOT-USDT": {
+    "blockchain": "Polkadot",
+    "consensus": "PoS"
+  },
+  "NEWT-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "SAHARA-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "PEPE-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "ERA-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "PENGU-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "CFX-USDT": {
+    "blockchain": "Conflux",
+    "consensus": "PoS"
+  },
+  "ENA-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "SUI-USDT": {
+    "blockchain": "Sui",
+    "consensus": "PoS"
+  },
+  "EIGEN-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "UNI-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "HYPE-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "TON-USDT": {
+    "blockchain": "TON",
+    "consensus": "PoS"
+  },
+  "KAS-USDT": {
+    "blockchain": "Kaspa",
+    "consensus": "PoW"
+  },
+  "HBAR-USDT": {
+    "blockchain": "Hedera",
+    "consensus": "PoS"
+  },
+  "ONDO-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "VIRTUAL-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "AAVE-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "GALA-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "PUMP-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "WIF-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "BERA-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "DYDX-USDT": {
+    "blockchain": "Cosmos",
+    "consensus": "PoS"
+  },
+  "KAITO-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "ARKM-USDT": {
+    "blockchain": "Arweave",
+    "consensus": "PoW"
+  },
+  "ATH-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "NMR-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "ARB-USDT": {
+    "blockchain": "Arbitrum",
+    "consensus": "L2"
+  },
+  "WLFI-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "BIO-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "ASTER-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "XPL-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "AVNT-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "ORDER-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "XAUT-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "OP-USDT": {
+    "blockchain": "Optimism",
+    "consensus": "L2"
+  },
+  "OPTIMISM-USDT": {
+    "blockchain": "Optimism",
+    "consensus": "L2"
+  },
+  "LIDO-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "LINA-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "OKB-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "RNDR-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "TAO-USDT": {
+    "blockchain": "Bittensor",
+    "consensus": "PoW"
+  },
+  "OCEAN-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "LUNA-USDT": {
+    "blockchain": "Terra",
+    "consensus": "PoS"
+  },
+  "CRV-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "CVX-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "LDO-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "STG-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "GNS-USDT": {
+    "blockchain": "Arbitrum",
+    "consensus": "L2"
+  },
+  "GMX-USDT": {
+    "blockchain": "Arbitrum",
+    "consensus": "L2"
+  },
+  "PERP-USDT": {
+    "blockchain": "Arbitrum",
+    "consensus": "L2"
+  },
+  "JUP-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "YGG-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "SAND-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "MANA-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "ENJ-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "AXS-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "ALICE-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "FLOW-USDT": {
+    "blockchain": "Flow",
+    "consensus": "PoS"
+  },
+  "ZEC-USDT": {
+    "blockchain": "Zcash",
+    "consensus": "PoW"
+  },
+  "FIL-USDT": {
+    "blockchain": "Filecoin",
+    "consensus": "PoS"
+  },
+  "STORJ-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "AR-USDT": {
+    "blockchain": "Arweave",
+    "consensus": "PoW"
+  },
+  "CHIA-USDT": {
+    "blockchain": "Chia",
+    "consensus": "PoSpace"
+  },
+  "THETA-USDT": {
+    "blockchain": "Theta",
+    "consensus": "PoS"
+  },
+  "TFUEL-USDT": {
+    "blockchain": "Theta",
+    "consensus": "PoS"
+  },
+  "BAND-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "API3-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "PYTH-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "LOOKS-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "X2Y2-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "RARI-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "BLUR-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "MKR-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "COMP-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "AURA-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "BAL-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "APT-USDT": {
+    "blockchain": "Aptos",
+    "consensus": "PoS"
+  },
+  "SEI-USDT": {
+    "blockchain": "Sei",
+    "consensus": "PoS"
+  },
+  "MOV-USDT": {
+    "blockchain": "Movement",
+    "consensus": "PoS"
+  },
+  "NEON-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "WLD-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "SHIB-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "FLOKI-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "BONK-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "FIDA-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "COPE-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "ZRX-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "BNT-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "LRC-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "SNX-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "SYN-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "GROK-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "BOME-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "POPCAT-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "CHEX-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "PIXEL-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "SLERF-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "PUPS-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "MEW-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "PONKE-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "SPX-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "TURBOS-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "CETUS-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "SCNSOL-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  },
+  "MANTA-USDT": {
+    "blockchain": "Ethereum",
+    "consensus": "PoS"
+  }
+}
