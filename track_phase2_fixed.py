@@ -29,8 +29,8 @@ import os
 
 SIGNALS_FILE = "SENT_SIGNALS.jsonl"
 
-# Phase 2-FIXED deployment time (2026-03-03 17:36 GMT+7 = 2026-03-03 10:36 UTC)
-PHASE2_FIXED_START = datetime(2026, 3, 3, 10, 36, 0, tzinfo=timezone.utc)  # Deployment time UTC
+# A/B Test Cutoff: 2026-03-03 20:16 GMT+7 = 2026-03-03 13:16 UTC (not deployment time!)
+PHASE2_FIXED_START = datetime(2026, 3, 3, 13, 16, 0, tzinfo=timezone.utc)  # A/B Test cutoff UTC
 
 def parse_utc(time_str):
     """Parse UTC timestamp."""
