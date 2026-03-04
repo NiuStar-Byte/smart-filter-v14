@@ -206,7 +206,9 @@ EMA_CONFIG = {
 }
 
 # cycle sleep can be controlled via environment variable (seconds)
-CYCLE_SLEEP = int(os.getenv("CYCLE_SLEEP", "60"))
+# INCREASED: 60s → 300s to allow 234-symbol workload + JSONL write completion
+# At 254s average cycle time, 300s provides buffer for signal storage
+CYCLE_SLEEP = int(os.getenv("CYCLE_SLEEP", "300"))
 
 # --- SuperGK helper: main_supergk_ok left for compatibility but main will bypass ---
 def main_supergk_ok(bias, orderbook_result, density_result, analyzer_result):
