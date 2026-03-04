@@ -276,12 +276,12 @@ def send_telegram_alert(
     else:
         consensus_display = "⛓️ Consensus: Unknown"
 
-    # RR and TP/SL source line (ATR-based 2:1 by default)
+    # RR and TP/SL source line (ATR-based, dynamic ratio)
     rr_line = ""
     if achieved_rr is not None:
         rr_str = f"{achieved_rr:.2f}" if isinstance(achieved_rr, (int, float)) else "N/A"
-        # Source indicates method: atr_2_to_1_long, atr_2_to_1_short, etc.
-        source_display = "ATR-Based 2:1 RR"
+        # Source indicates method: ATR-based with dynamic RR (1.5:1, 2.0:1, etc.)
+        source_display = f"ATR-Based {achieved_rr:.1f}:1 RR" if isinstance(achieved_rr, (int, float)) else "ATR-Based RR"
         rr_line = f"📊 R:R: {rr_str}:1 | {source_display}"
 
     # Build message lines WITHOUT any blank empty lines
