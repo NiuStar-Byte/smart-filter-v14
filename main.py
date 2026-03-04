@@ -817,8 +817,6 @@ def run_cycle():
                                 print(f"[PHASE2-FIXED-REJECT] 15min {symbol} {signal_type}: "
                                       f"{score:.1f} < {min_threshold} (below {Route} threshold)", flush=True)
                                 continue  # Skip signal
-                            
-                            score = adjusted_score  # Use adjusted score for subsequent checks
                         
                         except Exception as e:
                             print(f"[SCORE-ADJUST] Error in 15min: {e}", flush=True)
