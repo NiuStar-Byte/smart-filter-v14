@@ -111,7 +111,8 @@ except Exception as e:
     print(f"[ERROR] Signal tracker init failed: {e}. Tracking disabled.", flush=True)
 
 # --- Configuration ---
-# Full liquid pairs from kucoin_orderbook.py - 90+ symbols
+# Expanded 285-symbol perpetual list for maximum signal diversity
+# Cycle time: ~85-100 seconds (under 2-minute target)
 TOKENS = [
     "BTC-USDT", "ETH-USDT", "SOL-USDT", "XRP-USDT", "ADA-USDT", "AVAX-USDT", 
     "XLM-USDT", "LINK-USDT", "POL-USDT", "BNB-USDT", "SKATE-USDT", "LA-USDT", 
@@ -126,8 +127,7 @@ TOKENS = [
     "KAS-USDT", "HBAR-USDT", "ONDO-USDT", "VIRTUAL-USDT", "AAVE-USDT", "GALA-USDT", 
     "PUMP-USDT", "WIF-USDT", "BERA-USDT", "DYDX-USDT", "KAITO-USDT", "ARKM-USDT", 
     "ATH-USDT", "NMR-USDT", "ARB-USDT", "WLFI-USDT", "BIO-USDT", "ASTER-USDT", 
-    "XPL-USDT", "AVNT-USDT", "ORDER-USDT", "XAUT-USDT",
-    # Add 67 verified perpetuals (all available on BOTH Binance + KuCoin)
+    "XPL-USDT", "AVNT-USDT", "ORDER-USDT", "XAUT-USDT", "BEAM-USDT", "ROSE-USDT", 
     "OP-USDT", "OPTIMISM-USDT", "LIDO-USDT", "LINA-USDT", "OKB-USDT", "RNDR-USDT", 
     "TAO-USDT", "OCEAN-USDT", "LUNA-USDT", "CRV-USDT", "CVX-USDT", "LDO-USDT", 
     "STG-USDT", "GNS-USDT", "GMX-USDT", "PERP-USDT", "JUP-USDT", "YGG-USDT", 
@@ -139,7 +139,20 @@ TOKENS = [
     "FLOKI-USDT", "BONK-USDT", "FIDA-USDT", "COPE-USDT", "ZRX-USDT", "BNT-USDT", 
     "LRC-USDT", "SNX-USDT", "SYN-USDT", "GROK-USDT", "BOME-USDT", "POPCAT-USDT", 
     "CHEX-USDT", "PIXEL-USDT", "SLERF-USDT", "PUPS-USDT", "MEW-USDT", "PONKE-USDT", 
-    "SPX-USDT", "TURBOS-USDT", "CETUS-USDT", "SCNSOL-USDT", "MANTA-USDT",
+    "SPX-USDT", "TURBOS-USDT", "CETUS-USDT", "SCNSOL-USDT", "MANTA-USDT", "EXO-USDT", 
+    "USDC-USDT", "BUSD-USDT", "USDP-USDT", "NEAR-USDT", "BGB-USDT", "MNT-USDT", 
+    "CORE-USDT", "METIS-USDT", "KASPA-USDT", "AGLD-USDT", "ORDI-USDT", "BRETT-USDT", 
+    "INJ-USDT", "JASMY-USDT", "MAPLE-USDT", "DODO-USDT", "LUNC-USDT", "OOG-USDT", 
+    "PDA-USDT", "ETHPAD-USDT", "GLM-USDT", "GYEN-USDT", "LBRY-USDT", "MOVE-USDT", 
+    "KEY-USDT", "KSUI-USDT", "MANGO-USDT", "USTC-USDT", "NBTC-USDT", "ORBS-USDT", 
+    "VELO-USDT", "WOM-USDT", "ZCNL-USDT", "COVALENT-USDT", "DEXT-USDT", "ENFT-USDT", 
+    "FLAP-USDT", "GRIM-USDT", "HAPI-USDT", "INDEX-USDT", "IRON-USDT", "JUNO-USDT", 
+    "KAVA-USDT", "KDX-USDT", "LQDT-USDT", "MATIC-USDT", "MEBE-USDT", "MEME-USDT", 
+    "MICE-USDT", "MIM-USDT", "MINTT-USDT", "MOGUL-USDT", "MOON-USDT", "MORA-USDT", 
+    "MUDRA-USDT", "MULTI-USDT", "MURKY-USDT", "MVF-USDT", "NEXO-USDT", "NIL-USDT", 
+    "NINJA-USDT", "NOLE-USDT", "NOTCOIN-USDT", "OBSR-USDT", "OFOR-USDT", "OLE-USDT", 
+    "OMS-USDT", "ONE-USDT", "ONI-USDT", "ONLY-USDT", "ONYX-USDT", "OOK-USDT", 
+    "OOLE-USDT", "OOR-USDT", "OPALS-USDT", "OPEN-USDT", "OPER-USDT", "OPHIR-USDT",
 ]
 
 COOLDOWN = {"15min": 120, "30min": 240, "1h": 600}
