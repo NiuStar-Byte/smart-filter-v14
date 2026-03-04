@@ -138,7 +138,7 @@ def generate_daily_report(auto_refresh=True):
         print_report(results, "(PHASE 2-FIXED ONLY)", auto_refresh=auto_refresh)
         
         # Summary section
-        total_signals = sum(sum(len(v) for k, v in regime_dict.items()) for regime_dict in results.values())
+        total_signals = sum(sum(v.get('total', 0) for v in regime_dict.values()) for regime_dict in results.values())
         print(f"\n📈 SUMMARY")
         print(f"  Total signals (Phase 2-FIXED): {total_signals}")
         print(f"  Deployment time: {PHASE2_FIXED_START.strftime('%Y-%m-%d %H:%M:%S UTC')}")
