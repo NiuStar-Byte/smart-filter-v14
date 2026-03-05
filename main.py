@@ -117,12 +117,13 @@ except Exception as e:
 # --- Configuration ---
 # Full liquid pairs from kucoin_orderbook.py - 90+ symbols
 TOKENS = [
-    # === 92 SYMBOLS (82 original + 10 new added 2026-03-05 14:25 GMT+7) ===
+    # === 91 SYMBOLS (82 original + 10 new - 1 delisted: ELDE-USDT removed 2026-03-05 23:58) ===
     # NEW ADDS: ATOM-USDT, AGLD-USDT, APT-USDT, INJ-USDT, NEAR-USDT, OCEAN-USDT, OP-USDT, RNDR-USDT, SEI-USDT, TAO-USDT
+    # REMOVED: ELDE-USDT (no data on KuCoin perpetuals)
     "BTC-USDT", "ETH-USDT", "SOL-USDT", "XRP-USDT", "ADA-USDT", "AVAX-USDT", 
     "XLM-USDT", "LINK-USDT", "POL-USDT", "BNB-USDT", "SKATE-USDT", "LA-USDT", 
     "SPK-USDT", "ZKJ-USDT", "IP-USDT", "AERO-USDT", "BMT-USDT", "LQTY-USDT", 
-    "X-USDT", "RAY-USDT", "EPT-USDT", "ELDE-USDT", "MAGIC-USDT", "ACTSOL-USDT", 
+    "X-USDT", "RAY-USDT", "EPT-USDT", "MAGIC-USDT", "ACTSOL-USDT", 
     "FUN-USDT", "CROSS-USDT", "KNC-USDT", "AIN-USDT", "ARK-USDT", "PORTAL-USDT", 
     "ICNT-USDT", "OMNI-USDT", "PARTI-USDT", "VINE-USDT", "ZORA-USDT", "DUCK-USDT", 
     "AUCTION-USDT", "ROAM-USDT", "FUEL-USDT", "TUT-USDT", "VOXEL-USDT", "ALU-USDT", 
