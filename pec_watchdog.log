@@ -2831,3 +2831,9 @@
 [2026-03-05 21:00:12] ⚠️  PEC Executor died (crash #1). Restarting...
 [2026-03-05 21:00:14] ✅ PEC Executor recovered after 1 crash(es)
 [2026-03-05 21:00:14] ✅ PEC Executor started (PID will auto-continue)
+[2026-03-05 21:00:44] ⚠️  PEC Executor died (crash #1). Restarting...
+[2026-03-05 21:00:44] ✅ PEC Executor recovered after 1 crash(es)
+[2026-03-05 21:00:46] ✅ PEC Executor started (PID will auto-continue)
+[2026-03-05 21:01:14] ⚠️  PEC Executor died (crash #1). Restarting...
+[2026-03-05 21:01:16] ✅ PEC Executor recovered after 1 crash(es)
+[2026-03-05 21:01:16] ✅ PEC Executor started (PID will auto-continue)

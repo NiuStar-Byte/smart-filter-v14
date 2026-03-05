@@ -2078,3 +2078,15 @@
 {"ts": "2026-03-05T14:00:25.523668+00:00", "msg": "\u274c ERROR: BUY Down $2.46 (orig $16.37) @ 0.390 | Bitcoin Up or Down - March 5, 9:00AM-9:05AM ET"}
 {"ts": "2026-03-05T14:00:25.616598+00:00", "msg": "\u274c REJECTED: BUY Up $1.93 (orig $12.87) @ 0.585 | Bitcoin Up or Down - March 5, 9:00AM-9:05AM ET"}
 {"ts": "2026-03-05T14:00:38.711747+00:00", "msg": "\u274c ERROR: BUY Up $3.00 (orig $96.38) @ 0.527 | Bitcoin Up or Down - March 5, 9:00AM-9:05AM ET"}
+{"ts": "2026-03-05T14:00:40.585603+00:00", "msg": "\u274c ERROR: BUY Down $3.00 (orig $34.89) @ 0.452 | Bitcoin Up or Down - March 5, 9:00AM-9:05AM ET"}
+{"ts": "2026-03-05T14:00:42.538082+00:00", "msg": "\u274c ERROR: BUY Up $3.00 (orig $24.41) @ 0.555 | Bitcoin Up or Down - March 5, 9:00AM-9:05AM ET"}
+{"ts": "2026-03-05T14:00:42.631066+00:00", "msg": "\u274c REJECTED: BUY Up $2.66 (orig $17.76) @ 0.555 | Bitcoin Up or Down - March 5, 9:00AM-9:15AM ET"}
+{"ts": "2026-03-05T14:00:42.722554+00:00", "msg": "\u274c REJECTED: BUY Down $2.19 (orig $14.62) @ 0.443 | Bitcoin Up or Down - March 5, 9:00AM-9:15AM ET"}
+{"ts": "2026-03-05T14:00:42.813837+00:00", "msg": "\u274c REJECTED: BUY Down $1.44 (orig $9.57) @ 0.435 | Bitcoin Up or Down - March 5, 9:00AM-9:05AM ET"}
+{"ts": "2026-03-05T14:00:55.030877+00:00", "msg": "\u274c ERROR: BUY Up $3.00 (orig $70.77) @ 0.500 | Ethereum Up or Down - March 5, 9AM ET"}
+{"ts": "2026-03-05T14:00:56.865711+00:00", "msg": "\u274c ERROR: BUY Up $3.00 (orig $44.65) @ 0.520 | Bitcoin Up or Down - March 5, 9AM ET"}
+{"ts": "2026-03-05T14:00:57.264142+00:00", "msg": "\u274c REJECTED: BUY Up $3.00 (orig $37.44) @ 0.614 | Bitcoin Up or Down - March 5, 9:00AM-9:05AM ET"}
+{"ts": "2026-03-05T14:00:58.762741+00:00", "msg": "\u274c ERROR: BUY Up $3.00 (orig $36.26) @ 0.594 | Bitcoin Up or Down - March 5, 9:00AM-9:15AM ET"}
+{"ts": "2026-03-05T14:00:58.855394+00:00", "msg": "\u274c REJECTED: BUY Down $1.67 (orig $11.16) @ 0.402 | Bitcoin Up or Down - March 5, 9:00AM-9:05AM ET"}
+{"ts": "2026-03-05T14:00:58.946562+00:00", "msg": "\u274c REJECTED: BUY Down $1.35 (orig $9.02) @ 0.410 | Bitcoin Up or Down - March 5, 9:00AM-9:15AM ET"}
+{"ts": "2026-03-05T14:01:11.061703+00:00", "msg": "\u274c ERROR: BUY Down $3.00 (orig $228.84) @ 0.469 | Bitcoin Up or Down - March 5, 9:00AM-9:05AM ET"}
