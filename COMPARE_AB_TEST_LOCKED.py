@@ -69,7 +69,7 @@ def main():
     print()
     print("📊 SIGNAL COMPOSITION:")
     print("   • FOUNDATION: 853 signals (locked baseline, immutable)")
-    print("   • NEW (Phase 2-PRIOR): Fired before Mar 3 13:16 UTC, but chronologically newer")
+    print("   • NEW (Phase 2-PRIOR): 141 signals | Fired before Mar 3 13:16 UTC, but chronologically newer")
     print("   • NEW (Phase 2-FIXED): Fired after Mar 3 13:16 UTC ← THIS PHASE TRACKS ONLY PHASE 2-FIXED")
     print()
     print(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S GMT+7')}")
