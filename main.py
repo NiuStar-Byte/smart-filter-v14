@@ -12,6 +12,8 @@ import random
 import pytz
 from datetime import datetime
 import uuid as uuid_lib
+import signal as signal_module
+import sys
 from kucoin_data import get_live_entry_price, DEFAULT_SLIPPAGE
 from kucoin_data import get_ohlcv
 from smart_filter import SmartFilter
@@ -94,9 +96,11 @@ except Exception as e:
 
 # === INITIALIZE SENT SIGNAL TRACKER (PEC) ===
 try:
-    _sent_signal_tracker = get_signal_sent_tracker("SENT_SIGNALS.jsonl")
+    # Use workspace root, not submodule directory
+    sent_signals_path = "/Users/geniustarigan/.openclaw/workspace/SENT_SIGNALS.jsonl"
+    _sent_signal_tracker = get_signal_sent_tracker(sent_signals_path)
     _sent_tracker_ready = True
-    print(f"[INIT] Sent signal tracker ready: {os.path.abspath('SENT_SIGNALS.jsonl')}", flush=True)
+    print(f"[INIT] Sent signal tracker ready: {os.path.abspath(sent_signals_path)}", flush=True)
 except Exception as e:
     _sent_tracker_ready = False
     print(f"[ERROR] Sent signal tracker init failed: {e}. PEC will not have execution data.", flush=True)
@@ -113,6 +117,8 @@ except Exception as e:
 # --- Configuration ---
 # Full liquid pairs from kucoin_orderbook.py - 90+ symbols
 TOKENS = [
+    # === 92 SYMBOLS (82 original + 10 new added 2026-03-05 14:25 GMT+7) ===
+    # NEW ADDS: ATOM-USDT, AGLD-USDT, APT-USDT, INJ-USDT, NEAR-USDT, OCEAN-USDT, OP-USDT, RNDR-USDT, SEI-USDT, TAO-USDT
     "BTC-USDT", "ETH-USDT", "SOL-USDT", "XRP-USDT", "ADA-USDT", "AVAX-USDT", 
     "XLM-USDT", "LINK-USDT", "POL-USDT", "BNB-USDT", "SKATE-USDT", "LA-USDT", 
     "SPK-USDT", "ZKJ-USDT", "IP-USDT", "AERO-USDT", "BMT-USDT", "LQTY-USDT", 
@@ -126,7 +132,9 @@ TOKENS = [
     "KAS-USDT", "HBAR-USDT", "ONDO-USDT", "VIRTUAL-USDT", "AAVE-USDT", "GALA-USDT", 
     "PUMP-USDT", "WIF-USDT", "BERA-USDT", "DYDX-USDT", "KAITO-USDT", "ARKM-USDT", 
     "ATH-USDT", "NMR-USDT", "ARB-USDT", "WLFI-USDT", "BIO-USDT", "ASTER-USDT", 
-    "XPL-USDT", "AVNT-USDT", "ORDER-USDT", "XAUT-USDT"
+    "XPL-USDT", "AVNT-USDT", "ORDER-USDT", "XAUT-USDT",
+    # NEW SYMBOLS (2026-03-05 14:25 GMT+7) - 10 validated dual-listed perpetuals (ATOM, AGLD, APT, INJ, NEAR, OCEAN, OP, RNDR, SEI, TAO)
+    "ATOM-USDT", "AGLD-USDT", "APT-USDT", "INJ-USDT", "NEAR-USDT", "OCEAN-USDT", "OP-USDT", "RNDR-USDT", "SEI-USDT", "TAO-USDT"
 ]
 
 COOLDOWN = {"15min": 120, "30min": 240, "1h": 600}
@@ -158,12 +166,15 @@ def initialize_last_sent():
     import time
     now = time.time()
     
+    # Use workspace root, not submodule directory
+    sent_signals_path = "/Users/geniustarigan/.openclaw/workspace/SENT_SIGNALS.jsonl"
+    
     try:
-        if not os.path.exists("SENT_SIGNALS.jsonl"):
+        if not os.path.exists(sent_signals_path):
             return
         
         # Read last 100 lines of SENT_SIGNALS.jsonl to find recent signals
-        with open("SENT_SIGNALS.jsonl", "r") as f:
+        with open(sent_signals_path, "r") as f:
             lines = f.readlines()
         
         # Process recent signals (last 200 lines, ~10 mins of signals)
@@ -483,52 +494,70 @@ DEDUP_WINDOWS = {
     "1h": 4800       # 80 minutes in seconds
 }
 
-def is_duplicate_signal(symbol, timeframe, signal_type):
-    """
-    Check if this signal (symbol + timeframe + signal_type) was sent recently
-    within the dedup window for that timeframe.
+# === DEDUP CACHE (loaded once per cycle, not 603 times!) ===
+_dedup_cache = None
+_dedup_cache_time = None
+
+def load_dedup_cache():
+    """Load SENT_SIGNALS.jsonl ONCE per cycle into memory"""
+    global _dedup_cache, _dedup_cache_time
     
-    Returns: True if duplicate (should skip), False if new signal (should send)
-    """
+    sent_signals_path = "/Users/geniustarigan/.openclaw/workspace/SENT_SIGNALS.jsonl"
+    _dedup_cache = []
+    _dedup_cache_time = datetime.now(pytz.UTC)
+    
+    if not os.path.exists(sent_signals_path):
+        return  # File doesn't exist yet
+    
     try:
-        # Check if SENT_SIGNALS.jsonl exists
-        sent_signals_path = "SENT_SIGNALS.jsonl"
-        if not os.path.exists(sent_signals_path):
-            return False  # No file = no duplicates possible
-        
-        # Get dedup window for this timeframe
-        window_seconds = DEDUP_WINDOWS.get(timeframe, 1200)
-        current_time = datetime.now(pytz.UTC)
-        
-        # Read SENT_SIGNALS.jsonl line by line
         with open(sent_signals_path, 'r') as f:
             for line in f:
                 if not line.strip():
                     continue
                 try:
-                    signal_record = json.loads(line)
-                    
-                    # Check if same symbol + timeframe + signal_type
-                    if (signal_record.get('symbol') == symbol and 
-                        signal_record.get('timeframe') == timeframe and 
-                        signal_record.get('signal_type') == signal_type):
-                        
-                        # Check if within dedup window
-                        sent_time_str = signal_record.get('sent_time_utc')
-                        if sent_time_str:
-                            sent_time = datetime.fromisoformat(sent_time_str.replace('Z', '+00:00'))
-                            if not sent_time.tzinfo:
-                                sent_time = pytz.UTC.localize(sent_time)
-                            
-                            time_diff_seconds = (current_time - sent_time).total_seconds()
-                            
-                            # If within window = duplicate
-                            if time_diff_seconds < window_seconds:
-                                print(f"[DEDUP] {symbol} {timeframe} {signal_type}: Found duplicate from {time_diff_seconds:.0f}s ago. SKIPPING.", flush=True)
-                                return True
-                
+                    _dedup_cache.append(json.loads(line))
                 except json.JSONDecodeError:
                     continue
+        print(f"[DEDUP] Loaded {len(_dedup_cache)} signals into cache (instead of reading file 603 times!)", flush=True)
+    except Exception as e:
+        print(f"[DEDUP-LOAD-ERROR] {e}", flush=True)
+        _dedup_cache = []
+
+def is_duplicate_signal(symbol, timeframe, signal_type):
+    """
+    Check if this signal (symbol + timeframe + signal_type) was sent recently.
+    Uses in-memory cache loaded once per cycle (NOT file I/O 603 times!)
+    
+    Returns: True if duplicate (should skip), False if new signal (should send)
+    """
+    global _dedup_cache, _dedup_cache_time
+    
+    if _dedup_cache is None or _dedup_cache_time is None:
+        return False  # Cache not initialized
+    
+    try:
+        window_seconds = DEDUP_WINDOWS.get(timeframe, 1200)
+        current_time = datetime.now(pytz.UTC)
+        
+        # Check in-memory cache (O(n) but n is small and we only do this once per cycle)
+        for signal_record in _dedup_cache:
+            # Check if same symbol + timeframe + signal_type
+            if (signal_record.get('symbol') == symbol and 
+                signal_record.get('timeframe') == timeframe and 
+                signal_record.get('signal_type') == signal_type):
+                
+                # Check if within dedup window
+                sent_time_str = signal_record.get('sent_time_utc')
+                if sent_time_str:
+                    sent_time = datetime.fromisoformat(sent_time_str.replace('Z', '+00:00'))
+                    if not sent_time.tzinfo:
+                        sent_time = pytz.UTC.localize(sent_time)
+                    
+                    time_diff_seconds = (current_time - sent_time).total_seconds()
+                    
+                    # If within window = duplicate
+                    if time_diff_seconds < window_seconds:
+                        return True  # Duplicate found
         
         # No duplicate found
         return False
@@ -542,6 +571,10 @@ def run_cycle():
     Single pass over all TOKENS. Returns list of valid_debug dicts collected during this cycle.
     """
     print("[INFO] Starting Smart Filter cycle (single pass)...", flush=True)
+    
+    # === CRITICAL FIX: Load dedup cache ONCE per cycle (not 603 times!) ===
+    load_dedup_cache()
+    
     logger = SignalLogger(enabled=True)  # Clean, informative logging
     valid_debugs = []
     now = time.time()
