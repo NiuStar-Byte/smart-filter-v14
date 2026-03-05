@@ -625,9 +625,6 @@ def run_cycle():
                     # gates_passed = DirectionAwareGatekeeper.check_all_gates(...) - DISABLED 2026-03-06 00:06 GMT+7
                     signal_type = res15.get("bias", "UNKNOWN")
                     gates_passed = True  # FIX: Disable PHASE2-FIXED gates, proceed with SuperGK
-                        # Fail gracefully - still allow signal if gates can't be checked
-                        pass
-                    # ===== END PHASE 2-FIXED GATES =====
                     
                     last15 = last_sent.get(key15, 0)
                     if now - last15 >= COOLDOWN["15min"]:
@@ -891,13 +888,12 @@ def run_cycle():
                             print(f"[DEDUP-CYCLE] 15min {symbol_val} {signal_type}: Already sent in THIS CYCLE. SKIPPING.", flush=True)
                             continue
                         
-                        # PHASE 4A: Check 30min+1h alignment (Scenario 4)
-                        alignment_allowed, trend_30, trend_1h, alignment_reason = check_multitf_alignment_30_1h(symbol_val, ohlcv_data)
-                        print(f"[PHASE4A-S4] 15min {symbol_val}: {alignment_reason}", flush=True)
-                        
-                        if not alignment_allowed:
-                            print(f"[PHASE4A-S4-FILTERED] 15min {symbol_val} {signal_type}: Rejected by 30min+1h filter", flush=True)
-                            continue
+                        # DISABLED: PHASE 4A: Check 30min+1h alignment (Scenario 4)
+                        # This was rejecting ALL signals - disabled 2026-03-06 00:10 GMT+7
+                        # alignment_allowed, trend_30, trend_1h, alignment_reason = check_multitf_alignment_30_1h(symbol_val, ohlcv_data)
+                        # if not alignment_allowed:
+                        #     continue
+                        alignment_allowed = True  # FIX: Allow all signals to proceed
                         
                         # CRITICAL: Deduplication check (prevent duplicate within DEDUP_WINDOWS)
                         if is_duplicate_signal(symbol_val, "15min", signal_type):
