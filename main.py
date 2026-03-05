@@ -618,12 +618,6 @@ def run_cycle():
                     regime15 = sf15._market_regime()
                     res15 = sf15.analyze()
 
-                # CRITICAL: Log ALL 15min signals attempting to pass filters_ok check
-                if isinstance(res15, dict):
-                    res15_score = res15.get("score", 0)
-                    res15_filters_ok = res15.get("filters_ok", False)
-                    print(f"[CRITICAL-15min] {symbol}: score={res15_score} | filters_ok={res15_filters_ok} | min_score should be 10", flush=True)
-                
                 if isinstance(res15, dict) and res15.get("filters_ok") is True:
                     
                     # ===== DISABLED: PHASE 2-FIXED GATES WERE TOO STRICT (blocking all signals)
@@ -840,11 +834,6 @@ def run_cycle():
                         # RR acceptable: Store signal + Fire
                         print(f"[RR_FILTER] 15min signal ACCEPTED: {symbol_val} - RR {achieved_rr_value} >= MIN {MIN_ACCEPTED_RR}", flush=True)
                         
-                        # DEFENSIVE GATE: Verify score >= 10 for 15min (default min_score)
-                        if score < 10:
-                            print(f"[CRITICAL-REJECT] 15min {symbol_val}: score={score} < 10 (min_score gate). BLOCKING STORAGE.", flush=True)
-                            continue  # Reject this signal
-                        
                         # Store signal to JSONL
                         tp_pct_val = ((tp - entry_price) / entry_price * 100) if tp and entry_price else 0
                         sl_pct_val = ((sl - entry_price) / entry_price * 100) if sl and entry_price else 0
@@ -973,7 +962,7 @@ def run_cycle():
                 if df30 is None or df30.empty:
                     res30 = None
                 else:
-                    sf30 = SmartFilter(symbol, df30, min_score=14, tf="30min")  # RESTORED: explicit 14 for 30min (prevents score=9 signals)
+                    sf30 = SmartFilter(symbol, df30, tf="30min")  # FIX: 2026-03-06 - use default min_score from smart_filter.py (now 10)
                     regime30 = sf30._market_regime()
                     res30 = sf30.analyze()
 
@@ -1178,11 +1167,6 @@ def run_cycle():
                         
                         # RR acceptable: Store signal + Fire
                         print(f"[RR_FILTER] 30min signal ACCEPTED: {symbol_val} - RR {achieved_rr_value} >= MIN {MIN_ACCEPTED_RR}", flush=True)
-                        
-                        # DEFENSIVE GATE: Verify score >= 14 for 30min (golden state requirement, min_score=14 set above)
-                        if score < 14:
-                            print(f"[CRITICAL-REJECT] 30min {symbol_val}: score={score} < 14 (golden state requirement). BLOCKING STORAGE.", flush=True)
-                            continue  # Reject this signal
                         
                         # Store signal to JSONL
                         tp_pct_val = ((tp - entry_price) / entry_price * 100) if tp and entry_price else 0
@@ -1549,11 +1533,6 @@ def run_cycle():
                         
                         # RR acceptable: Store signal + Fire
                         print(f"[RR_FILTER] 1h signal ACCEPTED: {symbol_val} - RR {achieved_rr_value} >= MIN {MIN_ACCEPTED_RR}", flush=True)
-                        
-                        # DEFENSIVE GATE: Verify score >= 10 for 1h (default min_score)
-                        if score < 10:
-                            print(f"[CRITICAL-REJECT] 1h {symbol_val}: score={score} < 10 (min_score gate). BLOCKING STORAGE.", flush=True)
-                            continue  # Reject this signal
                         
                         # Store signal to JSONL
                         tp_pct_val = ((tp - entry_price) / entry_price * 100) if tp and entry_price else 0
