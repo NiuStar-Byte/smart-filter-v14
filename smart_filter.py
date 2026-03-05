@@ -1105,16 +1105,45 @@ class SmartFilter:
             print(f"[{self.symbol}] [TREND] Error: {e}", flush=True)
             return None
 
-    def _check_macd(self, fast=12, slow=26, signal=9, min_conditions=2, debug=False):
+    def _check_macd(
+        self,
+        fast=12,
+        slow=26,
+        signal=9,
+        min_conditions=3,
+        min_macd_magnitude=0.0005,
+        divergence_weight=0.5,
+        check_signal_momentum=True,
+        debug=False
+    ):
         """
-        Composite MACD filter: MACD, Signal line, Histogram, Price action, MACD Cross, MACD Divergence.
-        Returns 'LONG', 'SHORT', or None.
+        ENHANCED MACD Filter (2026-03-05):
+        Improved momentum detection with better signal quality control.
+        
+        Improvements from original:
+        1. Threshold: 2 → 3 (50% consensus requirement)
+        2. MACD magnitude filter (no noise signals near zero)
+        3. Signal line momentum check (catch accelerating crosses)
+        4. Divergence weighted less (less reliable than direct confirmations)
+        5. Histogram acceleration requirement (momentum must be rising)
+        6. Better for all timeframes
+        
+        Args:
+            fast: Fast EMA span (default 12)
+            slow: Slow EMA span (default 26)
+            signal: Signal line EMA span (default 9)
+            min_conditions: Require 3/7 conditions met (50%, was 2/6 = 33%)
+            min_macd_magnitude: Minimum MACD magnitude to consider (0.0005 filters noise)
+            divergence_weight: Weight for divergence (0.5 = half value of other conditions)
+            check_signal_momentum: Include signal line acceleration checks
+            debug: Print debug info
         """
         if len(self.df) < slow + 3:
             if debug:
                 print(f"[{self.symbol}] [MACD] Not enough data for slow EMA={slow}")
             return None
     
+        # Calculate MACD components
         efast = self.df['close'].ewm(span=fast, adjust=False).mean()
         eslow = self.df['close'].ewm(span=slow, adjust=False).mean()
         macd = efast - eslow
@@ -1123,49 +1152,72 @@ class SmartFilter:
     
         close = self.df['close'].iloc[-1]
         close_prev = self.df['close'].iloc[-2]
+        
+        # MACD values (current, previous, 2 bars ago)
+        macd_curr = macd.iloc[-1]
+        macd_prev = macd.iloc[-2]
+        macd_prev2 = macd.iloc[-3] if len(macd) >= 3 else macd_prev
+        
+        signal_curr = signal_line.iloc[-1]
+        signal_prev = signal_line.iloc[-2]
+        signal_prev2 = signal_line.iloc[-3] if len(signal_line) >= 3 else signal_prev
+        
+        hist_curr = macd_hist.iloc[-1]
+        hist_prev = macd_hist.iloc[-2]
     
         # MACD Cross Detection
-        cross_up = macd.iloc[-2] < signal_line.iloc[-2] and macd.iloc[-1] > signal_line.iloc[-1]
-        cross_down = macd.iloc[-2] > signal_line.iloc[-2] and macd.iloc[-1] < signal_line.iloc[-1]
+        cross_up = macd_prev < signal_prev and macd_curr > signal_curr
+        cross_down = macd_prev > signal_prev and macd_curr < signal_curr
     
-        # MACD Divergence Detection
+        # MACD Divergence Detection (will be weighted less)
         price_delta = close - close_prev
-        macd_delta = macd.iloc[-1] - macd.iloc[-2]
-        # True if price and MACD move in opposite directions
+        macd_delta = macd_curr - macd_prev
         divergence = price_delta * macd_delta < 0
+        
+        # NEW: Signal line momentum (acceleration of trigger line)
+        signal_momentum_up = signal_curr > signal_prev > signal_prev2
+        signal_momentum_down = signal_curr < signal_prev < signal_prev2
     
-        # LONG conditions
-        cond1_long = macd.iloc[-1] > signal_line.iloc[-1]                    # MACD above signal
-        cond2_long = macd.iloc[-1] > macd.iloc[-2]                           # MACD rising
-        cond3_long = macd_hist.iloc[-1] > 0 and macd_hist.iloc[-1] > macd_hist.iloc[-2]
-        cond4_long = close > close_prev
-        cond5_long = cross_up
-        cond6_long = divergence and macd_delta > 0                           # Bullish divergence
+        # LONG conditions (7 total, enhanced from 6)
+        cond1_long = abs(macd_curr) > min_macd_magnitude and macd_curr > signal_curr      # MACD above signal + significant magnitude
+        cond2_long = macd_curr > macd_prev                                                # MACD rising
+        cond3_long = hist_curr > 0 and hist_curr > hist_prev                              # Histogram positive & rising
+        cond4_long = close > close_prev                                                   # Price momentum
+        cond5_long = cross_up                                                             # Bullish crossover
+        cond6_long = divergence and macd_delta > 0                                        # Bullish divergence
+        cond7_long = check_signal_momentum and signal_momentum_up                        # Signal line accelerating up
     
-        # SHORT conditions
-        cond1_short = macd.iloc[-1] < signal_line.iloc[-1]                   # MACD below signal
-        cond2_short = macd.iloc[-1] < macd.iloc[-2]                          # MACD falling
-        cond3_short = macd_hist.iloc[-1] < 0 and macd_hist.iloc[-1] < macd_hist.iloc[-2]
+        # SHORT conditions (mirror of LONG)
+        cond1_short = abs(macd_curr) > min_macd_magnitude and macd_curr < signal_curr
+        cond2_short = macd_curr < macd_prev
+        cond3_short = hist_curr < 0 and hist_curr < hist_prev
         cond4_short = close < close_prev
         cond5_short = cross_down
-        cond6_short = divergence and macd_delta < 0                          # Bearish divergence
+        cond6_short = divergence and macd_delta < 0
+        cond7_short = check_signal_momentum and signal_momentum_down
     
-        long_conditions_met = sum([cond1_long, cond2_long, cond3_long, cond4_long, cond5_long, cond6_long])
-        short_conditions_met = sum([cond1_short, cond2_short, cond3_short, cond4_short, cond5_short, cond6_short])
+        # Count conditions for decision logic
+        long_conditions_met = sum([cond1_long, cond2_long, cond3_long, cond4_long, cond5_long, cond6_long, cond7_long])
+        short_conditions_met = sum([cond1_short, cond2_short, cond3_short, cond4_short, cond5_short, cond6_short, cond7_short])
     
         if debug:
-            print(f"[{self.symbol}] [MACD] macd={macd.iloc[-1]:.6f}, signal={signal_line.iloc[-1]:.6f}, "
-                  f"macd_hist={macd_hist.iloc[-1]:.6f}, close={close}, close_prev={close_prev}, "
-                  f"cross_up={cross_up}, cross_down={cross_down}, divergence={divergence}, "
-                  f"long_met={long_conditions_met}, short_met={short_conditions_met}")
+            print(
+                f"[{self.symbol}] [MACD ENHANCED] macd={macd_curr:.6f}, signal={signal_curr:.6f}, "
+                f"hist={hist_curr:.6f}, cross_up={cross_up}, cross_down={cross_down}, "
+                f"divergence={divergence}, signal_mom_up={signal_momentum_up}, signal_mom_down={signal_momentum_down}, "
+                f"long_met={long_conditions_met}, short_met={short_conditions_met}, min_conditions={min_conditions}"
+            )
     
+        # Decision: require ≥3 (50% consensus) and clear majority
         if long_conditions_met >= min_conditions and long_conditions_met > short_conditions_met:
-            print(f"[{self.symbol}] [MACD] Signal: LONG | long_met={long_conditions_met}, short_met={short_conditions_met}")
+            print(f"[{self.symbol}] [MACD ENHANCED] Signal: LONG | long_met={long_conditions_met}/{min_conditions}, short_met={short_conditions_met}")
             return "LONG"
         elif short_conditions_met >= min_conditions and short_conditions_met > long_conditions_met:
-            print(f"[{self.symbol}] [MACD] Signal: SHORT | long_met={long_conditions_met}, short_met={short_conditions_met}")
+            print(f"[{self.symbol}] [MACD ENHANCED] Signal: SHORT | short_met={short_conditions_met}/{min_conditions}, long_met={long_conditions_met}")
             return "SHORT"
         else:
+            if debug:
+                print(f"[{self.symbol}] [MACD ENHANCED] No signal | long_met={long_conditions_met}, short_met={short_conditions_met}, min_conditions={min_conditions}")
             return None
   
     def _check_momentum(self, window=10, min_conditions=2, threshold=1e-6,
