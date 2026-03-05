@@ -299,6 +299,8 @@ class PECExecutor:
             'tp_hit': 0,
             'sl_hit': 0,
             'timeout': 0,
+            'timeout_win': 0,
+            'timeout_loss': 0,
             'stale_timeout': 0,
             'total_pnl_usd': 0.0,
             'win_rate_pct': 0.0
@@ -323,14 +325,20 @@ class PECExecutor:
                             stats['sl_hit'] += 1
                         elif status == 'TIMEOUT':
                             stats['timeout'] += 1
+                            # Count TIMEOUT as win or loss based on P&L
+                            pnl = record.get('pnl_usd')
+                            if pnl is not None and float(pnl) > 0:
+                                stats['timeout_win'] += 1
+                            elif pnl is not None and float(pnl) < 0:
+                                stats['timeout_loss'] += 1
                         elif status == 'STALE_TIMEOUT':
                             stats['stale_timeout'] += 1
                         
-                        # Count P&L (STALE_TIMEOUT has pnl_usd=0, so it won't affect total)
-                        pnl = record.get('pnl_usd', 0)
-                        if status != 'STALE_TIMEOUT':
-                            # Only add to total P&L if not stale (stale signals excluded from P&L calculation)
-                            stats['total_pnl_usd'] += pnl
+                        # Count P&L (STALE_TIMEOUT has pnl_usd=0.0, so it won't affect total)
+                        pnl = record.get('pnl_usd')
+                        if pnl is not None and status != 'STALE_TIMEOUT':
+                            # Only add to total P&L if not stale and not None
+                            stats['total_pnl_usd'] += float(pnl)
             
             # Win Rate = TP_HIT / (TP_HIT + SL_HIT) [exclude TIMEOUT and STALE_TIMEOUT from base calculation]
             closed_trades = stats['tp_hit'] + stats['sl_hit']
@@ -380,7 +388,7 @@ class PECExecutor:
         # Print stats
         stats = self.get_stats()
         print(f"\n📊 PEC STATS:", flush=True)
-        print(f"   Total: {stats['total']} | Open: {stats['open']} | TP: {stats['tp_hit']} | SL: {stats['sl_hit']} | TIMEOUT: {stats['timeout']} | STALE_TIMEOUT: {stats['stale_timeout']}", flush=True)
+        print(f"   Total: {stats['total']} | Open: {stats['open']} | TP: {stats['tp_hit']} | SL: {stats['sl_hit']} | TIMEOUT: {stats['timeout']} ({stats['timeout_win']}W/{stats['timeout_loss']}L) | STALE_TIMEOUT: {stats['stale_timeout']}", flush=True)
         print(f"   Win Rate (TP/SL only): {stats['win_rate_pct']:.1f}% | Total P&L: ${stats['total_pnl_usd']:+.2f}", flush=True)
         print(f"{'='*80}\n", flush=True)
 

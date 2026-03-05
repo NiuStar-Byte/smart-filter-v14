@@ -961,6 +961,8 @@ class PECEnhancedReporter:
         
         # Build per-date summary (each date on its own line with its own beginning/last times)
         date_summary_lines = []
+        today_date = datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=7))).strftime('%Y-%m-%d')
+        
         for date_str in sorted(signals_by_date.keys()):
             times = signals_by_date[date_str]
             count = len(times)
@@ -969,7 +971,13 @@ class PECEnhancedReporter:
             beginning_time_str = date_earliest.strftime('%H:%M:%S')
             last_time_str = date_latest.strftime('%H:%M:%S')
             
-            date_line = f"  {date_str}: {count} fired | Beginning Fired Time: {beginning_time_str} | Last Fired Time: {last_time_str} |"
+            # Add immutable label for past dates, accumulating for today
+            if date_str == today_date:
+                status_label = "🔄 still accumulating"
+            else:
+                status_label = "✓ IMMUTABLE"
+            
+            date_line = f"  {date_str}: {count} fired | Beginning Fired Time: {beginning_time_str} | Last Fired Time: {last_time_str} | {status_label}"
             date_summary_lines.append(date_line)
         
         # Display Summary (with stale timeout exclusion note) - Match user's exact template
@@ -992,6 +1000,46 @@ class PECEnhancedReporter:
         if date_summary_lines:
             report.append("Total Fired per Date:")
             report.extend(date_summary_lines)
+        
+        # === NEW: HOURLY BREAKDOWN FOR TODAY (2026-03-05) ===
+        today_str = "2026-03-05"
+        signals_by_hour = defaultdict(int)
+        
+        if today_str in signals_by_date:
+            today_times = signals_by_date[today_str]
+            for gmt7_dt in today_times:
+                hour_key = gmt7_dt.strftime('%H:%M-%H:%M').split('-')[0]  # Get hour as "HH"
+                hour_bucket = f"{gmt7_dt.hour:02d}:00-{(gmt7_dt.hour+1):02d}:00"
+                signals_by_hour[hour_bucket] += 1
+        
+        if signals_by_hour or today_str in signals_by_date:  # Show hourly breakdown if we have today's signals
+            report.append("Total Fired Today per Hour (2026-03-05):")
+            current_hour = datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=7))).hour
+            current_hour_bucket = f"{current_hour:02d}:00-{(current_hour+1):02d}:00"
+            
+            # Build list of all hours with signals, sorted
+            all_hour_buckets = sorted(signals_by_hour.keys())
+            
+            # Also add the previous hour if it has 0 signals (shows clean closure)
+            if all_hour_buckets:
+                last_hour = int(all_hour_buckets[-1].split(':')[0])
+                next_hour = (last_hour + 1) % 24
+                next_bucket = f"{next_hour:02d}:00-{(next_hour+1)%24:02d}:00"
+                if next_bucket not in all_hour_buckets and next_hour < current_hour:
+                    # Only add if it's a past hour
+                    all_hour_buckets.append(next_bucket)
+                    all_hour_buckets.sort()
+            
+            for hour_bucket in all_hour_buckets:
+                count = signals_by_hour.get(hour_bucket, 0)
+                
+                # Add status label: current hour is accumulating, past hours are immutable
+                if hour_bucket == current_hour_bucket:
+                    status_label = "🔄 still accumulating"
+                else:
+                    status_label = "✓ IMMUTABLE"
+                
+                report.append(f"  {hour_bucket}: {count} fired | {status_label}")
         
         if stale_timeout_count > 0:
             report.append("")
