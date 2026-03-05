@@ -30,6 +30,26 @@ from signal_store import get_signal_store
 from pec_config import MIN_ACCEPTED_RR, SIGNALS_JSONL_PATH
 import math
 
+# ===== CONTROL FLAG: Disable Signal Firing (Keep Orchestrator Running) =====
+# Set this to False to disable signal generation (analysis still runs, but no Telegram sends or file writes)
+# Useful for: Analysis integrity, reporting stability, testing
+SIGNAL_FIRING_ENABLED = True
+
+# Read from environment or file for easy control
+import os
+if os.environ.get('SIGNAL_FIRING_DISABLED'):
+    SIGNAL_FIRING_ENABLED = False
+    print(f"[CONTROL] Signal firing DISABLED via environment variable", flush=True)
+
+if os.path.exists('/tmp/disable_signal_firing'):
+    SIGNAL_FIRING_ENABLED = False
+    print(f"[CONTROL] Signal firing DISABLED via /tmp/disable_signal_firing file", flush=True)
+
+if SIGNAL_FIRING_ENABLED:
+    print(f"[CONTROL] Signal firing ENABLED (normal operation)", flush=True)
+else:
+    print(f"[CONTROL] ⚠️  Signal firing DISABLED - orchestrator runs analysis only", flush=True)
+
 # NEW: Enhanced tracking & safe OHLCV (PROJECT-3 SmartFilter fixes)
 from signal_tracking_enhanced import get_signal_tracker
 from ohlcv_fetch_safe import safe_fetch_ohlcv_by_tf, check_tf_data_available, should_skip_symbol
@@ -926,33 +946,39 @@ def run_cycle():
                                 signal_tier = get_signal_tier(tf_val, signal_type, Route, regime)
                                 print(f"[TIER] 15min {symbol_val}: {signal_tier}", flush=True)
                                 
-                                print(f"[DEBUG] 15min: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
-                                sent_ok = send_telegram_alert(
-                                    numbered_signal=numbered_signal,
-                                    symbol=symbol_val,
-                                    signal_type=signal_type,
-                                    Route=Route,
-                                    price=entry_price,
-                                    tf=tf_val,
-                                    score=score,
-                                    passed=passes,
-                                    confidence=confidence,
-                                    weighted=passed_weight,
-                                    score_max=score_max,
-                                    gatekeepers_total=gatekeepers_total,
-                                    total_weight=total_weight,
-                                    reversal_side=res15.get("reversal_side"),
-                                    regime=regime,
-                                    early_breakout_15m=early_breakout_15m,
-                                    tp=tp,
-                                    sl=sl,
-                                    tp_sl=tp_sl,
-                                    chosen_ratio=None,
-                                    achieved_rr=achieved_rr_value,
-                                    tier=signal_tier
-                                )
-                                print(f"[DEBUG] 15min: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
-                                if sent_ok:
+                                # ===== CONTROL CHECK: Signal Firing Enabled? =====
+                                if SIGNAL_FIRING_ENABLED:
+                                    print(f"[DEBUG] 15min: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
+                                    sent_ok = send_telegram_alert(
+                                        numbered_signal=numbered_signal,
+                                        symbol=symbol_val,
+                                        signal_type=signal_type,
+                                        Route=Route,
+                                        price=entry_price,
+                                        tf=tf_val,
+                                        score=score,
+                                        passed=passes,
+                                        confidence=confidence,
+                                        weighted=passed_weight,
+                                        score_max=score_max,
+                                        gatekeepers_total=gatekeepers_total,
+                                        total_weight=total_weight,
+                                        reversal_side=res15.get("reversal_side"),
+                                        regime=regime,
+                                        early_breakout_15m=early_breakout_15m,
+                                        tp=tp,
+                                        sl=sl,
+                                        tp_sl=tp_sl,
+                                        chosen_ratio=None,
+                                        achieved_rr=achieved_rr_value,
+                                        tier=signal_tier
+                                    )
+                                    print(f"[DEBUG] 15min: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
+                                else:
+                                    print(f"[CONTROL] 15min: Signal firing DISABLED - skipping Telegram send for {symbol_val}", flush=True)
+                                    sent_ok = False  # Treat as not sent
+                                
+                                if SIGNAL_FIRING_ENABLED and sent_ok:
                                     last_sent[key15] = now
                                     # signals_sent_this_cycle.add(signal_key)  # Dedup now uses SENT_SIGNALS.jsonl
                                     logger.signal_sent(symbol_val, "15min", signal_uuid[:12])
@@ -1329,33 +1355,39 @@ def run_cycle():
                                 signal_tier = get_signal_tier(tf_val, signal_type, Route, regime)
                                 print(f"[TIER] 30min {symbol_val}: {signal_tier}", flush=True)
                                 
-                                print(f"[DEBUG] 30min: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
-                                sent_ok = send_telegram_alert(
-                                    numbered_signal=numbered_signal,
-                                    symbol=symbol_val,
-                                    signal_type=signal_type,
-                                    Route=Route,
-                                    price=entry_price,
-                                    tf=tf_val,
-                                    score=score,
-                                    passed=passes,
-                                    confidence=confidence,
-                                    weighted=passed_weight,
-                                    score_max=score_max,
-                                    gatekeepers_total=gatekeepers_total,
-                                    total_weight=total_weight,
-                                    reversal_side=res30.get("reversal_side"),
-                                    regime=regime,
-                                    early_breakout_15m=early_breakout_30m,
-                                    tp=tp,
-                                    sl=sl,
+                                # ===== CONTROL CHECK: Signal Firing Enabled? =====
+                                if SIGNAL_FIRING_ENABLED:
+                                    print(f"[DEBUG] 30min: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
+                                    sent_ok = send_telegram_alert(
+                                        numbered_signal=numbered_signal,
+                                        symbol=symbol_val,
+                                        signal_type=signal_type,
+                                        Route=Route,
+                                        price=entry_price,
+                                        tf=tf_val,
+                                        score=score,
+                                        passed=passes,
+                                        confidence=confidence,
+                                        weighted=passed_weight,
+                                        score_max=score_max,
+                                        gatekeepers_total=gatekeepers_total,
+                                        total_weight=total_weight,
+                                        reversal_side=res30.get("reversal_side"),
+                                        regime=regime,
+                                        early_breakout_15m=early_breakout_30m,
+                                        tp=tp,
+                                        sl=sl,
                                     tp_sl=tp_sl,
                                     chosen_ratio=None,
                                     achieved_rr=achieved_rr_value,
                                     tier=signal_tier
                                 )
-                                print(f"[DEBUG] 30min: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
-                                if sent_ok:
+                                    print(f"[DEBUG] 30min: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
+                                else:
+                                    print(f"[CONTROL] 30min: Signal firing DISABLED - skipping Telegram send for {symbol_val}", flush=True)
+                                    sent_ok = False  # Treat as not sent
+                                
+                                if SIGNAL_FIRING_ENABLED and sent_ok:
                                     last_sent[key30] = now
                                     # signals_sent_this_cycle.add(signal_key)  # Dedup now uses SENT_SIGNALS.jsonl
                                     logger.signal_sent(symbol_val, "30min", signal_uuid[:12])
