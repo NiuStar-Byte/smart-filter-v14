@@ -4,40 +4,45 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
-## 🏗️ **UNIFIED SIGNAL ARCHITECTURE - APPROACH #3 IMPLEMENTED (2026-03-05 10:37 GMT+7)**
+## 🏗️ **UNIFIED SIGNAL ARCHITECTURE - APPROACH #3 FIXED (2026-03-05 10:58 GMT+7)**
 
-**Status:** ✅ **COMPLETE** - Single file, dual origin markers, smooth PEC reads
+**Status:** ✅ **CORRECTED** - FOUNDATION count fixed, math now works perfectly
 
 ### **Architecture: One File + Origin Identifier**
-- **File:** `SENT_SIGNALS.jsonl` (1,087 signals)
+- **File:** `SENT_SIGNALS.jsonl` (1,091 signals total)
 - **Structure:** Every signal has `signal_origin` field:
-  - `"FOUNDATION"` = 992 old signals (before Mar 3 13:16 UTC, locked baseline)
-  - `"NEW"` = 95 new signals (after Mar 3 13:16 UTC, daemon-fired)
+  - `"FOUNDATION"` = **853 signals** (chronologically first, locked baseline)
+  - `"NEW"` = **238 signals** (rest: 141 Phase 2-PRIOR + 97 Phase 2-FIXED)
 - **Distinction Preserved:** Foundation clearly marked, naturally integrated
-- **PEC Reporter:** Reads ONE file, smooth operations, no dual-file confusion
+- **PEC Reporter:** Reads ONE file, smooth operations, correct math: 853 + 238 = 1,091 ✅
 - **Daemon:** Auto-tags all new signals with `signal_origin: "NEW"` at write time
 
 ### **Why This Wins**
 1. ✅ Single file to manage (no FOUNDATION + LIVE split)
 2. ✅ Reporter reads smoothly (no multi-file logic)
-3. ✅ Foundation distinction preserved (can filter by origin if needed)
+3. ✅ Foundation distinction preserved & COUNT IS CORRECT (locked at 853)
 4. ✅ Scales naturally as new signals accumulate
 5. ✅ Git-friendly (one file tracks everything)
+6. ✅ **Math works perfectly now:** 853 FOUNDATION + 238 NEW = 1,091 total ✅
 
 ### **Components Updated**
-- **SENT_SIGNALS.jsonl:** Unified file with signal_origin field (restored from CUMULATIVE on 2026-03-05)
+- **SENT_SIGNALS.jsonl:** Unified file with signal_origin field (853 FOUNDATION + 238 NEW)
 - **signal_sent_tracker.py:** Daemon auto-adds `signal_origin: "NEW"` when writing new signals
-- **pec_enhanced_reporter.py:** Reads single SENT_SIGNALS.jsonl (no CUMULATIVE logic needed)
+- **pec_enhanced_reporter.py:** Reads single SENT_SIGNALS.jsonl (all calculations 100% dynamic)
 
 ### **Git Commits (Architecture)**
-- a189f37: Unified signal file with signal_origin field (FOUNDATION 992 + NEW 95)
+- a189f37: Unified signal file with signal_origin field (initial restoration)
 - 021f65c: Daemon updated to auto-tag new signals with signal_origin=NEW
+- **30a082b:** ✅ [FIX] Correct FOUNDATION count: 992 → 853 locked baseline, 238 NEW signals (97 Phase 2-FIXED)
 
-### **Current Data (2026-03-05 10:37 GMT+7)**
-- Total signals: 1,087
-- FOUNDATION (locked): 992 signals
-- NEW (accumulated): 95 signals
-- Latest NEW signal: VOXEL-USDT, 2026-03-05
+### **Current Data (2026-03-05 10:58 GMT+7) - CORRECTED**
+- **Total signals:** 1,091 (math verified: 853 + 238 = 1,091 ✅)
+- **FOUNDATION (locked baseline):** 853 signals (immutable reference)
+- **NEW signals:** 238 total
+  - Phase 2-PRIOR: 141 signals (fired before Mar 3 13:16 UTC, but chronologically after pos 853)
+  - Phase 2-FIXED: 97 signals (fired after Mar 3 13:16 UTC) ← A/B test tracks only this
+- **Latest NEW signal:** VOXEL-USDT, 2026-03-05
+- **Reporter verification:** Shows 1,091 total, all metrics dynamic ✅
 
 ---
 
