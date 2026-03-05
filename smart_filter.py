@@ -84,9 +84,9 @@ class SmartFilter:
         self.volume_multiplier = volume_multiplier
         self.liquidity_threshold = liquidity_threshold
 
-        # Weights for filters
+        # Weights for filters (ENHANCED 2026-03-05: Fractal Zone 4.5→4.8, improved TREND)
         self.filter_weights_long = {
-            "MACD": 5.0, "Volume Spike": 5.0, "Fractal Zone": 4.5, "TREND": 4.7, "Momentum": 4.9, "ATR Momentum Burst": 4.3,
+            "MACD": 5.0, "Volume Spike": 5.0, "Fractal Zone": 4.8, "TREND": 4.7, "Momentum": 4.9, "ATR Momentum Burst": 4.3,
             "MTF Volume Agreement": 5.0, "HH/LL Trend": 4.1, "Volatility Model": 3.9,
             "Liquidity Awareness": 5.0, "Volatility Squeeze": 3.7, "Candle Confirmation": 5.0,
             "VWAP Divergence": 3.5, "Spread Filter": 5.0, "Chop Zone": 3.3, "Liquidity Pool": 3.1, "Support/Resistance": 5.0,
@@ -94,7 +94,7 @@ class SmartFilter:
         }
         
         self.filter_weights_short = {
-            "MACD": 5.0, "Volume Spike": 5.0, "Fractal Zone": 4.5, "TREND": 4.7, "Momentum": 4.9, "ATR Momentum Burst": 4.3,
+            "MACD": 5.0, "Volume Spike": 5.0, "Fractal Zone": 4.8, "TREND": 4.7, "Momentum": 4.9, "ATR Momentum Burst": 4.3,
             "MTF Volume Agreement": 5.0, "HH/LL Trend": 4.1, "Volatility Model": 3.9,
             "Liquidity Awareness": 5.0, "Volatility Squeeze": 3.7, "Candle Confirmation": 5.0,
             "VWAP Divergence": 3.5, "Spread Filter": 5.0, "Chop Zone": 3.3, "Liquidity Pool": 3.1, "Support/Resistance": 5.0,
@@ -984,85 +984,125 @@ class SmartFilter:
         except Exception:
             return 0.0
 
-    def _check_unified_trend(self, min_conditions=6, debug=False):
-        # EMA Cloud logic
-        ema20 = self.df['ema20'].iat[-1]
-        ema50 = self.df['ema50'].iat[-1]
-        ema20_prev = self.df['ema20'].iat[-2]
-        close = self.df['close'].iat[-1]
-        ema_cloud = ema20 - ema50
-    
-        # EMA Structure logic
-        ema9 = self.df['ema9'].iat[-1]
-        ema21 = self.df['ema21'].iat[-1]
-        ema50_s = self.df['ema50'].iat[-1]
-        ema9_prev = self.df['ema9'].iat[-2]
-        ema21_prev = self.df['ema21'].iat[-2]
-        ema50_prev = self.df['ema50'].iat[-2]
-    
-        # HATS logic
-        fast = self.df['ema10'].iat[-1]
-        mid = self.df['ema21'].iat[-1]
-        slow = self.df['ema50'].iat[-1]
-        fast_prev = self.df['ema10'].iat[-2]
-        mid_prev = self.df['ema21'].iat[-2]
-        slow_prev = self.df['ema50'].iat[-2]
-    
-        # Trend Continuation logic
-        ema6 = self.df['ema6'].iat[-1] if 'ema6' in self.df.columns else None
-        ema13 = self.df['ema13'].iat[-1] if 'ema13' in self.df.columns else None
-        macd = self.df['macd'].iat[-1] if 'macd' in self.df.columns else None
-        rsi = self.df['RSI'].iat[-1] if 'RSI' in self.df.columns else None
-        adx = self.df['adx'].iat[-1] if 'adx' in self.df.columns else None
-    
-        # LONG conditions (collect all distinctive features)
-        conds_long = [
-            ema20 > ema50,                       # EMA Cloud spread bullish
-            ema20 > ema20_prev,                  # EMA Cloud momentum
-            close > ema20,                       # Price above EMA Cloud top
-            ema9 > ema21 and ema21 > ema50_s,    # EMA Structure stacking
-            close > ema9 and close > ema21 and close > ema50_s, # Price above all EMAs
-            ema9 > ema9_prev and ema21 > ema21_prev and ema50_s > ema50_prev, # EMA Structure momentum
-            fast > mid and mid > slow,           # HATS stacking
-            fast > fast_prev and mid > mid_prev and slow > slow_prev, # HATS momentum
-            close > fast,                        # Price above fast EMA (HATS)
-            ema6 is not None and ema13 is not None and ema6 > ema13, # Trend continuation EMA
-            macd is not None and macd > 0,       # MACD bullish
-            rsi is not None and rsi > 50,        # RSI bullish
-            adx is None or adx > 20              # ADX confirms trend if present
-        ]
-        long_met = sum(conds_long)
-    
-        # SHORT conditions (mirror all features)
-        conds_short = [
-            ema20 < ema50,
-            ema20 < ema20_prev,
-            close < ema20,
-            ema9 < ema21 and ema21 < ema50_s,
-            close < ema9 and close < ema21 and close < ema50_s,
-            ema9 < ema9_prev and ema21 < ema21_prev and ema50_s < ema50_prev,
-            fast < mid and mid < slow,
-            fast < fast_prev and mid < mid_prev and slow < slow_prev,
-            close < fast,
-            ema6 is not None and ema13 is not None and ema6 < ema13,
-            macd is not None and macd < 0,
-            rsi is not None and rsi < 50,
-            adx is None or adx > 20
-        ]
-        short_met = sum(conds_short)
-    
-        if debug:
-            print(f"[{self.symbol}] [TREND] long_met={long_met}, short_met={short_met}, min_conditions={min_conditions}, ema_cloud={ema_cloud}")
-    
-        # Decision logic: at least min_conditions and dominant direction
-        if long_met >= min_conditions and long_met > short_met:
-            print(f"[{self.symbol}] [TREND] Signal: LONG | long_met={long_met}, short_met={short_met}")
-            return "LONG"
-        elif short_met >= min_conditions and short_met > long_met:
-            print(f"[{self.symbol}] [TREND] Signal: SHORT | long_met={long_met}, short_met={short_met}")
-            return "SHORT"
-        else:
-            print(f"[{self.symbol}] [TREND] No signal fired | long_met={long_met}, short_met={short_met}")
+    def _check_unified_trend(
+        self,
+        min_conditions=7,
+        min_adx_for_trend=20,
+        volatility_adjusted=True,
+        use_ema9_for_trend=True,
+        debug=False
+    ):
+        """
+        ENHANCED TREND Filter (2026-03-05):
+        Confirms unified directional bias across multiple EMA systems.
+        
+        Improvements from original:
+        1. Removed HATS redundancy (was nearly identical to Structure)
+        2. Increased threshold: 6 → 7 (54% consensus requirement)
+        3. Replaced EMA6 with reuse of EMA9 (less noisy)
+        4. Volatility-adjusted: harder to trigger in choppy markets (>3% ATR)
+        5. ADX check: only counts as trend if ADX > 20 (true trend confirmation)
+        
+        Args:
+            min_conditions: Require 7/10 conditions met (was 6/13, now cleaner)
+            min_adx_for_trend: ADX threshold for trend confirmation (default 20)
+            volatility_adjusted: Increase threshold in high volatility (>3% ATR)
+            use_ema9_for_trend: Reuse EMA9 instead of separate EMA6 (stability)
+            debug: Print debug info
+        """
+        try:
+            # EMA Cloud (20-50): Fast trend detection
+            ema20 = self.df['ema20'].iat[-1]
+            ema50 = self.df['ema50'].iat[-1]
+            ema20_prev = self.df['ema20'].iat[-2]
+            close = self.df['close'].iat[-1]
+            ema_cloud = ema20 - ema50
+        
+            # EMA Structure (9-21-50): Mid-term trend stacking
+            ema9 = self.df['ema9'].iat[-1]
+            ema21 = self.df['ema21'].iat[-1]
+            ema50_s = self.df['ema50'].iat[-1]
+            ema9_prev = self.df['ema9'].iat[-2]
+            ema21_prev = self.df['ema21'].iat[-2]
+            ema50_prev = self.df['ema50'].iat[-2]
+        
+            # NOTE: REMOVED HATS (10-21-50) - redundant with Structure above
+        
+            # Trend Continuation: Use EMA9 instead of EMA6 (less noisy on 15min)
+            if use_ema9_for_trend:
+                ema_trend_fast = self.df['ema9'].iat[-1]  # Reuse EMA9
+            else:
+                ema_trend_fast = self.df['ema6'].iat[-1] if 'ema6' in self.df.columns else self.df['ema9'].iat[-1]
+            
+            ema_trend_slow = self.df['ema13'].iat[-1] if 'ema13' in self.df.columns else self.df['ema21'].iat[-1]
+        
+            # Momentum confirmations
+            macd = self.df['macd'].iat[-1] if 'macd' in self.df.columns else None
+            rsi = self.df['RSI'].iat[-1] if 'RSI' in self.df.columns else None
+            adx = self.df['adx'].iat[-1] if 'adx' in self.df.columns else None
+            
+            # Volatility adjustment: harder in choppy markets
+            threshold = min_conditions
+            if volatility_adjusted:
+                atr = self.df['atr'].iat[-1] if 'atr' in self.df.columns else None
+                sma_close = self.df['close'].rolling(20).mean().iat[-1] if len(self.df) >= 20 else close
+                if atr and sma_close and sma_close > 0:
+                    volatility_pct = atr / sma_close
+                    if volatility_pct > 0.03:  # 3% volatility = high chop
+                        threshold = min_conditions + 1  # Require 8 instead of 7
+                        if debug:
+                            print(f"[{self.symbol}] [TREND] HIGH VOLATILITY ({volatility_pct:.2%}) → threshold {min_conditions} → {threshold}")
+        
+            # LONG conditions (10 total, was 13 with HATS redundancy removed)
+            conds_long = [
+                ema20 > ema50,                                    # Cloud spread bullish
+                ema20 > ema20_prev,                               # Cloud momentum rising
+                close > ema20,                                    # Price above cloud
+                ema9 > ema21 and ema21 > ema50_s,                 # Structure stacking
+                close > ema9 and close > ema21 and close > ema50_s,  # Price above all EMAs
+                ema9 > ema9_prev and ema21 > ema21_prev and ema50_s > ema50_prev,  # Structure momentum
+                ema_trend_fast > ema_trend_slow,                  # Trend continuation (EMA9 vs EMA13/21)
+                macd is not None and macd > 0,                    # MACD bullish
+                rsi is not None and rsi > 50,                     # RSI bullish
+                not (adx is not None) or adx > min_adx_for_trend  # ADX confirms trend (or absent = skip check)
+            ]
+            long_met = sum(conds_long)
+        
+            # SHORT conditions (mirror of LONG)
+            conds_short = [
+                ema20 < ema50,
+                ema20 < ema20_prev,
+                close < ema20,
+                ema9 < ema21 and ema21 < ema50_s,
+                close < ema9 and close < ema21 and close < ema50_s,
+                ema9 < ema9_prev and ema21 < ema21_prev and ema50_s < ema50_prev,
+                ema_trend_fast < ema_trend_slow,
+                macd is not None and macd < 0,
+                rsi is not None and rsi < 50,
+                not (adx is not None) or adx > min_adx_for_trend
+            ]
+            short_met = sum(conds_short)
+        
+            if debug:
+                print(
+                    f"[{self.symbol}] [TREND ENHANCED] long_met={long_met}, short_met={short_met}, "
+                    f"threshold={threshold}, ema_cloud={ema_cloud:.4f}"
+                )
+        
+            # Decision logic: require ≥7 (or 8 in high volatility) and clear majority
+            if long_met >= threshold and long_met > short_met:
+                print(f"[{self.symbol}] [TREND ENHANCED] Signal: LONG | long_met={long_met}/{threshold}, short_met={short_met}")
+                return "LONG"
+            elif short_met >= threshold and short_met > long_met:
+                print(f"[{self.symbol}] [TREND ENHANCED] Signal: SHORT | short_met={short_met}/{threshold}, long_met={long_met}")
+                return "SHORT"
+            else:
+                if debug:
+                    print(f"[{self.symbol}] [TREND ENHANCED] No signal | long_met={long_met}, short_met={short_met}, threshold={threshold}")
+                return None
+        
+        except Exception as e:
+            print(f"[{self.symbol}] [TREND] Error: {e}", flush=True)
             return None
 
     def _check_macd(self, fast=12, slow=26, signal=9, min_conditions=2, debug=False):
@@ -1662,48 +1702,94 @@ class SmartFilter:
                 )
             return None
 
-    def _check_fractal_zone(self, buffer_pct=0.005, window=20, min_conditions=2, debug=False):
-        fractal_low, _ = self._get_rolling_extremes('low', window)
-        _, fractal_high = self._get_rolling_extremes('high', window)
-        fractal_low_prev, _ = self._get_rolling_extremes('low', window, prev=True)
-        _, fractal_high_prev = self._get_rolling_extremes('high', window, prev=True)
-        close = self.df['close'].iat[-1]
-        close_prev = self.df['close'].iat[-2]
-    
-        cond1_long = close > fractal_low * (1 + buffer_pct)
-        cond2_long = close > close_prev
-        cond3_long = fractal_low > fractal_low_prev
-    
-        cond1_short = close < fractal_high * (1 - buffer_pct)
-        cond2_short = close < close_prev
-        cond3_short = fractal_high < fractal_high_prev
-    
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
-    
-        if short_met >= min_conditions and short_met > long_met:
-            if debug:
-                print(
-                    f"[{self.symbol}] [Fractal Zone] Signal: SHORT | "
-                    f"short_met={short_met}, long_met={long_met}, min_conditions={min_conditions}, "
-                    f"fractal_high={fractal_high:.2f}, fractal_high_prev={fractal_high_prev:.2f}"
-                )
-            return "SHORT"
-        elif long_met >= min_conditions and long_met > short_met:
-            if debug:
-                print(
-                    f"[{self.symbol}] [Fractal Zone] Signal: LONG | "
-                    f"long_met={long_met}, short_met={short_met}, min_conditions={min_conditions}, "
-                    f"fractal_low={fractal_low:.2f}, fractal_low_prev={fractal_low_prev:.2f}"
-                )
-            return "LONG"
-        else:
-            if debug:
-                print(
-                    f"[{self.symbol}] [Fractal Zone] No signal fired | "
-                    f"short_met={short_met}, long_met={long_met}, min_conditions={min_conditions}, "
-                    f"fractal_high={fractal_high:.2f}, fractal_high_prev={fractal_high_prev:.2f}"
-                )
+    def _check_fractal_zone(self, window=50, min_atr_mult=0.5, min_conditions=2, range_volatility_filter=True, debug=False):
+        """
+        ENHANCED Fractal Zone (2026-03-05):
+        Detects structural support/resistance breaks with improved robustness.
+        
+        Improvements:
+        1. Larger window (50 vs 20 candles) for better structure detection
+        2. ATR-based adaptive buffer (not fixed 0.5%)
+        3. Range volatility filter to skip choppy consolidation
+        4. Better for all timeframes
+        
+        Args:
+            window: Lookback for fractal extremes (50 = ~12h on 15min, ~25h on 30min, ~50h on 1h)
+            min_atr_mult: Multiplier for ATR-based buffer (0.5 = conservative)
+            min_conditions: Require 2+ conditions met (out of 3)
+            range_volatility_filter: Skip signals in choppy/consolidating ranges
+            debug: Print debug info
+        """
+        try:
+            fractal_low, _ = self._get_rolling_extremes('low', window)
+            _, fractal_high = self._get_rolling_extremes('high', window)
+            fractal_low_prev, _ = self._get_rolling_extremes('low', window, prev=True)
+            _, fractal_high_prev = self._get_rolling_extremes('high', window, prev=True)
+            
+            close = self.df['close'].iat[-1]
+            close_prev = self.df['close'].iat[-2]
+            atr = self.df['atr'].iat[-1] if 'atr' in self.df.columns and self.df['atr'].iat[-1] is not None else 0
+            
+            # ENHANCEMENT 1: Dynamic ATR-based buffer (adaptive to volatility)
+            if atr > 0 and fractal_low > 0:
+                buffer = (atr / fractal_low) * min_atr_mult  # Scales with volatility
+            else:
+                buffer = 0.005  # Fallback to 0.5% if ATR not available
+            
+            # ENHANCEMENT 2: Range volatility filter (skip choppy consolidation)
+            fractal_range = fractal_high - fractal_low if fractal_high and fractal_low else 0
+            fractal_range_prev = fractal_high_prev - fractal_low_prev if fractal_high_prev and fractal_low_prev else 0
+            
+            if range_volatility_filter and fractal_range > 0 and fractal_range_prev > 0:
+                mean_range = (fractal_range + fractal_range_prev) / 2
+                if fractal_range < mean_range * 0.7:  # Current range 30% smaller = choppy
+                    if debug:
+                        print(
+                            f"[{self.symbol}] [Fractal Zone] Skipped (choppy): range={fractal_range:.2f} < "
+                            f"mean={mean_range:.2f} (threshold={mean_range * 0.7:.2f})"
+                        )
+                    return None
+            
+            # Conditions: 3 checks (structural break + momentum + trend)
+            cond1_long = close > fractal_low * (1 + buffer)    # Price above structural low + buffer
+            cond2_long = close > close_prev                     # Momentum: higher close
+            cond3_long = fractal_low > fractal_low_prev        # Trend: higher lows (bullish structure)
+            
+            cond1_short = close < fractal_high * (1 - buffer)   # Price below structural high - buffer
+            cond2_short = close < close_prev                    # Momentum: lower close
+            cond3_short = fractal_high < fractal_high_prev     # Trend: lower highs (bearish structure)
+            
+            long_met = sum([cond1_long, cond2_long, cond3_long])
+            short_met = sum([cond1_short, cond2_short, cond3_short])
+            
+            if short_met >= min_conditions and short_met > long_met:
+                if debug:
+                    print(
+                        f"[{self.symbol}] [Fractal Zone ENHANCED] Signal: SHORT | "
+                        f"short_met={short_met}, long_met={long_met}, buffer={buffer:.4f}, "
+                        f"fractal_high={fractal_high:.2f}, fractal_high_prev={fractal_high_prev:.2f}, "
+                        f"range={fractal_range:.2f}"
+                    )
+                return "SHORT"
+            elif long_met >= min_conditions and long_met > short_met:
+                if debug:
+                    print(
+                        f"[{self.symbol}] [Fractal Zone ENHANCED] Signal: LONG | "
+                        f"long_met={long_met}, short_met={short_met}, buffer={buffer:.4f}, "
+                        f"fractal_low={fractal_low:.2f}, fractal_low_prev={fractal_low_prev:.2f}, "
+                        f"range={fractal_range:.2f}"
+                    )
+                return "LONG"
+            else:
+                if debug:
+                    print(
+                        f"[{self.symbol}] [Fractal Zone ENHANCED] No signal | "
+                        f"short_met={short_met}, long_met={long_met}, buffer={buffer:.4f}"
+                    )
+                return None
+        
+        except Exception as e:
+            print(f"[{self.symbol}] [Fractal Zone] Error: {e}", flush=True)
             return None
 
     def _check_hh_ll(self, debug=False):
