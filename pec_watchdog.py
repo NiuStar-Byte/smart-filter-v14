@@ -12,10 +12,11 @@ from datetime import datetime
 import signal
 
 # Configuration
-PEC_SCRIPT = "pec_executor.py"
+WORK_DIR = os.path.dirname(os.path.abspath(__file__))  # Workspace root
+PEC_SCRIPT_PATH = os.path.join(WORK_DIR, "smart-filter-v14-main", "pec_executor.py")  # Absolute path to executor
+PEC_SCRIPT = "pec_executor.py"  # Process name for pgrep
 CHECK_INTERVAL = 30  # seconds
 LOG_FILE = "pec_watchdog.log"
-WORK_DIR = os.path.dirname(os.path.abspath(__file__))
 GRACEFUL_SHUTDOWN = False
 
 def log(msg):
@@ -49,23 +50,46 @@ def is_pec_running():
 def start_pec():
     """Start PEC executor in background."""
     try:
-        os.chdir(WORK_DIR)
+        # Verify script exists
+        if not os.path.exists(PEC_SCRIPT_PATH):
+            error_msg = f"PEC script not found at {PEC_SCRIPT_PATH}"
+            log(f"❌ {error_msg}")
+            log_to_health_monitor("WATCHDOG", "SCRIPT_MISSING", error_msg)
+            return False
+        
+        # Use absolute path to executor in submodule
         proc = subprocess.Popen(
-            ["python3", PEC_SCRIPT],
+            ["python3", PEC_SCRIPT_PATH],
             stdout=open(os.devnull, 'w'),
             stderr=open(os.devnull, 'w'),
-            start_new_session=True  # Detach from parent
+            start_new_session=True,  # Detach from parent
+            cwd=WORK_DIR  # Run from workspace root
         )
         time.sleep(2)  # Give it time to start
         if is_pec_running():
             log(f"✅ PEC Executor started (PID will auto-continue)")
             return True
         else:
-            log(f"❌ PEC Executor failed to start")
+            error_msg = "PEC Executor process exited immediately after start"
+            log(f"❌ {error_msg}")
+            log_to_health_monitor("WATCHDOG", "START_FAILED", error_msg)
             return False
     except Exception as e:
-        log(f"❌ Error starting PEC: {e}")
+        error_msg = f"{type(e).__name__}: {e}"
+        log(f"❌ Error starting PEC: {error_msg}")
+        log_to_health_monitor("WATCHDOG", "EXCEPTION", error_msg)
         return False
+
+def log_to_health_monitor(component, error_type, message):
+    """Log errors to health monitor log"""
+    try:
+        health_log = os.path.join(WORK_DIR, 'pec_system_health.log')
+        ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S GMT+7")
+        line = f"[{ts}] 🔴 {component:<15} | {error_type:<20} | {message}\n"
+        with open(health_log, 'a') as f:
+            f.write(line)
+    except:
+        pass  # If health log fails, at least we tried in main log
 
 def main():
     """Main watchdog loop."""
