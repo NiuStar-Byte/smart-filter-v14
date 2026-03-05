@@ -1293,66 +1293,80 @@ class SmartFilter:
         self,
         rolling_window: int = 15,
         min_price_move: float = 0.0001,
-        zscore_threshold: float = 1.1,
-        require_5m_trend: bool = True,
+        zscore_threshold: float = 1.5,
         debug: bool = False
     ) -> Optional[str]:
         """
-        Detects volume spikes with price move and optional 5m trend confirmation.
-        Returns "LONG", "SHORT", or None.
+        ENHANCED Volume Spike Filter (2026-03-05):
+        Detects volume spikes (institutional activity) backing price moves.
+        
+        Improvements:
+        1. Z-score threshold: 1.1 → 1.5 (better balance: 93rd percentile)
+        2. Removed 5m confirmation (daemon runs 15min/30min/1h only, 5m not available)
+        3. Simplified: 3 conditions, threshold 2/3 (kept simple, proven effective)
+        4. Fixed rolling window (no more inconsistent 5-candle override)
+        5. Better for all timeframes
+        
+        Args:
+            rolling_window: Volume lookback window (15 candles = baseline)
+            min_price_move: Minimum price movement to consider (0.0001 = 0.01%)
+            zscore_threshold: Z-score for spike detection (1.5 = 93rd percentile, institutional activity)
+            debug: Print debug info
+        
+        Returns: "LONG", "SHORT", or None
         """
-        # --- Parameter overrides by timeframe ---
-        if self.tf != "3min":
-            rolling_window = 5
-            require_5m_trend = False
-    
+        
         # Defensive: Check rolling window length
         if len(self.df) < rolling_window + 2:
             if debug:
-                print(f"[{self.symbol}] [Volume Spike] Not enough data for rolling window")
+                print(f"[{self.symbol}] [Volume Spike] Not enough data for rolling window={rolling_window}")
             return None
     
-        avg = self.df['volume'].rolling(rolling_window).mean().iat[-2]
-        std = self.df['volume'].rolling(rolling_window).std().iat[-2]
-        curr_vol = self.df['volume'].iat[-1]
-        zscore = (curr_vol - avg) / (std if std != 0 else 1)
-    
-        close = self.df['close'].iat[-1]
-        close_prev = self.df['close'].iat[-2]
-        price_move = (close - close_prev) / close_prev if close_prev != 0 else 0
-    
-        price_up = price_move > min_price_move
-        price_down = price_move < -min_price_move
-        vol_up = curr_vol > self.df['volume'].iat[-2]
-        spike = zscore > zscore_threshold
-    
-        long_conditions = [spike, price_up, vol_up]
-        short_conditions = [spike, price_down, vol_up]
-    
-        signal = None
-        if sum(long_conditions) >= 2:
-            signal = "LONG"
-        elif sum(short_conditions) >= 2:
-            signal = "SHORT"
-    
-        if debug:
-            # cleaned-up debug print (previous version had a truncated/unterminated f-string)
-            print(
-                f"[{self.symbol}] [Volume Spike] signal={signal} | "
-                f"zscore={zscore:.6f}, price_move={price_move:.6f}, vol_up={vol_up}, "
-                f"spike={spike}, price_up={price_up}, price_down={price_down}, "
-                f"curr_vol={curr_vol}, avg_vol={avg}, std={std}"
-            )
-    
-        # 5m volume trend confirmation
-        if signal and require_5m_trend:
-            vol_trend = True  # Volume spike confirmation
+        try:
+            # Calculate volume metrics
+            avg = self.df['volume'].rolling(rolling_window).mean().iat[-2]
+            std = self.df['volume'].rolling(rolling_window).std().iat[-2]
+            curr_vol = self.df['volume'].iat[-1]
+            vol_prev = self.df['volume'].iat[-2]
+            
+            # Z-score: (current - average) / standard deviation
+            zscore = (curr_vol - avg) / (std if std != 0 else 1)
+            spike = zscore > zscore_threshold  # Institutional activity detected
+        
+            # Price metrics
+            close = self.df['close'].iat[-1]
+            close_prev = self.df['close'].iat[-2]
+            price_move = (close - close_prev) / close_prev if close_prev != 0 else 0
+        
+            # Conditions: price movement + volume confirmation
+            price_up = price_move > min_price_move      # Price moved up significantly
+            price_down = price_move < -min_price_move    # Price moved down significantly
+            vol_up = curr_vol > vol_prev                 # Volume higher than previous
+        
+            # Three conditions for LONG / SHORT
+            long_conditions = [spike, price_up, vol_up]
+            short_conditions = [spike, price_down, vol_up]
+        
+            # Signal decision: need 2/3 conditions (67% threshold)
+            signal = None
+            if sum(long_conditions) >= 2:
+                signal = "LONG"
+            elif sum(short_conditions) >= 2:
+                signal = "SHORT"
+        
             if debug:
-                print(f"[{self.symbol}] [Volume Spike] 5m volume trend check: {vol_trend} (latest={df5m['volume'].iat[-1]}, prev={df5m['volume'].iat[-2]})")
-            if not vol_trend:
-                return None
-    
-        return signal
+                print(
+                    f"[{self.symbol}] [Volume Spike ENHANCED] signal={signal} | "
+                    f"zscore={zscore:.4f} (threshold={zscore_threshold}), price_move={price_move:.6f}, "
+                    f"vol_up={vol_up}, spike={spike}, price_up={price_up}, price_down={price_down}, "
+                    f"curr_vol={curr_vol:.0f}, avg_vol={avg:.0f}, conditions_met={sum(long_conditions) if signal=='LONG' else sum(short_conditions)}/3"
+                )
+        
+            return signal
+        
+        except Exception as e:
+            print(f"[{self.symbol}] [Volume Spike] Error: {e}", flush=True)
+            return None
 
     def _check_mtf_volume_agreement(self, debug: bool = False) -> Optional[str]:
         """
