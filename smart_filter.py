@@ -2130,70 +2130,117 @@ class SmartFilter:
         self,
         atr_col='atr',
         atr_ma_col='atr_ma',
-        min_atr_diff=0.1,
-        volume_confirm=False,
+        atr_expansion_pct=0.15,
+        lookback=2,
+        volume_mult=1.3,
+        min_atr=0.5,
+        volume_confirm=True,
+        direction_threshold=2,
+        volume_ma_period=10,
         debug=False
     ):
         """
-        Enhanced Volatility Model:
-        - Configurable minimum ATR difference versus average.
-        - Optional volume confirmation.
-        - Detailed logging.
+        ENHANCED VOLATILITY MODEL - MODERATE Rules (2026-03-05)
+        
+        Detects volatility expansion with balanced/moderate filtering:
+        - ATR expansion: 15% above MA (percentage-based, normalized)
+        - Lookback: 2 bars, but 1+ bars showing trend OK (flexible)
+        - Direction: Need 2 of 3 conditions to fire (ATR, Price, Volume)
+        - Volume confirmation: 1.3x average (moderate gate)
+        - Min ATR: 0.5 (avoids stale markets)
+        
+        Parameters:
+        - atr_expansion_pct: ATR must be X% above its MA (0.15 = 15%)
+        - lookback: Check last N bars for expansion trend (2 = last 2)
+        - volume_mult: Volume > MA × this (1.3 = 30% above average)
+        - min_atr: Minimum ATR value for market quality
+        - volume_confirm: Require volume confirmation (True = enabled)
+        - direction_threshold: Need N of 3 conditions (2 = moderate, 3 = strict)
+        - volume_ma_period: Period for volume MA (10 = 10-bar MA)
+        
+        Logic:
+        LONG: ATR expanding 15% above MA + 2 of [ATR↑, Price↑, Volume↑]
+        SHORT: Same but for bearish direction
         """
-        atr = self.df[atr_col].iat[-1]
-        atr_prev = self.df[atr_col].iat[-2]
-        atr_ma = self.df[atr_ma_col].iat[-1]
-        close = self.df['close'].iat[-1]
-        close_prev = self.df['close'].iat[-2]
-        volume = self.df['volume'].iat[-1]
-        volume_ma = self.df['volume'].rolling(10).mean().iat[-1]
-    
-        volatility = {
-            "atr": atr,
-            "atr_prev": atr_prev,
-            "atr_ma": atr_ma,
-            "close": close,
-            "close_prev": close_prev,
-            "atr_vs_ma": atr - atr_ma,
-            "atr_vs_prev": atr - atr_prev,
-            "volume": volume,
-            "volume_ma": volume_ma,
-            "min_atr_diff": min_atr_diff,
-        }
-    
-        # Enhancement: ATR must exceed MA by min_atr_diff
-        cond1_long = atr > atr_prev
-        cond2_long = close > close_prev
-        cond3_long = (atr - atr_ma) > min_atr_diff
-        cond4_long = (volume > volume_ma) if volume_confirm else True
-    
-        cond1_short = atr < atr_prev
-        cond2_short = close < close_prev
-        cond3_short = (atr_ma - atr) > min_atr_diff
-        cond4_short = (volume > volume_ma) if volume_confirm else True
-    
-        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
-    
-        if debug:
-            print(
-                f"[{self.symbol}] [Volatility Model] Metrics | volatility={volatility}, long_met={long_met}, short_met={short_met}"
-            )
-    
-        if long_met >= 3:
-            print(
-                f"[{self.symbol}] [Volatility Model] Signal: LONG | long_met={long_met}, short_met={short_met}, volatility={volatility}"
-            )
-            return "LONG"
-        elif short_met >= 3:
-            print(
-                f"[{self.symbol}] [Volatility Model] Signal: SHORT | long_met={long_met}, short_met={short_met}, volatility={volatility}"
-            )
-            return "SHORT"
-        else:
-            print(
-                f"[{self.symbol}] [Volatility Model] No signal fired | long_met={long_met}, short_met={short_met}, volatility={volatility}"
-            )
+        try:
+            # Get current values
+            current_atr = self.df[atr_col].iat[-1] if atr_col in self.df.columns else None
+            current_atr_prev = self.df[atr_col].iat[-2] if atr_col in self.df.columns else None
+            current_atr_ma = self.df[atr_ma_col].iat[-1] if atr_ma_col in self.df.columns else None
+            current_close = self.df['close'].iat[-1]
+            current_close_prev = self.df['close'].iat[-2]
+            current_volume = self.df['volume'].iat[-1]
+            current_volume_ma = self.df['volume'].rolling(volume_ma_period).mean().iat[-1]
+            
+            # Gate 1: Minimum ATR requirement (market quality)
+            if current_atr is None or current_atr < min_atr:
+                if debug:
+                    print(f"[{self.symbol}] [Volatility Model] SKIP: ATR too low ({current_atr} < {min_atr})")
+                return None
+            
+            # Gate 2: ATR expansion magnitude (percentage-based, normalized)
+            atr_expansion_pct_actual = (current_atr - current_atr_ma) / current_atr_ma if current_atr_ma > 0 else 0
+            if atr_expansion_pct_actual < atr_expansion_pct:
+                if debug:
+                    print(f"[{self.symbol}] [Volatility Model] SKIP: Expansion too small ({atr_expansion_pct_actual:.4f} < {atr_expansion_pct})")
+                return None
+            
+            # Gate 3: Lookback period - check if expansion is consistent (flexible)
+            expansion_bars = 0
+            for i in range(1, min(lookback + 1, len(self.df))):
+                bar_atr = self.df[atr_col].iat[-i]
+                bar_atr_ma = self.df[atr_ma_col].iat[-i]
+                if bar_atr_ma > 0:
+                    bar_expansion_pct = (bar_atr - bar_atr_ma) / bar_atr_ma
+                    # Flexible: 80% of target threshold (not strict)
+                    if bar_expansion_pct > atr_expansion_pct * 0.8:
+                        expansion_bars += 1
+            
+            # Need at least 1 bar showing expansion (flexible, not strict)
+            if expansion_bars < 1:
+                if debug:
+                    print(f"[{self.symbol}] [Volatility Model] SKIP: No expansion bars ({expansion_bars} < 1)")
+                return None
+            
+            # Direction conditions (MODERATE: need 2 of 3)
+            cond_atr_up = current_atr > current_atr_prev if current_atr_prev else False
+            cond_price_up = current_close > current_close_prev
+            cond_volume_up = current_volume > current_volume_ma
+            
+            # Count conditions for bullish direction
+            long_conditions = sum([cond_atr_up, cond_price_up, cond_volume_up])
+            
+            # Count conditions for bearish direction
+            cond_atr_down = current_atr < current_atr_prev if current_atr_prev else False
+            cond_price_down = current_close < current_close_prev
+            short_conditions = sum([cond_atr_down, cond_price_down, cond_volume_up])  # Note: volume same for both
+            
+            if debug:
+                print(f"[{self.symbol}] [Volatility Model] Conditions | ATR↑={cond_atr_up}, Price↑={cond_price_up}, Vol↑={cond_volume_up}")
+                print(f"  Expansion: {expansion_bars} bars, actual={atr_expansion_pct_actual:.4f} (target={atr_expansion_pct})")
+                print(f"  Long conds={long_conditions}, Short conds={short_conditions}")
+            
+            # LONG: ATR expanding + need 2 of [ATR↑, Price↑, Volume↑]
+            # Volume confirmation can be optional, but if enabled, prefer it
+            if long_conditions >= direction_threshold and cond_atr_up:
+                vol_check = (cond_volume_up or not volume_confirm)  # Pass if vol↑ OR confirm disabled
+                if vol_check:
+                    print(f"[{self.symbol}] [Volatility Model] Signal: LONG | expansion={atr_expansion_pct_actual:.4f}, conds={long_conditions}/3, ATR={current_atr:.6f}")
+                    return "LONG"
+            
+            # SHORT: ATR expanding + need 2 of [ATR↓, Price↓, Volume↑]
+            if short_conditions >= direction_threshold and cond_atr_down:
+                vol_check = (cond_volume_up or not volume_confirm)
+                if vol_check:
+                    print(f"[{self.symbol}] [Volatility Model] Signal: SHORT | expansion={atr_expansion_pct_actual:.4f}, conds={short_conditions}/3, ATR={current_atr:.6f}")
+                    return "SHORT"
+            
+            if debug:
+                print(f"[{self.symbol}] [Volatility Model] No signal | long={long_conditions}, short={short_conditions}")
+            return None
+        
+        except Exception as e:
+            print(f"[{self.symbol}] [Volatility Model] Error: {e}")
             return None
 
     def _check_volatility_squeeze(
