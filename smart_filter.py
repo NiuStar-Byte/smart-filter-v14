@@ -19,6 +19,16 @@ from signal_debug_log import export_signal_debug_txt
 from calculations import add_indicators, compute_rsi, calculate_cci, calculate_stochrsi, compute_williams_r
 from typing import Optional
 
+# ===== SYMBOL REGISTRY ENFORCEMENT =====
+try:
+    from active_symbols import validate_symbol, SymbolNotRegisteredError
+except ImportError:
+    # Fallback if active_symbols not available (test environment)
+    def validate_symbol(symbol: str, raise_on_invalid: bool = True) -> bool:
+        return True
+    class SymbolNotRegisteredError(ValueError):
+        pass
+
 # Control verbosity (default: quiet mode to avoid Railway logging limits)
 DEBUG_FILTERS = os.getenv("DEBUG_FILTERS", "false").lower() == "true"
 
@@ -43,6 +53,16 @@ class SmartFilter:
     ):
         if kwargs is None:
             kwargs = {}
+
+        # ===== ENFORCE SYMBOL REGISTRATION =====
+        # Every symbol entering the filter chain must be registered in ACTIVE_SYMBOLS
+        try:
+            validate_symbol(symbol, raise_on_invalid=True)
+        except SymbolNotRegisteredError as e:
+            raise SymbolNotRegisteredError(
+                f"[SYMBOL VALIDATION] {symbol} is not registered in ACTIVE_SYMBOLS. "
+                f"Add it to main.py TOKENS list before processing. Error: {e}"
+            )
 
         self.symbol = symbol
         self.df = add_indicators(df)
