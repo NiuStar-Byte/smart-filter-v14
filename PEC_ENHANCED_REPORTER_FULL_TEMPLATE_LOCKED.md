@@ -144,7 +144,8 @@ Total P&L (Clean Data): ${total_pnl:+.2f}
 Avg TP Duration (Clean): {avg_tp_duration_summary}
 Avg SL Duration (Clean): {avg_sl_duration_summary}
 
-Max TIMEOUT Window: 15min=3h 45m | 30min=5h 0m | 1h=5h 0m
+Max TIMEOUT Window: 15min={max_timeout_15min} | 30min={max_timeout_30min} | 1h={max_timeout_1h}
+(CALCULATED from actual clean timeout signals, maximum duration per timeframe)
 
 Total Fired per Date:
   {YYYY-MM-DD}: {count} fired | Beginning Fired Time: {HH:MM:SS} | Last Fired Time: {HH:MM:SS} |
@@ -174,7 +175,8 @@ These are EXCLUDED from all above metrics to preserve backtest accuracy. See DET
 13. **Avg P&L/Trade:** Total P&L / Closed Trades ✅
 14. **TP Duration:** Average of all TP_HIT signal durations ✅
 15. **SL Duration:** Average of all SL_HIT signal durations ✅
-16. **Fired per Date:** Per-date breakdown with min/max times ✅
+16. **Max TIMEOUT per TF:** Maximum duration of TIMEOUT signals per timeframe (clean only, excluding stale) ✅
+17. **Fired per Date:** Per-date breakdown with min/max times ✅
 
 ---
 

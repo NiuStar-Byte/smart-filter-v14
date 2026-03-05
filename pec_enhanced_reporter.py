@@ -877,10 +877,30 @@ class PECEnhancedReporter:
         avg_tp_duration_summary = self._calculate_avg_duration_by_status(self.signals, 'TP_HIT')
         avg_sl_duration_summary = self._calculate_avg_duration_by_status(self.signals, 'SL_HIT')
         
-        # Calculate TIMEOUT WINDOW durations by timeframe (max_bars × tf_minutes, NOT actual closure duration)
-        timeout_window_15min = self._format_duration_hm(15 * 15 * 60)  # 15 bars × 15 min = 225 min = 3h 45m
-        timeout_window_30min = self._format_duration_hm(10 * 30 * 60)  # 10 bars × 30 min = 300 min = 5h
-        timeout_window_1h = self._format_duration_hm(5 * 60 * 60)      # 5 bars × 60 min = 300 min = 5h
+        # Calculate ACTUAL MAX TIMEOUT WINDOW by timeframe (from clean timeout signals only, excluding stale)
+        max_timeout_by_tf = {'15min': 0, '30min': 0, '1h': 0}
+        
+        for s in self.signals:
+            # Skip stale timeouts - only calculate from clean timeouts
+            if s.get('data_quality_flag') and 'STALE_TIMEOUT' in s.get('data_quality_flag'):
+                continue
+            if s.get('status') == 'TIMEOUT' and s.get('fired_time_utc') and s.get('closed_at'):
+                try:
+                    fired = datetime.fromisoformat(s.get('fired_time_utc').replace('Z', '+00:00'))
+                    closed = datetime.fromisoformat(s.get('closed_at').replace('Z', '+00:00'))
+                    delta = closed - fired
+                    duration_seconds = int(delta.total_seconds())
+                    
+                    tf = s.get('timeframe', '')
+                    if tf in max_timeout_by_tf:
+                        max_timeout_by_tf[tf] = max(max_timeout_by_tf[tf], duration_seconds)
+                except:
+                    pass
+        
+        # Format timeout windows (actual max durations from clean signals)
+        timeout_window_15min = self._format_duration_hm(max_timeout_by_tf['15min']) if max_timeout_by_tf['15min'] > 0 else "N/A"
+        timeout_window_30min = self._format_duration_hm(max_timeout_by_tf['30min']) if max_timeout_by_tf['30min'] > 0 else "N/A"
+        timeout_window_1h = self._format_duration_hm(max_timeout_by_tf['1h']) if max_timeout_by_tf['1h'] > 0 else "N/A"
         
         # Calculate fired time range and count per date
         signals_by_date = defaultdict(list)
