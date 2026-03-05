@@ -878,7 +878,10 @@ class PECEnhancedReporter:
         avg_sl_duration_summary = self._calculate_avg_duration_by_status(self.signals, 'SL_HIT')
         
         # Calculate ACTUAL MAX TIMEOUT WINDOW by timeframe (from clean timeout signals only, excluding stale)
+        # Count ALL clean timeouts (whether same-date or cross-date) and find max per TF
+        # Then limit to expected maximum (3h45m for 15min, 5h for 30min, 5h for 1h)
         max_timeout_by_tf = {'15min': 0, '30min': 0, '1h': 0}
+        expected_max_by_tf = {'15min': 15*15*60, '30min': 10*30*60, '1h': 5*60*60}  # Expected maximums
         
         for s in self.signals:
             # Skip stale timeouts - only calculate from clean timeouts
@@ -893,14 +896,22 @@ class PECEnhancedReporter:
                     
                     tf = s.get('timeframe', '')
                     if tf in max_timeout_by_tf:
-                        max_timeout_by_tf[tf] = max(max_timeout_by_tf[tf], duration_seconds)
+                        # Only count if within expected maximum (real timeout window)
+                        if duration_seconds <= expected_max_by_tf[tf]:
+                            max_timeout_by_tf[tf] = max(max_timeout_by_tf[tf], duration_seconds)
                 except:
                     pass
         
-        # Format timeout windows (actual max durations from clean signals)
-        timeout_window_15min = self._format_duration_hm(max_timeout_by_tf['15min']) if max_timeout_by_tf['15min'] > 0 else "N/A"
-        timeout_window_30min = self._format_duration_hm(max_timeout_by_tf['30min']) if max_timeout_by_tf['30min'] > 0 else "N/A"
-        timeout_window_1h = self._format_duration_hm(max_timeout_by_tf['1h']) if max_timeout_by_tf['1h'] > 0 else "N/A"
+        # Format timeout windows - show DESIGNED maximum (what system is set for)
+        # These are the theoretical limits per timeframe design
+        timeout_window_15min = "3h 45m"   # 15 bars × 15min = 225min = 3h45m (designed)
+        timeout_window_30min = "5h 0m"    # 10 bars × 30min = 300min = 5h (designed)
+        timeout_window_1h = "5h 0m"       # 5 bars × 60min = 300min = 5h (designed)
+        
+        # Also calculate actual max from clean signals within expected limits
+        actual_max_15min = self._format_duration_hm(max_timeout_by_tf['15min']) if max_timeout_by_tf['15min'] > 0 else "None"
+        actual_max_30min = self._format_duration_hm(max_timeout_by_tf['30min']) if max_timeout_by_tf['30min'] > 0 else "None"
+        actual_max_1h = self._format_duration_hm(max_timeout_by_tf['1h']) if max_timeout_by_tf['1h'] > 0 else "None"
         
         # Calculate fired time range and count per date
         signals_by_date = defaultdict(list)
@@ -956,7 +967,8 @@ class PECEnhancedReporter:
         report.append(f"Overall Win Rate: {overall_wr:.2f}% >> [ (count TP + Count TimeOut Win) / (Closed Trades) ] = [ ({total_tp}+{timeout_wins}) / {closed_signals} ]")
         report.append(f"Total P&L (Clean Data): ${total_pnl:+.2f} (Avg P&L per Signal = ${avg_pnl_per_signal:+.2f}; Avg P&L per Closed Trade = ${avg_pnl_per_trade:+.2f})")
         report.append(f"Avg TP Duration (Clean): {avg_tp_duration_summary} | Avg SL Duration (Clean): {avg_sl_duration_summary}")
-        report.append(f"Max TIMEOUT Window: 15min={timeout_window_15min} | 30min={timeout_window_30min} | 1h={timeout_window_1h}")
+        report.append(f"Max TIMEOUT Window (Designed): 15min={timeout_window_15min} | 30min={timeout_window_30min} | 1h={timeout_window_1h}")
+        report.append(f"Max TIMEOUT Actual (Within Limit): 15min={actual_max_15min} | 30min={actual_max_30min} | 1h={actual_max_1h}")
         
         # Add fired time range and count per date (each date on its own line)
         if date_summary_lines:
