@@ -1,0 +1,26 @@
+📊 SUMMARY
+====================================================================================================================================
+
+🔒 FOUNDATION BASELINE (IMMUTABLE - Locked at commit c535c34)
+Total Signals: 853 | Closed: 830 | WR: 25.7%
+LONG WR: 29.6% | SHORT WR: 46.2% | P&L: $-5498.59
+
+Total Signals (Foundation + New): 1321 (Count Win = 313; Count Loss = 616; Count TimeOut = 184; Count Open = 63; Stale Timeouts Excluded = 145)
+Closed Trades (Clean Data): 1113 (TP: 313, SL: 616; TimeOut Win = 58; TimeOut Loss = 126)
+Overall Win Rate: 33.33% >> [ (count TP + Count TimeOut Win) / (Closed Trades) ] = [ (313+58) / 1113 ]
+Total P&L (Clean Data): $-3688.15 (Avg P&L per Signal = $-2.79; Avg P&L per Closed Trade = $-3.31)
+Avg TP Duration (Clean): 1h 33m | Avg SL Duration (Clean): 1h 30m
+Max TIMEOUT Window: 15min=3h 45m | 30min=5h 0m | 1h=5h 0m
+Total Fired per Date:
+  2026-02-27: 21 fired | Beginning Fired Time: 22:55:36 | Last Fired Time: 23:59:35 |
+  2026-02-28: 246 fired | Beginning Fired Time: 00:01:45 | Last Fired Time: 23:53:46 |
+  2026-03-01: 301 fired | Beginning Fired Time: 00:06:53 | Last Fired Time: 23:55:18 |
+  2026-03-02: 418 fired | Beginning Fired Time: 00:11:31 | Last Fired Time: 23:57:25 |
+  2026-03-03: 6 fired | Beginning Fired Time: 00:04:03 | Last Fired Time: 00:52:29 |
+  2026-03-04: 329 fired | Beginning Fired Time: 00:46:45 | Last Fired Time: 23:27:43 |
+
+⚠️  DATA QUALITY NOTE: 145 signals marked as 'STALE_TIMEOUT' (closed >150% past deadline)
+These are EXCLUDED from all above metrics to preserve backtest accuracy. See DETAILED SIGNAL LIST for individual stale timeout records.
+
+========================================================================================================================================================================================================
+🎯 HIERARCHY RANKING - 5D / 4D / 3D / 2D PERFORMANCE TRACKING
