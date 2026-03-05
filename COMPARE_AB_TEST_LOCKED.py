@@ -27,23 +27,27 @@ def clear_screen():
     subprocess.call('clear' if os.name == 'posix' else 'cls', shell=True)
 
 def get_phase2_signals():
-    """Load Phase 2-FIXED signals (after 13:16 UTC cutoff)"""
+    """Load Phase 2-FIXED signals (after 13:16 UTC cutoff) from LIVE SENT_SIGNALS.jsonl"""
     phase2 = []
     try:
         with open(SIGNALS_FILE, 'r') as f:
             for line in f:
                 try:
                     sig = json.loads(line.strip())
+                    # Filter by signal_origin first (NEW signals only)
+                    if sig.get('signal_origin') != 'NEW':
+                        continue
                     fired_str = sig.get('fired_time_utc', '')
                     if not fired_str:
                         continue
+                    # Double-check by timestamp as well (belt + suspenders)
                     fired = datetime.fromisoformat(fired_str.split('+')[0]).replace(tzinfo=timezone.utc)
                     if fired >= PHASE2_CUTOFF:
                         phase2.append(sig)
                 except:
                     continue
-    except:
-        pass
+    except Exception as e:
+        print(f"[ERROR] Failed to read {SIGNALS_FILE}: {e}")
     return phase2
 
 def main():
