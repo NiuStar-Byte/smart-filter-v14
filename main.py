@@ -962,7 +962,7 @@ def run_cycle():
                 if df30 is None or df30.empty:
                     res30 = None
                 else:
-                    sf30 = SmartFilter(symbol, df30, min_score=3, tf="30min")  # FIX: 2026-03-06 - lowered from 14 to match 15min (was blocking ALL signals)
+                    sf30 = SmartFilter(symbol, df30, tf="30min")  # FIX: 2026-03-06 - use default min_score from smart_filter.py (now 10)
                     regime30 = sf30._market_regime()
                     res30 = sf30.analyze()
 
