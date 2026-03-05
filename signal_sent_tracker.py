@@ -21,9 +21,22 @@ class SignalSentTracker:
         self._ensure_file_exists()
     
     def _ensure_file_exists(self):
-        """Create file if doesn't exist"""
+        """Create file if doesn't exist (with parent directory creation)"""
         if not os.path.exists(self.sent_signals_path):
-            Path(self.sent_signals_path).touch()
+            try:
+                # Create parent directory if needed
+                parent_dir = os.path.dirname(self.sent_signals_path)
+                if parent_dir and not os.path.exists(parent_dir):
+                    os.makedirs(parent_dir, exist_ok=True)
+                
+                # Create empty file
+                with open(self.sent_signals_path, 'w') as f:
+                    pass  # Create empty file
+                
+                print(f"[INIT] Created SENT_SIGNALS.jsonl at {self.sent_signals_path}", flush=True)
+            except Exception as e:
+                print(f"[ERROR] Failed to create SENT_SIGNALS.jsonl: {e}", flush=True)
+                raise
     
     def log_sent_signal(self, 
                        signal_uuid: str,
