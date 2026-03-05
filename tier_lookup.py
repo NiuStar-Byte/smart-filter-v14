@@ -50,15 +50,15 @@ class TierLookup:
             self.tier_data = {"tier1": [], "tier2": [], "tier3": [], "tierx": []}
             self.tier_file = None
     
-    def get_tier(self, timeframe: str, direction: str, route: str = None, regime: str = None) -> str:
+    def get_tier(self, timeframe: str, direction: str, route: str = None, regime: str = None, symbol_group: str = None) -> str:
         """
-        Look up tier for a signal combo (ALL parent combos, not just TF-anchored).
+        Look up tier for a signal combo (ALL parent combos, most specific to least specific).
         
-        Checks combinations in order:
-        1. 4D: TF_DIR_ROUTE_REGIME
-        2. 3D: TF_DIR_ROUTE, TF_DIR_REGIME, TF_ROUTE_REGIME, DIR_ROUTE_REGIME, DIR_ROUTE, DIR_REGIME, ROUTE_REGIME
-        3. 2D: TF_DIR, TF_ROUTE, TF_REGIME, DIR_ROUTE, DIR_REGIME, ROUTE_REGIME
-        4. 1D: TF, DIR, ROUTE, REGIME
+        Checks combinations in order (highest dimension first):
+        1. 5D: TF_DIR_ROUTE_REGIME_SG (if symbol_group provided)
+        2. 4D: TF_DIR_ROUTE_REGIME
+        3. 3D: TF_DIR_ROUTE, TF_DIR_REGIME, TF_ROUTE_REGIME, DIR_ROUTE_REGIME, DIR_ROUTE, DIR_REGIME, ROUTE_REGIME
+        4. 2D: TF_DIR, TF_ROUTE, TF_REGIME, DIR_ROUTE, DIR_REGIME, ROUTE_REGIME
         5. Default to Tier-X if not found
         
         Returns: "Tier-1", "Tier-2", "Tier-3", or "Tier-X"
@@ -72,15 +72,24 @@ class TierLookup:
             dir_val = str(direction).strip().upper()
             route_val = str(route).strip() if route else None
             regime_val = str(regime).strip() if regime else None
+            symbol_group_val = str(symbol_group).strip() if symbol_group else None
             
             # Build ALL possible combo names to search for (most specific to least)
+            # NOTE: SIGNAL_TIERS.json has MIXED format:
+            # - 5D/4D: NO label prefix (e.g., "30min_SHORT_TREND CONTINUATION_BEAR")
+            # - 3D/2D: WITH label prefix (e.g., "TF_DIR_REGIME_30min_SHORT_BEAR")
+            # Search for both formats to be robust!
             combos_to_check = []
             
-            # 4D combo (most specific)
-            if route_val and regime_val:
-                combos_to_check.append(f"TF_DIR_ROUTE_REGIME_{tf}_{dir_val}_{route_val}_{regime_val}")
+            # 5D combo (most specific, if symbol group available) - NO PREFIX
+            if symbol_group_val and route_val and regime_val:
+                combos_to_check.append(f"{tf}_{dir_val}_{route_val}_{regime_val}_{symbol_group_val}")
             
-            # 3D combos (7 possibilities)
+            # 4D combo - NO PREFIX (matches file format for 5D/4D entries)
+            if route_val and regime_val:
+                combos_to_check.append(f"{tf}_{dir_val}_{route_val}_{regime_val}")
+            
+            # 3D combos - WITH label prefix (matches file format for 3D entries)
             if route_val and regime_val:
                 combos_to_check.append(f"TF_ROUTE_REGIME_{tf}_{route_val}_{regime_val}")
                 combos_to_check.append(f"DIR_ROUTE_REGIME_{dir_val}_{route_val}_{regime_val}")
@@ -95,7 +104,7 @@ class TierLookup:
             if route_val and regime_val:
                 combos_to_check.append(f"ROUTE_REGIME_{route_val}_{regime_val}")
             
-            # 2D combos
+            # 2D combos - WITH label prefix (matches file format for 2D entries)
             combos_to_check.append(f"TF_DIR_{tf}_{dir_val}")
             if route_val:
                 combos_to_check.append(f"TF_ROUTE_{tf}_{route_val}")
@@ -139,8 +148,9 @@ def get_tier_lookup() -> TierLookup:
         _tier_lookup = TierLookup()
     return _tier_lookup
 
-def get_signal_tier(timeframe: str, direction: str, route: str = None, regime: str = None) -> str:
-    """Convenience function to get tier for a signal (reloads latest tier file each time)"""
+def get_signal_tier(timeframe: str, direction: str, route: str = None, regime: str = None, symbol_group: str = None) -> str:
+    """Convenience function to get tier for a signal (reloads latest tier file each time)
+    Optional symbol_group allows checking 5D combos for better tier matching"""
     lookup = get_tier_lookup()
     lookup.reload()  # Always reload latest tier data (SIGNAL_TIERS updates frequently)
-    return lookup.get_tier(timeframe, direction, route, regime)
+    return lookup.get_tier(timeframe, direction, route, regime, symbol_group)
