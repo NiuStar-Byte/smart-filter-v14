@@ -23,7 +23,11 @@ from calculations import calculate_pnl
 class PECExecutor:
     """Auto-execute and track PEC signals"""
     
-    def __init__(self, sent_signals_path: str = "SENT_SIGNALS.jsonl"):
+    def __init__(self, sent_signals_path: str = None):
+        # Use absolute path to workspace root to fix path issues when run from submodule
+        if sent_signals_path is None:
+            workspace_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+            sent_signals_path = os.path.join(workspace_root, 'SENT_SIGNALS.jsonl')
         self.sent_signals_path = sent_signals_path
         self.kucoin_api_base = "https://api.kucoin.com"
         # MAX_BARS timeout per timeframe (bars since signal fired)
