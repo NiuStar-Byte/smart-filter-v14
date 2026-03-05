@@ -119,12 +119,12 @@ class RRTracker:
         m1_5 = self.calculate_metrics(self.signals_1_5)
         
         print("\n" + "="*110)
-        print("📊 RR VARIANT COMPARISON (2.0:1 PROD vs 1.5:1 Phase 2-FIXED)")
+        print("📊 RR VARIANT COMPARISON (2.0:1 PROD vs 1.5:1 NEW RR)")
         print("="*110)
         print()
         print("⏱️ CUTOFF TIME BETWEEN RR VARIANTS:")
-        print("   • 2.0:1 RR (PROD):      Feb 27 15:55 UTC → Mar 4 17:51 UTC (895 signals)")
-        print("   • 1.5:1 RR (Phase 2):   Mar 4 17:51 UTC → Mar 5 04:29 UTC (97 signals)")
+        print("   • 2.0:1 RR (PROD):      Feb 27 15:55 UTC → Mar 4 17:51 UTC [FIXED: 895 signals]")
+        print("   • 1.5:1 RR (NEW):       Mar 4 17:51 UTC → NOW [DYNAMIC: accumulating new signals]")
         print("   • Deployment:           2026-03-04 20:32 GMT+7 (commit e3f110b)")
         print()
         print("⚠️  3.0:1 RR (Legacy):      105 signals from Feb 27-28 (pre-optimization era) - EXCLUDED")
@@ -137,18 +137,22 @@ class RRTracker:
             return
         
         # Header row
-        print(f"{'RR':<8} | {'Total':>6} | {'TP':>4} | {'SL':>4} | {'TIMEOUT':>7} | {'OPEN':>4} | {'WR %':>6} | {'P&L $':>10} | {'TP Dur':>9} | {'SL Dur':>9}")
+        print(f"{'RR':<8} | {'Total*':>7} | {'Closed':>6} | {'TP':>4} | {'SL':>4} | {'TIMEOUT':>7} | {'WR %':>6} | {'P&L $':>10} | {'TP Dur':>9} | {'SL Dur':>9}")
         print("─"*110)
         
-        # 2.0 RR row
-        print(f"{'2.0:1':<8} | {m2_0['total_signals']:>6d} | {m2_0['tp_hits']:>4d} | {m2_0['sl_hits']:>4d} | {m2_0['timeouts']:>7d} | {m2_0['open']:>4d} | {m2_0['wr']:>6.2f} | ${m2_0['total_pnl']:>9.0f} | {self.format_duration(m2_0['avg_tp_dur']):>9} | {self.format_duration(m2_0['avg_sl_dur']):>9}")
+        # 2.0 RR row (FIXED)
+        print(f"{'2.0:1 F':>8} | {895:>7d} | {m2_0['closed']:>6d} | {m2_0['tp_hits']:>4d} | {m2_0['sl_hits']:>4d} | {m2_0['timeouts']:>7d} | {m2_0['wr']:>6.2f} | ${m2_0['total_pnl']:>9.0f} | {self.format_duration(m2_0['avg_tp_dur']):>9} | {self.format_duration(m2_0['avg_sl_dur']):>9}")
         
-        # 1.5 RR row
-        print(f"{'1.5:1':<8} | {m1_5['total_signals']:>6d} | {m1_5['tp_hits']:>4d} | {m1_5['sl_hits']:>4d} | {m1_5['timeouts']:>7d} | {m1_5['open']:>4d} | {m1_5['wr']:>6.2f} | ${m1_5['total_pnl']:>9.0f} | {self.format_duration(m1_5['avg_tp_dur']):>9} | {self.format_duration(m1_5['avg_sl_dur']):>9}")
+        # 1.5 RR row (DYNAMIC)
+        print(f"{'1.5:1 D':>8} | {m1_5['total_signals']:>7d} | {m1_5['closed']:>6d} | {m1_5['tp_hits']:>4d} | {m1_5['sl_hits']:>4d} | {m1_5['timeouts']:>7d} | {m1_5['wr']:>6.2f} | ${m1_5['total_pnl']:>9.0f} | {self.format_duration(m1_5['avg_tp_dur']):>9} | {self.format_duration(m1_5['avg_sl_dur']):>9}")
+        
+        print()
+        print("* F = FIXED (locked period before Mar 4 17:51 UTC)")
+        print("  D = DYNAMIC (accumulating new signals after Mar 4 17:51 UTC)")
         
         print()
         print("="*110)
-        print("📊 IMPACT ANALYSIS")
+        print("📊 IMPACT ANALYSIS - 2.0:1 (FIXED BASELINE) vs 1.5:1 (NEW, ACCUMULATING)")
         print("="*110)
         print()
         
@@ -157,13 +161,13 @@ class RRTracker:
         delta_tp_dur = m1_5['avg_tp_dur'] - m2_0['avg_tp_dur']
         delta_sl_dur = m1_5['avg_sl_dur'] - m2_0['avg_sl_dur']
         
-        print(f"Comparing 2.0:1 (PROD) vs 1.5:1 (Phase 2):")
+        print(f"Comparing 2.0:1 (FIXED BASELINE: 895 signals) vs 1.5:1 (NEW: {m1_5['total_signals']} signals accumulating):")
         print()
         print(f"  WR Change:        {m2_0['wr']:.2f}% → {m1_5['wr']:.2f}% ({delta_wr:+.2f}pp) {'✅ IMPROVING' if delta_wr > 0 else '⚠️ DECLINING'}")
         print(f"  TP Duration:      {self.format_duration(m2_0['avg_tp_dur'])} → {self.format_duration(m1_5['avg_tp_dur'])} ({delta_tp_dur:+.1f}h)")
         print(f"  SL Duration:      {self.format_duration(m2_0['avg_sl_dur'])} → {self.format_duration(m1_5['avg_sl_dur'])} ({delta_sl_dur:+.1f}h)")
         print(f"  P&L Change:       ${m2_0['total_pnl']:,.0f} → ${m1_5['total_pnl']:,.0f} ({delta_pnl:+,.0f})")
-        print(f"  Signal Volume:    {m2_0['total_signals']} → {m1_5['total_signals']} ({m1_5['total_signals']-m2_0['total_signals']:+d} signals)")
+        print(f"  Signal Volume:    895 (FIXED) → {m1_5['total_signals']} (accumulating +{m1_5['total_signals']-895:+d})")
         
         print()
         print("="*110)
