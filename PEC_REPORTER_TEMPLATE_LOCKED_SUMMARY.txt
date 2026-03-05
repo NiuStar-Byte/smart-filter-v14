@@ -1,0 +1,219 @@
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+🔒 PEC ENHANCED REPORTER - FULL TEMPLATE LOCKED v1.0
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+LOCKED DATE: 2026-03-05 09:23 GMT+7
+STATUS: ✅ COMPLETE & FROZEN
+SCOPE: ALL 8 SECTIONS + COMPLETE CALCULATION LOGIC
+GIT COMMITS: 0c3b302 (Summary) + aac44e6 (Full Template)
+
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+📋 TEMPLATE STRUCTURE (ALL 8 SECTIONS LOCKED)
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+✅ SECTION 1: HEADER
+   Format: "📊 PEC ENHANCED REPORTER - SIGNAL PERFORMANCE ANALYSIS"
+   Status: CONSTANT (locked)
+
+✅ SECTION 2: AGGREGATES (7 Dimensional Breakdowns)
+   Breakdown Types: BY TIMEFRAME | BY DIRECTION | BY ROUTE | BY REGIME | BY SYMBOL_GROUP | BY CONFIDENCE | (others)
+   Columns (LOCKED): Total | TP | SL | TIMEOUT | Closed | Open | WR | P&L | Avg TP Duration | Avg SL Duration
+   Rows: Dynamic (calculated from actual signals)
+   Status: LOCKED (7 types, fixed format)
+
+✅ SECTION 3: MULTI-DIMENSIONAL AGGREGATES (15 Combinations)
+   2D Combinations (9): TF×SG, Dir×SG, TF×Dir, TF×Regime, Dir×Regime, Dir×Route, Route×Regime, Route×SG, Regime×SG
+   3D+ Combinations (6): TF×Dir×Route, TF×Dir×Regime, Dir×Route×Regime, TF×Route×Regime, TF×Dir×Confidence, (+more)
+   Columns: Same as Aggregates (locked)
+   Status: LOCKED (15 combinations, fixed format)
+
+✅ SECTION 4: DETAILED SIGNAL LIST
+   Columns (LOCKED - 14 total):
+      Symbol | TF | Dir | Route | Regime | Conf | Sym Grp | Status | Entry | Exit | PnL | Fired Time | Exit Time | Duration | Data Quality
+   Sorting: By fired_time_utc (descending, most recent first)
+   Signal Status: TP_HIT | SL_HIT | TIMEOUT | OPEN
+   Data Quality Flags: ✓ CLEAN | ⚠️ STALE_TIMEOUT
+   Rows: Dynamic (one per signal)
+   Status: LOCKED (column format & order)
+
+✅ SECTION 5: SUMMARY (14 Dynamic Metrics)
+   1. Foundation Baseline (Reference - immutable: 853 signals, 25.7% WR)
+   2. Total Signals (Foundation + New) - DYNAMIC COUNT
+   3. Count Win (TP_HIT, excl. stale) - DYNAMIC COUNT
+   4. Count Loss (SL_HIT, excl. stale) - DYNAMIC COUNT
+   5. Count TimeOut - DYNAMIC COUNT
+   6. Count Open - DYNAMIC COUNT
+   7. Stale Timeouts Excluded - DYNAMIC COUNT
+   8. TimeOut Win (P&L > 0) - DYNAMIC CALCULATION
+   9. TimeOut Loss (P&L < 0) - DYNAMIC CALCULATION
+   10. Closed Trades (TP + SL + TW + TL) - DYNAMIC CALCULATION
+   11. Overall Win Rate ((TP + TW) / Closed × 100%) - DYNAMIC CALCULATION (formula shown)
+   12. Total P&L (clean data) - DYNAMIC CALCULATION
+   13. Avg P&L per Signal (Total / Total Signals) - DYNAMIC CALCULATION
+   14. Avg P&L per Closed Trade (Total / Closed Trades) - DYNAMIC CALCULATION
+   + Avg TP Duration, Avg SL Duration, Max TIMEOUT Window
+   + Total Fired per Date (per-date breakdown with unique begin/last times)
+   + Data Quality Note (count of stale timeouts)
+   Status: LOCKED (structure & calculation logic, values always dynamic)
+
+✅ SECTION 6: HIERARCHY RANKING (5D/4D/3D/2D)
+   5D Ranking: Top 10 combos by WR (TimeFrame × Direction × Route × Regime × Symbol_Group)
+   4D Ranking: Top 5 combos by WR (TimeFrame × Direction × Route × Regime)
+   3D Ranking: Top 5 per type × 4 types (TF_DIR_ROUTE, TF_DIR_REGIME, DIR_ROUTE_REGIME, TF_ROUTE_REGIME)
+   2D Ranking: Top 8 per type × 5 types (TF_DIR, TF_REGIME, DIR_REGIME, DIR_ROUTE, ROUTE_REGIME)
+   Metrics per combo: WR% | Total P&L | Avg P&L | Closed count
+   Minimum threshold: 25+ closed trades per combo
+   Sorting: By WR (descending), then P&L (descending)
+   Status: LOCKED (structure & sorting logic)
+
+✅ SECTION 7: SIGNAL TIERS (Optional)
+   Classification: Tier-1 | Tier-2 | Tier-3 | Tier-X (based on thresholds)
+   Output: Appended to SIGNAL_TIERS.json (cumulative history)
+   Status: LOCKED (classification logic & append behavior)
+
+✅ SECTION 8: AUTO-DETECTION LOGIC
+   Behavior: Scan for SENT_SIGNALS_CUMULATIVE_*.jsonl files
+   Selection: Use LATEST (most recent) file automatically
+   Fallback: If no CUMULATIVE files, use SENT_SIGNALS.jsonl
+   Progression: Mar 4 → Mar 5 → Mar 6 (automatic, no manual changes)
+   Status: LOCKED (auto-detection algorithm)
+
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+📐 CALCULATION FORMULAS (ALL LOCKED)
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+✅ Win Rate = (TP_HIT + TIMEOUT_WIN) / Closed_Trades × 100%
+   Where:
+   - TP_HIT = count of TP_HIT signals (excluding stale timeouts)
+   - TIMEOUT_WIN = timeout signals with P&L > 0
+   - Closed_Trades = TP + SL + TW + TL
+
+✅ P&L Calculation (Notional Position = $1,000)
+   LONG:  ((exit_price - entry_price) / entry_price) × $1,000
+   SHORT: ((entry_price - exit_price) / exit_price) × $1,000
+
+✅ Timeout Classification
+   TIMEOUT_WIN: P&L > 0 (exit price favorable to direction)
+   TIMEOUT_LOSS: P&L < 0 (exit price unfavorable to direction)
+
+✅ Duration Formatting
+   HH:MM:SS format: e.g., "01:34:23" (1 hour 34 min 23 sec)
+   Xh Ym format: e.g., "1h 34m" (human readable)
+
+✅ Per-Date Breakdown
+   Count: signals on date (fired_time_utc converted to GMT+7)
+   Beginning Fired Time: MIN(fired_time) for that date (HH:MM:SS)
+   Last Fired Time: MAX(fired_time) for that date (HH:MM:SS)
+
+✅ Aggregation (By any dimension)
+   Total: COUNT(signals)
+   TP: COUNT(status='TP_HIT' AND NOT stale)
+   SL: COUNT(status='SL_HIT' AND NOT stale)
+   TIMEOUT: COUNT(status='TIMEOUT')
+   Closed: TP + SL + TW + TL
+   Open: COUNT(status='OPEN')
+   WR: (TP + TW) / Closed × 100%
+   P&L: SUM(pnl for all signals in group)
+   Avg TP Duration: AVERAGE(duration for status='TP_HIT')
+   Avg SL Duration: AVERAGE(duration for status='SL_HIT')
+
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+🔐 DIMENSION DEFINITIONS (LOCKED)
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+✅ TimeFrame: 15min, 30min, 1h
+✅ Direction: LONG, SHORT
+✅ Route: AMBIGUOUS, NONE, REVERSAL, TREND_CONTINUATION, TREND CONTINUATION
+✅ Regime: BULL, BEAR, RANGE
+✅ Symbol Group:
+   - MAIN_BLOCKCHAIN: BTC-USDT, ETH-USDT, SOL-USDT, XRP-USDT, ADA-USDT, AVAX-USDT, BNB-USDT, XLM-USDT, LINK-USDT, POL-USDT
+   - TOP_ALTS: ZKJ-USDT, ROAM-USDT, XAUT-USDT, SAHARA-USDT
+   - MID_ALTS: XPL-USDT, DOT-USDT, FUEL-USDT, VIRTUAL-USDT, BERA-USDT, CROSS-USDT, FUN-USDT, ENA-USDT, SOL-USDT, AVAX-USDT
+   - LOW_ALTS: All other symbols
+✅ Confidence: HIGH (≥76%) | MID (51-75%) | LOW (≤50%)
+
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+📂 REFERENCE FILES
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+✅ pec_enhanced_reporter.py (79K)
+   - Active production script
+   - Auto-detects latest CUMULATIVE file
+   - All calculations built in
+   - Status: Ready for daily use
+
+✅ pec_enhanced_reporter_TEMPLATE_LOCKED.py (79K)
+   - Frozen reference copy
+   - Same as active script (backup)
+   - Status: Archive/reference only
+
+✅ PEC_ENHANCED_REPORTER_FULL_TEMPLATE_LOCKED.md (18.7K)
+   - Complete template documentation
+   - All 8 sections detailed
+   - Calculation logic explained
+   - Status: Reference document
+
+✅ PEC_REPORTER_TEMPLATE_LOCKED.md (7.3K)
+   - Summary section documentation
+   - Subset of full template
+   - Status: Reference document
+
+✅ PEC_REPORTER_SUMMARY_EXAMPLE.txt (1.9K)
+   - Live output example from Mar 4
+   - Shows actual SUMMARY format
+   - Status: Example/reference
+
+✅ PEC_ENHANCED_REPORT.txt (335K)
+   - Full generated report (1,760 lines)
+   - All 8 sections included
+   - Status: Output artifact
+
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+🚀 USAGE
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+Generate Report (On-Demand):
+$ cd /Users/geniustarigan/.openclaw/workspace
+$ python3 pec_enhanced_reporter.py > PEC_ENHANCED_REPORT.txt
+
+Daily Execution:
+- Runs manually as needed
+- Auto-detects latest CUMULATIVE_*.jsonl file
+- No manual file selection required
+- Output: 1,700+ lines with all sections
+
+Example Progression:
+- Mar 4: pec_enhanced_reporter reads SENT_SIGNALS_CUMULATIVE_2026-03-04.jsonl
+- Mar 5: pec_enhanced_reporter reads SENT_SIGNALS_CUMULATIVE_2026-03-05.jsonl (auto-updated)
+- Mar 6: pec_enhanced_reporter reads SENT_SIGNALS_CUMULATIVE_2026-03-06.jsonl (auto-updated)
+
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+✅ VALIDATION CHECKLIST
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+✅ All 8 sections documented and locked
+✅ All calculations verified as 100% dynamic
+✅ No hardcoded values (except Foundation baseline reference)
+✅ Auto-detection logic confirmed working
+✅ Column formats and order locked
+✅ Sorting rules locked
+✅ Dimension definitions locked
+✅ Symbol groupings locked
+✅ Timezone handling locked (GMT+7)
+✅ Stale timeout exclusion logic locked
+✅ Git commits recorded (0c3b302, aac44e6)
+
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+🔒 FINAL STATUS
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+Template Status: ✅ LOCKED v1.0 (COMPLETE)
+Scope: All 8 sections + complete calculation logic + all dimension definitions
+Deployment: ✅ READY FOR PRODUCTION
+Date Locked: 2026-03-05 09:23 GMT+7
+
+The PEC Enhanced Reporter template is now FROZEN and ready for long-term use.
+All calculations are dynamic (based on actual signals), no hardcoding.
+Auto-detection ensures seamless daily progression without manual intervention.
+
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
