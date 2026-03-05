@@ -354,11 +354,44 @@ class PECExecutor:
         print(f"{'='*80}\n", flush=True)
 
 
+def log_system_error(error_msg):
+    """Log errors to health monitor log"""
+    import sys
+    workspace_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    health_log = os.path.join(workspace_root, 'pec_system_health.log')
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S GMT+7")
+    line = f"[{ts}] 🔴 EXECUTOR        | RUNTIME_ERROR        | {error_msg}\n"
+    
+    try:
+        with open(health_log, 'a') as f:
+            f.write(line)
+    except:
+        pass  # If health log fails, at least we tried
+    
+    print(line.strip(), flush=True)
+
 def run_pec_update():
     """Main entry point for cron job"""
-    executor = PECExecutor()
-    summary = executor.update_signals()
-    executor.print_announcement(summary)
+    try:
+        executor = PECExecutor()
+        
+        # Verify file exists before processing
+        if not os.path.exists(executor.sent_signals_path):
+            error_msg = f"SENT_SIGNALS.jsonl not found at {executor.sent_signals_path}"
+            log_system_error(error_msg)
+            return
+        
+        summary = executor.update_signals()
+        executor.print_announcement(summary)
+        
+    except FileNotFoundError as e:
+        log_system_error(f"File access error: {e}")
+    except PermissionError as e:
+        log_system_error(f"Permission denied: {e}")
+    except json.JSONDecodeError as e:
+        log_system_error(f"SENT_SIGNALS.jsonl corrupted: {e}")
+    except Exception as e:
+        log_system_error(f"Unexpected error: {type(e).__name__}: {e}")
 
 
 if __name__ == '__main__':
