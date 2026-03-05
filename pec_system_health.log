@@ -130,3 +130,80 @@
 [2026-03-05 20:00:58 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
 [2026-03-05 20:01:58 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
 [2026-03-05 20:02:58 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:03:58 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:04:58 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:05:58 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:06:58 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:07:58 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:08:58 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:11:59 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 10+ minutes
+[2026-03-05 20:12:59 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 11+ minutes
+[2026-03-05 20:12:59 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:13:59 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 12+ minutes
+[2026-03-05 20:13:59 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:14:59 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 13+ minutes
+[2026-03-05 20:14:59 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:15:59 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 14+ minutes
+[2026-03-05 20:15:59 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:16:59 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 15+ minutes
+[2026-03-05 20:16:59 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:17:59 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 16+ minutes
+[2026-03-05 20:17:59 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:18:59 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 17+ minutes
+[2026-03-05 20:18:59 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:19:59 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 18+ minutes
+[2026-03-05 20:19:59 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:20:59 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 19+ minutes
+[2026-03-05 20:20:59 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:21:59 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:23:00 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:24:00 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:28:00 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:29:00 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:30:00 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:31:00 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:32:00 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:33:00 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:34:00 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:35:00 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 10+ minutes
+[2026-03-05 20:35:01 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:36:01 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 11+ minutes
+[2026-03-05 20:36:01 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:37:01 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 12+ minutes
+[2026-03-05 20:37:01 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:38:01 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 13+ minutes
+[2026-03-05 20:38:01 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:39:01 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 14+ minutes
+[2026-03-05 20:40:01 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 15+ minutes
+[2026-03-05 20:41:01 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 16+ minutes
+[2026-03-05 20:42:01 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 17+ minutes
+[2026-03-05 20:42:01 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:43:01 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 18+ minutes
+[2026-03-05 20:43:01 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:44:01 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 19+ minutes
+[2026-03-05 20:44:01 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:45:01 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 20+ minutes
+[2026-03-05 20:45:01 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:46:01 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 21+ minutes
+[2026-03-05 20:46:01 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:47:01 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 22+ minutes
+[2026-03-05 20:47:01 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:48:02 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 23+ minutes
+[2026-03-05 20:48:02 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:49:02 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 24+ minutes
+[2026-03-05 20:49:02 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:50:02 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 25+ minutes
+[2026-03-05 20:50:02 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:51:02 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 26+ minutes
+[2026-03-05 20:51:02 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:52:02 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 27+ minutes
+[2026-03-05 20:52:02 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:53:02 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 28+ minutes
+[2026-03-05 20:53:02 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:54:02 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 29+ minutes
+[2026-03-05 20:55:02 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 30+ minutes
+[2026-03-05 20:56:02 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:57:02 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:58:02 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:59:02 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 21:00:03 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found

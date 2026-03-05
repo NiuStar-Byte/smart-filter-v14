@@ -1,0 +1,21 @@
+========================================================================================================================
+PEC SIGNAL LEDGER - IMMUTABLE SOURCE OF TRUTH
+Generated: 2026-03-05 13:59:52 UTC
+Total Signals: 1557
+========================================================================================================================
+
+{"uuid": "c4420b6e-56a9-4eea-bac3-419a40e147a7", "symbol": "MAGIC-USDT", "timeframe": "30min", "signal_type": "LONG", "entry_price": 0.06386379999999998, "tp_target": 0.0648638, "sl_target": 0.0633638, "tp_pct": 1.565832286835445, "sl_pct": -0.78291614341769, "achieved_rr": 2.0, "score": 14, "max_score": 19, "confidence": 78.1, "route": "TREND CONTINUATION", "regime": "BEAR", "telegram_msg_id": "c4420b6e-56a", "fired_time_utc": "2026-02-27T15:55:36.852245", "sent_time_utc": "2026-02-27T15:55:38.106323", "status": "SL_HIT", "closed_at": "2026-02-27T17:03:23.634421", "actual_exit_price": 0.0631, "pnl_usd": -11.9598, "pnl_pct": -1.2}
+{"uuid": "33b9f88f-a653-490a-bc22-05354f4ccb0b", "symbol": "PROMPT-USDT", "timeframe": "30min", "signal_type": "LONG", "entry_price": 0.046396349999999996, "tp_target": 0.04734492, "sl_target": 0.04592206, "tp_pct": 2.044492724104381, "sl_pct": -1.022257138761983, "achieved_rr": 2.0, "score": 14, "max_score": 19, "confidence": 78.1, "route": "NONE", "regime": "BEAR", "telegram_msg_id": "33b9f88f-a65", "fired_time_utc": "2026-02-27T15:58:09.345724", "sent_time_utc": "2026-02-27T15:58:10.946698", "status": "SL_HIT", "closed_at": "2026-02-27T16:17:50.945488", "actual_exit_price": 0.04542, "pnl_usd": -21.0437, "pnl_pct": -2.1}
+{"uuid": "59198362-b0f7-438c-8699-e292fa6b47ae", "symbol": "HBAR-USDT", "timeframe": "30min", "signal_type": "SHORT", "entry_price": 0.10007982, "tp_target": 0.09825696, "sl_target": 0.10099125, "tp_pct": -1.8214061536081856, "sl_pct": 0.9107030768040998, "achieved_rr": 2.0, "score": 14, "max_score": 19, "confidence": 74.9, "route": "TREND CONTINUATION", "regime": "BEAR", "telegram_msg_id": "59198362-b0f", "fired_time_utc": "2026-02-27T16:01:53.539115", "sent_time_utc": "2026-02-27T16:01:54.868800", "status": "TIMEOUT", "closed_at": "2026-02-27T21:01:56.049956", "actual_exit_price": 0.09964, "pnl_usd": 4.3947, "pnl_pct": 0.44}
+{"uuid": "c0517969-cc92-41a1-9536-cdba67ae1e22", "symbol": "ALGO-USDT", "timeframe": "30min", "signal_type": "SHORT", "entry_price": 0.0861138, "tp_target": 0.08475666, "sl_target": 0.08679237, "tp_pct": -1.5759843370052262, "sl_pct": 0.787992168502597, "achieved_rr": 2.0, "score": 14, "max_score": 19, "confidence": 74.9, "route": "TREND CONTINUATION", "regime": "BEAR", "telegram_msg_id": "c0517969-cc9", "fired_time_utc": "2026-02-27T16:03:28.726131", "sent_time_utc": "2026-02-27T16:03:30.218646", "status": "SL_HIT", "closed_at": "2026-02-27T18:34:31.829867", "actual_exit_price": 0.087, "pnl_usd": -10.291, "pnl_pct": -1.03}
+{"uuid": "f9409bcd-e9d4-4fad-9904-9237c54bf1bd", "symbol": "ENA-USDT", "timeframe": "30min", "signal_type": "SHORT", "entry_price": 0.1036962, "tp_target": 0.10111049, "sl_target": 0.10498906, "tp_pct": -2.4935436399790976, "sl_pct": 1.246776641767001, "achieved_rr": 2.0, "score": 14, "max_score": 19, "confidence": 74.9, "route": "TREND CONTINUATION", "regime": "BEAR", "telegram_msg_id": "f9409bcd-e9d", "fired_time_utc": "2026-02-27T16:05:24.619628", "sent_time_utc": "2026-02-27T16:05:26.016595", "status": "TIMEOUT", "closed_at": "2026-02-27T21:07:00.619146", "actual_exit_price": 0.1025, "pnl_usd": 11.5356, "pnl_pct": 1.15}
+... (truncated for display)
+
+Summary by Date (UTC):
+2026-02-27: 80 signals | Begin: 2026-02-27T15:55:36 | Last: 2026-02-27T23:51:31
+2026-02-28: 365 signals | Begin: 2026-02-28T00:00:43 | Last: 2026-02-28T23:59:44
+2026-03-01: 187 signals | Begin: 2026-03-01T00:05:20 | Last: 2026-03-01T23:59:07
+2026-03-02: 360 signals | Begin: 2026-03-02T00:06:02 | Last: 2026-03-02T17:52:29
+2026-03-03: 105 signals | Begin: 2026-03-03T16:59:36 | Last: 2026-03-03T17:59:57
+2026-03-04: 233 signals | Begin: 2026-03-04T17:51:36 | Last: 2026-03-04T23:37:25
+2026-03-05: 227 signals | Begin: 2026-03-05T00:02:56 | Last: 2026-03-05T13:57:26

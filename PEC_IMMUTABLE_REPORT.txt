@@ -1,0 +1,39 @@
+========================================================================================================================
+📊 PEC IMMUTABLE REPORTER - LEDGER-BASED SIGNAL TRACKING
+========================================================================================================================
+Report Generated: 2026-03-05 14:00:23 UTC
+Source: SIGNALS_LEDGER_IMMUTABLE.jsonl
+Total Signals: 1557
+
+📅 TOTAL FIRED PER DATE
+========================================================================================================================
+  2026-02-27: 80 fired | Begin: 15:55:36 | Last: 23:51:31 | >> immutable
+  2026-02-28: 365 fired | Begin: 00:00:43 | Last: 23:59:44 | >> immutable
+  2026-03-01: 187 fired | Begin: 00:05:20 | Last: 23:59:07 | >> immutable
+  2026-03-02: 360 fired | Begin: 00:06:02 | Last: 17:52:29 | >> immutable
+  2026-03-03: 105 fired | Begin: 16:59:36 | Last: 17:59:57 | >> immutable
+  2026-03-04: 233 fired | Begin: 17:51:36 | Last: 23:37:25 | >> immutable
+  2026-03-05: 227 fired | Begin: 00:02:56 | Last: 13:57:26 | >> OPEN (accumulating)
+
+⏰ TOTAL FIRED TODAY HOURLY (UTC)
+========================================================================================================================
+  00:00-00:59 UTC: 77 fired | Begin: 00:02:56 | Last: 00:59:09
+  01:00-01:59 UTC: 19 fired | Begin: 01:08:04 | Last: 01:59:15
+  02:00-02:59 UTC: 38 fired | Begin: 02:00:52 | Last: 02:58:36
+  03:00-03:59 UTC: 10 fired | Begin: 03:00:08 | Last: 03:59:10
+  04:00-04:59 UTC: 52 fired | Begin: 04:01:00 | Last: 04:59:06
+  05:00-05:59 UTC: 1 fired | Begin: 05:05:45 | Last: 05:05:45
+  12:00-12:59 UTC: 16 fired | Begin: 12:47:01 | Last: 12:59:58
+  13:00-13:59 UTC: 14 fired | Begin: 13:24:30 | Last: 13:57:26
+
+📊 SUMMARY STATISTICS
+========================================================================================================================
+Total Signals: 1557
+  TP_HIT: 213
+  SL_HIT: 445
+  TIMEOUT_WIN: 68
+  TIMEOUT_LOSS: 249
+  OPEN: 582
+  Closed: 975
+
+Win Rate (TP + TIMEOUT_WIN) / Closed: 28.8%
