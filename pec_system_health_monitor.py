@@ -180,5 +180,41 @@ def print_health_summary():
     
     return all_ok
 
+def watch_mode(interval=30):
+    """Continuous monitoring mode - refresh every N seconds"""
+    import subprocess
+    
+    try:
+        while True:
+            # Clear screen
+            subprocess.run("clear", shell=True)
+            
+            # Print header with timestamp
+            ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S GMT+7")
+            print(f"\n🔄 PEC SYSTEM HEALTH MONITOR (auto-refresh every {interval}s) - {ts}\n")
+            
+            # Print health summary
+            print_health_summary()
+            
+            # Wait before next refresh
+            print(f"⏳ Next update in {interval} seconds... (Ctrl+C to stop)\n")
+            __import__('time').sleep(interval)
+    
+    except KeyboardInterrupt:
+        print("\n\n✅ Monitoring stopped by user")
+
 if __name__ == "__main__":
-    print_health_summary()
+    import sys
+    
+    if len(sys.argv) > 1 and sys.argv[1] == "--watch":
+        # Continuous mode
+        interval = 30
+        if len(sys.argv) > 2:
+            try:
+                interval = int(sys.argv[2])
+            except:
+                pass
+        watch_mode(interval)
+    else:
+        # Single check mode
+        print_health_summary()
