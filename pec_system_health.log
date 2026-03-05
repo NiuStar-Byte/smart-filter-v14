@@ -1,0 +1,132 @@
+[2026-03-05 17:39:46 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 17:40:46 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 17:41:46 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 17:42:46 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 17:43:46 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 17:44:47 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 17:45:47 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 17:46:47 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 17:47:47 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 17:48:47 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 17:49:47 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 17:53:47 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 17:54:47 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 17:55:47 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 17:56:48 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 17:57:48 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 17:58:48 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 17:59:48 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:00:48 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:01:48 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:02:48 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:03:48 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:06:48 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:07:48 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:08:48 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:09:49 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:10:49 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:11:49 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:12:49 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:13:49 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:14:49 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:15:49 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:16:49 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:19:49 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 10+ minutes
+[2026-03-05 18:20:49 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:21:50 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:22:50 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:23:50 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:24:50 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:25:50 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:26:50 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:27:50 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:28:50 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:29:50 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:30:50 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:34:50 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:35:51 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:36:51 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:37:51 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:38:51 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:39:51 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:40:51 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:41:51 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:42:51 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:43:51 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:44:51 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:48:52 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:49:52 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:50:52 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:51:52 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:52:52 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:53:52 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:54:52 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 10+ minutes
+[2026-03-05 18:54:52 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:55:52 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:56:52 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:57:53 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:58:53 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 18:59:53 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:02:53 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:03:53 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:04:53 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:05:53 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 10+ minutes
+[2026-03-05 19:05:53 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:06:53 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 11+ minutes
+[2026-03-05 19:06:53 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:07:53 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 12+ minutes
+[2026-03-05 19:07:53 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:08:53 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 13+ minutes
+[2026-03-05 19:08:53 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:09:54 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 14+ minutes
+[2026-03-05 19:09:54 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:10:54 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 15+ minutes
+[2026-03-05 19:10:54 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:11:54 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 16+ minutes
+[2026-03-05 19:11:54 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:12:54 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 17+ minutes
+[2026-03-05 19:12:54 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:13:54 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 18+ minutes
+[2026-03-05 19:14:54 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 19+ minutes
+[2026-03-05 19:15:54 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 20+ minutes
+[2026-03-05 19:16:54 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 21+ minutes
+[2026-03-05 19:16:54 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:17:54 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 22+ minutes
+[2026-03-05 19:17:54 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:18:54 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:19:54 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:20:55 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:21:55 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:22:55 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:23:55 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:24:55 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:25:55 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:29:55 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:30:55 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:31:55 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:32:56 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:33:56 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:34:56 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:35:56 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:36:56 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:37:56 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:38:56 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:39:56 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:40:56 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:43:56 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:44:57 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:45:57 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:46:57 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:47:57 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:48:57 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:49:57 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:50:57 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:51:57 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:52:57 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:53:57 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:54:57 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:58:58 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 19:59:58 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:00:58 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:01:58 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-05 20:02:58 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
