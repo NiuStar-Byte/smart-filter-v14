@@ -1,0 +1,38 @@
+{
+  "locked_date": "2026-03-05T09:54:00+07:00",
+  "status": "\ud83d\udd12 FROZEN - NO CHANGES ALLOWED",
+  "scope": "PEC Enhanced Reporter - Complete Template (Code + Calculations + Structure)",
+  "file": "pec_enhanced_reporter.py",
+  "file_size_bytes": 82457,
+  "file_hash_sha256": "cd27d3045991153d2c7fce73c1859e602c24b3dcc1f8c5b4599ce6cfc0389d1a",
+  "locked_lines": 1562,
+  "purpose": "Foundation of PEC/Backtest - Immutable for stability",
+  "protection_level": "CRITICAL",
+  "git_commit": "368b184",
+  "verification": {
+    "method": "SHA256 checksum - verify with: sha256sum pec_enhanced_reporter.py",
+    "expected_hash": "cd27d3045991153d2c7fce73c1859e602c24b3dcc1f8c5b4599ce6cfc0389d1a",
+    "how_to_verify": "sha256sum pec_enhanced_reporter.py - must match hash above"
+  },
+  "what_is_locked": [
+    "\u2705 All 8 report sections (Header, Aggregates, Multi-Dimensional, Signal List, Summary, Hierarchy, Tiers, Auto-Detection)",
+    "\u2705 All calculation formulas (Win Rate, P&L, Timeout, Duration)",
+    "\u2705 All dimension definitions (TimeFrame, Direction, Route, Regime, Symbol Group, Confidence)",
+    "\u2705 All column formats and sorting rules",
+    "\u2705 Auto-detection logic for latest CUMULATIVE file",
+    "\u2705 Timezone handling (GMT+7 conversion)",
+    "\u2705 Data quality logic (stale timeout exclusion)",
+    "\u2705 Summary section metrics (14 dynamic values)"
+  ],
+  "what_is_NOT_locked": [
+    "\u274c Actual signal values (always dynamic from real data)",
+    "\u274c CUMULATIVE file selection (auto-detects latest)",
+    "\u274c Report output rows (depends on signal data)",
+    "\u274c Visualization (can be customized if needed)"
+  ],
+  "change_detection": {
+    "instruction": "If file hash DIFFERS from hash above, CHANGES WERE MADE - DO NOT USE",
+    "action_if_changed": "Revert to git commit 368b184 immediately"
+  },
+  "backup_reference": "pec_enhanced_reporter_LOCKED_FROZEN.py (read-only copy)"
+}
