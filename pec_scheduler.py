@@ -4,14 +4,23 @@ from datetime import datetime
 from pec_backtest import run_pec_backtest
 from kucoin_data import get_ohlcv
 from telegram_alert import send_telegram_file
-from main import get_local_wib
+
+# ===== OPTION C: Import TOKENS from main.py (Single Source of Truth) =====
+# Always uses the complete symbol list (not a partial subset)
+try:
+    from main import get_local_wib, TOKENS
+except ImportError:
+    # Fallback: Use default minimal config if main.py isn't available
+    def get_local_wib(dt):
+        return str(dt)
+    TOKENS = [
+        "SKATE-USDT", "LA-USDT", "SPK-USDT", "ZKJ-USDT", "IP-USDT",
+        "AERO-USDT", "BMT-USDT", "LQTY-USDT", "X-USDT", "RAY-USDT",
+        "EPT-USDT", "ELDE-USDT", "MAGIC-USDT", "ACTSOL-USDT", "FUN-USDT",
+        "ATOM-USDT", "AGLD-USDT", "APT-USDT", "INJ-USDT", "NEAR-USDT"
+    ]
 
 # === CONFIGURATION ===
-TOKENS = [
-    "SKATE-USDT", "LA-USDT", "SPK-USDT", "ZKJ-USDT", "IP-USDT",
-    "AERO-USDT", "BMT-USDT", "LQTY-USDT", "X-USDT", "RAY-USDT",
-    "EPT-USDT", "ELDE-USDT", "MAGIC-USDT", "ACTSOL-USDT", "FUN-USDT"
-]
 PEC_WINDOW_MINUTES = 720     # Adjust as needed
 PEC_BARS = 5
 OHLCV_LIMIT = 1000           # Adjust as needed

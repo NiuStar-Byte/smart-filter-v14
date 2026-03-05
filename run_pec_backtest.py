@@ -23,19 +23,30 @@ import math
 WIB = pytz.timezone('Asia/Jakarta')
 
 # --- Configuration ---
-TOKENS = [
-    "BTC-USDT", "ETH-USDT",
-    "BNB-USDT", "XRP-USDT", "SOL-USDT", "ADA-USDT", "XLM-USDT",
-    "TON-USDT", "AVAX-USDT", "LINK-USDT", "DOT-USDT", "ARB-USDT",
-    "PUMP-USDT", "KAITO-USDT", "MAGIC-USDT", "SUI-USDT", "AERO-USDT",
-    "BERA-USDT", "UNI-USDT", "HBAR-USDT", "SAHARA-USDT", "VIRTUAL-USDT",
-    "PARTI-USDT", "CFX-USDT", "DOGE-USDT", "VINE-USDT", "PENGU-USDT",
-    "WIF-USDT", "EIGEN-USDT", "SPK-USDT", "HYPE-USDT", "WLFI-USDT",
-    "POL-USDT", "RAY-USDT", "ZKJ-USDT", "AAVE-USDT", "DYDX-USDT",
-    "ONDO-USDT", "ARKM-USDT", "ATH-USDT", "NMR-USDT", "PROMPT-USDT",
-    "TURBO-USDT", "ENA-USDT", "BIO-USDT", "ASTER-USDT", "XPL-USDT",
-    "AVNT-USDT", "ORDER-USDT", "XAUT-USDT", "ZORA-USDT"
-]
+# ===== OPTION C: Import TOKENS from main.py (Single Source of Truth) =====
+# This ensures run_pec_backtest.py ALWAYS uses the same symbol list as the daemon
+try:
+    import sys
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'smart-filter-v14-main'))
+    from main import TOKENS
+except ImportError:
+    # Fallback: Use default list if main.py isn't available
+    TOKENS = [
+        "BTC-USDT", "ETH-USDT",
+        "BNB-USDT", "XRP-USDT", "SOL-USDT", "ADA-USDT", "XLM-USDT",
+        "TON-USDT", "AVAX-USDT", "LINK-USDT", "DOT-USDT", "ARB-USDT",
+        "PUMP-USDT", "KAITO-USDT", "MAGIC-USDT", "SUI-USDT", "AERO-USDT",
+        "BERA-USDT", "UNI-USDT", "HBAR-USDT", "SAHARA-USDT", "VIRTUAL-USDT",
+        "PARTI-USDT", "CFX-USDT", "DOGE-USDT", "VINE-USDT", "PENGU-USDT",
+        "WIF-USDT", "EIGEN-USDT", "SPK-USDT", "HYPE-USDT", "WLFI-USDT",
+        "POL-USDT", "RAY-USDT", "ZKJ-USDT", "AAVE-USDT", "DYDX-USDT",
+        "ONDO-USDT", "ARKM-USDT", "ATH-USDT", "NMR-USDT", "PROMPT-USDT",
+        "TURBO-USDT", "ENA-USDT", "BIO-USDT", "ASTER-USDT", "XPL-USDT",
+        "AVNT-USDT", "ORDER-USDT", "XAUT-USDT", "ZORA-USDT",
+        # NEW (2026-03-05)
+        "ATOM-USDT", "AGLD-USDT", "APT-USDT", "INJ-USDT", "NEAR-USDT", 
+        "OCEAN-USDT", "OP-USDT", "RNDR-USDT", "SEI-USDT", "TAO-USDT"
+    ]
 
 PEC_BARS = 5
 PEC_WINDOW_MINUTES = 720
