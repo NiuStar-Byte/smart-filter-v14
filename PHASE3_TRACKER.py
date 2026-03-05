@@ -1,59 +1,42 @@
 #!/usr/bin/env python3
 """
-🔒 PHASE 3 TRACKER - HISTORICAL REFERENCE ONLY
+🔒 PHASE 3B TRACKER - Reversal Quality Gates (Live Monitoring)
 
-⚠️ STATUS: PHASE 3 WAS REVERTED (2026-03-03 14:50 GMT+7)
-   Phase 3 (route optimization) was found to collapse SHORT signals
-   Now running Phase 2-FIXED + Phase 3B instead
+Phase 3B: 4-Gate Reversal Quality Check
+├─ RQ1: Detector Consensus
+├─ RQ2: Momentum Alignment  
+├─ RQ3: Trend Strength
+└─ RQ4: Direction-Regime Match
 
-🔒 FOUNDATION BASELINE - LOCKED AT 853 SIGNALS (2026-03-04 01:10 GMT+7):
-  - All signals in current dataset analyzed by pec_enhanced_reporter.py
-  - 25.7% WR (locked, never changes)
-  - Used across ALL comparisons (COMPARE_AB_TEST_LOCKED, Phase 3, Phase 4A)
-
-⚠️ PHASE 3 WINDOW (Historical - Empty):
-  - Time window: Mar 2 14:30 UTC to Mar 3 13:16 UTC
-  - Status: REVERTED - not actively running
-  - Signals in this window: 0 (we're now collecting Phase 2-FIXED from 13:16 UTC onwards)
-  - This tracker shows historical data only (for reference/analysis)
-
-Current Active Phases:
-  ✅ Phase 2-FIXED - Direction-aware gates (live from Mar 3 13:16 UTC)
-  ✅ Phase 3B - Reversal quality gates (parallel with Phase 2-FIXED)
-  ✅ Phase 4A - Multi-TF alignment filter (independent)
-
-Usage:
-  python3 PHASE3_TRACKER.py --once
+Status: ✅ LIVE & COLLECTING (Parallel with Phase 2-FIXED)
+Deployment: 2026-03-03 19:31 GMT+7
+Timeline: Monitor 7 days (Mar 3-10) → Decision Mar 10 14:30 GMT+7
 """
 
 import json
 from collections import defaultdict
-from datetime import datetime, timezone, timedelta
-
-PHASE1_CUTOFF = datetime(2026, 3, 3, 13, 16, 0, tzinfo=timezone.utc)  # Mar 03 20:16 GMT+7 = 13:16 UTC (CRITICAL FIXES) - LOCKED BASELINE
-PHASE3_START = datetime(2026, 3, 2, 14, 30, 0, tzinfo=timezone.utc)  # Mar 2 21:30 GMT+7 = 14:30 UTC
-PHASE3_END = datetime(2026, 3, 3, 13, 16, 0, tzinfo=timezone.utc)    # Mar 03 20:16 GMT+7 = 13:16 UTC (when Phase 2-FIXED critical fixes deployed)
-SIGNALS_FILE = "SENT_SIGNALS.jsonl"
+from datetime import datetime, timezone
 
 # 🔒 FOUNDATION BASELINE LOCKED (2026-03-04 01:10 GMT+7)
-# NO MORE CONFLICTING NUMBERS - THIS IS THE ONLY BASELINE USED
-PHASE1_LOCKED = {
+FOUNDATION = {
     "total_signals": 853,
     "closed_trades": 830,
     "win_rate": 25.7,
-    "pnl": -5498.59,
     "long_wr": 29.6,
-    "short_wr": 46.2
+    "short_wr": 46.2,
+    "pnl": -5498.59
 }
 
-class Phase3Tracker:
+PHASE3B_START = datetime(2026, 3, 3, 19, 31, 0, tzinfo=timezone.utc)  # Mar 3 02:31 GMT+7 = 19:31 UTC (when Phase 3B deployed)
+SIGNALS_FILE = "/Users/geniustarigan/.openclaw/workspace/SENT_SIGNALS.jsonl"
+
+class Phase3BTracker:
     def __init__(self):
-        self.phase1_signals = []
-        self.phase3_signals = []
+        self.phase3b_signals = []
         self.load_signals()
     
     def load_signals(self):
-        """Split signals into Phase 1 vs Phase 3"""
+        """Load Phase 3B signals (from 19:31 UTC Mar 3 onwards) - REVERSAL routes only"""
         try:
             with open(SIGNALS_FILE, 'r') as f:
                 for line in f:
@@ -73,30 +56,29 @@ class Phase3Tracker:
                         # Parse as naive datetime and make UTC
                         fired = datetime.fromisoformat(fired_str.split('+')[0]).replace(tzinfo=timezone.utc)
                         
-                        # PHASE 1: Everything BEFORE 13:16 UTC Mar 3 (LOCKED FOUNDATION - 853 signals)
-                        if fired < PHASE1_CUTOFF:
-                            self.phase1_signals.append(sig)
-                        # PHASE 3: From 14:30 UTC Mar 2 TO 13:16 UTC Mar 3 (Route-optimized period)
-                        elif PHASE3_START <= fired < PHASE3_END:
-                            self.phase3_signals.append(sig)
+                        # Phase 3B: From 19:31 UTC Mar 3 onwards
+                        if fired >= PHASE3B_START:
+                            # Focus on REVERSAL signals (Phase 3B specialty)
+                            if sig.get('route') == 'REVERSAL':
+                                self.phase3b_signals.append(sig)
                     except Exception as e:
                         continue
         except FileNotFoundError:
             print(f"❌ {SIGNALS_FILE} not found")
     
-    def calculate_metrics(self, signals, phase_name=""):
-        """Calculate comprehensive metrics (excluding stale timeouts - matches COMPARE_AB_TEST)"""
-        if not signals:
+    def calculate_metrics(self):
+        """Calculate Phase 3B metrics"""
+        if not self.phase3b_signals:
             return None
         
-        # Filter: closed trades + clean data (no stale timeouts)
+        # Filter: closed trades
         closed = []
-        for s in signals:
+        for s in self.phase3b_signals:
             if s.get('status') in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
-                # Exclude stale timeouts (marked with data_quality_flag)
+                # Exclude stale timeouts
                 flag = s.get('data_quality_flag', '')
                 if flag and 'STALE_TIMEOUT' in flag:
-                    continue  # Skip stale timeout
+                    continue
                 closed.append(s)
         
         if not closed:
@@ -113,227 +95,182 @@ class Phase3Tracker:
         # P&L
         total_pnl = sum(float(s.get('pnl_usd', 0) or 0) for s in closed)
         
-        # Route breakdown
-        routes = defaultdict(lambda: {'wins': 0, 'closed': 0, 'pnl': 0.0})
+        # Direction breakdown
+        long_trades = [s for s in closed if s.get('signal_type') == 'LONG']
+        long_wins = len([s for s in long_trades if s.get('status') == 'TP_HIT'])
+        long_timeout_wins = len([s for s in long_trades if s.get('status') == 'TIMEOUT' and float(s.get('pnl_usd', 0)) > 0])
+        long_wr = ((long_wins + long_timeout_wins) / len(long_trades) * 100) if long_trades else 0
+        
+        short_trades = [s for s in closed if s.get('signal_type') == 'SHORT']
+        short_wins = len([s for s in short_trades if s.get('status') == 'TP_HIT'])
+        short_timeout_wins = len([s for s in short_trades if s.get('status') == 'TIMEOUT' and float(s.get('pnl_usd', 0)) > 0])
+        short_wr = ((short_wins + short_timeout_wins) / len(short_trades) * 100) if short_trades else 0
+        
+        # Regime breakdown
+        regimes = defaultdict(lambda: {'trades': 0, 'wins': 0, 'pnl': 0.0})
         for s in closed:
-            route = s.get('route', 'UNKNOWN')
-            routes[route]['closed'] += 1
-            routes[route]['pnl'] += float(s.get('pnl_usd', 0) or 0)
+            regime = s.get('regime', 'UNKNOWN')
+            regimes[regime]['trades'] += 1
+            regimes[regime]['pnl'] += float(s.get('pnl_usd', 0) or 0)
             
             if s.get('status') == 'TP_HIT':
-                routes[route]['wins'] += 1
+                regimes[regime]['wins'] += 1
             elif s.get('status') == 'TIMEOUT' and float(s.get('pnl_usd', 0)) > 0:
-                routes[route]['wins'] += 1
-        
-        # Direction breakdown
-        long_wr = self._calculate_direction_wr(closed, 'LONG')
-        short_wr = self._calculate_direction_wr(closed, 'SHORT')
+                regimes[regime]['wins'] += 1
         
         return {
-            'total_signals': len(signals),
+            'total_signals': len(self.phase3b_signals),
             'closed_trades': len(closed),
             'win_rate': win_rate,
             'long_wr': long_wr,
             'short_wr': short_wr,
             'total_pnl': total_pnl,
-            'routes': dict(routes),
             'tp_hits': tp_hits,
             'sl_hits': sl_hits,
-            'timeouts': len(timeout_trades),
             'timeout_wins': timeout_wins,
+            'long_trades': len(long_trades),
+            'short_trades': len(short_trades),
+            'regimes': dict(regimes),
         }
-    
-    def _calculate_direction_wr(self, closed, direction):
-        """Calculate WR for specific direction"""
-        dir_trades = [s for s in closed if s.get('signal_type') == direction]
-        if not dir_trades:
-            return 0
-        
-        wins = len([s for s in dir_trades if s.get('status') == 'TP_HIT'])
-        timeout_wins = len([s for s in dir_trades if s.get('status') == 'TIMEOUT' and float(s.get('pnl_usd', 0)) > 0])
-        
-        return ((wins + timeout_wins) / len(dir_trades) * 100) if dir_trades else 0
-    
-    def _print_route_summary(self, routes, phase_name):
-        """Print route breakdown"""
-        if not routes:
-            print(f"No routes found in {phase_name}")
-            return
-        
-        print(f"Route                  | Closed | Wins | WR    | P&L        | Status")
-        print("-" * 75)
-        
-        for route, stats in sorted(routes.items(), key=lambda x: x[1]['closed'], reverse=True):
-            closed = stats['closed']
-            wins = stats['wins']
-            wr = (wins / closed * 100) if closed > 0 else 0
-            pnl = stats['pnl']
-            
-            if wr > 40:
-                status = "✅ Good"
-            elif wr > 30:
-                status = "⚠️ Marginal"
-            else:
-                status = "❌ Poor"
-            
-            print(f"{route:<21} | {closed:6d} | {wins:4d} | {wr:5.1f}% | ${pnl:9.2f} | {status}")
     
     def print_report(self):
-        """Generate Phase 3 tracking report"""
-        print("\n" + "="*180)
-        print("📊 PHASE 3: UNIFIED ROUTE OPTIMIZATION - TRACKING REPORT")
-        print("="*180)
+        """Generate Phase 3B tracking report"""
+        print("\n" + "="*110)
+        print("🔒 PHASE 3B TRACKER - REVERSAL QUALITY GATES (Live Monitoring)")
+        print("="*110)
         print(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S GMT+7')}")
-        print(f"🔒 FOUNDATION BASELINE (LOCKED): 853 signals @ 25.7% WR (2026-03-04 01:10 GMT+7)")
-        print(f"⚠️ PHASE 3 WINDOW: Mar 2 21:30 - Mar 3 20:16 GMT+7 (REVERTED - Historical reference)")
-        print("="*180)
+        print(f"📌 Deployment: 2026-03-03 19:31 GMT+7 (parallel with Phase 2-FIXED)")
+        print(f"📌 Focus: REVERSAL signals only (4-gate quality validation)")
+        print("="*110)
         print()
         
-        # PHASE 1: Use LOCKED baseline (never changes) + calculate route breakdown from phase1_signals
-        m1_calculated = self.calculate_metrics(self.phase1_signals, "PHASE 1")
-        m1 = {
-            'total_signals': PHASE1_LOCKED['total_signals'],
-            'closed_trades': PHASE1_LOCKED['closed_trades'],
-            'win_rate': PHASE1_LOCKED['win_rate'],
-            'long_wr': PHASE1_LOCKED['long_wr'],
-            'short_wr': PHASE1_LOCKED['short_wr'],
-            'total_pnl': PHASE1_LOCKED['pnl'],
-            'routes': m1_calculated['routes'] if m1_calculated else {}  # Route breakdown from loaded signals
-        }
+        metrics = self.calculate_metrics()
         
-        m3 = self.calculate_metrics(self.phase3_signals, "PHASE 3")
-        
-        if not m1:
-            print("❌ Phase 1 baseline not available")
+        if not metrics:
+            print("⏳ PHASE 3B: No REVERSAL signals collected yet")
+            print(f"   Total Phase 3B REVERSAL signals: {len(self.phase3b_signals)}")
+            print("   Closed trades: 0")
+            print()
+            print("="*110)
             return
         
-        print("METRIC                          │   FOUNDATION (Locked)  │   PHASE 3 (Reverted)  │   DELTA      │ STATUS")
-        print("─"*180)
+        # Comparison with Foundation
+        print("METRIC                  │ FOUNDATION (Baseline) │ PHASE 3B (REVERSAL)  │ STATUS")
+        print("─"*110)
         
-        # Overall metrics
-        p3_signals = m3['total_signals'] if m3 else 0
-        p3_closed = m3['closed_trades'] if m3 else 0
-        delta_signals = (m3['total_signals'] - m1['total_signals']) if m3 else 0
-        delta_closed = (m3['closed_trades'] - m1['closed_trades']) if m3 else 0
+        # Total signals
+        delta_signals = metrics['total_signals'] - FOUNDATION['total_signals']
+        print(f"Total Signals           │        {FOUNDATION['total_signals']:6d}          │      {metrics['total_signals']:6d}       │ 📊 {delta_signals:+d}")
         
-        print(f"Total Signals                   │  {m1['total_signals']:6d}          │  {p3_signals:6d}          │  {delta_signals:+6d}    │ 📊")
-        print(f"Closed Trades                   │  {m1['closed_trades']:6d}          │  {p3_closed:6d}          │  {delta_closed:+6d}    │ ✓")
-        print("─"*180)
+        # Closed trades
+        delta_closed = metrics['closed_trades'] - FOUNDATION['closed_trades']
+        print(f"Closed Trades           │        {FOUNDATION['closed_trades']:6d}          │      {metrics['closed_trades']:6d}       │ ✓ {delta_closed:+d}")
         
-        # Win rate
-        if m3 and m3['closed_trades'] > 0:
-            delta_wr = m3['win_rate'] - m1['win_rate']
-            if delta_wr > 2:
-                status = "✅ IMPROVING"
-            elif delta_wr > 0:
-                status = "⚠️ MARGINAL"
-            else:
-                status = "❌ DECLINING"
-            print(f"Overall Win Rate                │  {m1['win_rate']:6.2f}%          │  {m3['win_rate']:6.2f}%          │  {delta_wr:+6.2f}%  │ {status}")
+        print("─"*110)
+        
+        # Win Rate
+        delta_wr = metrics['win_rate'] - FOUNDATION['win_rate']
+        if delta_wr > 2:
+            status = "✅ IMPROVING"
+        elif delta_wr > 0:
+            status = "⚠️ MARGINAL"
         else:
-            print(f"Overall Win Rate                │  {m1['win_rate']:6.2f}%          │  {'Collecting':6s}       │  {'N/A':6s}  │ ⏳")
+            status = "❌ DECLINING"
+        
+        print(f"Overall Win Rate        │        {FOUNDATION['win_rate']:6.1f}%         │      {metrics['win_rate']:6.1f}%      │ {status}")
         
         # LONG/SHORT
-        if m3 and m3['closed_trades'] > 0:
-            delta_long = m3['long_wr'] - m1['long_wr']
-            delta_short = m3['short_wr'] - m1['short_wr']
-            print(f"  ├─ LONG WR                    │  {m1['long_wr']:6.2f}%          │  {m3['long_wr']:6.2f}%          │  {delta_long:+6.2f}%  │ {'✅' if delta_long > 0 else '⚠️'}")
-            print(f"  └─ SHORT WR                   │  {m1['short_wr']:6.2f}%          │  {m3['short_wr']:6.2f}%          │  {delta_short:+6.2f}%  │ {'✅' if delta_short > 0 else '⚠️'}")
+        delta_long = metrics['long_wr'] - FOUNDATION['long_wr']
+        delta_short = metrics['short_wr'] - FOUNDATION['short_wr']
         
-        print("─"*180)
+        print(f"  ├─ LONG WR            │        {FOUNDATION['long_wr']:6.1f}%         │      {metrics['long_wr']:6.1f}%      │ {'✅' if delta_long > 0 else '⚠️'} {delta_long:+.1f}%")
+        print(f"  └─ SHORT WR           │        {FOUNDATION['short_wr']:6.1f}%         │      {metrics['short_wr']:6.1f}%      │ {'✅' if delta_short > 0 else '⚠️'} {delta_short:+.1f}%")
+        
+        print("─"*110)
         
         # P&L
-        if m3 and m3['closed_trades'] > 0:
-            delta_pnl = m3['total_pnl'] - m1['total_pnl']
-            if delta_pnl > 500:
-                status = "✅ PROFITABLE"
-            elif delta_pnl > 0:
-                status = "⚠️ IMPROVING"
-            else:
-                status = "❌ WORSE"
-            print(f"Total P&L (Clean Data)          │  ${m1['total_pnl']:9.2f}     │  ${m3['total_pnl']:9.2f}     │  ${delta_pnl:+9.2f}  │ {status}")
+        delta_pnl = metrics['total_pnl'] - FOUNDATION['pnl']
+        if delta_pnl > 500:
+            status = "✅ PROFITABLE"
+        elif delta_pnl > 0:
+            status = "⚠️ IMPROVING"
         else:
-            print(f"Total P&L (Clean Data)          │  ${m1['total_pnl']:9.2f}     │  {'Collecting':9s}    │  {'N/A':9s} │ ⏳")
+            status = "❌ WORSE"
+        
+        print(f"Total P&L               │      ${FOUNDATION['pnl']:9.2f}      │    ${metrics['total_pnl']:9.2f}    │ {status}")
         
         print()
-        print("="*180)
-        print("🛣️ ROUTE BREAKDOWN (FOUNDATION - 853 Signals Locked)")
-        print("="*180)
+        print("="*110)
+        print("📊 DETAILED BREAKDOWN")
+        print("="*110)
         print()
         
-        self._print_route_summary(m1['routes'], "PHASE 1")
-        
-        if m3 and m3['closed_trades'] > 0:
-            print()
-            print("="*180)
-            print("🛣️ ROUTE BREAKDOWN (Phase 3 - Reverted Window / Empty)")
-            print("="*180)
-            print()
-            
-            self._print_route_summary(m3['routes'], "PHASE 3")
-        
-        print()
-        print("="*180)
-        print("📋 PHASE 3 DECISION FRAMEWORK")
-        print("="*180)
+        # Direction summary
+        print(f"Direction Breakdown:")
+        print(f"  • LONG:  {metrics['long_trades']:4d} closed trades | {metrics['long_wr']:5.1f}% WR")
+        print(f"  • SHORT: {metrics['short_trades']:4d} closed trades | {metrics['short_wr']:5.1f}% WR")
         print()
         
-        if m3 and m3['closed_trades'] >= 20:
-            if m3['win_rate'] > 35:
-                print("✅ PHASE 3 SUCCESS: WR > 35% - Route filtering is working!")
-                print("   Impact: Route optimization achieved +{:.1f}% WR improvement".format(m3['win_rate'] - m1['win_rate']))
-                print("   Next: Finalize Phase 3, prepare for next optimization phase")
-            elif m3['win_rate'] > 30:
-                print("⚠️ PHASE 3 MARGINAL: 30% < WR < 35% - Monitor for more data")
-                print("   Impact: Route optimization showing {:.1f}% WR change".format(m3['win_rate'] - m1['win_rate']))
-                print("   Next: Collect more trades, assess trend (improving or declining?)")
+        # Regime breakdown
+        print(f"Regime Performance (REVERSAL signals):")
+        print(f"  Regime      │ Closed │ Wins │ WR     │ P&L")
+        print(f"  ────────────┼────────┼──────┼────────┼─────────")
+        for regime, stats in sorted(metrics['regimes'].items()):
+            trades = stats['trades']
+            wins = stats['wins']
+            wr = (wins / trades * 100) if trades > 0 else 0
+            pnl = stats['pnl']
+            print(f"  {regime:<11} │ {trades:6d} │ {wins:4d} │ {wr:6.1f}% │ ${pnl:8.2f}")
+        
+        print()
+        print("="*110)
+        print("🎯 PHASE 3B PERFORMANCE SUMMARY")
+        print("="*110)
+        print()
+        
+        if metrics['closed_trades'] >= 20:
+            if metrics['win_rate'] >= FOUNDATION['win_rate']:
+                print(f"✅ PHASE 3B IMPROVING: WR {metrics['win_rate']:.1f}% ≥ Baseline {FOUNDATION['win_rate']}%")
+                improvement = metrics['win_rate'] - FOUNDATION['win_rate']
+                print(f"   Impact: +{improvement:.1f}% WR improvement on REVERSAL signals")
+                print(f"   Status: Phase 3B quality gates are working!")
             else:
-                print("❌ PHASE 3 REGRESSION: WR < 30% - Route filtering hurt performance")
-                print("   Impact: Route optimization declined {:.1f}%".format(m1['win_rate'] - m3['win_rate']))
-                print("   Next: Rollback and revise strategy")
+                print(f"⚠️ PHASE 3B BELOW BASELINE: WR {metrics['win_rate']:.1f}% < {FOUNDATION['win_rate']}%")
+                decline = FOUNDATION['win_rate'] - metrics['win_rate']
+                print(f"   Impact: -{decline:.1f}% WR decline on REVERSAL signals")
+                print(f"   Status: Monitor for improvement or consider refinement")
         else:
-            trades_needed = 20 - (m3['closed_trades'] if m3 else 0)
-            print("⏳ PHASE 3 IN PROGRESS")
-            print(f"   Closed trades: {m3['closed_trades'] if m3 else 0}/20 (need {trades_needed} more)")
-            print("   Continue monitoring daily")
+            trades_needed = 20 - metrics['closed_trades']
+            print(f"⏳ PHASE 3B IN PROGRESS")
+            print(f"   Closed trades: {metrics['closed_trades']}/20 (need {trades_needed} more)")
+            print(f"   Current WR: {metrics['win_rate']:.1f}% (preliminary)")
+            print(f"   Continue monitoring daily...")
         
         print()
-        print("="*180)
+        print(f"📌 Decision Threshold: Phase 3B WR ≥ {FOUNDATION['win_rate']}% by Mar 10 14:30 GMT+7")
+        print()
+        print("="*110 + "\n")
 
 if __name__ == "__main__":
     import sys
     import time
+    import subprocess
     import os
     
-    # PHASE 3 REVERTED - This script is historical reference only
-    print("\n" + "="*100)
-    print("⚠️  PHASE 3 TRACKER - HISTORICAL REFERENCE ONLY")
-    print("="*100)
-    print()
-    print("📌 STATUS: Phase 3 was REVERTED on 2026-03-03 14:50 GMT+7")
-    print()
-    print("🔄 CURRENT ACTIVE PHASES:")
-    print("   ✅ Phase 2-FIXED   → python3 COMPARE_AB_TEST_LOCKED.py")
-    print("   ✅ Phase 3B        → python3 track_phase3b_simple.py")
-    print("   ✅ Phase 4A        → (running independently)")
-    print()
-    print("📊 PHASE 3 WINDOW (HISTORICAL):")
-    print("   Time Range: Mar 2 21:30 UTC → Mar 3 20:16 UTC")
-    print("   Status: REVERTED (no signals collected)")
-    print("   Reason: Route optimization was found to collapse SHORT signals")
-    print()
-    print("💡 RECOMMENDATION:")
-    print("   Use COMPARE_AB_TEST_LOCKED.py to track Phase 2-FIXED progress")
-    print("   Use track_phase3b_simple.py to monitor Phase 3B quality gates")
-    print()
-    print("="*100 + "\n")
+    def clear_screen():
+        """Clear terminal screen"""
+        subprocess.call('clear' if os.name == 'posix' else 'cls', shell=True)
     
-    # Optional: Show historical data if user wants
-    once_mode = '--once' in sys.argv or '--history' in sys.argv
-    
-    if '--history' in sys.argv:
-        print("📋 SHOWING HISTORICAL PHASE 3 DATA...\n")
-        tracker = Phase3Tracker()
+    if '--once' in sys.argv:
+        tracker = Phase3BTracker()
         tracker.print_report()
-    
-    sys.exit(0)
+    else:
+        # Live watch mode (default)
+        try:
+            while True:
+                clear_screen()
+                tracker = Phase3BTracker()
+                tracker.print_report()
+                time.sleep(5)
+        except KeyboardInterrupt:
+            print("\n✓ Stopped")
