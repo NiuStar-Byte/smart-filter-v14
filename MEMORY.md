@@ -4,6 +4,43 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
+## 🏗️ **UNIFIED SIGNAL ARCHITECTURE - APPROACH #3 IMPLEMENTED (2026-03-05 10:37 GMT+7)**
+
+**Status:** ✅ **COMPLETE** - Single file, dual origin markers, smooth PEC reads
+
+### **Architecture: One File + Origin Identifier**
+- **File:** `SENT_SIGNALS.jsonl` (1,087 signals)
+- **Structure:** Every signal has `signal_origin` field:
+  - `"FOUNDATION"` = 992 old signals (before Mar 3 13:16 UTC, locked baseline)
+  - `"NEW"` = 95 new signals (after Mar 3 13:16 UTC, daemon-fired)
+- **Distinction Preserved:** Foundation clearly marked, naturally integrated
+- **PEC Reporter:** Reads ONE file, smooth operations, no dual-file confusion
+- **Daemon:** Auto-tags all new signals with `signal_origin: "NEW"` at write time
+
+### **Why This Wins**
+1. ✅ Single file to manage (no FOUNDATION + LIVE split)
+2. ✅ Reporter reads smoothly (no multi-file logic)
+3. ✅ Foundation distinction preserved (can filter by origin if needed)
+4. ✅ Scales naturally as new signals accumulate
+5. ✅ Git-friendly (one file tracks everything)
+
+### **Components Updated**
+- **SENT_SIGNALS.jsonl:** Unified file with signal_origin field (restored from CUMULATIVE on 2026-03-05)
+- **signal_sent_tracker.py:** Daemon auto-adds `signal_origin: "NEW"` when writing new signals
+- **pec_enhanced_reporter.py:** Reads single SENT_SIGNALS.jsonl (no CUMULATIVE logic needed)
+
+### **Git Commits (Architecture)**
+- a189f37: Unified signal file with signal_origin field (FOUNDATION 992 + NEW 95)
+- 021f65c: Daemon updated to auto-tag new signals with signal_origin=NEW
+
+### **Current Data (2026-03-05 10:37 GMT+7)**
+- Total signals: 1,087
+- FOUNDATION (locked): 992 signals
+- NEW (accumulated): 95 signals
+- Latest NEW signal: VOXEL-USDT, 2026-03-05
+
+---
+
 ## 🔐 **PEC ENHANCED REPORTER - TEMPLATE FROZEN & LOCKED (2026-03-05 10:30 GMT+7)**
 
 **Status:** ✅ **COMPLETE** - All 8 sections documented, hash-protected, git-locked, multi-layered defense
