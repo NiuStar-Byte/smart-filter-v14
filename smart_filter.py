@@ -45,7 +45,7 @@ class SmartFilter:
         symbol: str,
         df: pd.DataFrame,
         tf: Optional[str] = None,
-        min_score: int = 10,  # FIX: 2026-03-06 00:04 GMT+7 - lowered from 15 (was blocking ALL signals). Gatekeepers + Candle Confirmation handle gating
+        min_score: int = 15,  # RESTORED: Golden state default (2026-03-04). Lowering to 10 opened floodgates to score=5 signals. The 10-hour blackout was caused by disabled gates (DirectionAwareGatekeeper, PHASE4A), not min_score.
         required_passed: Optional[int] = None,  # int or None allowed
         volume_multiplier: float = 2.25,
         liquidity_threshold: float = 0.20,
