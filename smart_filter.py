@@ -45,7 +45,7 @@ class SmartFilter:
         symbol: str,
         df: pd.DataFrame,
         tf: Optional[str] = None,
-        min_score: int = 15,  # FIX: 2026-02-22 - increased from 12 to reduce false positives (25% fewer signals)
+        min_score: int = 3,  # FIX: 2026-03-06 00:04 GMT+7 - lowered from 15 (was blocking ALL signals). Gatekeepers + Candle Confirmation handle gating
         required_passed: Optional[int] = None,  # int or None allowed
         volume_multiplier: float = 2.25,
         liquidity_threshold: float = 0.20,
@@ -888,6 +888,13 @@ class SmartFilter:
             and (passes >= required_for_signal)
             and soft_passed  # Soft gatekeepers MUST pass too (e.g., Candle Confirmation)
         )
+        
+        # DEBUG: Log why filters_ok might be False
+        if not filters_ok:
+            print(f"[{self.symbol}] [FILTERS_OK_DEBUG] direction={direction} ({direction in ['LONG', 'SHORT']}) | "
+                  f"score={score}>={self.min_score}? ({score >= (self.min_score if isinstance(self.min_score, (int, float)) else 0)}) | "
+                  f"passes={passes}>={required_for_signal}? ({passes >= required_for_signal}) | "
+                  f"soft_passed={soft_passed}", flush=True)
 
         # Keep valid_signal for backwards compatibility but do NOT include super_gk_ok here.
         # main.py will compute the final valid_signal by combining filters_ok + super_gk_aligned(...)
