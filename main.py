@@ -620,11 +620,28 @@ def run_cycle():
 
                 if isinstance(res15, dict) and res15.get("filters_ok") is True:
                     
-                    # ===== DISABLED: PHASE 2-FIXED GATES WERE TOO STRICT (blocking all signals)
-                    # Using original SuperGK approach instead (from SmartFilter orderbook/density)
-                    # gates_passed = DirectionAwareGatekeeper.check_all_gates(...) - DISABLED 2026-03-06 00:06 GMT+7
+                    # ===== PHASE 2-FIXED: DIRECTION-AWARE GATEKEEPER CHECK (RESTORED from golden state) =====
                     signal_type = res15.get("bias", "UNKNOWN")
-                    gates_passed = True  # FIX: Disable PHASE2-FIXED gates, proceed with SuperGK
+                    try:
+                        gates_passed, gate_results = DirectionAwareGatekeeper.check_all_gates(
+                            df15,
+                            direction=signal_type,
+                            regime=regime15,
+                            debug=False
+                        )
+                        
+                        if not gates_passed:
+                            failed_gates = [k for k, v in gate_results.items() if not v]
+                            print(f"[PHASE2-FIXED] 15min {symbol} {signal_type} REJECTED - "
+                                  f"failed: {failed_gates}", flush=True)
+                            continue  # Skip to next symbol
+                        else:
+                            print(f"[PHASE2-FIXED] 15min {symbol} {signal_type} ✓ ALL GATES PASS ({regime15})", flush=True)
+                    except Exception as e:
+                        print(f"[PHASE2-FIXED] Error checking gates for {symbol}: {e}", flush=True)
+                        # Fail gracefully - still allow signal if gates can't be checked
+                        pass
+                    # ===== END PHASE 2-FIXED GATES =====
                     
                     last15 = last_sent.get(key15, 0)
                     if now - last15 >= COOLDOWN["15min"]:
@@ -968,9 +985,27 @@ def run_cycle():
 
                 if isinstance(res30, dict) and res30.get("filters_ok") is True:
                     
-                    # ===== DISABLED: PHASE 2-FIXED GATES TOO STRICT (30min) - using SuperGK instead
+                    # ===== PHASE 2-FIXED: DIRECTION-AWARE GATEKEEPER CHECK - 30min (RESTORED from golden state) =====
                     signal_type = res30.get("bias", "UNKNOWN")
-                    gates_passed = True  # FIX: Disable PHASE2-FIXED gates, proceed with SuperGK
+                    try:
+                        gates_passed, gate_results = DirectionAwareGatekeeper.check_all_gates(
+                            df30,
+                            direction=signal_type,
+                            regime=regime30,
+                            debug=False
+                        )
+                        
+                        if not gates_passed:
+                            failed_gates = [k for k, v in gate_results.items() if not v]
+                            print(f"[PHASE2-FIXED] 30min {symbol} {signal_type} REJECTED - "
+                                  f"failed: {failed_gates}", flush=True)
+                            continue  # Skip to next symbol
+                        else:
+                            print(f"[PHASE2-FIXED] 30min {symbol} {signal_type} ✓ ALL GATES PASS ({regime30})", flush=True)
+                    except Exception as e:
+                        print(f"[PHASE2-FIXED] Error checking gates for {symbol}: {e}", flush=True)
+                        pass
+                    # ===== END PHASE 2-FIXED GATES =====
                     
                     last30 = last_sent.get(key30, 0)
                     if now - last30 >= COOLDOWN["30min"]:
@@ -1335,9 +1370,27 @@ def run_cycle():
 
                 if isinstance(res1h, dict) and res1h.get("filters_ok") is True:
                     
-                    # ===== DISABLED: PHASE 2-FIXED GATES TOO STRICT (1h) - using SuperGK instead
+                    # ===== PHASE 2-FIXED: DIRECTION-AWARE GATEKEEPER CHECK - 1h (RESTORED from golden state) =====
                     signal_type = res1h.get("bias", "UNKNOWN")
-                    gates_passed = True  # FIX: Disable PHASE2-FIXED gates, proceed with SuperGK
+                    try:
+                        gates_passed, gate_results = DirectionAwareGatekeeper.check_all_gates(
+                            df1h,
+                            direction=signal_type,
+                            regime=regime1h,
+                            debug=False
+                        )
+                        
+                        if not gates_passed:
+                            failed_gates = [k for k, v in gate_results.items() if not v]
+                            print(f"[PHASE2-FIXED] 1h {symbol} {signal_type} REJECTED - "
+                                  f"failed: {failed_gates}", flush=True)
+                            continue  # Skip to next symbol
+                        else:
+                            print(f"[PHASE2-FIXED] 1h {symbol} {signal_type} ✓ ALL GATES PASS ({regime1h})", flush=True)
+                    except Exception as e:
+                        print(f"[PHASE2-FIXED] Error checking gates for {symbol}: {e}", flush=True)
+                        pass
+                    # ===== END PHASE 2-FIXED GATES =====
                     
                     last1h = last_sent.get(key1h, 0)
                     if now - last1h >= COOLDOWN["1h"]:
