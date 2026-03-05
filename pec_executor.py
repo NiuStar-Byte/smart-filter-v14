@@ -113,16 +113,21 @@ class PECExecutor:
                 print(f"[PEC-TIMEOUT-DEBUG] {symbol} {timeframe}: bars={bars_elapsed}/{max_bars}, "
                       f"fired={fired_time_str}, now={now}, delta_min={time_delta_minutes:.1f}", flush=True)
             
-            # If bars exceed max, check for STALE timeout
+            # If bars exceed max, determine timeout type
             if bars_elapsed >= max_bars:
-                # Skip STALE timeouts (>150% overdue) - system failed to process at deadline
+                # Check if STALE timeout (>150% overdue) - system failed to process at deadline
                 if bars_elapsed > max_bars * 1.5:
                     hours_overdue = int((bars_elapsed - max_bars) * tf_minutes / 60)
-                    print(f"[PEC-SKIP-STALE] {symbol} {timeframe}: {bars_elapsed} bars ({hours_overdue}h overdue), "
-                          f"skipping P&L calculation", flush=True)
-                    return None  # Skip stale timeout, don't calculate P&L
+                    print(f"[PEC-STALE-TIMEOUT] {symbol} {timeframe}: {bars_elapsed} bars ({hours_overdue}h overdue), "
+                          f"marking as STALE_TIMEOUT (no P&L)", flush=True)
+                    return {
+                        'status': 'STALE_TIMEOUT',
+                        'exit_price': current_price,
+                        'pnl_usd': None,  # No P&L for stale timeouts
+                        'pnl_pct': None
+                    }
                 
-                # Normal timeout (within reasonable window) - calculate P&L
+                # Normal timeout (within reasonable window) - calculate P&L as TIMEOUT_WIN or TIMEOUT_LOSS
                 print(f"[PEC-TIMEOUT-HIT] {symbol} {timeframe}: {bars_elapsed} bars >= {max_bars} max", flush=True)
                 # FIXED POSITION SIZE: $100 with 10x leverage = $1,000 notional
                 NOTIONAL_POSITION = 1000.0  # $100 position × 10x leverage
@@ -132,7 +137,7 @@ class PECExecutor:
                 return {
                     'status': 'TIMEOUT',
                     'exit_price': current_price,  # timeout_price = current_price
-                    'pnl_usd': pnl_result['pnl_usd'],
+                    'pnl_usd': pnl_result['pnl_usd'],  # Can be positive (TIMEOUT_WIN) or negative (TIMEOUT_LOSS)
                     'pnl_pct': pnl_result['pnl_pct']
                 }
         except Exception as e:
@@ -192,6 +197,7 @@ class PECExecutor:
             'tp_hits': [],
             'sl_hits': [],
             'timeouts': [],
+            'stale_timeouts': [],
             'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
         
@@ -218,9 +224,16 @@ class PECExecutor:
                         # Update record
                         record['status'] = result['status']
                         record['actual_exit_price'] = result['exit_price']
-                        record['pnl_usd'] = round(result['pnl_usd'], 4)
-                        record['pnl_pct'] = round(result['pnl_pct'], 2)
                         record['closed_at'] = datetime.utcnow().isoformat()
+                        
+                        # Only set P&L if not STALE_TIMEOUT (stale timeouts have no P&L)
+                        if result['pnl_usd'] is not None:
+                            record['pnl_usd'] = round(result['pnl_usd'], 4)
+                            record['pnl_pct'] = round(result['pnl_pct'], 2)
+                        else:
+                            # STALE_TIMEOUT has no P&L
+                            record['pnl_usd'] = None
+                            record['pnl_pct'] = None
                         
                         # Track summary (include timestamp when signal fired)
                         fired_time = record.get('fired_time_utc', '')
@@ -261,6 +274,12 @@ class PECExecutor:
                                 'pnl_pct': record['pnl_pct'],
                                 'fired_time': local_time
                             })
+                        elif result['status'] == 'STALE_TIMEOUT':
+                            summary['stale_timeouts'].append({
+                                'symbol': record.get('symbol'),
+                                'timeframe': record.get('timeframe'),
+                                'fired_time': local_time
+                            })
             
             # Write back updated records
             with open(self.sent_signals_path, 'w') as f:
@@ -280,6 +299,7 @@ class PECExecutor:
             'tp_hit': 0,
             'sl_hit': 0,
             'timeout': 0,
+            'stale_timeout': 0,
             'total_pnl_usd': 0.0,
             'win_rate_pct': 0.0
         }
@@ -303,12 +323,15 @@ class PECExecutor:
                             stats['sl_hit'] += 1
                         elif status == 'TIMEOUT':
                             stats['timeout'] += 1
+                        elif status == 'STALE_TIMEOUT':
+                            stats['stale_timeout'] += 1
                         
-                        pnl = record.get('pnl_usd', 0)
-                        if pnl:
+                        # Only count P&L if not STALE_TIMEOUT
+                        pnl = record.get('pnl_usd')
+                        if pnl is not None and status != 'STALE_TIMEOUT':
                             stats['total_pnl_usd'] += pnl
             
-            # Win Rate = TP_HIT / (TP_HIT + SL_HIT)
+            # Win Rate = TP_HIT / (TP_HIT + SL_HIT) [exclude TIMEOUT and STALE_TIMEOUT from base calculation]
             closed_trades = stats['tp_hit'] + stats['sl_hit']
             if closed_trades > 0:
                 stats['win_rate_pct'] = round((stats['tp_hit'] / closed_trades) * 100, 1)
@@ -322,7 +345,7 @@ class PECExecutor:
     
     def print_announcement(self, summary: Dict):
         """Print summary ONLY if something changed"""
-        if not any([summary['tp_hits'], summary['sl_hits'], summary['timeouts']]):
+        if not any([summary['tp_hits'], summary['sl_hits'], summary['timeouts'], summary['stale_timeouts']]):
             return  # Silent if nothing changed
         
         print(f"\n{'='*80}", flush=True)
@@ -347,11 +370,17 @@ class PECExecutor:
                 fired = f" | Fired: {hit['fired_time']}" if hit.get('fired_time') else ""
                 print(f"   {hit['symbol']:12} {hit['timeframe']:6} | P&L: ${hit['pnl_usd']:8.2f} ({hit['pnl_pct']:+.2f}%){fired}", flush=True)
         
+        if summary['stale_timeouts']:
+            print(f"\n⚠️  STALE_TIMEOUT ({len(summary['stale_timeouts'])} signals) - System failed to process at deadline:", flush=True)
+            for hit in summary['stale_timeouts']:
+                fired = f" | Fired: {hit['fired_time']}" if hit.get('fired_time') else ""
+                print(f"   {hit['symbol']:12} {hit['timeframe']:6} | NO P&L (data quality issue){fired}", flush=True)
+        
         # Print stats
         stats = self.get_stats()
         print(f"\n📊 PEC STATS:", flush=True)
-        print(f"   Total: {stats['total']} | Open: {stats['open']} | TP: {stats['tp_hit']} | SL: {stats['sl_hit']} | Timeout: {stats['timeout']}", flush=True)
-        print(f"   Win Rate: {stats['win_rate_pct']:.1f}% | Total P&L: ${stats['total_pnl_usd']:+.2f}", flush=True)
+        print(f"   Total: {stats['total']} | Open: {stats['open']} | TP: {stats['tp_hit']} | SL: {stats['sl_hit']} | TIMEOUT: {stats['timeout']} | STALE_TIMEOUT: {stats['stale_timeout']}", flush=True)
+        print(f"   Win Rate (TP/SL only): {stats['win_rate_pct']:.1f}% | Total P&L: ${stats['total_pnl_usd']:+.2f}", flush=True)
         print(f"{'='*80}\n", flush=True)
 
 
