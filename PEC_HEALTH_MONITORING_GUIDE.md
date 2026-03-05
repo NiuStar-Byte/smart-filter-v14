@@ -6,9 +6,9 @@
 
 ---
 
-## 📋 QUICK CHECK - One Command
+## 📋 QUICK CHECK - Two Modes
 
-**To diagnose what's broken:**
+### **Mode 1: Single Check (Quick)**
 ```bash
 python3 pec_system_health_monitor.py
 ```
@@ -21,6 +21,32 @@ OR
 
 🔴 SYSTEM DEGRADED - See errors above, check pec_system_health.log for details
 ```
+
+### **Mode 2: Watch Mode (Continuous - 30 seconds auto-refresh)**
+```bash
+# Default: refresh every 30 seconds
+python3 pec_system_health_monitor.py --watch
+
+# Or custom interval (e.g., 10 seconds):
+python3 pec_system_health_monitor.py --watch 10
+```
+
+**Output updates automatically every 30 seconds:**
+```
+🔄 PEC SYSTEM HEALTH MONITOR (auto-refresh every 30s) - 2026-03-05 12:50:15 GMT+7
+
+  ✅ Daemon (main.py)              → Running & firing signals
+  ✅ Executor (pec_executor.py)    → Running & processing
+  ✅ Watchdog (pec_watchdog.py)    → Running & monitoring
+  ✅ File Access (SENT_SIGNALS)   → Readable & writable
+  ✅ Signal Pipeline              → Accumulating normally
+
+🟢 SYSTEM HEALTHY - All components operational
+
+⏳ Next update in 30 seconds... (Ctrl+C to stop)
+```
+
+Stop with: **`Ctrl+C`**
 
 ---
 

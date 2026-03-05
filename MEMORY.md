@@ -4,6 +4,29 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
+## 🏥 **PEC SYSTEM HEALTH MONITORING (2026-03-05 12:45 GMT+7)**
+
+**Status:** ✅ **OPERATIONAL - Auto-refresh every 30 seconds**  
+**Tool:** `pec_system_health_monitor.py`  
+**Git Commits:** 0aed69b, ff1d37d, cd42249  
+
+### **Quick Commands:**
+- **Single check:** `python3 pec_system_health_monitor.py`
+- **Continuous watch (30s auto-refresh):** `python3 pec_system_health_monitor.py --watch`
+- **Custom interval:** `python3 pec_system_health_monitor.py --watch 10` (10 seconds)
+
+### **Error Log:**
+- `tail -f pec_system_health.log` (live errors)
+
+### **Monitoring 5 Critical Systems:**
+1. ✅ **DAEMON** - main.py running & firing signals
+2. ✅ **EXECUTOR** - pec_executor.py processing signals
+3. ✅ **WATCHDOG** - pec_watchdog.py monitoring executor
+4. ✅ **FILE ACCESS** - SENT_SIGNALS.jsonl readable/writable
+5. ✅ **SIGNAL FLOW** - Accumulating normally, no backlog
+
+---
+
 ## 🔒 **TRACKERS LOCK - IMMUTABLE (2026-03-05 11:53 GMT+7)**
 
 **Status:** ✅ **ALL LIVE TRACKERS FROZEN & LOCKED**  
