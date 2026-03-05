@@ -818,28 +818,10 @@ def run_cycle():
                             print(f"[WARN] log_fired_signal raised: {e}", flush=True)
                             traceback.print_exc()
 
-                        # ===== PHASE 2-FIXED: DIRECTION-AWARE THRESHOLD CHECK (15min) =====
-                        try:
-                            min_threshold, threshold_reason = calculate_direction_aware_threshold(
-                                Route,
-                                regime,
-                                signal_type,
-                                debug=False
-                            )
-                            
-                            print(f"[PHASE2-FIXED-THRESHOLD] 15min {symbol}: score={score:.1f} | "
-                                  f"threshold={min_threshold} | {threshold_reason}", flush=True)
-                            
-                            if score < min_threshold:
-                                print(f"[PHASE2-FIXED-REJECT] 15min {symbol} {signal_type}: "
-                                      f"{score:.1f} < {min_threshold} (below {Route} threshold)", flush=True)
-                                continue  # Skip signal
-                        
-                        except Exception as e:
-                            print(f"[SCORE-ADJUST] Error in 15min: {e}", flush=True)
-                            # Continue with original score if error
-                            pass
-                        # ===== END REGIME-AWARE ADJUSTMENT =====
+                        # DISABLED: Direction-aware threshold was too strict
+                        # Scores are 9-12, but thresholds are 13-25 → rejected ALL signals
+                        # Disabled 2026-03-06 00:18 GMT+7
+                        # (threshold check moved to SmartFilter min_score, which is now 3)
 
                         # ===== RR FILTERING (Enhanced PEC) ===== (regime already calculated earlier)
                         achieved_rr_value = tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None
@@ -1171,26 +1153,8 @@ def run_cycle():
                             print(f"[WARN] log_fired_signal raised: {e}", flush=True)
                             traceback.print_exc()
 
-                        # ===== PHASE 2-FIXED: DIRECTION-AWARE THRESHOLD CHECK - 30min =====
-                        try:
-                            min_threshold, threshold_reason = calculate_direction_aware_threshold(
-                                Route,
-                                regime,
-                                signal_type,
-                                debug=False
-                            )
-                            
-                            print(f"[PHASE2-FIXED-THRESHOLD] 30min {symbol}: score={score:.1f} | "
-                                  f"threshold={min_threshold} | {threshold_reason}", flush=True)
-                            
-                            if score < min_threshold:
-                                print(f"[PHASE2-FIXED-REJECT] 30min {symbol} {signal_type}: "
-                                      f"{score:.1f} < {min_threshold} (below {Route} threshold)", flush=True)
-                                continue  # Skip signal
-                        
-                        except Exception as e:
-                            print(f"[PHASE2-FIXED] Error in 30min threshold: {e}", flush=True)
-                            pass
+                        # DISABLED: Direction-aware threshold was too strict (30min)
+                        # Disabled 2026-03-06 00:18 GMT+7
                         # ===== END PHASE 2-FIXED THRESHOLD =====
 
                         # ===== RR FILTERING (Enhanced PEC) ===== (regime already calculated earlier)
@@ -1556,27 +1520,8 @@ def run_cycle():
                             print(f"[WARN] log_fired_signal raised: {e}", flush=True)
                             traceback.print_exc()
 
-                        # ===== PHASE 2-FIXED: DIRECTION-AWARE THRESHOLD CHECK - 1h =====
-                        try:
-                            min_threshold, threshold_reason = calculate_direction_aware_threshold(
-                                Route,
-                                regime,
-                                signal_type,
-                                debug=False
-                            )
-                            
-                            print(f"[PHASE2-FIXED-THRESHOLD] 1h {symbol}: score={score:.1f} | "
-                                  f"threshold={min_threshold} | {threshold_reason}", flush=True)
-                            
-                            if score < min_threshold:
-                                print(f"[PHASE2-FIXED-REJECT] 1h {symbol} {signal_type}: "
-                                      f"{score:.1f} < {min_threshold} (below {Route} threshold)", flush=True)
-                                continue  # Skip signal
-                        
-                        except Exception as e:
-                            print(f"[PHASE2-FIXED] Error in 1h threshold: {e}", flush=True)
-                            pass
-                        # ===== END PHASE 2-FIXED THRESHOLD =====
+                        # DISABLED: Direction-aware threshold was too strict (1h)
+                        # Disabled 2026-03-06 00:18 GMT+7
 
                         # ===== RR FILTERING (Enhanced PEC) ===== (regime already calculated earlier)
                         achieved_rr_value = tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None
