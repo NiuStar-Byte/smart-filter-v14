@@ -80,6 +80,7 @@ class SmartFilter:
     
         self.tf = tf
         self.min_score = min_score
+        print(f"[CRITICAL-DEBUG] SmartFilter.__init__ {symbol} {tf}: min_score={min_score} (source of truth for ALL timeframes)", flush=True)
         self.required_passed = required_passed
         self.volume_multiplier = volume_multiplier
         self.liquidity_threshold = liquidity_threshold
@@ -882,12 +883,14 @@ class SmartFilter:
 
         # --- NEW: compute filters_ok (filters & gatekeepers only) ---
         # Keep SuperGK out of this decision so main.py performs the canonical SuperGK check.
+        score_check = score >= (self.min_score if isinstance(self.min_score, (int, float)) else 0)
         filters_ok = (
             direction in ["LONG", "SHORT"]
-            and (score >= (self.min_score if isinstance(self.min_score, (int, float)) else 0))
+            and score_check
             and (passes >= required_for_signal)
             and soft_passed  # Soft gatekeepers MUST pass too (e.g., Candle Confirmation)
         )
+        print(f"[CRITICAL-FILTERS_OK] {self.symbol}: direction={direction} | score={score} >= min_score={self.min_score}? {score_check} | passes={passes}>={required_for_signal}? {passes >= required_for_signal} | soft_passed={soft_passed} → filters_ok={filters_ok}", flush=True)
         
         # DEBUG: Log why filters_ok might be False
         if not filters_ok:
