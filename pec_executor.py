@@ -26,7 +26,8 @@ class PECExecutor:
     def __init__(self, sent_signals_path: str = None):
         # Use absolute path to workspace root to fix path issues when run from submodule
         if sent_signals_path is None:
-            workspace_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+            # pec_executor.py lives in workspace root, so __file__ dirname IS workspace root
+            workspace_root = os.path.abspath(os.path.dirname(__file__))
             sent_signals_path = os.path.join(workspace_root, 'SENT_SIGNALS.jsonl')
         self.sent_signals_path = sent_signals_path
         self.kucoin_api_base = "https://api.kucoin.com"
@@ -357,7 +358,8 @@ class PECExecutor:
 def log_system_error(error_msg):
     """Log errors to health monitor log"""
     import sys
-    workspace_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    # pec_executor.py lives in workspace root, so __file__ dirname IS workspace root
+    workspace_root = os.path.abspath(os.path.dirname(__file__))
     health_log = os.path.join(workspace_root, 'pec_system_health.log')
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S GMT+7")
     line = f"[{ts}] 🔴 EXECUTOR        | RUNTIME_ERROR        | {error_msg}\n"
