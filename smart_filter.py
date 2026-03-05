@@ -45,7 +45,7 @@ class SmartFilter:
         symbol: str,
         df: pd.DataFrame,
         tf: Optional[str] = None,
-        min_score: int = 3,  # FIX: 2026-03-06 00:04 GMT+7 - lowered from 15 (was blocking ALL signals). Gatekeepers + Candle Confirmation handle gating
+        min_score: int = 10,  # FIX: 2026-03-06 00:04 GMT+7 - lowered from 15 (was blocking ALL signals). Gatekeepers + Candle Confirmation handle gating
         required_passed: Optional[int] = None,  # int or None allowed
         volume_multiplier: float = 2.25,
         liquidity_threshold: float = 0.20,
