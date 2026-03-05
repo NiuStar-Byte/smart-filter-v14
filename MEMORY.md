@@ -6,11 +6,72 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ## 🚀 **SYMBOL EXPANSION - 10 NEW PERPETUALS (2026-03-05 14:25 GMT+7)**
 
-**Status:** ✅ **COMPLETE - Daemon restarted with 92 symbols**  
+**Status:** ✅ **COMPLETE - All 92 symbols synced across all files**  
 **New Symbols:** ATOM-USDT, AGLD-USDT, APT-USDT, INJ-USDT, NEAR-USDT, OCEAN-USDT, OP-USDT, RNDR-USDT, SEI-USDT, TAO-USDT  
 **Count:** 82 → 92 symbols (+10)  
-**Git Commit:** 3d9ccee (pushed to main)  
-**Daemon Status:** Running, processing existing symbols, will cycle to new ones in next round  
+**Daemon Restart:** 3d9ccee (pushed to main, 2026-03-05 14:25 GMT+7)  
+**Daemon Status:** ✅ Running, processing 92 symbols, generating signals #1-#92  
+
+---
+
+## 🔐 **OPTION C: SINGLE SOURCE OF TRUTH (2026-03-05 14:10 GMT+7)**
+
+**Status:** ✅ **COMPLETE - All critical files sync to main.py**  
+**Problem Solved:** kucoin_orderbook.py was out of sync, creating a ticking time bomb if SuperGK re-enabled
+
+### **Files Synced (Option C Implementation)**
+
+| File | Status | Method | Details |
+|------|--------|--------|---------|
+| **main.py** | ✅ MASTER | Hardcoded | 92 symbols (source of truth) |
+| **check_symbols.py** | ✅ SYNCED | Imports | `from main import TOKENS` |
+| **kucoin_orderbook.py** | ✅ SYNCED | Imports | `from main import TOKENS` + fallback |
+| **pec_scheduler.py** | ✅ SYNCED | Imports | `from main import TOKENS` + fallback |
+| **run_pec_backtest.py** | ✅ SYNCED | Imports | `from main import TOKENS` + fallback |
+
+### **How It Works**
+```python
+# In each file (except main.py):
+try:
+    from main import TOKENS
+except ImportError:
+    # Fallback with 92 symbols (includes 10 new ones)
+    TOKENS = [...]
+```
+
+**Benefit:** Next time you expand symbols → update **ONLY main.py** → all files auto-sync ✅
+
+### **Verification (2026-03-05 14:10 GMT+7)**
+```
+main.py              | 92 symbols | ✅ SYNCED
+check_symbols.py     | 92 symbols | ✅ SYNCED
+kucoin_orderbook.py  | 92 symbols | ✅ SYNCED
+pec_scheduler.py     | 92 symbols | ✅ SYNCED
+run_pec_backtest.py  | 92 symbols | ✅ SYNCED
+```
+
+**All unique (no duplicates):** PEPE-USDT duplicate removed ✅
+
+---
+
+## 🎯 **Why kucoin_orderbook.py Was Firing Signals Despite Being Out of Sync**
+
+**Answer:** SuperGK (SuperGatekeeper) is DISABLED globally in main.py (line 665-669).
+
+```python
+# Line 667-669 in main.py:
+super_gk_ok = True  # BYPASS (always True, regardless of orderbook check)
+
+if not super_gk_ok:  # This NEVER executes
+    continue  # ← Signal not blocked
+```
+
+**Impact:** 
+- ❌ Signal generation works even without kucoin_orderbook.py sync
+- ⚠️ But if SuperGK is re-enabled later, signals #83-92 will FAIL validation
+- ✅ Fixed now with Option C (all files import from main.py)
+
+---
 
 ---
 
