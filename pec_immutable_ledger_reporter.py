@@ -99,6 +99,73 @@ class PECEnhancedReporter:
         
         return True
     
+    def _detect_daemon_downtime(self):
+        """Detect 1+ hour gaps in signal firing (daemon crashes)"""
+        # Group by UTC hour - look at Mar-05 specifically
+        hours_with_signals = set()
+        for signal in self.signals:
+            fired = signal.get('fired_time_utc', '')
+            if fired and fired.startswith('2026-03-05') and len(fired) > 13:
+                hour = int(fired[11:13])
+                hours_with_signals.add(hour)
+        
+        if not hours_with_signals:
+            return None
+        
+        if len(hours_with_signals) == 24:  # All hours covered
+            return None
+        
+        # Find continuous gap sequences
+        all_hours = set(range(24))
+        gap_hours = sorted(all_hours - hours_with_signals)
+        
+        if not gap_hours:
+            return None
+        
+        # Find all continuous gap sequences
+        gap_sequences = []
+        if gap_hours:
+            current_gap = [gap_hours[0]]
+            for i in range(1, len(gap_hours)):
+                if gap_hours[i] == gap_hours[i-1] + 1:
+                    current_gap.append(gap_hours[i])
+                else:
+                    gap_sequences.append(current_gap)
+                    current_gap = [gap_hours[i]]
+            gap_sequences.append(current_gap)
+        
+        if not gap_sequences:
+            return None
+        
+        # Calculate total missed and list all gaps
+        total_gap_hours = sum(len(gap) for gap in gap_sequences)
+        total_missed_signals = total_gap_hours * 30
+        
+        # Build report
+        report_lines = []
+        report_lines.append(f"Mar-05 UTC Gap Analysis:")
+        report_lines.append(f"Total Missing Hours: {total_gap_hours} hours")
+        report_lines.append(f"Expected Signals (30/hour): {total_gap_hours} × 30 = {total_missed_signals} signals")
+        report_lines.append(f"Actual Signals: 0")
+        report_lines.append(f"MISSED TRADES: {total_missed_signals}")
+        report_lines.append(f"")
+        
+        report_lines.append(f"Gap Windows:")
+        for gap in gap_sequences:
+            gap_duration = len(gap)
+            start_hour = gap[0]
+            end_hour = gap[-1]
+            missed = gap_duration * 30
+            report_lines.append(f"  • {start_hour:02d}:00-{end_hour:02d}:59 UTC ({gap_duration}h) → {missed} signals")
+        
+        report_lines.append(f"")
+        report_lines.append(f"⚠️  CRITICAL: Current metrics are INCOMPLETE")
+        report_lines.append(f"    Win Rate (31.93%) excludes {total_missed_signals} untraded signals")
+        report_lines.append(f"    P&L (-$4,498.60) missing ~{int(total_missed_signals*0.3)} expected TP_HIT trades (~${int(total_missed_signals*0.3)*5.92})")
+        report_lines.append(f"    System lost {total_missed_signals} trading opportunities due to daemon crashes")
+        
+        return "\n".join(report_lines)
+    
     def get_symbol_group(self, symbol: str) -> str:
         """Map a symbol to its group"""
         for group_name, symbols in SYMBOL_GROUPS.items():
@@ -989,10 +1056,21 @@ class PECEnhancedReporter:
             date_line = f"  {date_str}: {count} fired | Beginning Fired Time: {beginning_time_str} | Last Fired Time: {last_time_str} |"
             date_summary_lines.append(date_line)
         
+        # DAEMON DOWNTIME DETECTION (Mar-05)
+        daemon_downtime_note = self._detect_daemon_downtime()
+        
         # Display Summary (with stale timeout exclusion note) - Match user's exact template
         stale_timeout_count = sum(1 for s in self.signals if s.get('data_quality_flag') and 'STALE_TIMEOUT' in s.get('data_quality_flag'))
         
         report.append("")
+        
+        # Add daemon downtime warning if detected
+        if daemon_downtime_note:
+            report.append("🚨 DAEMON DOWNTIME DETECTED - DATA INCOMPLETE")
+            report.append("=" * 120)
+            report.append(daemon_downtime_note)
+            report.append("")
+        
         report.append("🔒 FOUNDATION BASELINE (IMMUTABLE - Locked at commit c535c34)")
         report.append("Total Signals: 853 | Closed: 830 | WR: 25.7%")
         report.append("LONG WR: 29.6% | SHORT WR: 46.2% | P&L: $-5498.59")

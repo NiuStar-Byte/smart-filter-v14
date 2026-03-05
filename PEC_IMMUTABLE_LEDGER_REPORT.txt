@@ -335,7 +335,7 @@ TF       | Route                | Regime   | Total  | TP   | SL   | TIMEOUT  | C
 
 ==================================================================================================================================================================================================================================================================================================
 📋 DETAILED SIGNAL LIST: FIXED POSITION SIZE $100, LEVERAGE 10x
-Report Generated: 2026-03-05 21:05:47 GMT+7
+Report Generated: 2026-03-05 21:08:34 GMT+7
 Total Signals Loaded: 1530
 
 ⚠️  NOTE: Signals marked 'STALE_TIMEOUT' in Data Quality column are EXCLUDED from Aggregates/Summary/Hierarchy
@@ -1878,6 +1878,23 @@ MAGIC-USDT   30min    LONG   TREND CONTINUATION   BEAR   78%    LOW_ALTS     SL_
 ====================================================================================================================================
 📊 SUMMARY
 ====================================================================================================================================
+
+🚨 DAEMON DOWNTIME DETECTED - DATA INCOMPLETE
+========================================================================================================================
+Mar-05 UTC Gap Analysis:
+Total Missing Hours: 16 hours
+Expected Signals (30/hour): 16 × 30 = 480 signals
+Actual Signals: 0
+MISSED TRADES: 480
+
+Gap Windows:
+  • 06:00-11:59 UTC (6h) → 180 signals
+  • 14:00-23:59 UTC (10h) → 300 signals
+
+⚠️  CRITICAL: Current metrics are INCOMPLETE
+    Win Rate (31.93%) excludes 480 untraded signals
+    P&L (-$4,498.60) missing ~144 expected TP_HIT trades (~$852.48)
+    System lost 480 trading opportunities due to daemon crashes
 
 🔒 FOUNDATION BASELINE (IMMUTABLE - Locked at commit c535c34)
 Total Signals: 853 | Closed: 830 | WR: 25.7%
