@@ -4,6 +4,52 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
+## 🔒 **TRACKERS LOCK - IMMUTABLE (2026-03-05 11:53 GMT+7)**
+
+**Status:** ✅ **ALL LIVE TRACKERS FROZEN & LOCKED**  
+**Decision:** NO MODIFICATIONS without explicit user confirmation (until Mar 10)  
+**Git Commit:** 8bf435a  
+**Git Tag:** `stable-trackers-locked-2026-03-05`
+
+### **4 Locked Trackers (Immutable):**
+1. **COMPARE_AB_TEST_LOCKED.py** - Phase 2-FIXED A/B test
+   - SHA256: `424d239eadb70a1026ab105c9d9602bae44c8257b78a5cebbb12d95e51211ba3`
+   - Backup: `COMPARE_AB_TEST_LOCKED_LOCKED_FROZEN.py`
+   
+2. **PHASE3_TRACKER.py** - Phase 3B reversal quality gates
+   - SHA256: `a64a12b7bb2a32534030e2b4bb37ac8e7350e3a01061646bf13e6475361ab329`
+   - Backup: `PHASE3_TRACKER_LOCKED_FROZEN.py`
+   
+3. **track_rr_comparison.py** - RR variant comparison (2.0:1 FIXED vs 1.5:1 DYNAMIC)
+   - SHA256: `ad27f98315f14cfb38f27ea7b65a99f62ff396da39aa12c2bdcc7a04d9c8e056`
+   - Backup: `track_rr_comparison_LOCKED_FROZEN.py`
+   
+4. **pec_enhanced_reporter.py** - PEC enhanced report
+   - SHA256: `02913b861199f99dbd9bfe822d42619e8e4bcc500adcfd5fc3ca46d9981dced2`
+   - Backup: `pec_enhanced_reporter_LOCKED_FROZEN.py`
+
+### **Crash Recovery Safeguards:**
+- Scenario 1: Daemon crash → Restart daemon (documented)
+- Scenario 2: API rate limit → Increase CYCLE_SLEEP to 1000s
+- Scenario 3: File corruption → `git checkout SENT_SIGNALS.jsonl`
+- Scenario 4: Tracker modification → Hash verification prevents changes
+
+### **Daily Verification:**
+```bash
+python3 verify_trackers_lock.py  # Checks all hashes + FOUNDATION baseline
+```
+
+### **Accumulation Phase (Mar 5-10):**
+- ✅ Only new signals accumulate to SENT_SIGNALS.jsonl
+- ✅ Trackers auto-update (no code changes)
+- ❌ NO tracker modifications
+- ❌ NO format/structure changes
+
+### **Decision Point: Mar 10 14:30 GMT+7**
+Compare Phase 2-FIXED WR vs baseline (25.7%) → decide approve/reject
+
+---
+
 ## 🏗️ **UNIFIED SIGNAL ARCHITECTURE - APPROACH #3 FIXED (2026-03-05 10:58 GMT+7)**
 
 **Status:** ✅ **CORRECTED** - FOUNDATION count fixed, math now works perfectly
