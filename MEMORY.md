@@ -54,6 +54,62 @@ run_pec_backtest.py  | 92 symbols | ✅ SYNCED
 
 ---
 
+## 🛡️ **SYMBOL ENFORCEMENT ARCHITECTURE (2026-03-05 14:25 GMT+7)**
+
+**Status:** ✅ **COMPLETE - Filters now validate all symbols**  
+**Problem:** 20 filters in smart_filter.py had NO symbol registry enforcement  
+**Solution:** Created active_symbols.py with mandatory validation  
+
+### **Architecture: 3-Layer Enforcement**
+
+```
+Layer 1: ACTIVE_SYMBOLS Registry (active_symbols.py)
+├─ Source: Imports from main.py TOKENS (single source of truth)
+├─ Provides: validate_symbol(), enforce_symbol_validation decorator
+└─ Tracks: Total=92, Duplicates=0, Last_Updated=2026-03-05
+
+Layer 2: SmartFilter Validation (smart_filter.py __init__)
+├─ Checks: Every symbol before entering filter chain
+├─ Raises: SymbolNotRegisteredError if not in registry
+└─ Prevents: Invalid symbols from being processed by 20 filters
+
+Layer 3: Main Daemon (main.py daemon loop)
+├─ Source: Loops over main.py TOKENS (blessed list)
+├─ Guards: Only registered symbols enter the pipeline
+└─ Guarantee: Filters can ONLY receive validated symbols
+```
+
+### **How It Works (Real Example)**
+
+```python
+# Valid symbol: Flows through pipeline ✅
+symbol = "ATOM-USDT"
+validate_symbol(symbol, raise_on_invalid=True)  # ✅ In registry
+sf = SmartFilter(symbol, df)  # ✅ Proceeds to filters
+results = sf.analyze()  # ✅ All 20 filters execute
+
+# Invalid symbol: Blocked at SmartFilter ❌
+symbol = "FAKE-USDT"
+validate_symbol(symbol, raise_on_invalid=True)  # ❌ Raises exception
+sf = SmartFilter(symbol, df)  # ❌ Never reaches here - exception caught
+# Error: "[SYMBOL VALIDATION] FAKE-USDT is not registered..."
+```
+
+### **Verification (2026-03-05 14:25 GMT+7)**
+```
+✅ active_symbols.py created (170 lines, 6.4 KB)
+✅ SmartFilter.__init__ validates symbols
+✅ Test 1: BTC-USDT (registered) → ✅ SmartFilter created
+✅ Test 2: FAKE-USDT (unregistered) → ❌ SymbolNotRegisteredError
+✅ Registry integrity: 92 symbols, 0 duplicates
+```
+
+### **Files Updated**
+- **active_symbols.py** - NEW (central registry + validators)
+- **smart_filter.py** - Added symbol validation to __init__
+
+---
+
 ## 🎯 **Why kucoin_orderbook.py Was Firing Signals Despite Being Out of Sync**
 
 **Answer:** SuperGK (SuperGatekeeper) is DISABLED globally in main.py (line 665-669).
