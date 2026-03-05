@@ -60,14 +60,19 @@ class PECExecutor:
     
     def check_signal_status(self, signal: Dict) -> Optional[Dict]:
         """
-        Check if signal should be marked TP_HIT/SL_HIT/TIMEOUT
-        Returns: {'status': 'TP_HIT'|'SL_HIT'|'TIMEOUT'|None, 'exit_price': float, 'pnl': float}
+        Check if signal should be marked TP_HIT/SL_HIT/TIMEOUT/STALE_TIMEOUT
+        Returns: {'status': 'TP_HIT'|'SL_HIT'|'TIMEOUT'|'STALE_TIMEOUT'|None, 'exit_price': float, 'pnl_usd': float, 'pnl_pct': float}
+        
+        **TIMEOUT CATEGORIES:**
+        a) Normal TIMEOUT (max_bars ≤ bars_elapsed ≤ max_bars × 1.5)
+           - pnl_usd calculated: positive = TIMEOUT_WIN, negative = TIMEOUT_LOSS
+        b) STALE_TIMEOUT (bars_elapsed > max_bars × 1.5)
+           - pnl_usd = 0.0 (excluded from P&L calculations)
+           - Indicates system failure to process at deadline
         
         **CRITICAL:** Check TIMEOUT first, then TP/SL. A signal past max_bars should ALWAYS
-        be TIMEOUT, even if price hit TP/SL. Otherwise 18-hour trades get marked SL_HIT instead.
+        be TIMEOUT/STALE_TIMEOUT, even if price hit TP/SL. Otherwise 18-hour trades misclassify.
         
-        **DATA QUALITY:** Skip STALE_TIMEOUT signals (>150% overdue). These indicate system
-        failure to process signal at deadline. Do NOT calculate P&L for stale signals.
         With hourly runner, stale timeouts should be rare/zero.
         """
         if signal.get('status') != 'OPEN':
@@ -123,8 +128,8 @@ class PECExecutor:
                     return {
                         'status': 'STALE_TIMEOUT',
                         'exit_price': current_price,
-                        'pnl_usd': None,  # No P&L for stale timeouts
-                        'pnl_pct': None
+                        'pnl_usd': 0.0,  # Zero P&L for stale timeouts (excluded from calculations)
+                        'pnl_pct': 0.0
                     }
                 
                 # Normal timeout (within reasonable window) - calculate P&L as TIMEOUT_WIN or TIMEOUT_LOSS
@@ -226,14 +231,9 @@ class PECExecutor:
                         record['actual_exit_price'] = result['exit_price']
                         record['closed_at'] = datetime.utcnow().isoformat()
                         
-                        # Only set P&L if not STALE_TIMEOUT (stale timeouts have no P&L)
-                        if result['pnl_usd'] is not None:
-                            record['pnl_usd'] = round(result['pnl_usd'], 4)
-                            record['pnl_pct'] = round(result['pnl_pct'], 2)
-                        else:
-                            # STALE_TIMEOUT has no P&L
-                            record['pnl_usd'] = None
-                            record['pnl_pct'] = None
+                        # Set P&L (STALE_TIMEOUT will be 0, others calculated)
+                        record['pnl_usd'] = round(result['pnl_usd'], 4)
+                        record['pnl_pct'] = round(result['pnl_pct'], 2)
                         
                         # Track summary (include timestamp when signal fired)
                         fired_time = record.get('fired_time_utc', '')
@@ -326,9 +326,10 @@ class PECExecutor:
                         elif status == 'STALE_TIMEOUT':
                             stats['stale_timeout'] += 1
                         
-                        # Only count P&L if not STALE_TIMEOUT
-                        pnl = record.get('pnl_usd')
-                        if pnl is not None and status != 'STALE_TIMEOUT':
+                        # Count P&L (STALE_TIMEOUT has pnl_usd=0, so it won't affect total)
+                        pnl = record.get('pnl_usd', 0)
+                        if status != 'STALE_TIMEOUT':
+                            # Only add to total P&L if not stale (stale signals excluded from P&L calculation)
                             stats['total_pnl_usd'] += pnl
             
             # Win Rate = TP_HIT / (TP_HIT + SL_HIT) [exclude TIMEOUT and STALE_TIMEOUT from base calculation]
