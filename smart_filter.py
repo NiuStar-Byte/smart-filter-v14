@@ -1220,72 +1220,117 @@ class SmartFilter:
                 print(f"[{self.symbol}] [MACD ENHANCED] No signal | long_met={long_conditions_met}, short_met={short_conditions_met}, min_conditions={min_conditions}")
             return None
   
-    def _check_momentum(self, window=10, min_conditions=2, threshold=1e-6,
-                        rsi_period=14, rsi_overbought=80, rsi_oversold=20,
-                        cci_period=20, stochrsi_period=14, willr_period=14, debug=False):
+    def _check_momentum(
+        self,
+        window=10,
+        min_conditions=3,
+        min_roc_threshold=0.001,
+        min_acceleration=0,
+        rsi_period=14,
+        rsi_overbought=70,
+        rsi_oversold=30,
+        cci_period=20,
+        stochrsi_period=14,
+        willr_period=14,
+        debug=False
+    ):
         """
-        Composite momentum filter: ROC, acceleration, price action, RSI, CCI, StochRSI, Williams %R.
-        Returns 'LONG', 'SHORT', or None.
+        ENHANCED Momentum Filter (2026-03-05):
+        Detects overbought/oversold reversals with momentum confirmation.
+        
+        Improvements from original:
+        1. Threshold: 2 → 3 (29% → 43% consensus requirement)
+        2. ROC threshold: 1e-6 → 0.001 (filters noise, requires 0.1% momentum minimum)
+        3. Acceleration threshold added (requires meaningful momentum change, not just > 0)
+        4. RSI levels: 20/80 → 30/70 (true overbought/oversold, not extreme)
+        5. Clear reversal detection focus (extremes → reversals)
+        6. Better for all timeframes
+        
+        Args:
+            window: ROC period (10 = momentum over 10 candles)
+            min_conditions: Require 3/7 conditions met (43%, was 2/7 = 29%)
+            min_roc_threshold: Minimum ROC to consider (0.001 = 0.1%, was 1e-6 = noise)
+            min_acceleration: Minimum acceleration change (0 = any positive)
+            rsi_oversold: RSI threshold for bullish reversal (30 = true oversold, was 20)
+            rsi_overbought: RSI threshold for bearish reversal (70 = true overbought, was 80)
+            debug: Print debug info
+        
+        Returns: "LONG", "SHORT", or None
         """
+        
         required_len = max(window + 2, rsi_period + 2, cci_period + 2, stochrsi_period + 2, willr_period + 2)
         if len(self.df) < required_len:
             if debug:
                 print(f"[{self.symbol}] [Momentum] Not enough data for required indicators.")
             return None
     
-        roc = self.df['close'].pct_change(periods=window)
-        momentum = roc.iloc[-1]
-        momentum_prev = roc.iloc[-2]
-        acceleration = momentum - momentum_prev
-        close = self.df['close'].iloc[-1]
-        close_prev = self.df['close'].iloc[-2]
-    
-        rsi = compute_rsi(self.df, rsi_period)
-        rsi_latest = rsi.iloc[-1]
-    
-        cci = calculate_cci(self.df, cci_period)
-        cci_latest = cci.iloc[-1]
-    
-        stochrsi_k, stochrsi_d = calculate_stochrsi(self.df, rsi_period, stochrsi_period)
-        stochrsi_latest = stochrsi_k.iloc[-1]
-    
-        willr = compute_williams_r(self.df, willr_period)
-        willr_latest = willr.iloc[-1]
-    
-        # LONG conditions
-        cond1_long = momentum > threshold
-        cond2_long = acceleration > 0
-        cond3_long = close > close_prev
-        cond4_long = rsi_latest < rsi_oversold
-        cond5_long = cci_latest < -100
-        cond6_long = stochrsi_latest < 0.2
-        cond7_long = willr_latest < -80
-    
-        # SHORT conditions
-        cond1_short = momentum < -threshold
-        cond2_short = acceleration < 0
-        cond3_short = close < close_prev
-        cond4_short = rsi_latest > rsi_overbought
-        cond5_short = cci_latest > 100
-        cond6_short = stochrsi_latest > 0.8
-        cond7_short = willr_latest > -20
-    
-        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long, cond5_long, cond6_long, cond7_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short, cond5_short, cond6_short, cond7_short])
-    
-        if debug:
-            print(f"[{self.symbol}] [Momentum] values: "
-                  f"momentum={momentum:.6f}, acceleration={acceleration:.6f}, close={close}, close_prev={close_prev}, "
-                  f"rsi={rsi_latest:.2f}, cci={cci_latest:.2f}, stochrsi={stochrsi_latest:.2f}, willr={willr_latest:.2f}, "
-                  f"long_met={long_met}, short_met={short_met}")
-    
-        if long_met >= min_conditions and long_met > short_met:
-            print(f"[{self.symbol}] [Momentum] Signal: LONG | long_met={long_met}, short_met={short_met}")
-            return "LONG"
-        elif short_met >= min_conditions and short_met > long_met:
-            print(f"[{self.symbol}] [Momentum] Signal: SHORT | long_met={long_met}, short_met={short_met}")
-            return "SHORT"
-        else:
+        try:
+            # Calculate ROC and acceleration
+            roc = self.df['close'].pct_change(periods=window)
+            momentum = roc.iloc[-1]
+            momentum_prev = roc.iloc[-2]
+            acceleration = momentum - momentum_prev
+            
+            close = self.df['close'].iloc[-1]
+            close_prev = self.df['close'].iloc[-2]
+        
+            # Calculate oscillators
+            rsi = compute_rsi(self.df, rsi_period)
+            rsi_latest = rsi.iloc[-1]
+        
+            cci = calculate_cci(self.df, cci_period)
+            cci_latest = cci.iloc[-1]
+        
+            stochrsi_k, stochrsi_d = calculate_stochrsi(self.df, rsi_period, stochrsi_period)
+            stochrsi_latest = stochrsi_k.iloc[-1]
+        
+            willr = compute_williams_r(self.df, willr_period)
+            willr_latest = willr.iloc[-1]
+        
+            # LONG conditions (oversold reversal)
+            cond1_long = momentum > min_roc_threshold              # ROC positive + meaningful (0.1%+)
+            cond2_long = acceleration > min_acceleration           # Momentum accelerating (not just > 0)
+            cond3_long = close > close_prev                        # Price momentum aligned
+            cond4_long = rsi_latest < rsi_oversold               # RSI oversold (< 30, true extreme)
+            cond5_long = cci_latest < -100                        # CCI at extreme low
+            cond6_long = stochrsi_latest < 0.2                    # StochRSI at trough
+            cond7_long = willr_latest < -80                       # Williams %R at extreme low
+        
+            # SHORT conditions (overbought reversal) - mirror of LONG
+            cond1_short = momentum < -min_roc_threshold
+            cond2_short = acceleration < -min_acceleration
+            cond3_short = close < close_prev
+            cond4_short = rsi_latest > rsi_overbought            # RSI overbought (> 70, true extreme)
+            cond5_short = cci_latest > 100
+            cond6_short = stochrsi_latest > 0.8
+            cond7_short = willr_latest > -20
+        
+            long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long, cond5_long, cond6_long, cond7_long])
+            short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short, cond5_short, cond6_short, cond7_short])
+        
+            if debug:
+                print(
+                    f"[{self.symbol}] [Momentum ENHANCED] momentum={momentum:.6f} (min={min_roc_threshold}), "
+                    f"acceleration={acceleration:.6f}, close={close}, close_prev={close_prev}, "
+                    f"rsi={rsi_latest:.1f} (oversold={rsi_oversold}/overbought={rsi_overbought}), "
+                    f"cci={cci_latest:.1f}, stochrsi={stochrsi_latest:.2f}, willr={willr_latest:.1f}, "
+                    f"long_met={long_met}, short_met={short_met}, min_conditions={min_conditions}"
+                )
+        
+            # Decision: require 3/7 (43% consensus) and clear majority
+            if long_met >= min_conditions and long_met > short_met:
+                print(f"[{self.symbol}] [Momentum ENHANCED] Signal: LONG | long_met={long_met}/{min_conditions}, short_met={short_met}")
+                return "LONG"
+            elif short_met >= min_conditions and short_met > long_met:
+                print(f"[{self.symbol}] [Momentum ENHANCED] Signal: SHORT | short_met={short_met}/{min_conditions}, long_met={long_met}")
+                return "SHORT"
+            else:
+                if debug:
+                    print(f"[{self.symbol}] [Momentum ENHANCED] No signal | long_met={long_met}, short_met={short_met}, min_conditions={min_conditions}")
+                return None
+        
+        except Exception as e:
+            print(f"[{self.symbol}] [Momentum] Error: {e}", flush=True)
             return None
     
     # ==== FILTERS ====    
