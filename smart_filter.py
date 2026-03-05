@@ -1903,47 +1903,83 @@ class SmartFilter:
             print(f"[{self.symbol}] [Fractal Zone] Error: {e}", flush=True)
             return None
 
-    def _check_hh_ll(self, debug=False):
-        print(f"[{self.symbol}] [HH/LL Trend] Function called")
-        high = self.df['high'].iat[-1]
-        high_prev = self.df['high'].iat[-2]
-        low = self.df['low'].iat[-1]
-        low_prev = self.df['low'].iat[-2]
-        close = self.df['close'].iat[-1]
-        close_prev = self.df['close'].iat[-2]
-    
-        print(f"[{self.symbol}] [HH/LL Trend] Values | high={high}, high_prev={high_prev}, low={low}, low_prev={low_prev}, close={close}, close_prev={close_prev}")
-    
-        hh = high
-        ll = low
-    
-        cond1_long = high > high_prev
-        cond2_long = low > low_prev
-        cond3_long = close > close_prev
-    
-        cond1_short = low < low_prev
-        cond2_short = high < high_prev
-        cond3_short = close < close_prev
-    
-        print(
-            f"[{self.symbol}] [HH/LL Trend] Conditions | "
-            f"cond1_long={cond1_long}, cond2_long={cond2_long}, cond3_long={cond3_long}, "
-            f"cond1_short={cond1_short}, cond2_short={cond2_short}, cond3_short={cond3_short}"
-        )
-    
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
-    
-        print(f"[{self.symbol}] [HH/LL Trend] Met Counts | long_met={long_met}, short_met={short_met}")
-    
-        if long_met >= 2 and long_met > short_met:
-            print(f"[{self.symbol}] [HH/LL Trend] Signal: LONG | long_met={long_met}, short_met={short_met}, hh={hh}, ll={ll}")
-            return "LONG"
-        elif short_met >= 2 and short_met > long_met:
-            print(f"[{self.symbol}] [HH/LL Trend] Signal: SHORT | long_met={long_met}, short_met={short_met}, hh={hh}, ll={ll}")
-            return "SHORT"
-        else:
-            print(f"[{self.symbol}] [HH/LL Trend] No signal fired | long_met={long_met}, short_met={short_met}, hh={hh}, ll={ll}")
+    def _check_hh_ll(self, lookback=3, range_threshold_pct=0.3, debug=False):
+        """
+        ENHANCED HH/LL Trend with Lookback + Range Check (2026-03-05)
+        
+        Checks for consistent Higher Highs/Higher Lows over lookback period
+        Only fires in markets with meaningful range (excludes choppy/stale moves)
+        
+        Parameters:
+        - lookback: Number of bars to confirm trend (3 = last 3 bars must show pattern)
+        - range_threshold_pct: Min High-Low range as % of close (0.3% = 30 bps minimum)
+        
+        Logic:
+        LONG: ≥2 consecutive bars with HH AND ≥2 with HL, High-Low range > threshold
+        SHORT: ≥2 consecutive bars with LH AND ≥2 with LL, High-Low range > threshold
+        """
+        try:
+            current_high = self.df['high'].iat[-1]
+            current_low = self.df['low'].iat[-1]
+            current_close = self.df['close'].iat[-1]
+            
+            # Calculate current bar's High-Low range
+            current_range = current_high - current_low
+            current_range_pct = (current_range / current_close) * 100 if current_close > 0 else 0
+            
+            # Gate: Avoid trading in choppy/stale markets (very small range)
+            if current_range_pct < range_threshold_pct:
+                if debug:
+                    print(f"[{self.symbol}] [HH/LL Trend] SKIP: Range too small ({current_range_pct:.4f}% < {range_threshold_pct}%)")
+                return None
+            
+            # Count Higher Highs and Higher Lows over lookback period
+            hh_count = 0
+            hl_count = 0
+            lh_count = 0
+            ll_count = 0
+            
+            for i in range(1, min(lookback + 1, len(self.df))):
+                bar_high = self.df['high'].iat[-i]
+                bar_high_prev = self.df['high'].iat[-(i+1)]
+                bar_low = self.df['low'].iat[-i]
+                bar_low_prev = self.df['low'].iat[-(i+1)]
+                
+                # Count Higher Highs and Higher Lows
+                if bar_high > bar_high_prev:
+                    hh_count += 1
+                if bar_low > bar_low_prev:
+                    hl_count += 1
+                
+                # Count Lower Highs and Lower Lows
+                if bar_high < bar_high_prev:
+                    lh_count += 1
+                if bar_low < bar_low_prev:
+                    ll_count += 1
+            
+            # Trend confirmation: need majority of lookback bars showing pattern
+            hh_threshold = (lookback // 2) + 1  # At least half + 1
+            
+            if debug:
+                print(f"[{self.symbol}] [HH/LL Trend] Lookback={lookback} | Range={current_range_pct:.4f}% | HH={hh_count}, HL={hl_count}, LH={lh_count}, LL={ll_count}")
+            
+            # LONG: Higher Highs AND Higher Lows trend confirmed
+            if hh_count >= hh_threshold and hl_count >= hh_threshold and hh_count > lh_count:
+                print(f"[{self.symbol}] [HH/LL Trend] Signal: LONG | HH={hh_count}, HL={hl_count} (lookback={lookback}, range={current_range_pct:.4f}%)")
+                return "LONG"
+            
+            # SHORT: Lower Highs AND Lower Lows trend confirmed
+            elif ll_count >= hh_threshold and lh_count >= hh_threshold and ll_count > hl_count:
+                print(f"[{self.symbol}] [HH/LL Trend] Signal: SHORT | LH={lh_count}, LL={ll_count} (lookback={lookback}, range={current_range_pct:.4f}%)")
+                return "SHORT"
+            
+            else:
+                if debug:
+                    print(f"[{self.symbol}] [HH/LL Trend] No signal | HH={hh_count}, HL={hl_count}, LH={lh_count}, LL={ll_count}")
+                return None
+        
+        except Exception as e:
+            print(f"[{self.symbol}] [HH/LL Trend] Error: {e}")
             return None
 
     def _check_liquidity_pool(self, lookback=20, min_cond=2, debug=False):
