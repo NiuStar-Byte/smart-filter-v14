@@ -2020,68 +2020,109 @@ class SmartFilter:
 
     def _check_atr_momentum_burst(
         self,
-        threshold_pct=0.10,
-        volume_mult=1.1,
-        min_cond=2,
+        threshold_ratio=0.15,
+        volume_mult=1.5,
+        lookback=3,
+        volume_ma_period=10,
         min_atr=0.5,
+        min_momentum_bars=2,
         debug=False
     ):
         """
-        Enhanced ATR Momentum Burst:
-        - Requires minimum ATR for signal quality.
-        - Logs all relevant metrics.
-        - Keeps logic independent and robust.
+        ENHANCED ATR Momentum Burst (2026-03-05)
+        
+        Detects sustained momentum bursts with:
+        - ATR-scaled thresholds (normalizes to volatility)
+        - Strong volume confirmation (50% above average)
+        - Lookback period for multi-bar confirmation
+        - Directional consistency (no flip-flops)
+        
+        Parameters:
+        - threshold_ratio: Move/ATR ratio > threshold (0.15 = 15% of ATR)
+        - volume_mult: Volume must exceed MA by this multiple (1.5 = 50% above avg)
+        - lookback: Number of bars to check for momentum (3 = last 3 bars)
+        - volume_ma_period: SMA period for volume average (10 = 10-bar MA)
+        - min_atr: Minimum ATR to trade (avoid low-volatility symbols)
+        - min_momentum_bars: Minimum bars showing momentum (2 = at least 2 of lookback)
+        
+        Logic:
+        LONG: ≥2 of last 3 bars show (move/ATR > 0.15 AND volume > 1.5x avg) 
+              AND majority bars are bullish (close > open)
+        SHORT: Same but for bearish direction
         """
-        long_met = 0
-        short_met = 0
-        momentum = []
-        atr = []
-        volumes = []
-        avg_vols = []
-        atr_vals = []
-    
-        for i in [-1, -2]:
-            close = self.df['close'].iat[i]
-            open_ = self.df['open'].iat[i]
-            volume = self.df['volume'].iat[i]
-            avg_vol = self.df['volume'].rolling(10).mean().iat[i]
-            pct_move = (close - open_) / open_ * 100
-            atr_val = self.df['atr'].iat[i] if 'atr' in self.df.columns else None
-    
-            momentum.append(pct_move)
-            atr.append(atr_val)
-            volumes.append(volume)
-            avg_vols.append(avg_vol)
-            atr_vals.append(atr_val)
-    
-            # Enhancement: Only consider bar if ATR is sufficient
-            if atr_val is not None and atr_val < min_atr:
-                continue
-    
-            if pct_move > threshold_pct and volume > avg_vol * volume_mult:
-                long_met += 1
-            elif pct_move < -threshold_pct and volume > avg_vol * volume_mult:
-                short_met += 1
-    
-        if debug:
-            print(
-                f"[{self.symbol}] [ATR Momentum Burst] Metrics | momentum={momentum}, atr={atr}, volumes={volumes}, avg_vols={avg_vols}, min_atr={min_atr}"
-            )
-    
-        if long_met >= min_cond and long_met > short_met:
-            print(
-                f"[{self.symbol}] [ATR Momentum Burst] Signal: LONG | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, atr={atr}, momentum={momentum}"
-            )
-            return "LONG"
-        elif short_met >= min_cond and short_met > long_met:
-            print(
-                f"[{self.symbol}] [ATR Momentum Burst] Signal: SHORT | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, atr={atr}, momentum={momentum}"
-            )
-            return "SHORT"
-        else:
-            print(
-                f"[{self.symbol}] [ATR Momentum Burst] No signal fired | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, atr={atr}, momentum={momentum}"
-            )
+        try:
+            # Get current ATR
+            current_atr = self.df['atr'].iat[-1] if 'atr' in self.df.columns else None
+            
+            # Gate: Require minimum ATR for market quality
+            if current_atr is None or current_atr < min_atr:
+                if debug:
+                    print(f"[{self.symbol}] [ATR Momentum Burst] SKIP: ATR too low ({current_atr} < {min_atr})")
+                return None
+            
+            # Scan lookback period for momentum bars
+            momentum_bars_list = []
+            directions = []  # Track bullish (+1) or bearish (-1) bars
+            
+            for i in range(1, min(lookback + 1, len(self.df))):
+                bar_open = self.df['open'].iat[-i]
+                bar_close = self.df['close'].iat[-i]
+                bar_volume = self.df['volume'].iat[-i]
+                
+                # Calculate metrics for this bar
+                pct_move = ((bar_close - bar_open) / bar_open * 100) if bar_open > 0 else 0
+                atr_ratio = abs(pct_move) / current_atr if current_atr > 0 else 0
+                volume_ma = self.df['volume'].rolling(volume_ma_period).mean().iat[-i]
+                
+                # Direction: +1 for bullish (close > open), -1 for bearish
+                direction = 1 if bar_close > bar_open else (-1 if bar_close < bar_open else 0)
+                directions.append(direction)
+                
+                # Check: ATR-scaled move + strong volume
+                if atr_ratio > threshold_ratio and bar_volume > volume_ma * volume_mult:
+                    momentum_bars_list.append({
+                        'bar': i,
+                        'pct_move': pct_move,
+                        'atr_ratio': atr_ratio,
+                        'volume': bar_volume,
+                        'volume_ma': volume_ma,
+                        'direction': direction
+                    })
+            
+            if debug:
+                print(f"[{self.symbol}] [ATR Momentum Burst] Lookback={lookback} | ATR={current_atr:.6f} | Momentum bars found: {len(momentum_bars_list)}")
+                for bar in momentum_bars_list:
+                    print(f"  Bar {bar['bar']}: move={bar['pct_move']:.4f}%, ratio={bar['atr_ratio']:.4f}, vol={bar['volume']:.0f} (avg={bar['volume_ma']:.0f})")
+            
+            # Need minimum momentum bars
+            if len(momentum_bars_list) < min_momentum_bars:
+                if debug:
+                    print(f"[{self.symbol}] [ATR Momentum Burst] No signal | {len(momentum_bars_list)} momentum bars < {min_momentum_bars} required")
+                return None
+            
+            # Check directional consistency
+            bullish_count = sum(1 for d in directions if d > 0)
+            bearish_count = sum(1 for d in directions if d < 0)
+            
+            # LONG: Majority of lookback bars are bullish + multiple momentum bars
+            if bullish_count >= 2 and bullish_count > bearish_count and len(momentum_bars_list) >= min_momentum_bars:
+                momentum_summary = f"{len(momentum_bars_list)} bars, avg_ratio={sum(b['atr_ratio'] for b in momentum_bars_list)/len(momentum_bars_list):.4f}"
+                print(f"[{self.symbol}] [ATR Momentum Burst] Signal: LONG | {momentum_summary} | ATR={current_atr:.6f}")
+                return "LONG"
+            
+            # SHORT: Majority of lookback bars are bearish + multiple momentum bars
+            elif bearish_count >= 2 and bearish_count > bullish_count and len(momentum_bars_list) >= min_momentum_bars:
+                momentum_summary = f"{len(momentum_bars_list)} bars, avg_ratio={sum(b['atr_ratio'] for b in momentum_bars_list)/len(momentum_bars_list):.4f}"
+                print(f"[{self.symbol}] [ATR Momentum Burst] Signal: SHORT | {momentum_summary} | ATR={current_atr:.6f}")
+                return "SHORT"
+            
+            else:
+                if debug:
+                    print(f"[{self.symbol}] [ATR Momentum Burst] No signal | bullish={bullish_count}, bearish={bearish_count}, momentum_bars={len(momentum_bars_list)}")
+                return None
+        
+        except Exception as e:
+            print(f"[{self.symbol}] [ATR Momentum Burst] Error: {e}")
             return None
 
 
