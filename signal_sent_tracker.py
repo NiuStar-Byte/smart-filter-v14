@@ -73,7 +73,8 @@ class SignalSentTracker:
                 "closed_at": None,
                 "actual_exit_price": None,
                 "pnl_usd": None,
-                "pnl_pct": None
+                "pnl_pct": None,
+                "signal_origin": "NEW"  # Auto-tagged: Daemon fires NEW signals only. FOUNDATION signals are pre-tagged in base file.
             }
             
             with open(self.sent_signals_path, 'a') as f:
