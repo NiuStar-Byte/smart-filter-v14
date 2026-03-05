@@ -43,19 +43,42 @@ class PECEnhancedReporter:
         self.load_signals()
     
     def load_signals(self):
-        """Load ALL signals from SENT_SIGNALS.jsonl (accumulate all fired signals)"""
+        """Load ALL signals from BOTH archive + live files (complete history)"""
+        workspace = "/Users/geniustarigan/.openclaw/workspace"
+        
+        # Load from ARCHIVE FIRST (FOUNDATION signals)
+        archive_file = os.path.join(workspace, "SENT_SIGNALS_ARCHIVE_2026-03-05.jsonl")
+        if os.path.exists(archive_file):
+            try:
+                with open(archive_file, 'r') as f:
+                    count = 0
+                    for line in f:
+                        try:
+                            signal = json.loads(line.strip())
+                            self.signals.append(signal)
+                            count += 1
+                        except:
+                            pass
+                print(f"[INFO] Loaded {count} signals from archive", flush=True)
+            except Exception as e:
+                print(f"[WARN] Error loading archive: {e}")
+        
+        # Load from LIVE FILE (accumulating NEW signals)
         if not os.path.exists(self.sent_signals_file):
             print(f"[WARN] {self.sent_signals_file} not found")
             return
         
         try:
             with open(self.sent_signals_file, 'r') as f:
+                count = 0
                 for line in f:
                     try:
                         signal = json.loads(line.strip())
                         self.signals.append(signal)
+                        count += 1
                     except:
                         pass
+                print(f"[INFO] Loaded {count} signals from live file", flush=True)
         except Exception as e:
             print(f"[WARN] Error loading signals: {e}")
     

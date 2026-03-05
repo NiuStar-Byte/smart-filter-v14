@@ -2,6 +2,11 @@
 """
 Hourly PEC Enhanced Reporter - Captures signal performance snapshots every hour
 Stores reports in REPORTS/ directory for historical tracking and anomaly detection
+
+NOTE: pec_enhanced_reporter.py now loads from BOTH archive + live files
+- Archive: pre-Mar-3 signals (FOUNDATION baseline)
+- Live: Mar-3 onwards (accumulating NEW signals)
+- Combined: Complete history for accurate metrics
 """
 
 import os
