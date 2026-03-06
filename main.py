@@ -35,6 +35,7 @@ from signal_tracking_enhanced import get_signal_tracker
 from ohlcv_fetch_safe import safe_fetch_ohlcv_by_tf, check_tf_data_available, should_skip_symbol
 from signal_logger import SignalLogger
 from signal_sent_tracker import get_signal_sent_tracker  # PEC: Track SENT signals only
+from signals_master_writer import get_signals_master_writer  # Write to SIGNALS_MASTER.jsonl (single source of truth)
 from pathlib import Path
 
 # ===== PHASE 2 IMPORTS (Stage 2 - Direction-Aware Gatekeepers + Regime Adjustments) =====
@@ -104,6 +105,16 @@ try:
 except Exception as e:
     _sent_tracker_ready = False
     print(f"[ERROR] Sent signal tracker init failed: {e}. PEC will not have execution data.", flush=True)
+
+# === INITIALIZE SIGNALS_MASTER WRITER (Single Source of Truth) ===
+try:
+    signals_master_path = "/Users/geniustarigan/.openclaw/workspace/SIGNALS_MASTER.jsonl"
+    _signals_master_writer = get_signals_master_writer(signals_master_path)
+    _master_writer_ready = True
+    print(f"[INIT] Signals Master writer ready: {os.path.abspath(signals_master_path)}", flush=True)
+except Exception as e:
+    _master_writer_ready = False
+    print(f"[ERROR] Signals Master writer init failed: {e}. SIGNALS_MASTER.jsonl will not be updated.", flush=True)
 
 # === INITIALIZE SIGNAL TRACKING (EARLY & ROBUST) - NEW PROJECT-3 FIX ===
 try:
@@ -985,6 +996,31 @@ def run_cycle():
                                             telegram_msg_id=signal_uuid[:12],
                                             fired_time_utc=fired_time_utc.isoformat()
                                         )
+                                        # Also write to SIGNALS_MASTER.jsonl (single source of truth)
+                                        if _master_writer_ready:
+                                            _signals_master_writer.write_signal({
+                                                'signal_uuid': signal_uuid,
+                                                'symbol': symbol_val,
+                                                'timeframe': '15min',
+                                                'signal_type': signal_type,
+                                                'entry_price': entry_price,
+                                                'tp_target': tp,
+                                                'sl_target': sl,
+                                                'tp_pct': tp_pct_val,
+                                                'sl_pct': sl_pct_val,
+                                                'achieved_rr': achieved_rr_value,
+                                                'score': score,
+                                                'max_score': score_max,
+                                                'confidence': confidence,
+                                                'route': Route,
+                                                'regime': regime,
+                                                'telegram_msg_id': signal_uuid[:12],
+                                                'fired_time_utc': fired_time_utc.isoformat(),
+                                                'sent_time_utc': datetime.utcnow().isoformat(),
+                                                'status': 'OPEN',
+                                                'signal_origin': 'NEW_LIVE',
+                                                'weighted_score': confidence * score / 100 if score_max else 0
+                                            })
                                     except Exception as e:
                                         print(f"[ERROR] Failed to log PEC signal for {symbol_val}: {e}", flush=True)
                                 else:
@@ -1395,6 +1431,31 @@ def run_cycle():
                                             telegram_msg_id=signal_uuid[:12],
                                             fired_time_utc=fired_time_utc.isoformat()
                                         )
+                                        # Also write to SIGNALS_MASTER.jsonl (single source of truth)
+                                        if _master_writer_ready:
+                                            _signals_master_writer.write_signal({
+                                                'signal_uuid': signal_uuid,
+                                                'symbol': symbol_val,
+                                                'timeframe': '30min',
+                                                'signal_type': signal_type,
+                                                'entry_price': entry_price,
+                                                'tp_target': tp,
+                                                'sl_target': sl,
+                                                'tp_pct': tp_pct_val,
+                                                'sl_pct': sl_pct_val,
+                                                'achieved_rr': achieved_rr_value,
+                                                'score': score,
+                                                'max_score': score_max,
+                                                'confidence': confidence,
+                                                'route': Route,
+                                                'regime': regime,
+                                                'telegram_msg_id': signal_uuid[:12],
+                                                'fired_time_utc': fired_time_utc.isoformat(),
+                                                'sent_time_utc': datetime.utcnow().isoformat(),
+                                                'status': 'OPEN',
+                                                'signal_origin': 'NEW_LIVE',
+                                                'weighted_score': confidence * score / 100 if score_max else 0
+                                            })
                                     except Exception as e:
                                         print(f"[ERROR] Failed to log PEC signal for {symbol_val}: {e}", flush=True)
                                 else:
@@ -1773,6 +1834,31 @@ def run_cycle():
                                             telegram_msg_id=signal_uuid[:12],
                                             fired_time_utc=fired_time_utc.isoformat()
                                         )
+                                        # Also write to SIGNALS_MASTER.jsonl (single source of truth)
+                                        if _master_writer_ready:
+                                            _signals_master_writer.write_signal({
+                                                'signal_uuid': signal_uuid,
+                                                'symbol': symbol_val,
+                                                'timeframe': '1h',
+                                                'signal_type': signal_type,
+                                                'entry_price': entry_price,
+                                                'tp_target': tp,
+                                                'sl_target': sl,
+                                                'tp_pct': tp_pct_val,
+                                                'sl_pct': sl_pct_val,
+                                                'achieved_rr': achieved_rr_value,
+                                                'score': score,
+                                                'max_score': score_max,
+                                                'confidence': confidence,
+                                                'route': Route,
+                                                'regime': regime,
+                                                'telegram_msg_id': signal_uuid[:12],
+                                                'fired_time_utc': fired_time_utc.isoformat(),
+                                                'sent_time_utc': datetime.utcnow().isoformat(),
+                                                'status': 'OPEN',
+                                                'signal_origin': 'NEW_LIVE',
+                                                'weighted_score': confidence * score / 100 if score_max else 0
+                                            })
                                     except Exception as e:
                                         print(f"[ERROR] Failed to log PEC signal for {symbol_val}: {e}", flush=True)
                                 else:
