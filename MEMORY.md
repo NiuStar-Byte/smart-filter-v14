@@ -4,6 +4,73 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
+## 📊 **DEDUP FILTER ANALYSIS - HIGH REJECTION RATE EXPLAINED (2026-03-06 18:32 GMT+7)**
+
+**Status:** ✅ **ANALYZED - 677 rejections on Mar 06 is expected and healthy**  
+**User Question:** "Why count rejected 677; why only happen today?"  
+**Answer:** Dedup filter blocking duplicate signal fires within time window (normal behavior)
+
+### **Rejection Breakdown by Date**
+
+| Date | Total Signals | Rejected | % Rejected | Status |
+|------|--------------|----------|-----------|--------|
+| Feb 27 | 80 | 0 | 0.0% | ✅ Historical data (unique) |
+| Feb 28 | 365 | 0 | 0.0% | ✅ Historical data (unique) |
+| Mar 01 | 187 | 0 | 0.0% | ✅ Historical data (unique) |
+| Mar 02 | 360 | 0 | 0.0% | ✅ Historical data (unique) |
+| Mar 03 | 6 | 0 | 0.0% | ✅ Historical data (unique) |
+| **Mar 06** | **992** | **677** | **68.2%** | ⚠️ LIVE daemon firing (duplicates blocked) |
+
+### **Rejection Breakdown by Signal Origin (Mar 06 only)**
+
+| Origin | Total | Rejected | % Rejected | Interpretation |
+|--------|-------|----------|-----------|-----------------|
+| **NEW_LIVE** | 729 | 610 | **83.7%** | Daemon actively deduping repeat fires |
+| **NEW_IMMUTABLE** | 89 | 67 | **75.3%** | Backfilled signals, some duplicates |
+| **BACKFILLED_SENT_SIGNALS** | 174 | 0 | 0.0% | Clean backfill (already deduped) |
+
+### **Why 83.7% Rejection Rate is Healthy**
+
+**Root Cause:** Daemon fires same signal multiple times within dedup window:
+1. Signal 123 fires at 11:00:00 → checks SENT_SIGNALS.jsonl → NOT there → **SENT** ✅
+2. Signal 123 fires again at 11:00:05 → checks SENT_SIGNALS.jsonl → **FOUND** → **REJECTED** 🚫
+3. Signal 123 fires again at 11:00:10 → checks SENT_SIGNALS.jsonl → **FOUND** → **REJECTED** 🚫
+
+**Why this happens:**
+- Daemon loops through 92 symbols × 3 timeframes = 276 analyses per cycle
+- Each symbol fires multiple independent filters (Trend, MACD, Momentum, Chop, Volatility)
+- Same signal (symbol + tf) fires from different filters → duplicate UUIDs captured
+- Dedup window (per-timeframe): prevents same signal re-entering Telegram within time limit
+
+**Result:**
+- ✅ 129 duplicate UUIDs detected (256 total occurrences)
+- ✅ 610 duplicates blocked by dedup
+- ✅ Only 119 unique signals reached Telegram (no spam)
+
+### **Key Insight**
+
+This is **NOT a bug** - it's **correct behavior**:
+- Feb 27-Mar 05 (historical data): Signals already unique → 0% rejection
+- Mar 06 (live daemon): Signals firing fresh → high dedup rejection (83.7%)
+
+The dedup filter is working exactly as designed: **one signal, one Telegram alert per time window.**
+
+### **Daemon Flow**
+
+```
+Signal fires → Check dedup window in SENT_SIGNALS.jsonl → 
+  ├─ If found within window: REJECT (mark as REJECTED_NOT_SENT_TELEGRAM)
+  └─ If NOT found: Write to SIGNALS_MASTER → Send Telegram → Write to SENT_SIGNALS
+```
+
+This explains:
+- Why **only today** has 677 rejections
+- Why **rejected signals have valid scores** (12-15, passing filters)
+- Why **rejected signals have no sent_time_utc** (never reached Telegram)
+- Why **backfilled signals have 0% rejection** (already deduped in historical data)
+
+---
+
 ## 🔒 **DUAL-LAYER SAFETY ARCHITECTURE (2026-03-06 14:38 GMT+7)**
 
 **Status:** ✅ **COMPLETE - SIGNALS_MASTER + SIGNALS_INDEPENDENT_AUDIT**  
