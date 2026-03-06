@@ -2594,79 +2594,42 @@ Total P&L: $-28.58
 
 ---
 
-## 🚨 **PEC DISPLAY FIXES (Commits 3a9cfb6 + 5350305, 2026-03-02 01:38-01:50 GMT+7)**
+## ✅ **DUAL-LAYER FIELD ALIGNMENT REBUILD (2026-03-06 15:43 GMT+7)**
 
-### **Fix #1: PEC Executor Check Order (Commit 3a9cfb6, 01:38 GMT+7)**
+**Status:** ✅ **COMPLETE - CANONICAL SCHEMA DEPLOYED**  
+**Commit:** `b13ff01` - REBUILD: Field alignment - canonical schema (29 fields)
 
-**Issue:** Trades closed 18+ hours after firing were marked SL_HIT/TP_HIT instead of TIMEOUT
+### **Issue Found**
+- SIGNALS_MASTER.jsonl and SIGNALS_INDEPENDENT_AUDIT.txt had **mismatched field sets**
+- MASTER had 20 extra fields, AUDIT had 8 different fields
+- Field name conflicts: `uuid` vs `signal_uuid`, `tp_target` vs `tp_price`, etc.
 
-**Examples:**
-- DUCK-USDT 1h: Fired 06:50:08, Closed 01:02:22 (18h 12m) → was SL_HIT, **should be TIMEOUT**
-- SUI-USDT 30min: Fired 06:48:54, Closed 01:02:22 (18h 13m) → was SL_HIT, **should be TIMEOUT**
+### **Solution Applied**
+Built canonical schema with 29 fields (both files identical):
+```
+1. actual_exit_price    15. route              
+2. closed_at            16. rr (risk:reward)
+3. confidence           17. score
+4. consensus            18. sent_time_utc
+5. direction (LONG/SHORT) 19. signal_origin (FOUNDATION/NEW_IMMUTABLE/NEW_LIVE)
+6. entry_price          20. signal_uuid
+7. fired_date_jakarta   21. sl_pct
+8. fired_time_jakarta   22. sl_price
+9. fired_time_utc       23. status (TP_HIT/SL_HIT/TIMEOUT/OPEN/etc)
+10. max_score           24. symbol
+11. passed_min_score_gate 25. tier
+12. pnl_pct             26. timeframe
+13. pnl_usd             27. tp_pct
+14. regime              28. tp_price
+                        29. weighted_score
+```
 
-**Root Cause:** pec_executor checked TP/SL **before** TIMEOUT. If price hit SL even 18 hours later, marked SL_HIT.
-
-**Fix:** Reordered check_signal_status() to check TIMEOUT first, then TP/SL only if within window.
-
-**Results:**
-- Reclassified 55 trades: 7 TP→TIMEOUT, 48 SL→TIMEOUT
-- Added `CORRECTED_TIMEOUT_Xh_overdue` flags for audit trail
-- Win Rate: 31.3% → 35.65% (+4.35%)
-- P&L: $-2,310 → $-2,276 (+$33.96)
-
-### **Fix #2: Display Dates for Old OPEN Signals (Commit 5350305, 01:50 GMT+7)**
-
-**Issue:** OPEN signals from 2+ days ago displayed only time, hiding their age
-- ARK-USDT 1h: Fired Feb-28 09:50:05, displayed as "09:50:05" (hidden age!)
-- GALA-USDT 30min: Fired Feb-28 15:03:35, displayed as "15:03:35"
-
-**Problem:** Makes stale signals appear recent, dangerous for traders.
-
-**Fix:** Modified get_gmt7_time() to check signal age:
-- If >24h old: display "Feb-28 09:50:05" (shows date + time)
-- If <24h old: display "09:50:05" (time only)
-
-**Result:** Stale OPEN signals now immediately visible with age transparency.
-
-### **STALE OPEN SIGNALS DISCOVERED (2026-03-02 01:49 GMT+7)**
-
-Found **5 OPEN signals past timeout window:**
-
-| Symbol | TF | Fired | Hours Overdue | Status |
-|--------|----|----|---|---|
-| ARK-USDT | 1h | Feb-28 02:50 | 34h | ❌ API fetch failed |
-| GALA-USDT | 30min | Feb-28 08:03 | 29h | ❌ API fetch failed |
-| ARK-USDT | 15min | Feb-28 13:50 | 25h | ❌ API fetch failed |
-| ARK-USDT | 15min | Feb-28 15:29 | 23h | ❌ API fetch failed |
-| SKATE-USDT | 30min | Mar-01 13:47 | ~1h | ✅ Auto-TIMEOUT (caught by daemon) |
-
-**Why stuck:** pec_executor can't fetch current prices for ARK-USDT and GALA-USDT from API, so can't close them automatically.
-
-**Status:** Awaiting manual review or API recovery. These need to be inspected and possibly closed manually.
-
-### **Fix #3: Delete 4 Zombie OPEN Signals (Commit 967b0b4, 01:54 GMT+7)**
-
-**Decision:** Delete the 4 stale signals stuck past timeout (API fetch failed)
-
-**Deleted signals:**
-- ARK-USDT 1h fired Feb-28 02:50 (34h overdue)
-- GALA-USDT 30min fired Feb-28 08:03 (29h overdue)
-- ARK-USDT 15min fired Feb-28 13:50 (25h overdue)
-- ARK-USDT 15min fired Feb-28 15:29 (23h overdue)
-
-**Why:** These were zombie signals that:
-- Were 23-34 hours past their timeout windows (should have been TIMEOUT)
-- Couldn't be processed by daemon due to API failures
-- Would never resolve (no price data available)
-- Just cluttered the dataset
-
-**Impact After Deletion:**
-- Total: 593 → 589 signals (-4)
-- OPEN: 42 → 36 (-4 zombie signals)
-- Win Rate: 35.65% → 35.89% (+0.24%)
-- P&L: -$2,276.61 → -$2,246.61 (+$30.00)
-
-**Status:** ✅ Data now clean, ready for next trading cycle
+### **Result**
+- ✅ SIGNALS_MASTER.jsonl: 1,808 signals (normalized)
+- ✅ SIGNALS_INDEPENDENT_AUDIT.txt: 1,808 signals (identical)
+- ✅ Perfect sync verified
+- ✅ Backups saved (*.backup)
+- ✅ Pushed to GitHub (commit b13ff01)
 
 ---
 
