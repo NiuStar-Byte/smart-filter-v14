@@ -618,12 +618,9 @@ def run_cycle():
                     regime15 = sf15._market_regime()
                     res15 = sf15.analyze()
 
-                if isinstance(res15, dict) and res15.get("filters_ok") is True:
-                    
-                    # LOG ALL SIGNALS (even rejected) to ALL_SIGNALS.jsonl for PEC quantity tracking
+                # LOG ALL SIGNALS (even rejected) to ALL_SIGNALS.jsonl BEFORE filters_ok check
+                if isinstance(res15, dict):
                     score_15min = res15.get("score")
-                    
-                    # Write to ALL_SIGNALS.jsonl FIRST (before any filtering)
                     try:
                         all_signals_path = "/Users/geniustarigan/.openclaw/workspace/ALL_SIGNALS.jsonl"
                         all_signal_entry = {
@@ -639,6 +636,8 @@ def run_cycle():
                             f.write(json.dumps(all_signal_entry) + '\n')
                     except Exception as e:
                         print(f"[WARN] Failed to log to ALL_SIGNALS.jsonl: {e}", flush=True)
+
+                if isinstance(res15, dict) and res15.get("filters_ok") is True:
                     
                     # ===== SCORE VALIDATION GATE (Universal MIN_SCORE from smart_filter.py) =====
                     if score_15min is None or score_15min < MIN_SCORE:
@@ -1009,12 +1008,9 @@ def run_cycle():
                     regime30 = sf30._market_regime()
                     res30 = sf30.analyze()
 
-                if isinstance(res30, dict) and res30.get("filters_ok") is True:
-                    
-                    # LOG ALL SIGNALS (even rejected) to ALL_SIGNALS.jsonl for PEC quantity tracking
+                # LOG ALL SIGNALS (even rejected) to ALL_SIGNALS.jsonl BEFORE filters_ok check
+                if isinstance(res30, dict):
                     score_30min = res30.get("score")
-                    
-                    # Write to ALL_SIGNALS.jsonl FIRST (before any filtering)
                     try:
                         all_signals_path = "/Users/geniustarigan/.openclaw/workspace/ALL_SIGNALS.jsonl"
                         all_signal_entry = {
@@ -1030,6 +1026,8 @@ def run_cycle():
                             f.write(json.dumps(all_signal_entry) + '\n')
                     except Exception as e:
                         print(f"[WARN] Failed to log to ALL_SIGNALS.jsonl: {e}", flush=True)
+
+                if isinstance(res30, dict) and res30.get("filters_ok") is True:
                     
                     # ===== SCORE VALIDATION GATE (Universal MIN_SCORE from smart_filter.py) =====
                     if score_30min is None or score_30min < MIN_SCORE:
@@ -1420,12 +1418,9 @@ def run_cycle():
                     regime1h = sf1h._market_regime()
                     res1h = sf1h.analyze()
 
-                if isinstance(res1h, dict) and res1h.get("filters_ok") is True:
-                    
-                    # LOG ALL SIGNALS (even rejected) to ALL_SIGNALS.jsonl for PEC quantity tracking
+                # LOG ALL SIGNALS (even rejected) to ALL_SIGNALS.jsonl BEFORE filters_ok check
+                if isinstance(res1h, dict):
                     score_1h = res1h.get("score")
-                    
-                    # Write to ALL_SIGNALS.jsonl FIRST (before any filtering)
                     try:
                         all_signals_path = "/Users/geniustarigan/.openclaw/workspace/ALL_SIGNALS.jsonl"
                         all_signal_entry = {
@@ -1441,6 +1436,8 @@ def run_cycle():
                             f.write(json.dumps(all_signal_entry) + '\n')
                     except Exception as e:
                         print(f"[WARN] Failed to log to ALL_SIGNALS.jsonl: {e}", flush=True)
+
+                if isinstance(res1h, dict) and res1h.get("filters_ok") is True:
                     
                     # ===== SCORE VALIDATION GATE (Universal MIN_SCORE from smart_filter.py) =====
                     if score_1h is None or score_1h < MIN_SCORE:
