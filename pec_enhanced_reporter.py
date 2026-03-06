@@ -1001,8 +1001,8 @@ class PECEnhancedReporter:
             report.append("Total Fired per Date:")
             report.extend(date_summary_lines)
         
-        # === NEW: HOURLY BREAKDOWN FOR TODAY (2026-03-05) ===
-        today_str = "2026-03-05"
+        # === NEW: HOURLY BREAKDOWN FOR TODAY (DYNAMIC) ===
+        today_str = datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=7))).strftime('%Y-%m-%d')
         signals_by_hour = defaultdict(int)
         
         if today_str in signals_by_date:
