@@ -959,9 +959,10 @@ class PECEnhancedReporter:
         
         # Calculate ACTUAL MAX TIMEOUT WINDOW by timeframe
         # EXCLUDING stale timeouts (quality issues - overdue signals that inflate averages)
-        # Only calculate from clean timeouts within expected design limits
+        # Only calculate from clean timeouts within expected design limits (with 10% tolerance for timing slippage)
         max_timeout_clean = {'15min': 0, '30min': 0, '1h': 0}
-        expected_max_by_tf = {'15min': 15*15*60, '30min': 10*30*60, '1h': 5*60*60}  # Expected maximums
+        expected_max_by_tf = {'15min': 15*15*60, '30min': 10*30*60, '1h': 5*60*60}  # Expected maximums (in seconds)
+        tolerance = 0.10  # Allow 10% tolerance for minor timing variations
         
         for s in self.signals:
             # SKIP stale timeouts completely (data quality issues)
@@ -980,8 +981,10 @@ class PECEnhancedReporter:
                     
                     tf = s.get('timeframe', '')
                     if tf in max_timeout_clean:
-                        # Only count if within expected limit (clean timeout)
-                        if duration_seconds <= expected_max_by_tf[tf]:
+                        # Only count if within expected limit + 10% tolerance (clean timeout)
+                        # E.g., 1h design window is 5h = 18000s, with 10% tolerance = 19800s (5h 30m)
+                        threshold = int(expected_max_by_tf[tf] * (1 + tolerance))
+                        if duration_seconds <= threshold:
                             max_timeout_clean[tf] = max(max_timeout_clean[tf], duration_seconds)
                 except:
                     pass
