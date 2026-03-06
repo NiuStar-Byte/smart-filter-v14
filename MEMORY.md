@@ -2594,6 +2594,52 @@ Total P&L: $-28.58
 
 ---
 
+## ✅ **REJECTED SIGNAL CLASSIFICATION & PEC FILTER (2026-03-06 16:07 GMT+7)**
+
+**Status:** ✅ **COMPLETE - 677 rejected signals marked + PEC reporter filtered**  
+**Commit:** `c241bb0` - Mark 677 rejected signals as REJECTED_NOT_SENT_TELEGRAM
+
+### **Problem Identified**
+- 677 signals had status=NULL (instead of OPEN)
+- These were stored to SIGNALS_MASTER but never reached Telegram API
+- No `sent_time_utc` field = no evidence they were sent to traders
+- No `telegram_msg_id` = never received by Telegram
+- Traders NEVER saw these 677 signals, so they don't count toward PEC metrics
+
+### **Root Cause**
+Two-stage write process in daemon:
+1. Stage 1: `create_and_store_signal()` writes raw signal data (no status field) to SIGNALS_MASTER
+2. Stage 2: IF signal passes dedup checks → `write_to_signals_master()` writes with "status":"OPEN"
+
+The 677 signals were rejected BETWEEN stages by dedup filters (duplicate check, cycle check, is_duplicate_signal check).
+
+### **Solution Applied**
+- Marked all 677 NULL signals as `status: "REJECTED_NOT_SENT_TELEGRAM"`
+- Updated PEC reporter to:
+  - ONLY include signals with `sent_time_utc` (proof of Telegram send)
+  - EXCLUDE signals with `status: "REJECTED_NOT_SENT_TELEGRAM"`
+- Synced both files: SIGNALS_MASTER.jsonl + SIGNALS_INDEPENDENT_AUDIT.txt
+- Audit trail preserved: all signals kept for completeness, not deleted
+
+### **Evidence (Proof)**
+| Metric | NULL Signals | OPEN Signals |
+|--------|--------------|--------------|
+| Count | 677 | 41 |
+| sent_time_utc | 0 | 41 ✅ |
+| telegram_msg_id | 0 | 0 |
+| Reached Telegram | NO ❌ | YES ✅ |
+
+### **PEC Impact**
+- Before: Reporting confused (tracking 677 signals that weren't actually sent)
+- After: Only tracking 133 signals that reached Telegram (traders used these)
+  - 41 OPEN
+  - 43 SL_HIT  
+  - 24 TP_HIT
+  - 24 TIMEOUT
+  - 1 STALE_TIMEOUT
+
+---
+
 ## ✅ **DUAL-LAYER FIELD ALIGNMENT REBUILD (2026-03-06 15:43 GMT+7)**
 
 **Status:** ✅ **COMPLETE - CANONICAL SCHEMA DEPLOYED**  
