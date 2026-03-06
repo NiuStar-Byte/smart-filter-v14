@@ -957,9 +957,34 @@ class PECEnhancedReporter:
         actual_max_30min = self._format_duration_hm(max_timeout_by_tf['30min']) if max_timeout_by_tf['30min'] > 0 else "None"
         actual_max_1h = self._format_duration_hm(max_timeout_by_tf['1h']) if max_timeout_by_tf['1h'] > 0 else "None"
         
-        # Calculate fired time range and count per date
+        # Calculate fired time range and count per date (with dedup and telegram tracking)
         signals_by_date = defaultdict(list)
+        signals_by_date_dedup = defaultdict(set)  # Track unique UUIDs per date
+        signals_by_date_tele = defaultdict(list)  # Track telegram-sent only
         all_fired_times = []
+        
+        # For today, also read directly from SIGNALS_MASTER for accurate counts (bypasses dedup issues)
+        today_str = datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=7))).strftime('%Y-%m-%d')
+        master_today_stats = defaultdict(lambda: {'total': 0, 'unique': set(), 'tele': 0})
+        
+        if os.path.exists(os.path.join("/Users/geniustarigan/.openclaw/workspace", "SIGNALS_MASTER.jsonl")):
+            try:
+                with open(os.path.join("/Users/geniustarigan/.openclaw/workspace", "SIGNALS_MASTER.jsonl"), 'r') as f:
+                    for line in f:
+                        try:
+                            sig = json.loads(line)
+                            fired_utc = sig.get('fired_time_utc', '')
+                            if fired_utc.startswith(today_str):
+                                master_today_stats[today_str]['total'] += 1
+                                uuid = sig.get('signal_uuid')
+                                if uuid:
+                                    master_today_stats[today_str]['unique'].add(uuid)
+                                if sig.get('sent_time_utc') and sig.get('status') != 'REJECTED_NOT_SENT_TELEGRAM':
+                                    master_today_stats[today_str]['tele'] += 1
+                        except:
+                            pass
+            except Exception as e:
+                pass
         
         for s in self.signals:
             fired_utc = s.get('fired_time_utc')
@@ -974,6 +999,15 @@ class PECEnhancedReporter:
                     date_str = gmt7.strftime('%Y-%m-%d')
                     signals_by_date[date_str].append(gmt7)
                     all_fired_times.append(gmt7)
+                    
+                    # Track unique UUIDs (dedup)
+                    uuid = s.get('signal_uuid')
+                    if uuid:
+                        signals_by_date_dedup[date_str].add(uuid)
+                    
+                    # Track telegram-sent signals (have sent_time_utc and not REJECTED)
+                    if s.get('sent_time_utc') and s.get('status') != 'REJECTED_NOT_SENT_TELEGRAM':
+                        signals_by_date_tele[date_str].append(s)
                 except:
                     pass
         
@@ -991,7 +1025,18 @@ class PECEnhancedReporter:
         
         for date_str in sorted(signals_by_date.keys()):
             times = signals_by_date[date_str]
-            count = len(times)
+            
+            # For today, use SIGNALS_MASTER stats; for past dates, use loaded signals
+            if date_str == today_date and date_str in master_today_stats:
+                total_fired = master_today_stats[date_str]['total']
+                unique_fired = len(master_today_stats[date_str]['unique'])
+                tele_sent = master_today_stats[date_str]['tele']
+                metrics_str = f"Total Fired={total_fired} | Unique Fired={unique_fired} | Tele Sent={tele_sent}"
+            else:
+                # Past dates: show Total only (Unique/Tele not available due to NULL UUIDs in CUMULATIVE)
+                total_fired = len(times)
+                metrics_str = f"Total Fired={total_fired}"
+            
             date_earliest = min(times)
             date_latest = max(times)
             beginning_time_str = date_earliest.strftime('%H:%M:%S')
@@ -1003,7 +1048,7 @@ class PECEnhancedReporter:
             else:
                 status_label = "✓ IMMUTABLE"
             
-            date_line = f"  {date_str}: {count} fired | Beginning Fired Time: {beginning_time_str} | Last Fired Time: {last_time_str} | {status_label}"
+            date_line = f"  {date_str}: {metrics_str} | {beginning_time_str}-{last_time_str} | {status_label}"
             date_summary_lines.append(date_line)
         
         # Display Summary (with stale timeout exclusion note) - Match user's exact template
@@ -1040,13 +1085,39 @@ class PECEnhancedReporter:
         
         # === HOURLY BREAKDOWN FOR TODAY (DYNAMIC) ===
         today_str = datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=7))).strftime('%Y-%m-%d')
-        signals_by_hour = defaultdict(int)
+        signals_by_hour = defaultdict(list)
+        signals_by_hour_dedup = defaultdict(set)
+        signals_by_hour_tele = defaultdict(int)
         
-        if today_str in signals_by_date:
-            today_times = signals_by_date[today_str]
-            for gmt7_dt in today_times:
-                hour_bucket = f"{gmt7_dt.hour:02d}:00-{(gmt7_dt.hour+1):02d}:00"
-                signals_by_hour[hour_bucket] += 1
+        # For today, read directly from SIGNALS_MASTER for accurate hourly breakdown
+        if os.path.exists(os.path.join("/Users/geniustarigan/.openclaw/workspace", "SIGNALS_MASTER.jsonl")):
+            try:
+                with open(os.path.join("/Users/geniustarigan/.openclaw/workspace", "SIGNALS_MASTER.jsonl"), 'r') as f:
+                    for line in f:
+                        try:
+                            sig = json.loads(line)
+                            fired_utc = sig.get('fired_time_utc')
+                            if fired_utc and fired_utc.startswith(today_str):
+                                dt = datetime.fromisoformat(fired_utc.replace('Z', '+00:00'))
+                                if dt.tzinfo is None:
+                                    dt = dt.replace(tzinfo=timezone.utc)
+                                gmt7 = dt.astimezone(timezone(timedelta(hours=7)))
+                                hour_bucket = f"{gmt7.hour:02d}:00-{(gmt7.hour+1):02d}:00"
+                                
+                                signals_by_hour[hour_bucket].append(sig)
+                                
+                                # Track unique UUIDs per hour
+                                uuid = sig.get('signal_uuid')
+                                if uuid:
+                                    signals_by_hour_dedup[hour_bucket].add(uuid)
+                                
+                                # Track telegram-sent per hour
+                                if sig.get('sent_time_utc') and sig.get('status') != 'REJECTED_NOT_SENT_TELEGRAM':
+                                    signals_by_hour_tele[hour_bucket] += 1
+                        except:
+                            pass
+            except Exception as e:
+                pass
         
         if signals_by_hour and today_str:  # Show hourly breakdown only for current accumulating date
             report.append("")
@@ -1061,7 +1132,9 @@ class PECEnhancedReporter:
                 all_hour_buckets.append(hour_bucket)
             
             for hour_bucket in all_hour_buckets:
-                count = signals_by_hour.get(hour_bucket, 0)
+                total_fired = len(signals_by_hour.get(hour_bucket, []))
+                unique_fired = len(signals_by_hour_dedup.get(hour_bucket, set()))
+                tele_sent = signals_by_hour_tele.get(hour_bucket, 0)
                 
                 # Add status label: current hour is accumulating, past hours are immutable
                 if hour_bucket == current_hour_bucket:
@@ -1069,7 +1142,7 @@ class PECEnhancedReporter:
                 else:
                     status_label = "✓ IMMUTABLE"
                 
-                report.append(f"  {hour_bucket}: {count} fired | {status_label}")
+                report.append(f"  {hour_bucket}: Total={total_fired} | Unique={unique_fired} | TeleSent={tele_sent} | {status_label}")
         
         report.append("")
         
