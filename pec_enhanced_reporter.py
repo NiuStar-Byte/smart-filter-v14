@@ -32,32 +32,40 @@ SYMBOL_GROUPS = {
 
 class PECEnhancedReporter:
     def __init__(self, sent_signals_file=None):
-        # Prefer CUMULATIVE files (immutable hourly snapshots)
-        # Fall back to ARCHIVE (Foundation) or LIVE (current accumulation)
+        # Use SIGNALS_MASTER.jsonl as single source of truth
+        # Falls back to CUMULATIVE for historical data if MASTER not available
         if sent_signals_file is None:
             workspace = "/Users/geniustarigan/.openclaw/workspace"
             
-            # Try CUMULATIVE first (hourly immutable snapshot)
-            import glob
-            cumulative_files = sorted(glob.glob(os.path.join(workspace, "SENT_SIGNALS_CUMULATIVE_*.jsonl")))
-            if cumulative_files:
-                sent_signals_file = cumulative_files[-1]
-                print(f"[INFO] Using CUMULATIVE file: {os.path.basename(sent_signals_file)}", flush=True)
+            # Primary: SIGNALS_MASTER (single source of truth)
+            signals_master = os.path.join(workspace, "SIGNALS_MASTER.jsonl")
+            if os.path.exists(signals_master) and os.path.getsize(signals_master) > 1000:
+                sent_signals_file = signals_master
+                print(f"[INFO] Using SIGNALS_MASTER.jsonl: {signals_master}", flush=True)
             else:
-                # Fallback to ARCHIVE (Foundation baseline)
-                sent_signals_file = os.path.join(workspace, "SENT_SIGNALS_ARCHIVE_2026-03-05.jsonl")
-                print(f"[INFO] Using ARCHIVE file (Foundation): SENT_SIGNALS_ARCHIVE_2026-03-05.jsonl", flush=True)
+                # Fallback: CUMULATIVE (immutable hourly snapshots for historical data)
+                import glob
+                cumulative_files = sorted(glob.glob(os.path.join(workspace, "SENT_SIGNALS_CUMULATIVE_*.jsonl")))
+                if cumulative_files:
+                    sent_signals_file = cumulative_files[-1]
+                    print(f"[INFO] SIGNALS_MASTER not available, using CUMULATIVE: {os.path.basename(sent_signals_file)}", flush=True)
+                else:
+                    # Last resort: ARCHIVE (Foundation baseline)
+                    sent_signals_file = os.path.join(workspace, "SENT_SIGNALS_ARCHIVE_2026-03-05.jsonl")
+                    print(f"[INFO] Using ARCHIVE file (Foundation): SENT_SIGNALS_ARCHIVE_2026-03-05.jsonl", flush=True)
         
         self.sent_signals_file = sent_signals_file
         self.signals = []
         self.load_signals()
     
     def load_signals(self):
-        """Load signals from CUMULATIVE file + today's signals from SIGNALS_MASTER (complete history, no duplicates)"""
+        """Load signals from SIGNALS_MASTER.jsonl (single source of truth)
+        
+        If using SIGNALS_MASTER: all signals in one file (complete history)
+        If using CUMULATIVE: load cumulative + append any newer signals from SIGNALS_MASTER
+        """
         workspace = "/Users/geniustarigan/.openclaw/workspace"
         
-        # CUMULATIVE files are complete snapshots (ARCHIVE + NEW signals combined)
-        # Do NOT load from both to avoid duplicates
         if not os.path.exists(self.sent_signals_file):
             print(f"[WARN] {self.sent_signals_file} not found")
             return
@@ -79,34 +87,44 @@ class PECEnhancedReporter:
         except Exception as e:
             print(f"[WARN] Error loading signals: {e}")
         
-        # ALSO load today's accumulating signals from SIGNALS_MASTER.jsonl
-        # This ensures Mar 06 (and other today's date) shows in FIRED BY DATE with "still accumulating"
-        today_str = datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=7))).strftime('%Y-%m-%d')
-        signals_master = os.path.join(workspace, "SIGNALS_MASTER.jsonl")
-        
-        if os.path.exists(signals_master):
-            try:
-                today_count = 0
-                with open(signals_master, 'r') as f:
-                    for line in f:
-                        try:
-                            signal = json.loads(line.strip())
-                            fired_utc = signal.get('fired_time_utc', '')
-                            if fired_utc and fired_utc.startswith(today_str):
-                                # Check if this signal is already in self.signals (by uuid)
-                                signal_uuid = signal.get('signal_uuid')
-                                if signal_uuid and not any(s.get('signal_uuid') == signal_uuid for s in self.signals):
-                                    # Normalize field names: convert 'direction' → 'signal_type' if needed
-                                    if 'direction' in signal and 'signal_type' not in signal:
-                                        signal['signal_type'] = signal['direction']
-                                    self.signals.append(signal)
-                                    today_count += 1
-                        except:
-                            pass
-                if today_count > 0:
-                    print(f"[INFO] Appended {today_count} signals from today ({today_str}) in SIGNALS_MASTER.jsonl", flush=True)
-            except Exception as e:
-                print(f"[WARN] Error loading today's signals from SIGNALS_MASTER: {e}")
+        # If NOT using SIGNALS_MASTER already, try to append newer signals from it
+        # This ensures we always have the latest signals for today
+        if "SIGNALS_MASTER" not in self.sent_signals_file:
+            signals_master = os.path.join(workspace, "SIGNALS_MASTER.jsonl")
+            if os.path.exists(signals_master):
+                try:
+                    # Get the latest fired_time from currently loaded signals
+                    if self.signals:
+                        latest_fired = max((datetime.fromisoformat(s.get('fired_time_utc', '').replace('Z', '+00:00')) 
+                                          for s in self.signals if s.get('fired_time_utc')), 
+                                         default=datetime.min.replace(tzinfo=timezone.utc))
+                    else:
+                        latest_fired = datetime.min.replace(tzinfo=timezone.utc)
+                    
+                    # Load newer signals from SIGNALS_MASTER
+                    appended_count = 0
+                    with open(signals_master, 'r') as f:
+                        for line in f:
+                            try:
+                                signal = json.loads(line.strip())
+                                fired_utc_str = signal.get('fired_time_utc', '')
+                                if fired_utc_str:
+                                    fired_dt = datetime.fromisoformat(fired_utc_str.replace('Z', '+00:00'))
+                                    # Only add if newer than what we already have
+                                    if fired_dt > latest_fired:
+                                        # Check for duplicate uuid
+                                        signal_uuid = signal.get('signal_uuid')
+                                        if signal_uuid and not any(s.get('signal_uuid') == signal_uuid for s in self.signals):
+                                            if 'direction' in signal and 'signal_type' not in signal:
+                                                signal['signal_type'] = signal['direction']
+                                            self.signals.append(signal)
+                                            appended_count += 1
+                            except:
+                                pass
+                    if appended_count > 0:
+                        print(f"[INFO] Appended {appended_count} newer signals from SIGNALS_MASTER.jsonl", flush=True)
+                except Exception as e:
+                    print(f"[WARN] Error appending from SIGNALS_MASTER: {e}")
     
     def get_symbol_group(self, symbol: str) -> str:
         """Map a symbol to its group"""
