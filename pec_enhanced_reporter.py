@@ -889,6 +889,8 @@ class PECEnhancedReporter:
         
         total_timeout = timeout_wins + timeout_losses
         total_open = sum(1 for s in self.signals if s.get('status') == 'OPEN')
+        total_rejected = sum(1 for s in self.signals if s.get('status') == 'REJECTED_NOT_SENT_TELEGRAM')
+        total_stale_status = sum(1 for s in self.signals if s.get('status') == 'STALE_TIMEOUT')
         
         # Closed trades = TP + SL + TIMEOUT_WIN + TIMEOUT_LOSS
         closed_signals = total_tp + total_sl + timeout_wins + timeout_losses
@@ -1086,7 +1088,9 @@ class PECEnhancedReporter:
         report.append("Total Signals: 853 | Closed: 830 | WR: 25.7%")
         report.append("LONG WR: 29.6% | SHORT WR: 46.2% | P&L: $-5498.59")
         report.append("")
-        report.append(f"Total Signals (Foundation + New): {total_signals} (Count Win = {total_tp}; Count Loss = {total_sl}; Count TimeOut = {total_timeout}; Count Open = {total_open}; Stale Timeouts Excluded = {stale_timeout_count})")
+        # Total stale timeouts = flagged TIMEOUT signals + STALE_TIMEOUT status
+        total_stale_all = stale_timeout_count + total_stale_status  # 151 + 1 = 152
+        report.append(f"Total Signals (Foundation + New): {total_signals} (Count Win = {total_tp}; Count Loss = {total_sl}; Count TimeOut = {total_timeout}; Count Open = {total_open}; Count Rejected = {total_rejected}; Stale Timeouts Excluded = {total_stale_all})")
         report.append(f"Closed Trades (Clean Data): {closed_signals} (TP: {total_tp}, SL: {total_sl}; TimeOut Win = {timeout_wins}; TimeOut Loss = {timeout_losses})")
         report.append(f"Overall Win Rate: {overall_wr:.2f}% >> [ (count TP + Count TimeOut Win) / (Closed Trades) ] = [ ({total_tp}+{timeout_wins}) / {closed_signals} ]")
         report.append(f"Total P&L (Clean Data): ${total_pnl:+.2f} (Avg P&L per Signal = ${avg_pnl_per_signal:+.2f}; Avg P&L per Closed Trade = ${avg_pnl_per_trade:+.2f})")
