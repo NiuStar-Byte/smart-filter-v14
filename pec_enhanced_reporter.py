@@ -1032,6 +1032,39 @@ class PECEnhancedReporter:
         if date_summary_lines:
             report.extend(date_summary_lines)
         
+        # === HOURLY BREAKDOWN FOR TODAY (DYNAMIC) ===
+        today_str = datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=7))).strftime('%Y-%m-%d')
+        signals_by_hour = defaultdict(int)
+        
+        if today_str in signals_by_date:
+            today_times = signals_by_date[today_str]
+            for gmt7_dt in today_times:
+                hour_bucket = f"{gmt7_dt.hour:02d}:00-{(gmt7_dt.hour+1):02d}:00"
+                signals_by_hour[hour_bucket] += 1
+        
+        if signals_by_hour and today_str:  # Show hourly breakdown only for current accumulating date
+            report.append("")
+            report.append(f"⏰ TODAY'S BREAKDOWN BY HOUR ({today_str}):")
+            current_hour = datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=7))).hour
+            current_hour_bucket = f"{current_hour:02d}:00-{(current_hour+1):02d}:00"
+            
+            # Build list of ALL hours from 00:00 to current_hour (inclusive)
+            all_hour_buckets = []
+            for hour in range(current_hour + 1):  # 0 to current_hour
+                hour_bucket = f"{hour:02d}:00-{(hour+1):02d}:00"
+                all_hour_buckets.append(hour_bucket)
+            
+            for hour_bucket in all_hour_buckets:
+                count = signals_by_hour.get(hour_bucket, 0)
+                
+                # Add status label: current hour is accumulating, past hours are immutable
+                if hour_bucket == current_hour_bucket:
+                    status_label = "🔄 still accumulating"
+                else:
+                    status_label = "✓ IMMUTABLE"
+                
+                report.append(f"  {hour_bucket}: {count} fired | {status_label}")
+        
         report.append("")
         
         # === NEW: HIERARCHY RANKING SECTION ===
