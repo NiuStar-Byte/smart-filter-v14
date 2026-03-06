@@ -902,24 +902,33 @@ class PECEnhancedReporter:
         win_count = total_tp + timeout_wins
         overall_wr = (win_count / closed_signals * 100) if closed_signals > 0 else 0
         
-        # RECALCULATE total P&L using notional position of $1,000 (EXCLUDING stale timeouts)
-        # Stale timeouts are overdue quality issues - zero P&L contribution
+        # Calculate total P&L (EXCLUDING stale timeouts)
+        # USE STORED PNL_USD when available (may be based on max_bar closing price for timeouts)
+        # Fall back to recalculation if stored value missing
+        # Stale timeouts = zero P&L (overdue quality issues)
         total_pnl = 0.0
         for s in self.signals:
-            # SKIP stale timeouts completely (overdue quality issues, should not affect P&L)
+            # SKIP stale timeouts completely (overdue quality issues, zero P&L)
             if s.get('data_quality_flag') and 'STALE_TIMEOUT' in s.get('data_quality_flag'):
                 continue
-            if s.get('status') == 'STALE_TIMEOUT':  # Also skip STALE_TIMEOUT status
+            if s.get('status') == 'STALE_TIMEOUT':
                 continue
             
             if s.get('status') in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
-                pnl_calc = self._calculate_pnl_usd(
-                    s.get('entry_price'),
-                    s.get('actual_exit_price'),
-                    s.get('signal_type')
-                )
-                if pnl_calc is not None:
-                    total_pnl += pnl_calc
+                # PREFER stored pnl_usd (may use max_bar price for timeouts)
+                # Fall back to recalculation if not available
+                stored_pnl = s.get('pnl_usd')
+                if stored_pnl is not None:
+                    total_pnl += float(stored_pnl)
+                else:
+                    # Fallback calculation
+                    pnl_calc = self._calculate_pnl_usd(
+                        s.get('entry_price'),
+                        s.get('actual_exit_price'),
+                        s.get('signal_type')
+                    )
+                    if pnl_calc is not None:
+                        total_pnl += pnl_calc
         
         # Calculate average P&L per signal
         avg_pnl_per_signal = total_pnl / total_signals if total_signals > 0 else 0
