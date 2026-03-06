@@ -84,8 +84,9 @@ class PECExecutor:
         
         symbol = signal.get('symbol')
         entry_price = signal.get('entry_price')
-        tp_target = signal.get('tp_target')
-        sl_target = signal.get('sl_target')
+        # Support both field name conventions: tp_target/tp_price, sl_target/sl_price
+        tp_target = signal.get('tp_target') or signal.get('tp_price')
+        sl_target = signal.get('sl_target') or signal.get('sl_price')
         fired_time_str = signal.get('fired_time_utc')
         timeframe = signal.get('timeframe', '')
         
