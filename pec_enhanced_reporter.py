@@ -32,11 +32,21 @@ SYMBOL_GROUPS = {
 
 class PECEnhancedReporter:
     def __init__(self, sent_signals_file=None):
-        # Default to LIVE SENT_SIGNALS.jsonl (always has fresh signals)
-        # CUMULATIVE files are snapshots - use them only if explicitly requested
+        # Prefer CUMULATIVE files (immutable hourly snapshots)
+        # Fall back to ARCHIVE (Foundation) or LIVE (current accumulation)
         if sent_signals_file is None:
-            sent_signals_file = "/Users/geniustarigan/.openclaw/workspace/SENT_SIGNALS.jsonl"
-            print(f"[INFO] Using LIVE signals file: SENT_SIGNALS.jsonl", flush=True)
+            workspace = "/Users/geniustarigan/.openclaw/workspace"
+            
+            # Try CUMULATIVE first (hourly immutable snapshot)
+            import glob
+            cumulative_files = sorted(glob.glob(os.path.join(workspace, "SENT_SIGNALS_CUMULATIVE_*.jsonl")))
+            if cumulative_files:
+                sent_signals_file = cumulative_files[-1]
+                print(f"[INFO] Using CUMULATIVE file: {os.path.basename(sent_signals_file)}", flush=True)
+            else:
+                # Fallback to ARCHIVE (Foundation baseline)
+                sent_signals_file = os.path.join(workspace, "SENT_SIGNALS_ARCHIVE_2026-03-05.jsonl")
+                print(f"[INFO] Using ARCHIVE file (Foundation): SENT_SIGNALS_ARCHIVE_2026-03-05.jsonl", flush=True)
         
         self.sent_signals_file = sent_signals_file
         self.signals = []
