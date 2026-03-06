@@ -68,6 +68,9 @@ class PECEnhancedReporter:
                 for line in f:
                     try:
                         signal = json.loads(line.strip())
+                        # Normalize field names: convert 'direction' → 'signal_type' if needed
+                        if 'direction' in signal and 'signal_type' not in signal:
+                            signal['signal_type'] = signal['direction']
                         self.signals.append(signal)
                         count += 1
                     except:
@@ -93,6 +96,9 @@ class PECEnhancedReporter:
                                 # Check if this signal is already in self.signals (by uuid)
                                 signal_uuid = signal.get('signal_uuid')
                                 if signal_uuid and not any(s.get('signal_uuid') == signal_uuid for s in self.signals):
+                                    # Normalize field names: convert 'direction' → 'signal_type' if needed
+                                    if 'direction' in signal and 'signal_type' not in signal:
+                                        signal['signal_type'] = signal['direction']
                                     self.signals.append(signal)
                                     today_count += 1
                         except:
