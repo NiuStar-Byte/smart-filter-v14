@@ -924,14 +924,19 @@ class PECEnhancedReporter:
         avg_sl_duration_summary = self._calculate_avg_duration_by_status(self.signals, 'SL_HIT')
         
         # Calculate ACTUAL MAX TIMEOUT WINDOW by timeframe
-        # Two calculations:
-        # 1. Clean max: only signals within expected limit (excludes stale)
-        # 2. Absolute max: highest timeout including stale (shows actual observed max)
+        # EXCLUDING stale timeouts (quality issues - overdue signals that inflate averages)
+        # Only calculate from clean timeouts within expected design limits
         max_timeout_clean = {'15min': 0, '30min': 0, '1h': 0}
-        max_timeout_absolute = {'15min': 0, '30min': 0, '1h': 0}
         expected_max_by_tf = {'15min': 15*15*60, '30min': 10*30*60, '1h': 5*60*60}  # Expected maximums
         
         for s in self.signals:
+            # SKIP stale timeouts completely (data quality issues)
+            if s.get('data_quality_flag') and 'STALE_TIMEOUT' in s.get('data_quality_flag'):
+                continue
+            # Also skip STALE_TIMEOUT status
+            if s.get('status') == 'STALE_TIMEOUT':
+                continue
+            
             if s.get('status') == 'TIMEOUT' and s.get('fired_time_utc') and s.get('closed_at'):
                 try:
                     fired = datetime.fromisoformat(s.get('fired_time_utc').replace('Z', '+00:00'))
@@ -941,10 +946,7 @@ class PECEnhancedReporter:
                     
                     tf = s.get('timeframe', '')
                     if tf in max_timeout_clean:
-                        # Absolute max (includes all timeouts)
-                        max_timeout_absolute[tf] = max(max_timeout_absolute[tf], duration_seconds)
-                        
-                        # Clean max (only within expected limit)
+                        # Only count if within expected limit (clean timeout)
                         if duration_seconds <= expected_max_by_tf[tf]:
                             max_timeout_clean[tf] = max(max_timeout_clean[tf], duration_seconds)
                 except:
@@ -956,15 +958,10 @@ class PECEnhancedReporter:
         timeout_window_30min = "5h 0m"    # 10 bars × 30min = 300min = 5h (designed)
         timeout_window_1h = "5h 0m"       # 5 bars × 60min = 300min = 5h (designed)
         
-        # Format actual max (clean within limit)
+        # Format actual max (clean within limit, stale excluded)
         actual_max_15min = self._format_duration_hm(max_timeout_clean['15min']) if max_timeout_clean['15min'] > 0 else "None"
         actual_max_30min = self._format_duration_hm(max_timeout_clean['30min']) if max_timeout_clean['30min'] > 0 else "None"
         actual_max_1h = self._format_duration_hm(max_timeout_clean['1h']) if max_timeout_clean['1h'] > 0 else "None"
-        
-        # Format absolute max (including stale) - show if exceeds limit
-        abs_max_15min = self._format_duration_hm(max_timeout_absolute['15min']) if max_timeout_absolute['15min'] > expected_max_by_tf['15min'] else None
-        abs_max_30min = self._format_duration_hm(max_timeout_absolute['30min']) if max_timeout_absolute['30min'] > expected_max_by_tf['30min'] else None
-        abs_max_1h = self._format_duration_hm(max_timeout_absolute['1h']) if max_timeout_absolute['1h'] > expected_max_by_tf['1h'] else None
         
         # Calculate fired time range and count per date (with dedup and telegram tracking)
         signals_by_date = defaultdict(list)
@@ -1103,19 +1100,14 @@ class PECEnhancedReporter:
         report.append(f"Total P&L (Clean Data): ${total_pnl:+.2f} (Avg P&L per Signal = ${avg_pnl_per_signal:+.2f}; Avg P&L per Closed Trade = ${avg_pnl_per_trade:+.2f})")
         report.append(f"Avg TP Duration (Clean): {avg_tp_duration_summary} | Avg SL Duration (Clean): {avg_sl_duration_summary}")
         report.append(f"Max TIMEOUT Window (Designed): 15min={timeout_window_15min} | 30min={timeout_window_30min} | 1h={timeout_window_1h}")
-        report.append(f"Max TIMEOUT Actual (Within Limit): 15min={actual_max_15min} | 30min={actual_max_30min} | 1h={actual_max_1h}")
-        
-        # Show absolute max if it exceeds the limit (for 1h mostly)
-        if abs_max_15min or abs_max_30min or abs_max_1h:
-            abs_max_15min_str = abs_max_15min if abs_max_15min else "-"
-            abs_max_30min_str = abs_max_30min if abs_max_30min else "-"
-            abs_max_1h_str = abs_max_1h if abs_max_1h else "-"
-            report.append(f"Max TIMEOUT Observed (Absolute): 15min={abs_max_15min_str} | 30min={abs_max_30min_str} | 1h={abs_max_1h_str} | ⚠️ exceeds design limit")
+        report.append(f"Max TIMEOUT Actual (Clean Data): 15min={actual_max_15min} | 30min={actual_max_30min} | 1h={actual_max_1h}")
         
         if stale_timeout_count > 0:
             report.append("")
-            report.append(f"⚠️  DATA QUALITY NOTE: {stale_timeout_count} signals marked as 'STALE_TIMEOUT' (closed >150% past deadline)")
-            report.append(f"These are EXCLUDED from all above metrics to preserve backtest accuracy. See DETAILED SIGNAL LIST for individual stale timeout records.")
+            report.append(f"⚠️  DATA QUALITY ALERT: {stale_timeout_count} signals marked as 'STALE_TIMEOUT' (closed >150% past deadline)")
+            report.append(f"EXCLUDED from all metrics to preserve backtest accuracy.")
+            report.append(f"⚠️  CRITICAL: 1h timeframe shows None because ALL {sum(1 for s in self.signals if s.get('status') == 'TIMEOUT' and s.get('timeframe') == '1h')} 1h timeouts exceed 5h design limit!")
+            report.append(f"These signals should be reviewed for data/trade quality issues.")
         
         report.append("")
         
