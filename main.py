@@ -620,8 +620,27 @@ def run_cycle():
 
                 if isinstance(res15, dict) and res15.get("filters_ok") is True:
                     
-                    # ===== SCORE VALIDATION GATE (Universal MIN_SCORE from smart_filter.py) =====
+                    # LOG ALL SIGNALS (even rejected) to ALL_SIGNALS.jsonl for PEC quantity tracking
                     score_15min = res15.get("score")
+                    
+                    # Write to ALL_SIGNALS.jsonl FIRST (before any filtering)
+                    try:
+                        all_signals_path = "/Users/geniustarigan/.openclaw/workspace/ALL_SIGNALS.jsonl"
+                        all_signal_entry = {
+                            "symbol": symbol,
+                            "timeframe": "15min",
+                            "score": score_15min,
+                            "min_score_required": MIN_SCORE,
+                            "passed_filter": score_15min is not None and score_15min >= MIN_SCORE,
+                            "fired_time_utc": datetime.utcnow().isoformat(),
+                            "filters_ok": res15.get("filters_ok")
+                        }
+                        with open(all_signals_path, 'a') as f:
+                            f.write(json.dumps(all_signal_entry) + '\n')
+                    except Exception as e:
+                        print(f"[WARN] Failed to log to ALL_SIGNALS.jsonl: {e}", flush=True)
+                    
+                    # ===== SCORE VALIDATION GATE (Universal MIN_SCORE from smart_filter.py) =====
                     if score_15min is None or score_15min < MIN_SCORE:
                         print(f"[SCORE_GATE] 15min {symbol} REJECTED: score={score_15min} < MIN_SCORE={MIN_SCORE}", flush=True)
                         continue
@@ -992,8 +1011,27 @@ def run_cycle():
 
                 if isinstance(res30, dict) and res30.get("filters_ok") is True:
                     
-                    # ===== SCORE VALIDATION GATE (Universal MIN_SCORE from smart_filter.py) =====
+                    # LOG ALL SIGNALS (even rejected) to ALL_SIGNALS.jsonl for PEC quantity tracking
                     score_30min = res30.get("score")
+                    
+                    # Write to ALL_SIGNALS.jsonl FIRST (before any filtering)
+                    try:
+                        all_signals_path = "/Users/geniustarigan/.openclaw/workspace/ALL_SIGNALS.jsonl"
+                        all_signal_entry = {
+                            "symbol": symbol,
+                            "timeframe": "30min",
+                            "score": score_30min,
+                            "min_score_required": MIN_SCORE,
+                            "passed_filter": score_30min is not None and score_30min >= MIN_SCORE,
+                            "fired_time_utc": datetime.utcnow().isoformat(),
+                            "filters_ok": res30.get("filters_ok")
+                        }
+                        with open(all_signals_path, 'a') as f:
+                            f.write(json.dumps(all_signal_entry) + '\n')
+                    except Exception as e:
+                        print(f"[WARN] Failed to log to ALL_SIGNALS.jsonl: {e}", flush=True)
+                    
+                    # ===== SCORE VALIDATION GATE (Universal MIN_SCORE from smart_filter.py) =====
                     if score_30min is None or score_30min < MIN_SCORE:
                         print(f"[SCORE_GATE] 30min {symbol} REJECTED: score={score_30min} < MIN_SCORE={MIN_SCORE}", flush=True)
                         continue
@@ -1384,8 +1422,27 @@ def run_cycle():
 
                 if isinstance(res1h, dict) and res1h.get("filters_ok") is True:
                     
-                    # ===== SCORE VALIDATION GATE (Universal MIN_SCORE from smart_filter.py) =====
+                    # LOG ALL SIGNALS (even rejected) to ALL_SIGNALS.jsonl for PEC quantity tracking
                     score_1h = res1h.get("score")
+                    
+                    # Write to ALL_SIGNALS.jsonl FIRST (before any filtering)
+                    try:
+                        all_signals_path = "/Users/geniustarigan/.openclaw/workspace/ALL_SIGNALS.jsonl"
+                        all_signal_entry = {
+                            "symbol": symbol,
+                            "timeframe": "1h",
+                            "score": score_1h,
+                            "min_score_required": MIN_SCORE,
+                            "passed_filter": score_1h is not None and score_1h >= MIN_SCORE,
+                            "fired_time_utc": datetime.utcnow().isoformat(),
+                            "filters_ok": res1h.get("filters_ok")
+                        }
+                        with open(all_signals_path, 'a') as f:
+                            f.write(json.dumps(all_signal_entry) + '\n')
+                    except Exception as e:
+                        print(f"[WARN] Failed to log to ALL_SIGNALS.jsonl: {e}", flush=True)
+                    
+                    # ===== SCORE VALIDATION GATE (Universal MIN_SCORE from smart_filter.py) =====
                     if score_1h is None or score_1h < MIN_SCORE:
                         print(f"[SCORE_GATE] 1h {symbol} REJECTED: score={score_1h} < MIN_SCORE={MIN_SCORE}", flush=True)
                         continue
