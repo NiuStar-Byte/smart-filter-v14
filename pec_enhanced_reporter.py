@@ -872,9 +872,12 @@ class PECEnhancedReporter:
         timeout_wins = 0
         timeout_losses = 0
         for s in self.signals:
-            # Skip stale timeouts from metrics
+            # Skip stale timeouts from metrics (overdue quality issues)
             if s.get('data_quality_flag') and 'STALE_TIMEOUT' in s.get('data_quality_flag'):
                 continue
+            if s.get('status') == 'STALE_TIMEOUT':
+                continue
+            
             if s.get('status') == 'TIMEOUT' and s.get('actual_exit_price'):
                 pnl_calc = self._calculate_pnl_usd(
                     s.get('entry_price'),
@@ -900,11 +903,15 @@ class PECEnhancedReporter:
         overall_wr = (win_count / closed_signals * 100) if closed_signals > 0 else 0
         
         # RECALCULATE total P&L using notional position of $1,000 (EXCLUDING stale timeouts)
+        # Stale timeouts are overdue quality issues - zero P&L contribution
         total_pnl = 0.0
         for s in self.signals:
-            # Skip stale timeouts from backtest P&L
+            # SKIP stale timeouts completely (overdue quality issues, should not affect P&L)
             if s.get('data_quality_flag') and 'STALE_TIMEOUT' in s.get('data_quality_flag'):
                 continue
+            if s.get('status') == 'STALE_TIMEOUT':  # Also skip STALE_TIMEOUT status
+                continue
+            
             if s.get('status') in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
                 pnl_calc = self._calculate_pnl_usd(
                     s.get('entry_price'),
