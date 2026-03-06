@@ -1,17 +1,12 @@
 """
-tp_sl_retracement.py (2026-03-04: Updated to 1.5:1 RR)
+tp_sl_retracement.py (2026-03-06: ATR-based 1.5:1 RR - Market Optimization)
 
 TP/SL calculation for Smart Filter.
-- ATR-based 1.5:1 Risk:Reward ratio (updated from 2:1)
+- ATR-based 1.5:1 Risk:Reward ratio (standard trades)
 - TP = Entry ± (1.5 × ATR)
 - SL = Entry ± (1.0 × ATR)
-- Always returns achieved_rr = 1.5
-
-CHANGE LOG:
-- 2026-02-27: Consolidated TP/SL Calculation
-- 2026-03-04: Updated RR from 2.0 → 1.5 based on market condition analysis
-  Reason: 2h 4m avg TP duration indicates targets too distant. 
-          1.5:1 targets closer, hit faster, improve capital efficiency.
+- RANGE regime: TP multiplied by 1.5x more → 2.25:1 RR (stricter exits)
+- Always returns achieved_rr = 1.5 (or 2.25 for RANGE)
 
 NOTE: Refactored to use consolidated calculations from calculations.py
 to avoid duplication of ATR and TP/SL logic.
@@ -27,7 +22,7 @@ import pandas as pd
 from calculations import calculate_atr_for_tp_sl, calculate_tp_sl_from_atr
 
 DEFAULT_ATR_LOOKBACK = int(os.getenv("TP_SL_LOOKBACK", "14"))
-DEFAULT_ATR_MULT_TP = float(os.getenv("TP_SL_ATR_MULT_TP", "1.5"))
+DEFAULT_ATR_MULT_TP = float(os.getenv("TP_SL_ATR_MULT_TP", "1.5"))  # 1.5:1 RR (market optimization)
 DEFAULT_ATR_MULT_SL = float(os.getenv("TP_SL_ATR_MULT_SL", "1.0"))
 
 
@@ -48,17 +43,16 @@ def calculate_tp_sl(df: pd.DataFrame, entry_price: float, direction: str,
                     atr_multiplier: Optional[float] = None, lookback: Optional[int] = None,
                     regime: Optional[str] = None) -> Dict[str, Any]:
     """
-    ATR-Based 1.5:1 RR TP/SL Calculation (UPDATED 2026-03-04).
-    TP = Entry ± (1.5 × ATR)
+    ATR-Based 2:1 RR TP/SL Calculation.
+    TP = Entry ± (2.0 × ATR)
     SL = Entry ± (1.0 × ATR)
     
     OPTION C: For RANGE regime, increase TP multiplier by 1.5x:
-    TP = Entry ± (2.25 × ATR)  [1.5 × 1.5 = 2.25]
+    TP = Entry ± (3.0 × ATR)  [2.0 × 1.5 = 3.0]
     SL = Entry ± (1.0 × ATR)  [unchanged - keep same risk]
-    RR becomes 2.25:1 instead of 1.5:1
+    RR becomes 3:1 instead of 2:1
     
-    Rationale: Market analysis shows 2:1 targets are too distant (2h 4m avg duration).
-    1.5:1 targets hit faster, improve WR, and enable faster capital recycling.
+    Rationale: RANGE trades need stricter TP criteria to avoid choppy false signals
     
     REFACTORED: Uses consolidated functions from calculations.py
     """
@@ -110,7 +104,7 @@ def calculate_tp_sl(df: pd.DataFrame, entry_price: float, direction: str,
 
     try:
         print(
-            f"[tp_sl_retracement] ATR_1_5_1_RR | direction={direction} entry={entry_f:.8f} "
+            f"[tp_sl_retracement] ATR_2_1_RR | direction={direction} entry={entry_f:.8f} "
             f"atr={atr:.8f} tp={result['tp']:.8f} sl={result['sl']:.8f} rr={result['achieved_rr']}",
             flush=True
         )
