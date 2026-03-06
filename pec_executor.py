@@ -3,12 +3,16 @@ PEC Executor: Auto-refresh signal execution status every 5 minutes
 
 Strategy:
 - Silent operation: Only announce when signals hit TP/SL/TIMEOUT
-- Read SENT_SIGNALS.jsonl (signals sent to Telegram)
+- Read SIGNALS_MASTER.jsonl (unified single source of truth)
 - Check current prices via public KuCoin API
 - Update signal status: OPEN → TP_HIT/SL_HIT/TIMEOUT
+- Write back exit prices and P&L to SIGNALS_MASTER.jsonl
 - Print summary of changes only
 
-REFACTORED (2026-02-27): Uses consolidated P&L calculation from calculations.py
+UPDATED (2026-03-06 14:59 GMT+7): 
+- Changed from SENT_SIGNALS.jsonl to SIGNALS_MASTER.jsonl
+- Now writes exit_price and pnl back to SIGNALS_MASTER.jsonl
+- This provides P&L data needed by reporter
 """
 
 import json
@@ -23,13 +27,13 @@ from calculations import calculate_pnl
 class PECExecutor:
     """Auto-execute and track PEC signals"""
     
-    def __init__(self, sent_signals_path: str = None):
-        # Use absolute path to workspace root to fix path issues when run from submodule
-        if sent_signals_path is None:
+    def __init__(self, signals_master_path: str = None):
+        # Use absolute path to workspace root - read from SIGNALS_MASTER.jsonl (unified source)
+        if signals_master_path is None:
             # pec_executor.py lives in workspace root, so __file__ dirname IS workspace root
             workspace_root = os.path.abspath(os.path.dirname(__file__))
-            sent_signals_path = os.path.join(workspace_root, 'SENT_SIGNALS.jsonl')
-        self.sent_signals_path = sent_signals_path
+            signals_master_path = os.path.join(workspace_root, 'SIGNALS_MASTER.jsonl')
+        self.signals_master_path = signals_master_path
         self.kucoin_api_base = "https://api.kucoin.com"
         # MAX_BARS timeout per timeframe (bars since signal fired)
         self.max_bars = {
@@ -194,7 +198,8 @@ class PECExecutor:
     
     def update_signals(self) -> Dict:
         """
-        Scan all OPEN signals, check status, update file
+        Scan all OPEN signals in SIGNALS_MASTER.jsonl, check status, update file
+        Writes exit prices and P&L back to SIGNALS_MASTER.jsonl
         Returns: summary of changes
         """
         summary = {
@@ -206,14 +211,14 @@ class PECExecutor:
             'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
         
-        if not os.path.exists(self.sent_signals_path):
+        if not os.path.exists(self.signals_master_path):
             return summary
         
         try:
             records = []
             
-            # Read all records
-            with open(self.sent_signals_path, 'r') as f:
+            # Read all records from SIGNALS_MASTER.jsonl (unified source)
+            with open(self.signals_master_path, 'r') as f:
                 for line in f:
                     if line.strip():
                         record = json.loads(line)
@@ -281,8 +286,8 @@ class PECExecutor:
                                 'fired_time': local_time
                             })
             
-            # Write back updated records
-            with open(self.sent_signals_path, 'w') as f:
+            # Write back updated records to SIGNALS_MASTER.jsonl
+            with open(self.signals_master_path, 'w') as f:
                 for record in records:
                     f.write(json.dumps(record) + '\n')
             
@@ -411,13 +416,13 @@ def log_system_error(error_msg):
     print(line.strip(), flush=True)
 
 def run_pec_update():
-    """Main entry point for cron job"""
+    """Main entry point for cron job - executes signals from SIGNALS_MASTER.jsonl"""
     try:
         executor = PECExecutor()
         
         # Verify file exists before processing
-        if not os.path.exists(executor.sent_signals_path):
-            error_msg = f"SENT_SIGNALS.jsonl not found at {executor.sent_signals_path}"
+        if not os.path.exists(executor.signals_master_path):
+            error_msg = f"SIGNALS_MASTER.jsonl not found at {executor.signals_master_path}"
             log_system_error(error_msg)
             return
         
@@ -429,7 +434,7 @@ def run_pec_update():
     except PermissionError as e:
         log_system_error(f"Permission denied: {e}")
     except json.JSONDecodeError as e:
-        log_system_error(f"SENT_SIGNALS.jsonl corrupted: {e}")
+        log_system_error(f"SIGNALS_MASTER.jsonl corrupted: {e}")
     except Exception as e:
         log_system_error(f"Unexpected error: {type(e).__name__}: {e}")
 
