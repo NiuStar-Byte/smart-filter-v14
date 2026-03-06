@@ -963,9 +963,9 @@ class PECEnhancedReporter:
         signals_by_date_tele = defaultdict(list)  # Track telegram-sent only
         all_fired_times = []
         
-        # For today, also read directly from SIGNALS_MASTER for accurate counts (bypasses dedup issues)
+        # Read SIGNALS_MASTER for ALL dates to get accurate Unique/Tele metrics
         today_str = datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=7))).strftime('%Y-%m-%d')
-        master_today_stats = defaultdict(lambda: {'total': 0, 'unique': set(), 'tele': 0})
+        master_stats_all = defaultdict(lambda: {'total': 0, 'unique': set(), 'tele': 0})
         
         if os.path.exists(os.path.join("/Users/geniustarigan/.openclaw/workspace", "SIGNALS_MASTER.jsonl")):
             try:
@@ -974,13 +974,17 @@ class PECEnhancedReporter:
                         try:
                             sig = json.loads(line)
                             fired_utc = sig.get('fired_time_utc', '')
-                            if fired_utc.startswith(today_str):
-                                master_today_stats[today_str]['total'] += 1
+                            if fired_utc:
+                                # Extract date from fired_time_utc (format: YYYY-MM-DDTHH:MM:SS...)
+                                date_str = fired_utc.split('T')[0]
+                                master_stats_all[date_str]['total'] += 1
+                                
                                 uuid = sig.get('signal_uuid')
                                 if uuid:
-                                    master_today_stats[today_str]['unique'].add(uuid)
+                                    master_stats_all[date_str]['unique'].add(uuid)
+                                
                                 if sig.get('sent_time_utc') and sig.get('status') != 'REJECTED_NOT_SENT_TELEGRAM':
-                                    master_today_stats[today_str]['tele'] += 1
+                                    master_stats_all[date_str]['tele'] += 1
                         except:
                             pass
             except Exception as e:
@@ -1026,16 +1030,39 @@ class PECEnhancedReporter:
         for date_str in sorted(signals_by_date.keys()):
             times = signals_by_date[date_str]
             
-            # For today, use SIGNALS_MASTER stats; for past dates, use loaded signals
-            if date_str == today_date and date_str in master_today_stats:
-                total_fired = master_today_stats[date_str]['total']
-                unique_fired = len(master_today_stats[date_str]['unique'])
-                tele_sent = master_today_stats[date_str]['tele']
-                metrics_str = f"Total Fired={total_fired} | Unique Fired={unique_fired} | Tele Sent={tele_sent}"
+            # Calculate metrics from loaded signals for this date (handles timezone shifts)
+            signals_for_date = [s for s in self.signals if s.get('fired_time_utc')]
+            signals_for_date = [s for s in signals_for_date if 'T' in s.get('fired_time_utc', '')]
+            
+            # Re-parse and group to match the date_str (which is already in GMT+7)
+            date_signals = []
+            for s in signals_for_date:
+                try:
+                    dt = datetime.fromisoformat(s.get('fired_time_utc').replace('Z', '+00:00'))
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=timezone.utc)
+                    gmt7 = dt.astimezone(timezone(timedelta(hours=7)))
+                    if gmt7.strftime('%Y-%m-%d') == date_str:
+                        date_signals.append(s)
+                except:
+                    pass
+            
+            total_fired = len(times)  # Use times count (already grouped by GMT+7 date)
+            
+            # For today (Mar 06), use SIGNALS_MASTER stats if available (more complete than loaded signals)
+            if date_str == today_date and date_str in master_stats_all:
+                unique_uuids = master_stats_all[date_str]['unique']
+                unique_fired = len(unique_uuids)
+                tele_sent = master_stats_all[date_str]['tele']
             else:
-                # Past dates: show Total only (Unique/Tele not available due to NULL UUIDs in CUMULATIVE)
-                total_fired = len(times)
-                metrics_str = f"Total Fired={total_fired}"
+                # For past dates, use loaded signals (which have all the data)
+                unique_uuids = set(s.get('signal_uuid') for s in date_signals if s.get('signal_uuid'))
+                unique_fired = len(unique_uuids) if unique_uuids else None  # None means not available (no UUIDs in data)
+                tele_sent = sum(1 for s in date_signals if s.get('sent_time_utc') and s.get('status') != 'REJECTED_NOT_SENT_TELEGRAM')
+            
+            # Format metrics string: show "-" for Unique if not available
+            unique_str = str(unique_fired) if unique_fired else "-"
+            metrics_str = f"Total Fired={total_fired} | Unique Fired={unique_str} | Tele Sent={tele_sent}"
             
             date_earliest = min(times)
             date_latest = max(times)
