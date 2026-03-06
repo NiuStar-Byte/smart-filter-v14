@@ -1088,6 +1088,15 @@ class PECEnhancedReporter:
             report.append("Total Fired per Date:")
             report.extend(date_summary_lines)
         
+        # === NEW: FIRED TODAY BREAKDOWN BY HOURS ===
+        report.append("")
+        hourly_breakdown = self._generate_hourly_breakdown_today()
+        if hourly_breakdown:
+            report.append("Fired Today Breakdown by Hours:")
+            report.extend(hourly_breakdown)
+        else:
+            report.append("Fired Today Breakdown by Hours: (No data available)")
+        
         if stale_timeout_count > 0:
             report.append("")
             report.append(f"⚠️  DATA QUALITY NOTE: {stale_timeout_count} signals marked as 'STALE_TIMEOUT' (closed >150% past deadline)")
@@ -1441,6 +1450,51 @@ class PECEnhancedReporter:
         tiers['config_version'] = 'C (CONSENSUS CASCADE + OPTION B)'
         
         return tiers
+    
+    def _generate_hourly_breakdown_today(self):
+        """Generate hourly breakdown for today (GMT+7)"""
+        output = []
+        
+        # Get today's date in GMT+7
+        now_gmt7 = datetime.now(timezone(timedelta(hours=7)))
+        today_str = now_gmt7.strftime('%Y-%m-%d')
+        
+        # Group signals by hour for today
+        signals_by_hour = defaultdict(list)
+        
+        for s in self.signals:
+            fired_utc = s.get('fired_time_utc')
+            if fired_utc:
+                try:
+                    dt = datetime.fromisoformat(fired_utc.replace('Z', '+00:00'))
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=timezone.utc)
+                    
+                    # Convert to GMT+7
+                    gmt7 = dt.astimezone(timezone(timedelta(hours=7)))
+                    date_str = gmt7.strftime('%Y-%m-%d')
+                    
+                    # Only include today's signals
+                    if date_str == today_str:
+                        hour = gmt7.strftime('%H')
+                        signals_by_hour[hour].append(gmt7)
+                except:
+                    pass
+        
+        # Build hourly summary
+        if signals_by_hour:
+            for hour in sorted(signals_by_hour.keys()):
+                times = signals_by_hour[hour]
+                count = len(times)
+                hour_start = min(times)
+                hour_end = max(times)
+                hour_start_str = hour_start.strftime('%H:%M:%S')
+                hour_end_str = hour_end.strftime('%H:%M:%S')
+                
+                hour_line = f"  {hour}:00-{hour}:59: {count} fired | {hour_start_str} - {hour_end_str}"
+                output.append(hour_line)
+        
+        return output
     
     def _generate_hierarchy_ranking(self):
         """Generate 5D, 4D, 3D, 2D hierarchy ranking for decision-making (top to bottom)"""
