@@ -16,7 +16,7 @@ import signal as signal_module
 import sys
 from kucoin_data import get_live_entry_price, DEFAULT_SLIPPAGE
 from kucoin_data import get_ohlcv
-from smart_filter import SmartFilter
+from smart_filter import SmartFilter, MIN_SCORE
 from telegram_alert import send_telegram_alert, send_telegram_file
 from tier_lookup import get_signal_tier
 from kucoin_orderbook import get_order_wall_delta
@@ -620,6 +620,13 @@ def run_cycle():
 
                 if isinstance(res15, dict) and res15.get("filters_ok") is True:
                     
+                    # ===== SCORE VALIDATION GATE (Universal MIN_SCORE from smart_filter.py) =====
+                    score_15min = res15.get("score")
+                    if score_15min is None or score_15min < MIN_SCORE:
+                        print(f"[SCORE_GATE] 15min {symbol} REJECTED: score={score_15min} < MIN_SCORE={MIN_SCORE}", flush=True)
+                        continue
+                    # ===== END SCORE VALIDATION =====
+                    
                     # ===== PHASE 2-FIXED: DIRECTION-AWARE GATEKEEPER CHECK (RESTORED from golden state) =====
                     signal_type = res15.get("bias", "UNKNOWN")
                     try:
@@ -984,6 +991,13 @@ def run_cycle():
                     res30 = sf30.analyze()
 
                 if isinstance(res30, dict) and res30.get("filters_ok") is True:
+                    
+                    # ===== SCORE VALIDATION GATE (Universal MIN_SCORE from smart_filter.py) =====
+                    score_30min = res30.get("score")
+                    if score_30min is None or score_30min < MIN_SCORE:
+                        print(f"[SCORE_GATE] 30min {symbol} REJECTED: score={score_30min} < MIN_SCORE={MIN_SCORE}", flush=True)
+                        continue
+                    # ===== END SCORE VALIDATION =====
                     
                     # ===== PHASE 2-FIXED: DIRECTION-AWARE GATEKEEPER CHECK - 30min (RESTORED from golden state) =====
                     signal_type = res30.get("bias", "UNKNOWN")
@@ -1369,6 +1383,13 @@ def run_cycle():
                     res1h = sf1h.analyze()
 
                 if isinstance(res1h, dict) and res1h.get("filters_ok") is True:
+                    
+                    # ===== SCORE VALIDATION GATE (Universal MIN_SCORE from smart_filter.py) =====
+                    score_1h = res1h.get("score")
+                    if score_1h is None or score_1h < MIN_SCORE:
+                        print(f"[SCORE_GATE] 1h {symbol} REJECTED: score={score_1h} < MIN_SCORE={MIN_SCORE}", flush=True)
+                        continue
+                    # ===== END SCORE VALIDATION =====
                     
                     # ===== PHASE 2-FIXED: DIRECTION-AWARE GATEKEEPER CHECK - 1h (RESTORED from golden state) =====
                     signal_type = res1h.get("bias", "UNKNOWN")

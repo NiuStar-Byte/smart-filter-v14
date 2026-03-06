@@ -32,6 +32,11 @@ except ImportError:
 # Control verbosity (default: quiet mode to avoid Railway logging limits)
 DEBUG_FILTERS = os.getenv("DEBUG_FILTERS", "false").lower() == "true"
 
+# ===== UNIVERSAL MIN_SCORE THRESHOLD (Single Source of Truth) =====
+# Applies to all timeframes (15min, 30min, 1h)
+# Change this one value to update threshold everywhere
+MIN_SCORE = 12  # Signals below this score will be rejected
+
 class SmartFilter:
     """
     Core scanner that evaluates 23+ technical / order-flow filters,
@@ -45,7 +50,7 @@ class SmartFilter:
         symbol: str,
         df: pd.DataFrame,
         tf: Optional[str] = None,
-        min_score: int = 15,  # RESTORED: Golden state default (2026-03-04). Lowering to 10 opened floodgates to score=5 signals. The 10-hour blackout was caused by disabled gates (DirectionAwareGatekeeper, PHASE4A), not min_score.
+        min_score: int = MIN_SCORE,  # Uses universal threshold defined at module level (currently 12)
         required_passed: Optional[int] = None,  # int or None allowed
         volume_multiplier: float = 2.25,
         liquidity_threshold: float = 0.20,
