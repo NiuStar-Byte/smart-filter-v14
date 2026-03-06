@@ -4,7 +4,108 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
-## 🔑 **DUAL-SOURCE ARCHITECTURE - QUANTITY + QUALITY (2026-03-06 10:10 GMT+7)**
+## 🔒 **DUAL-LAYER SAFETY ARCHITECTURE (2026-03-06 14:38 GMT+7)**
+
+**Status:** ✅ **COMPLETE - SIGNALS_MASTER + SIGNALS_INDEPENDENT_AUDIT**  
+**Problem Solved:** If SIGNALS_MASTER corrupts → data loss possible  
+**User Insight:** "Back to zero again" risk unacceptable → need independent audit trail  
+**Solution:** Two-layer system:
+1. **SIGNALS_MASTER.jsonl** - Structured reporting source
+2. **SIGNALS_INDEPENDENT_AUDIT.txt** - Immutable append-only audit trail
+
+---
+
+## 🎯 **SIGNALS_MASTER.jsonl - UNIFIED SINGLE SOURCE OF TRUTH**
+
+**Status:** ✅ **APPROVED - Single file replaces fragmented architecture**  
+**Decision Point:** User mandate - "5 days seems not enough for you to create single truth source"  
+**Problem Solved:** Multiple files (SENT_SIGNALS, ALL_SIGNALS, LEDGER) causing confusion; no single source of truth  
+**Solution:** ONE file with signal_origin field to mark FOUNDATION, IMMUTABLE, and LIVE periods
+
+### **File Structure (Sequential Lines)**
+
+```
+Line 1-853:        FOUNDATION (locked baseline, 25.7% WR, -$5498.59)
+Line 854-1,087:    NEW IMMUTABLE (234 signals, Feb 27-Mar 05, locked)
+Line 1,088-1,275+: NEW LIVE (188 signals as of 11:08, Mar 06 onwards, accumulating)
+```
+
+### **Total Signals**
+- **FOUNDATION:** 853 signals (locked immutable baseline)
+- **NEW IMMUTABLE:** 234 signals (Feb 27 13:16 UTC - Mar 05, locked)
+- **IMMUTABLE TOTAL:** 1,087 signals (Feb 27 - Mar 05, all locked)
+- **NEW LIVE (Mar 06):** 188 signals (accumulating, will lock at end of day)
+- **GRAND TOTAL:** 1,275 signals (as of 2026-03-06 11:08 GMT+7)
+
+### **Immutability Rules**
+- ✅ **FOUNDATION:** No changes ever. Violation = reset to zero baseline.
+- ✅ **NEW IMMUTABLE:** No changes ever. Violation = reset to zero baseline.
+- ⚠️ **NEW LIVE:** Append-only during Mar 06. Status changes allowed (OPEN → TP_HIT/SL_HIT/TIMEOUT). Becomes immutable at end of day.
+
+### **Signal Origin Tags**
+Each signal has `signal_origin` field:
+- `"FOUNDATION"` = Lines 1-853 (locked, Feb 27-Mar 03 13:16 UTC)
+- `"NEW_IMMUTABLE"` = Lines 854-1,087 (locked, Mar 03 13:16 UTC - Mar 05)
+- `"NEW_LIVE"` = Lines 1,088+ (accumulating, Mar 06 00:00 onwards)
+
+### **Who Writes / Who Reads**
+- **Daemon (main.py):** Writes NEW signals to SIGNALS_MASTER.jsonl (lines 1,088+) as they fire
+- **Reporter (pec_immutable_ledger_reporter.py):** Reads ONLY SIGNALS_MASTER.jsonl (single source)
+- **Archive:** SENT_SIGNALS.jsonl (backup reference, no longer primary)
+
+### **Latest Signal (as of 11:08 GMT+7)**
+- Symbol: AGLD-USDT
+- Timestamp: 2026-03-06T04:01:03.821504 UTC
+- Index: 1,041 in SENT_SIGNALS.jsonl (will be line 1,275 in SIGNALS_MASTER.jsonl)
+
+### **Transition Plan**
+1. ✅ Create SIGNALS_MASTER.jsonl from SENT_SIGNALS.jsonl with signal_origin field added
+2. ✅ Update daemon to write to SIGNALS_MASTER.jsonl instead of ALL_SIGNALS.jsonl
+3. ✅ Update reporter to read SIGNALS_MASTER.jsonl (remove fallback logic)
+4. ✅ Archive old files (keep as backup reference)
+
+### **Documentation**
+- Detailed architecture: `/Users/geniustarigan/.openclaw/workspace/SIGNALS_MASTER_ARCHITECTURE.txt`
+
+---
+
+## 🛡️ **SIGNALS_INDEPENDENT_AUDIT.txt - IMMUTABLE AUDIT TRAIL (2026-03-06 14:38 GMT+7)**
+
+**Status:** ✅ **IMPLEMENTED - Safety net against data loss**  
+**Problem:** If SIGNALS_MASTER.jsonl corrupts → back to zero baseline (user's immutability rule)  
+**Solution:** Separate independent audit trail, completely independent from SIGNALS_MASTER
+- **Format:** Newline-delimited JSON, .txt extension (clarity it's not code)
+- **When:** Daemon writes EVERY signal that fires (before Telegram send)
+- **What:** Complete data - fired_time (both UTC/Jakarta), symbol, tier, timeframe, regime, direction, route, entry_price, tp_price, sl_price, score, confidence, weighted_score, consensus, rr, signal_uuid, status
+- **Guarantee:** Append-only, never modified, survives any corruption of SIGNALS_MASTER
+
+### **Current Audit Trail**
+- **File:** SIGNALS_INDEPENDENT_AUDIT.txt
+- **Signals:** 1,679 backfilled from SENT_SIGNALS.jsonl
+- **Oldest:** 2026-02-27T22:55:36+07:00 (first FOUNDATION signal)
+- **Latest:** 2026-03-06 (as daemon continues firing)
+
+### **Recovery Process (If SIGNALS_MASTER Corrupts)**
+1. Run: `python3 rebuild_signals_master_from_audit.py`
+2. Script reads SIGNALS_INDEPENDENT_AUDIT.txt
+3. Reconstructs SIGNALS_MASTER.jsonl with all fields
+4. Preserves immutability boundaries (FOUNDATION/NEW_IMMUTABLE/NEW_LIVE)
+5. Backs up corrupted SIGNALS_MASTER before overwriting
+
+### **Daemon Integration**
+- **3 locations:** 15min, 30min, 1h signal fires
+- **Flow:** signal_data → write_to_audit_trail() → write_to_signals_master() → send_telegram_alert()
+- **Safety:** Audit trail write happens FIRST (before any other action)
+
+### **Guarantee**
+- ✅ No 'back to zero' risk - audit trail is independent proof of firing
+- ✅ If daemon crashes → next restart reads audit trail, recovers SIGNALS_MASTER
+- ✅ Complete signal history preserved forever
+- ✅ Immutability rules enforced even after recovery
+
+---
+
+## 🔑 **DUAL-SOURCE ARCHITECTURE - QUANTITY + QUALITY (2026-03-06 10:10 GMT+7)** [DEPRECATED - REPLACED BY SIGNALS_MASTER]
 
 **Status:** ✅ **COMPLETE - Separates signal quantity from quality metrics**  
 **Problem Solved:** PEC reporter shows only valid signals, missing total quantity (incl. rejected)  
