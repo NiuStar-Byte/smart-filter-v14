@@ -1012,23 +1012,16 @@ class PECEnhancedReporter:
                 hour_bucket = f"{gmt7_dt.hour:02d}:00-{(gmt7_dt.hour+1):02d}:00"
                 signals_by_hour[hour_bucket] += 1
         
-        if signals_by_hour or today_str in signals_by_date:  # Show hourly breakdown if we have today's signals
-            report.append("Total Fired Today per Hour (2026-03-05):")
+        if signals_by_hour and today_str:  # Show hourly breakdown only for current accumulating date
+            report.append(f"Total Fired Today per Hour ({today_str}):")
             current_hour = datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=7))).hour
             current_hour_bucket = f"{current_hour:02d}:00-{(current_hour+1):02d}:00"
             
-            # Build list of all hours with signals, sorted
-            all_hour_buckets = sorted(signals_by_hour.keys())
-            
-            # Also add the previous hour if it has 0 signals (shows clean closure)
-            if all_hour_buckets:
-                last_hour = int(all_hour_buckets[-1].split(':')[0])
-                next_hour = (last_hour + 1) % 24
-                next_bucket = f"{next_hour:02d}:00-{(next_hour+1)%24:02d}:00"
-                if next_bucket not in all_hour_buckets and next_hour < current_hour:
-                    # Only add if it's a past hour
-                    all_hour_buckets.append(next_bucket)
-                    all_hour_buckets.sort()
+            # Build list of ALL hours from 00:00 to current_hour (inclusive)
+            all_hour_buckets = []
+            for hour in range(current_hour + 1):  # 0 to current_hour
+                hour_bucket = f"{hour:02d}:00-{(hour+1):02d}:00"
+                all_hour_buckets.append(hour_bucket)
             
             for hour_bucket in all_hour_buckets:
                 count = signals_by_hour.get(hour_bucket, 0)
