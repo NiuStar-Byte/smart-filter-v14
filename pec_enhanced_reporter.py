@@ -53,7 +53,7 @@ class PECEnhancedReporter:
         self.load_signals()
     
     def load_signals(self):
-        """Load signals from CUMULATIVE file ONLY (complete history, no duplicates)"""
+        """Load signals from CUMULATIVE file + today's signals from SIGNALS_MASTER (complete history, no duplicates)"""
         workspace = "/Users/geniustarigan/.openclaw/workspace"
         
         # CUMULATIVE files are complete snapshots (ARCHIVE + NEW signals combined)
@@ -75,6 +75,32 @@ class PECEnhancedReporter:
                 print(f"[INFO] Loaded {count} signals from {os.path.basename(self.sent_signals_file)}", flush=True)
         except Exception as e:
             print(f"[WARN] Error loading signals: {e}")
+        
+        # ALSO load today's accumulating signals from SIGNALS_MASTER.jsonl
+        # This ensures Mar 06 (and other today's date) shows in FIRED BY DATE with "still accumulating"
+        today_str = datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=7))).strftime('%Y-%m-%d')
+        signals_master = os.path.join(workspace, "SIGNALS_MASTER.jsonl")
+        
+        if os.path.exists(signals_master):
+            try:
+                today_count = 0
+                with open(signals_master, 'r') as f:
+                    for line in f:
+                        try:
+                            signal = json.loads(line.strip())
+                            fired_utc = signal.get('fired_time_utc', '')
+                            if fired_utc and fired_utc.startswith(today_str):
+                                # Check if this signal is already in self.signals (by uuid)
+                                signal_uuid = signal.get('signal_uuid')
+                                if signal_uuid and not any(s.get('signal_uuid') == signal_uuid for s in self.signals):
+                                    self.signals.append(signal)
+                                    today_count += 1
+                        except:
+                            pass
+                if today_count > 0:
+                    print(f"[INFO] Appended {today_count} signals from today ({today_str}) in SIGNALS_MASTER.jsonl", flush=True)
+            except Exception as e:
+                print(f"[WARN] Error loading today's signals from SIGNALS_MASTER: {e}")
     
     def get_symbol_group(self, symbol: str) -> str:
         """Map a symbol to its group"""
@@ -990,48 +1016,21 @@ class PECEnhancedReporter:
         report.append(f"Max TIMEOUT Window (Designed): 15min={timeout_window_15min} | 30min={timeout_window_30min} | 1h={timeout_window_1h}")
         report.append(f"Max TIMEOUT Actual (Within Limit): 15min={actual_max_15min} | 30min={actual_max_30min} | 1h={actual_max_1h}")
         
-        # Add fired time range and count per date (each date on its own line)
-        if date_summary_lines:
-            report.append("Total Fired per Date:")
-            report.extend(date_summary_lines)
-        
-        # === NEW: HOURLY BREAKDOWN FOR TODAY (DYNAMIC) ===
-        today_str = datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=7))).strftime('%Y-%m-%d')
-        signals_by_hour = defaultdict(int)
-        
-        if today_str in signals_by_date:
-            today_times = signals_by_date[today_str]
-            for gmt7_dt in today_times:
-                hour_key = gmt7_dt.strftime('%H:%M-%H:%M').split('-')[0]  # Get hour as "HH"
-                hour_bucket = f"{gmt7_dt.hour:02d}:00-{(gmt7_dt.hour+1):02d}:00"
-                signals_by_hour[hour_bucket] += 1
-        
-        if signals_by_hour and today_str:  # Show hourly breakdown only for current accumulating date
-            report.append(f"Total Fired Today per Hour ({today_str}):")
-            current_hour = datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=7))).hour
-            current_hour_bucket = f"{current_hour:02d}:00-{(current_hour+1):02d}:00"
-            
-            # Build list of ALL hours from 00:00 to current_hour (inclusive)
-            all_hour_buckets = []
-            for hour in range(current_hour + 1):  # 0 to current_hour
-                hour_bucket = f"{hour:02d}:00-{(hour+1):02d}:00"
-                all_hour_buckets.append(hour_bucket)
-            
-            for hour_bucket in all_hour_buckets:
-                count = signals_by_hour.get(hour_bucket, 0)
-                
-                # Add status label: current hour is accumulating, past hours are immutable
-                if hour_bucket == current_hour_bucket:
-                    status_label = "🔄 still accumulating"
-                else:
-                    status_label = "✓ IMMUTABLE"
-                
-                report.append(f"  {hour_bucket}: {count} fired | {status_label}")
-        
         if stale_timeout_count > 0:
             report.append("")
             report.append(f"⚠️  DATA QUALITY NOTE: {stale_timeout_count} signals marked as 'STALE_TIMEOUT' (closed >150% past deadline)")
             report.append(f"These are EXCLUDED from all above metrics to preserve backtest accuracy. See DETAILED SIGNAL LIST for individual stale timeout records.")
+        
+        report.append("")
+        
+        # === FIRED BY DATE SECTION (PLACED BELOW SUMMARY) ===
+        report.append("=" * 132)
+        report.append("🔥 FIRED BY DATE")
+        report.append("=" * 132)
+        
+        # Add fired time range and count per date (each date on its own line)
+        if date_summary_lines:
+            report.extend(date_summary_lines)
         
         report.append("")
         
