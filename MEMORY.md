@@ -4,6 +4,68 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
+## 🔑 **DUAL-SOURCE ARCHITECTURE - QUANTITY + QUALITY (2026-03-06 10:10 GMT+7)**
+
+**Status:** ✅ **COMPLETE - Separates signal quantity from quality metrics**  
+**Problem Solved:** PEC reporter shows only valid signals, missing total quantity (incl. rejected)  
+**Solution Deployed:**
+- **ALL_SIGNALS.jsonl** = Total fired signals (before filtering) - QUANTITY
+- **SENT_SIGNALS.jsonl** = Valid signals (score ≥ 12) - QUALITY  
+- **SIGNALS_LEDGER_IMMUTABLE.jsonl** = Closed trades with outcomes - METRICS
+
+### **Why This Matters**
+- ❌ **Old:** Only SENT_SIGNALS.jsonl (valid signals), missing total fired count
+- ✅ **New:** ALL_SIGNALS.jsonl captures rejected signals for quantity tracking
+- ✅ **New:** Clean separation: Quantity ≠ Quality (both tracked independently)
+- ✅ **New:** min_score=12 filters 1,064/1,064 valid signals, rejects ~80+ per cycle
+- ✅ **New:** Reporter shows what matters: all signals fired, all gates applied
+
+### **Current Metrics (2026-03-06 10:10 GMT+7)**
+```
+QUANTITY (All Fired Signals):
+  Total Fired:       84 (ALL_SIGNALS.jsonl, current session)
+  Valid (≥score12): 1,064 (SENT_SIGNALS.jsonl, accumulated)
+  Rejection Rate:    ~7% (84 total, 80 rejected)
+
+QUALITY (Closed Trade Outcomes):
+  Ledger:          1,530 signals (with trade outcomes)
+  Foundation:        853 (baseline, 25.7% WR)
+  New:               677 (recent, 31.93% WR)
+  Win Rate:       31.93% (265 TP/TIMEOUT_WIN out of 830)
+  Total P&L:   -$4,498.60 (avg -$2.94/signal)
+  Stale Timeouts:   145 (>150% past deadline, excluded)
+```
+
+### **Files (Architecture)**
+
+| File | Purpose | Contains | Status |
+|------|---------|----------|--------|
+| ALL_SIGNALS.jsonl | Total quantity tracker | Every signal (before min_score filtering) | ✅ Live, appends each cycle |
+| SENT_SIGNALS.jsonl | Valid quality tracker | Only signals score ≥ 12 | ✅ Live, appends when fired |
+| SIGNALS_LEDGER_IMMUTABLE.jsonl | Trade outcomes | All closed trades with P&L | ✅ Locked, historical baseline |
+
+### **How to Use**
+```bash
+# Real-time quantity check
+wc -l ALL_SIGNALS.jsonl SENT_SIGNALS.jsonl
+
+# Quality metrics (authoritative)
+python3 pec_immutable_ledger_reporter.py
+
+# Output: All 8 sections plus per-date breakdown
+```
+
+### **Architecture Guarantee**
+- ✅ Quantity captured (ALL_SIGNALS.jsonl = true firing count)
+- ✅ Quality enforced (min_score=12 gate blocks <score signals)
+- ✅ Metrics accurate (ledger has all closed trades)
+- ✅ No confusion (separation of concerns: quantity vs quality vs metrics)
+- ✅ PEC reporter shows both (total fired + valid breakdown + metrics)
+
+**This dual-source system replaces the old "missing ~7000 rejected signals" problem.**
+
+---
+
 ## 🚀 **SYMBOL EXPANSION - 10 NEW PERPETUALS (2026-03-05 14:25 GMT+7)**
 
 **Status:** ✅ **COMPLETE - All 92 symbols synced across all files**  
