@@ -1,12 +1,12 @@
 """
-tp_sl_retracement.py (2026-03-06: ATR-based 1.5:1 RR - Market Optimization)
+tp_sl_retracement.py (2026-03-06: FLAT 1.5:1 RR - No Regime Adjustment)
 
 TP/SL calculation for Smart Filter.
-- ATR-based 1.5:1 Risk:Reward ratio (standard trades)
+- ATR-based 1.5:1 Risk:Reward ratio (uniform across all market regimes)
 - TP = Entry ± (1.5 × ATR)
 - SL = Entry ± (1.0 × ATR)
-- RANGE regime: TP multiplied by 1.5x more → 2.25:1 RR (stricter exits)
-- Always returns achieved_rr = 1.5 (or 2.25 for RANGE)
+- RANGE adjustment DISABLED: All signals now use 1.5:1 (previously RANGE got 2.25:1)
+- Always returns achieved_rr = 1.5
 
 NOTE: Refactored to use consolidated calculations from calculations.py
 to avoid duplication of ATR and TP/SL logic.
@@ -43,16 +43,13 @@ def calculate_tp_sl(df: pd.DataFrame, entry_price: float, direction: str,
                     atr_multiplier: Optional[float] = None, lookback: Optional[int] = None,
                     regime: Optional[str] = None) -> Dict[str, Any]:
     """
-    ATR-Based 2:1 RR TP/SL Calculation.
-    TP = Entry ± (2.0 × ATR)
+    ATR-Based 1.5:1 RR TP/SL Calculation (FLAT across all regimes).
+    TP = Entry ± (1.5 × ATR)
     SL = Entry ± (1.0 × ATR)
     
-    OPTION C: For RANGE regime, increase TP multiplier by 1.5x:
-    TP = Entry ± (3.0 × ATR)  [2.0 × 1.5 = 3.0]
-    SL = Entry ± (1.0 × ATR)  [unchanged - keep same risk]
-    RR becomes 3:1 instead of 2:1
-    
-    Rationale: RANGE trades need stricter TP criteria to avoid choppy false signals
+    NOTE: RANGE regime adjustment is DISABLED.
+    Previously: RANGE trades used 2.25:1 RR (TP × 1.5x multiplier)
+    Now: All trades use uniform 1.5:1 RR
     
     REFACTORED: Uses consolidated functions from calculations.py
     """

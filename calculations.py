@@ -266,36 +266,36 @@ def calculate_atr_for_tp_sl(df: pd.DataFrame, entry_price: float, lookback: int 
 
 
 def calculate_tp_sl_from_atr(entry_price: float, atr_value: float, direction: str,
-                             atr_mult_tp: float = 2.0, atr_mult_sl: float = 1.0,
+                             atr_mult_tp: float = 1.5, atr_mult_sl: float = 1.0,
                              regime: str = None) -> dict:
     """
-    Calculate TP/SL from ATR value using 2:1 (or 3:1 for RANGE) Risk:Reward ratio.
+    Calculate TP/SL from ATR value using 1.5:1 Risk:Reward ratio (flat across all regimes).
     
-    STANDARD (BULL/BEAR):
-    LONG:  TP = Entry + (2.0 × ATR), SL = Entry - (1.0 × ATR)
-    SHORT: TP = Entry - (2.0 × ATR), SL = Entry + (1.0 × ATR)
+    UNIFORM 1.5:1 RR:
+    LONG:  TP = Entry + (1.5 × ATR), SL = Entry - (1.0 × ATR)
+    SHORT: TP = Entry - (1.5 × ATR), SL = Entry + (1.0 × ATR)
     
-    OPTION C - RANGE REGIME (Stricter Exits):
-    LONG:  TP = Entry + (3.0 × ATR), SL = Entry - (1.0 × ATR)  [RR 3:1]
-    SHORT: TP = Entry - (3.0 × ATR), SL = Entry + (1.0 × ATR)  [RR 3:1]
+    NOTE: OPTION C (1.5x RANGE multiplier) is DISABLED.
+    Previously: RANGE trades got 3:1 RR (multiplier 2.0 × 1.5). Now: flat 1.5:1 everywhere.
     
-    Rationale: RANGE trades need stricter TP criteria to avoid choppy false signals
+    Rationale: User requested market-optimized 1.5:1 RR across all market conditions.
     
     Args:
         entry_price: Entry price
         atr_value: ATR value
         direction: "LONG" or "SHORT"
-        atr_mult_tp: ATR multiplier for TP (default 2.0, becomes 3.0 for RANGE)
-        atr_mult_sl: ATR multiplier for SL (default 1.0, unchanged for RANGE)
-        regime: Market regime ("BULL", "BEAR", "RANGE") - RANGE gets stricter TP
+        atr_mult_tp: ATR multiplier for TP (default 1.5)
+        atr_mult_sl: ATR multiplier for SL (default 1.0)
+        regime: Market regime (not used for multiplier adjustment anymore)
     
     Returns:
         dict: {'tp': float, 'sl': float, 'achieved_rr': float, 'source': str}
     """
     try:
-        # OPTION C: For RANGE regime, increase TP multiplier by 1.5x
-        if regime == "RANGE":
-            atr_mult_tp = atr_mult_tp * 1.5  # 2.0 → 3.0
+        # DISABLED: OPTION C was adding 1.5x multiplier for RANGE regime
+        # User requested flat 1.5:1 RR across ALL regimes (no special RANGE adjustment)
+        # if regime == "RANGE":
+        #     atr_mult_tp = atr_mult_tp * 1.5  # 2.0 → 3.0
         
         dir_up = str(direction).strip().upper() == "LONG"
         dir_down = str(direction).strip().upper() == "SHORT"
@@ -303,19 +303,19 @@ def calculate_tp_sl_from_atr(entry_price: float, atr_value: float, direction: st
         if dir_up:
             tp = entry_price + (atr_mult_tp * atr_value)
             sl = entry_price - (atr_mult_sl * atr_value)
-            source = "atr_3_to_1_long_range" if regime == "RANGE" else "atr_2_to_1_long"
+            source = "atr_1_5_to_1_long"
         elif dir_down:
             tp = entry_price - (atr_mult_tp * atr_value)
             sl = entry_price + (atr_mult_sl * atr_value)
-            source = "atr_3_to_1_short_range" if regime == "RANGE" else "atr_2_to_1_short"
+            source = "atr_1_5_to_1_short"
         else:
             # Default to LONG
             tp = entry_price + (atr_mult_tp * atr_value)
             sl = entry_price - (atr_mult_sl * atr_value)
-            source = "atr_2_to_1_default_long"
+            source = "atr_1_5_to_1_default_long"
         
-        # Calculate achieved RR
-        achieved_rr = atr_mult_tp / atr_mult_sl  # Will be 3.0 for RANGE, 2.0 otherwise
+        # Calculate achieved RR (now always 1.5:1, RANGE adjustment disabled)
+        achieved_rr = atr_mult_tp / atr_mult_sl  # Will be 1.5 for all regimes
         
         return {
             'tp': round(float(tp), 8),
