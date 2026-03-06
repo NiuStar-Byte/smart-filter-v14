@@ -105,6 +105,98 @@ Each signal has `signal_origin` field:
 
 ---
 
+## ✅ **CHECKPOINT VERIFICATION SYSTEM (2026-03-06 14:43 GMT+7)**
+
+**Status:** ✅ **IMPLEMENTED - Continuous sync monitoring**  
+**Purpose:** Verify SIGNALS_MASTER.jsonl and SIGNALS_INDEPENDENT_AUDIT.txt stay in perfect sync  
+**Tool:** `checkpoint_verify_signals.py`
+
+### **Usage**
+```bash
+# Single checkpoint verification
+python3 checkpoint_verify_signals.py
+
+# Continuous monitoring (checks every hour at :00 minute)
+python3 checkpoint_verify_signals.py --watch
+```
+
+### **How It Works**
+1. **Counts both files:**
+   - Line count of SIGNALS_MASTER.jsonl
+   - Line count of SIGNALS_INDEPENDENT_AUDIT.txt
+2. **Compares counts:**
+   - Equal: ✅ SYNCED (no action)
+   - Unequal: ⚠️ DISCREPANCY (alerts immediately)
+3. **Logs to SIGNALS_CHECKPOINT.txt:**
+   - Timestamp (Jakarta time)
+   - Both counts
+   - Status (SYNCED or DISCREPANCY)
+   - Action recommended
+4. **Prints to stdout:**
+   - Clear formatted output
+   - Shows exact counts and difference
+   - Exit code 1 if mismatch (for automated alerts)
+
+### **Output Example (Synced)**
+```
+================================================================================
+SIGNALS CHECKPOINT VERIFICATION
+================================================================================
+
+Timestamp: 2026-03-06 14:43:37 GMT+7
+
+  SIGNALS_MASTER.jsonl:           1,679 signals
+  SIGNALS_INDEPENDENT_AUDIT.txt: 1,679 signals
+
+  ✅ SYNCED
+
+  Status: No action needed
+
+================================================================================
+```
+
+### **Output Example (Discrepancy Detected)**
+```
+  SIGNALS_MASTER.jsonl:           1,679 signals
+  SIGNALS_INDEPENDENT_AUDIT.txt: 1,680 signals
+
+  ⚠️ DISCREPANCY - Audit trail ahead by 1
+
+  ⚠️ ALERT: Audit trail has 1 more signal(s). SIGNALS_MASTER may be missing data.
+```
+
+### **Checkpoint Log (SIGNALS_CHECKPOINT.txt)**
+- **Format:** Newline-delimited JSON
+- **Immutable:** Append-only, never modified
+- **Content:** Complete verification record
+- **Sample entry:**
+  ```json
+  {
+    "timestamp": "2026-03-06 14:43:37 GMT+7",
+    "timestamp_iso": "2026-03-06T14:43:37.023452+07:00",
+    "master_count": 1679,
+    "audit_count": 1679,
+    "discrepancy": 0,
+    "status": "✅ SYNCED",
+    "action": "No action needed"
+  }
+  ```
+
+### **Future: Cron Integration**
+Can be scheduled hourly via cron:
+```bash
+0 * * * * cd /workspace && python3 checkpoint_verify_signals.py
+```
+
+### **Benefits**
+- ✅ Continuous validation that both files stay synced
+- ✅ Immediate alert if one file gets corrupted/incomplete
+- ✅ Historical record of all verifications
+- ✅ Can identify data loss before it becomes a major problem
+- ✅ Zero overhead: just compares line counts
+
+---
+
 ## 🔑 **DUAL-SOURCE ARCHITECTURE - QUANTITY + QUALITY (2026-03-06 10:10 GMT+7)** [DEPRECATED - REPLACED BY SIGNALS_MASTER]
 
 **Status:** ✅ **COMPLETE - Separates signal quantity from quality metrics**  
