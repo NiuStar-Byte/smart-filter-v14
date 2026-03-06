@@ -36,42 +36,38 @@ SYMBOL_GROUPS = {
 
 class PECEnhancedReporter:
     def __init__(self):
-        # IMMUTABLE LEDGER ONLY - Single source of truth
-        print(f"[INFO] Using SIGNALS_LEDGER_IMMUTABLE.jsonl (immutable source, NO GAPS, NO WRONG DATA)", flush=True)
+        # SIGNALS_MASTER.jsonl ONLY - Single source of truth
+        print(f"[INFO] Using SIGNALS_MASTER.jsonl (single source of truth)", flush=True)
         self.signals = []
         self.load_signals()
     
     def load_signals(self):
-        """Load ALL signals from IMMUTABLE LEDGER (single source of truth, NO GAPS)"""
+        """Load ALL signals from SIGNALS_MASTER.jsonl (single source of truth)"""
         workspace = "/Users/geniustarigan/.openclaw/workspace"
-        ledger_file = os.path.join(workspace, "SIGNALS_LEDGER_IMMUTABLE.jsonl")
+        master_file = os.path.join(workspace, "SIGNALS_MASTER.jsonl")
         
-        if not os.path.exists(ledger_file):
-            print(f"[ERROR] Immutable ledger not found: {ledger_file}")
+        if not os.path.exists(master_file):
+            print(f"[ERROR] SIGNALS_MASTER.jsonl not found: {master_file}")
             return
         
         try:
-            with open(ledger_file, 'r') as f:
+            with open(master_file, 'r') as f:
                 count = 0
                 invalid_count = 0
                 for line in f:
                     try:
                         signal = json.loads(line.strip())
-                        
-                        # DATA INTEGRITY CHECK: Reject signals with invalid data
-                        if self._is_valid_signal(signal):
-                            self.signals.append(signal)
-                            count += 1
-                        else:
-                            invalid_count += 1
+                        # Load all signals from SIGNALS_MASTER.jsonl (no filtering)
+                        self.signals.append(signal)
+                        count += 1
                     except:
                         invalid_count += 1
                 
-                print(f"[INFO] Loaded {count} signals from IMMUTABLE LEDGER", flush=True)
+                print(f"[INFO] Loaded {count} signals from SIGNALS_MASTER.jsonl", flush=True)
                 if invalid_count > 0:
-                    print(f"[WARN] Skipped {invalid_count} invalid signals (data integrity)", flush=True)
+                    print(f"[WARN] Skipped {invalid_count} invalid signals", flush=True)
         except Exception as e:
-            print(f"[ERROR] Error loading immutable ledger: {e}")
+            print(f"[ERROR] Error loading SIGNALS_MASTER.jsonl: {e}")
     
     def _is_valid_signal(self, signal):
         """Validate signal for data integrity (NO GAPS, NO WRONG DATA)"""
@@ -1017,34 +1013,24 @@ class PECEnhancedReporter:
         
         # Calculate fired time range and count per date
         signals_by_date = defaultdict(list)
-        all_fired_times = []
         
         for s in self.signals:
-            fired_utc = s.get('fired_time_utc')
-            if fired_utc:
+            # Use pre-computed Jakarta fields from SIGNALS_MASTER.jsonl
+            fired_date = s.get('fired_date_jakarta')
+            fired_time = s.get('fired_time_jakarta')
+            
+            if fired_date and fired_time:
                 try:
-                    dt = datetime.fromisoformat(fired_utc.replace('Z', '+00:00'))
-                    if dt.tzinfo is None:
-                        dt = dt.replace(tzinfo=timezone.utc)
-                    
-                    # Convert to GMT+7
-                    gmt7 = dt.astimezone(timezone(timedelta(hours=7)))
-                    date_str = gmt7.strftime('%Y-%m-%d')
-                    signals_by_date[date_str].append(gmt7)
-                    all_fired_times.append(gmt7)
+                    dt = datetime.fromisoformat(fired_time)
+                    signals_by_date[fired_date].append(dt)
                 except:
                     pass
         
-        # Get overall earliest and latest fired times (for reference)
-        if all_fired_times:
-            beginning_fired = min(all_fired_times).strftime('%Y-%m-%d %H:%M:%S')
-            last_fired = max(all_fired_times).strftime('%Y-%m-%d %H:%M:%S')
-        else:
-            beginning_fired = "N/A"
-            last_fired = "N/A"
-        
-        # Build per-date summary (each date on its own line with its own beginning/last times)
+        # Build per-date summary with immutability status
         date_summary_lines = []
+        now_gmt7 = datetime.now(timezone(timedelta(hours=7)))
+        today_str = now_gmt7.strftime('%Y-%m-%d')
+        
         for date_str in sorted(signals_by_date.keys()):
             times = signals_by_date[date_str]
             count = len(times)
@@ -1053,7 +1039,13 @@ class PECEnhancedReporter:
             beginning_time_str = date_earliest.strftime('%H:%M:%S')
             last_time_str = date_latest.strftime('%H:%M:%S')
             
-            date_line = f"  {date_str}: {count} fired | Beginning Fired Time: {beginning_time_str} | Last Fired Time: {last_time_str} |"
+            # Determine immutability status based on date
+            if date_str < today_str:
+                immutable_status = "✓ IMMUTABLE"
+            else:
+                immutable_status = ">> still accumulating"
+            
+            date_line = f"{date_str}: {count} fired | Beginning Fired Time: {beginning_time_str} | Last Fired Time: {last_time_str} | {immutable_status}"
             date_summary_lines.append(date_line)
         
         # DAEMON DOWNTIME DETECTION (Mar-05)
@@ -1452,110 +1444,43 @@ class PECEnhancedReporter:
         return tiers
     
     def _generate_hourly_breakdown_today(self):
-        """Generate hourly breakdown for today (GMT+7) - reads from ALL_SIGNALS (quantity) + SENT_SIGNALS (quality)"""
+        """Generate hourly breakdown for today (Jakarta-based, from SIGNALS_MASTER.jsonl)"""
         output = []
         
         # Get today's date in GMT+7
         now_gmt7 = datetime.now(timezone(timedelta(hours=7)))
         today_str = now_gmt7.strftime('%Y-%m-%d')
         
-        workspace = "/Users/geniustarigan/.openclaw/workspace"
-        all_signals_file = os.path.join(workspace, "ALL_SIGNALS.jsonl")
-        sent_signals_file = os.path.join(workspace, "SENT_SIGNALS.jsonl")
+        # Track signals by hour for today (0-23 = all 24 hours)
+        signals_by_hour = defaultdict(list)
         
-        # Track both: all (quantity) and valid (quality)
-        all_by_hour = defaultdict(list)
-        valid_by_hour = defaultdict(list)
+        # Read from SIGNALS_MASTER.jsonl using pre-computed Jakarta fields
+        for s in self.signals:
+            fired_date = s.get('fired_date_jakarta')
+            fired_hour = s.get('fired_hour_jakarta')
+            fired_time = s.get('fired_time_jakarta')
+            
+            if fired_date == today_str and fired_hour is not None and fired_time:
+                try:
+                    dt = datetime.fromisoformat(fired_time)
+                    signals_by_hour[str(fired_hour).zfill(2)].append(dt)
+                except:
+                    pass
         
-        # Load ALL signals (quantity - before min_score filter)
-        if os.path.exists(all_signals_file):
-            try:
-                with open(all_signals_file, 'r') as f:
-                    for line in f:
-                        try:
-                            signal = json.loads(line.strip())
-                            fired_utc = signal.get('fired_time_utc')
-                            if fired_utc:
-                                dt = datetime.fromisoformat(fired_utc.replace('Z', '+00:00'))
-                                if dt.tzinfo is None:
-                                    dt = dt.replace(tzinfo=timezone.utc)
-                                
-                                gmt7 = dt.astimezone(timezone(timedelta(hours=7)))
-                                date_str = gmt7.strftime('%Y-%m-%d')
-                                
-                                if date_str == today_str:
-                                    hour = gmt7.strftime('%H')
-                                    all_by_hour[hour].append(gmt7)
-                        except:
-                            pass
-            except Exception as e:
-                print(f"[WARN] Could not read ALL_SIGNALS.jsonl: {e}", flush=True)
-        
-        # Load VALID signals (quality - after min_score filter)
-        if os.path.exists(sent_signals_file):
-            try:
-                with open(sent_signals_file, 'r') as f:
-                    for line in f:
-                        try:
-                            signal = json.loads(line.strip())
-                            fired_utc = signal.get('fired_time_utc')
-                            if fired_utc:
-                                dt = datetime.fromisoformat(fired_utc.replace('Z', '+00:00'))
-                                if dt.tzinfo is None:
-                                    dt = dt.replace(tzinfo=timezone.utc)
-                                
-                                gmt7 = dt.astimezone(timezone(timedelta(hours=7)))
-                                date_str = gmt7.strftime('%Y-%m-%d')
-                                
-                                if date_str == today_str:
-                                    hour = gmt7.strftime('%H')
-                                    valid_by_hour[hour].append(gmt7)
-                        except:
-                            pass
-            except Exception as e:
-                print(f"[WARN] Could not read SENT_SIGNALS.jsonl: {e}", flush=True)
-        
-        # Fallback to immutable ledger if no live data
-        if not all_by_hour and not valid_by_hour:
-            for s in self.signals:
-                fired_utc = s.get('fired_time_utc')
-                if fired_utc:
-                    try:
-                        dt = datetime.fromisoformat(fired_utc.replace('Z', '+00:00'))
-                        if dt.tzinfo is None:
-                            dt = dt.replace(tzinfo=timezone.utc)
-                        
-                        gmt7 = dt.astimezone(timezone(timedelta(hours=7)))
-                        date_str = gmt7.strftime('%Y-%m-%d')
-                        
-                        if date_str == today_str:
-                            hour = gmt7.strftime('%H')
-                            valid_by_hour[hour].append(gmt7)
-                    except:
-                        pass
-        
-        # Build hourly summary (show both quantity and quality)
-        all_hours = set(all_by_hour.keys()) | set(valid_by_hour.keys())
-        if all_hours:
-            for hour in sorted(all_hours):
-                all_times = all_by_hour.get(hour, [])
-                valid_times = valid_by_hour.get(hour, [])
-                all_count = len(all_times)
-                valid_count = len(valid_times)
-                
-                # Show quantity (all) vs quality (valid)
-                if all_count > valid_count:
-                    # Show both if different (indicates rejections)
-                    hour_start_str = min(all_times).strftime('%H:%M:%S') if all_times else "N/A"
-                    hour_end_str = max(all_times).strftime('%H:%M:%S') if all_times else "N/A"
-                    hour_line = f"  {hour}:00-{hour}:59: {all_count} fired ({valid_count} valid) | {hour_start_str} - {hour_end_str}"
-                else:
-                    # Show only valid count (all passed filters)
-                    hour_start_str = min(valid_times).strftime('%H:%M:%S') if valid_times else "N/A"
-                    hour_end_str = max(valid_times).strftime('%H:%M:%S') if valid_times else "N/A"
-                    hour_line = f"  {hour}:00-{hour}:59: {valid_count} fired | {hour_start_str} - {hour_end_str}"
-                
-                output.append(hour_line)
+        # Build hourly summary for ALL 24 hours of today
+        for hour in range(24):
+            hour_str = str(hour).zfill(2)
+            times = signals_by_hour.get(hour_str, [])
+            count = len(times)
+            
+            if times:
+                hour_start_str = min(times).strftime('%H:%M:%S')
+                hour_end_str = max(times).strftime('%H:%M:%S')
+                hour_line = f"  {hour_str}:00-{hour_str}:59: {count} fired | {hour_start_str} - {hour_end_str}"
+            else:
+                hour_line = f"  {hour_str}:00-{hour_str}:59: 0 fired"
+            
+            output.append(hour_line)
         
         return output
     
