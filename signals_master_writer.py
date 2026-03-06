@@ -12,24 +12,26 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 
 class SignalsMasterWriter:
-    """Append sent signals to SIGNALS_MASTER.jsonl"""
+    """Append sent signals to SIGNALS_MASTER.jsonl (primary) and SIGNALS_INDEPENDENT_AUDIT.txt (backup)"""
     
     def __init__(self, master_path: str = "SIGNALS_MASTER.jsonl"):
         self.master_path = master_path
+        self.audit_path = master_path.replace("SIGNALS_MASTER.jsonl", "SIGNALS_INDEPENDENT_AUDIT.txt")
         self._ensure_file_exists()
     
     def _ensure_file_exists(self):
-        """Create file if doesn't exist"""
-        if not os.path.exists(self.master_path):
-            try:
-                parent_dir = os.path.dirname(self.master_path)
-                if parent_dir and not os.path.exists(parent_dir):
-                    os.makedirs(parent_dir, exist_ok=True)
-                with open(self.master_path, 'w') as f:
-                    pass
-                print(f"[INIT] Created SIGNALS_MASTER.jsonl at {self.master_path}", flush=True)
-            except Exception as e:
-                print(f"[ERROR] Failed to create SIGNALS_MASTER.jsonl: {e}", flush=True)
+        """Create files if don't exist"""
+        for fpath, fname in [(self.master_path, "SIGNALS_MASTER.jsonl"), (self.audit_path, "SIGNALS_INDEPENDENT_AUDIT.txt")]:
+            if not os.path.exists(fpath):
+                try:
+                    parent_dir = os.path.dirname(fpath)
+                    if parent_dir and not os.path.exists(parent_dir):
+                        os.makedirs(parent_dir, exist_ok=True)
+                    with open(fpath, 'w') as f:
+                        pass
+                    print(f"[INIT] Created {fname} at {fpath}", flush=True)
+                except Exception as e:
+                    print(f"[ERROR] Failed to create {fname}: {e}", flush=True)
     
     def write_signal(self, signal_dict: Dict[str, Any]) -> bool:
         """
@@ -85,9 +87,16 @@ class SignalsMasterWriter:
                 "data_quality_flag": signal_dict.get('data_quality_flag', ''),
             }
             
-            # Append to SIGNALS_MASTER.jsonl
+            # Append to SIGNALS_MASTER.jsonl (primary)
             with open(self.master_path, 'a') as f:
                 f.write(json.dumps(master_record) + '\n')
+            
+            # Also append to SIGNALS_INDEPENDENT_AUDIT.txt (immutable audit trail)
+            try:
+                with open(self.audit_path, 'a') as f:
+                    f.write(json.dumps(master_record) + '\n')
+            except Exception as e:
+                print(f"[WARN] Failed to update audit trail: {e}", flush=True)
             
             return True
             
