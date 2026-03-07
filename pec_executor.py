@@ -35,12 +35,35 @@ class PECExecutor:
             signals_master_path = os.path.join(workspace_root, 'SIGNALS_MASTER.jsonl')
         self.signals_master_path = signals_master_path
         self.kucoin_api_base = "https://api.kucoin.com"
-        # MAX_BARS timeout per timeframe (bars since signal fired)
-        self.max_bars = {
+        
+        # CHAMPION: MAX_BARS timeout per timeframe (baseline, no tier)
+        self.champion_max_bars = {
             "15min": 15,   # 15 bars × 15min = 225 min = 3.75 hours
             "30min": 10,   # 10 bars × 30min = 300 min = 5 hours
             "1h": 5        # 5 bars × 60min = 300 min = 5 hours
         }
+        
+        # CHALLENGER: Tier-based timeout windows (minutes, not bars)
+        self.challenger_timeout_minutes = {
+            "15min": {
+                "TIER-1": 4 * 60,      # 4h (reward high conviction)
+                "TIER-2": 3 * 60,      # 3h (standard)
+                "TIER-3": 2 * 60,      # 2h (stop bleed)
+            },
+            "30min": {
+                "TIER-1": 5 * 60,      # 5h
+                "TIER-2": 4 * 60,      # 4h
+                "TIER-3": 3 * 60,      # 3h
+            },
+            "1h": {
+                "TIER-1": 6 * 60,      # 6h (extra runway for proven combos)
+                "TIER-2": 5 * 60,      # 5h
+                "TIER-3": 4 * 60,      # 4h (quick exit for losing combos)
+            }
+        }
+        
+        # Running Champion vs Challenger test (50/50 split)
+        self.cc_test_enabled = True
     
     def get_current_price(self, symbol: str) -> Optional[float]:
         """Get current price from public KuCoin API (no auth needed)"""
@@ -92,8 +115,22 @@ class PECExecutor:
                 '1h': 60
             }.get(timeframe, 60)
             
-            # Get max bars for this timeframe
-            max_bars = self.max_bars.get(timeframe, 5)
+            # CHAMPION vs CHALLENGER: Choose timeout strategy
+            import random
+            is_challenger = random.random() < 0.5
+            
+            if is_challenger and self.cc_test_enabled:
+                # CHALLENGER: Tier-based timeout windows
+                tier = signal.get('tier', 'TIER-3')
+                timeout_minutes = self.challenger_timeout_minutes.get(timeframe, {}).get(tier, 5 * 60)
+                max_bars = int(timeout_minutes / tf_minutes)  # Convert minutes back to bars for calculation
+                cc_group = 'CHALLENGER'
+                cc_window = timeout_minutes
+            else:
+                # CHAMPION: Standard (no tier distinction)
+                max_bars = self.champion_max_bars.get(timeframe, 5)
+                cc_group = 'CHAMPION'
+                cc_window = max_bars * tf_minutes
             
             # Calculate bars elapsed since signal fired
             now = datetime.utcnow().replace(tzinfo=timezone.utc) if fired_time.tzinfo else datetime.utcnow()
@@ -122,7 +159,7 @@ class PECExecutor:
                 
                 # Normal timeout - calculate P&L
                 print(f"[PEC-TIMEOUT-HIT] {symbol} {timeframe}: {bars_elapsed} bars >= {max_bars} max, "
-                      f"actual_timeout={actual_timeout_time.isoformat()}", flush=True)
+                      f"actual_timeout={actual_timeout_time.isoformat()} [{cc_group}]", flush=True)
                 NOTIONAL_POSITION = 1000.0
                 pnl_result = calculate_pnl(entry_price, current_price, signal.get('signal_type'), NOTIONAL_POSITION)
                 
@@ -132,7 +169,9 @@ class PECExecutor:
                     'pnl_usd': pnl_result['pnl_usd'],
                     'pnl_pct': pnl_result['pnl_pct'],
                     'actual_timeout_time': actual_timeout_time.isoformat(),
-                    'is_stale': False
+                    'is_stale': False,
+                    'cc_group': cc_group,
+                    'timeout_window_minutes': cc_window
                 }
         except Exception as e:
             print(f"[PEC-TIMEOUT-ERROR] {symbol}: {e}", flush=True)
@@ -210,6 +249,12 @@ class PECExecutor:
             for record in records:
                 if record.get('status') == 'OPEN':
                     summary['total_checked'] += 1
+                    
+                    # SILENT TAGGING: Assign Champion/Challenger group before checking
+                    import random
+                    if self.cc_test_enabled and record.get('champion_challenger_group') is None:
+                        record['champion_challenger_group'] = 'CHALLENGER' if random.random() < 0.5 else 'CHAMPION'
+                    
                     result = self.check_signal_status(record)
                     
                     if result:
@@ -233,6 +278,11 @@ class PECExecutor:
                             record['data_quality_flag'] = f'STALE_TIMEOUT_{hours_overdue}h_overdue'
                         else:
                             record['data_quality_flag'] = None
+                        
+                        # SILENT TAGGING: Store timeout window info (internal only, not shown to traders)
+                        if result['status'] in ['TIMEOUT', 'STALE_TIMEOUT']:
+                            record['cc_timeout_window_minutes'] = result.get('timeout_window_minutes', 0)
+                            record['cc_group'] = result.get('cc_group', 'CHAMPION')
                         
                         # Track summary
                         fired_time = record.get('fired_time_utc', '')
