@@ -948,6 +948,51 @@ class PECEnhancedReporter:
                     if pnl_calc is not None:
                         total_pnl += pnl_calc
         
+        # Calculate P&L breakdown by outcome type (EXCLUDING stale timeouts)
+        pnl_tp = 0.0
+        pnl_sl = 0.0
+        pnl_timeout_win = 0.0
+        pnl_timeout_loss = 0.0
+        
+        for s in self.signals:
+            # SKIP stale timeouts completely (overdue quality issues, zero P&L)
+            if s.get('data_quality_flag') and 'STALE_TIMEOUT' in s.get('data_quality_flag'):
+                continue
+            if s.get('status') == 'STALE_TIMEOUT':
+                continue
+            
+            status = s.get('status', 'OPEN')
+            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                # Get P&L for this signal
+                stored_pnl = s.get('pnl_usd')
+                if stored_pnl is not None:
+                    pnl_val = float(stored_pnl)
+                else:
+                    pnl_val_calc = self._calculate_pnl_usd(
+                        s.get('entry_price'),
+                        s.get('actual_exit_price'),
+                        s.get('signal_type')
+                    )
+                    pnl_val = pnl_val_calc if pnl_val_calc is not None else 0.0
+                
+                # Categorize by outcome type
+                if status == 'TP_HIT':
+                    pnl_tp += pnl_val
+                elif status == 'SL_HIT':
+                    pnl_sl += pnl_val
+                elif status == 'TIMEOUT':
+                    # Separate TIMEOUT by P&L sign
+                    if pnl_val > 0:
+                        pnl_timeout_win += pnl_val
+                    elif pnl_val < 0:
+                        pnl_timeout_loss += pnl_val
+        
+        # Calculate average P&L per count for each outcome type
+        avg_pnl_per_tp = pnl_tp / total_tp if total_tp > 0 else 0
+        avg_pnl_per_sl = pnl_sl / total_sl if total_sl > 0 else 0
+        avg_pnl_per_timeout_win = pnl_timeout_win / timeout_wins if timeout_wins > 0 else 0
+        avg_pnl_per_timeout_loss = pnl_timeout_loss / timeout_losses if timeout_losses > 0 else 0
+        
         # Calculate average P&L per signal
         avg_pnl_per_signal = total_pnl / total_signals if total_signals > 0 else 0
         avg_pnl_per_trade = total_pnl / closed_signals if closed_signals > 0 else 0
@@ -1135,6 +1180,8 @@ class PECEnhancedReporter:
         report.append(f"Closed Trades (Clean Data): {closed_signals} (TP: {total_tp}, SL: {total_sl}; TimeOut Win = {timeout_wins}; TimeOut Loss = {timeout_losses})")
         report.append(f"Overall Win Rate: {overall_wr:.2f}% >> [ (count TP + Count TimeOut Win) / (Closed Trades) ] = [ ({total_tp}+{timeout_wins}) / {closed_signals} ]")
         report.append(f"Total P&L (Clean Data): ${total_pnl:+.2f} (Avg P&L per Signal = ${avg_pnl_per_signal:+.2f}; Avg P&L per Closed Trade = ${avg_pnl_per_trade:+.2f})")
+        report.append(f"Total P&L TP = ${pnl_tp:+.2f}; Total P&L SL = ${pnl_sl:+.2f}; Total P&L TIMEOUT Win = ${pnl_timeout_win:+.2f}; Total P&L TIMEOUT Loss = ${pnl_timeout_loss:+.2f}")
+        report.append(f"Avg P&L TP per Count TP = ${avg_pnl_per_tp:+.2f}; Avg P&L SL per Count SL = ${avg_pnl_per_sl:+.2f}; Avg P&L TIMEOUT Win per Count TIMEOUT Win = ${avg_pnl_per_timeout_win:+.2f}; Avg P&L TIMEOUT Loss per Count TIMEOUT Loss = ${avg_pnl_per_timeout_loss:+.2f}")
         report.append(f"Avg TP Duration (Clean): {avg_tp_duration_summary} | Avg SL Duration (Clean): {avg_sl_duration_summary}")
         report.append(f"Max TIMEOUT Window (Designed): 15min={timeout_window_15min} | 30min={timeout_window_30min} | 1h={timeout_window_1h}")
         report.append(f"Max TIMEOUT Actual (Clean Data): 15min={actual_max_15min} | 30min={actual_max_30min} | 1h={actual_max_1h}")
@@ -1158,7 +1205,7 @@ class PECEnhancedReporter:
             report.extend(date_summary_lines)
         
         # === HOURLY BREAKDOWN FOR TODAY (DYNAMIC) ===
-        today_str = datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=7))).strftime('%Y-%m-%d')
+        today_gmt7 = datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=7))).strftime('%Y-%m-%d')
         signals_by_hour = defaultdict(list)
         signals_by_hour_dedup = defaultdict(set)
         signals_by_hour_tele = defaultdict(int)
@@ -1171,31 +1218,35 @@ class PECEnhancedReporter:
                         try:
                             sig = json.loads(line)
                             fired_utc = sig.get('fired_time_utc')
-                            if fired_utc and fired_utc.startswith(today_str):
+                            if fired_utc:
                                 dt = datetime.fromisoformat(fired_utc.replace('Z', '+00:00'))
                                 if dt.tzinfo is None:
                                     dt = dt.replace(tzinfo=timezone.utc)
                                 gmt7 = dt.astimezone(timezone(timedelta(hours=7)))
-                                hour_bucket = f"{gmt7.hour:02d}:00-{(gmt7.hour+1):02d}:00"
+                                gmt7_date = gmt7.strftime('%Y-%m-%d')
                                 
-                                signals_by_hour[hour_bucket].append(sig)
-                                
-                                # Track unique UUIDs per hour
-                                uuid = sig.get('signal_uuid')
-                                if uuid:
-                                    signals_by_hour_dedup[hour_bucket].add(uuid)
-                                
-                                # Track telegram-sent per hour
-                                if sig.get('sent_time_utc') and sig.get('status') != 'REJECTED_NOT_SENT_TELEGRAM':
-                                    signals_by_hour_tele[hour_bucket] += 1
+                                # CRITICAL FIX: Compare GMT+7 dates, not UTC vs GMT+7
+                                if gmt7_date == today_gmt7:
+                                    hour_bucket = f"{gmt7.hour:02d}:00-{(gmt7.hour+1):02d}:00"
+                                    
+                                    signals_by_hour[hour_bucket].append(sig)
+                                    
+                                    # Track unique UUIDs per hour
+                                    uuid = sig.get('signal_uuid')
+                                    if uuid:
+                                        signals_by_hour_dedup[hour_bucket].add(uuid)
+                                    
+                                    # Track telegram-sent per hour
+                                    if sig.get('sent_time_utc') and sig.get('status') != 'REJECTED_NOT_SENT_TELEGRAM':
+                                        signals_by_hour_tele[hour_bucket] += 1
                         except:
                             pass
             except Exception as e:
                 pass
         
-        if signals_by_hour and today_str:  # Show hourly breakdown only for current accumulating date
+        if signals_by_hour:  # Show hourly breakdown only for current accumulating date
             report.append("")
-            report.append(f"⏰ TODAY'S BREAKDOWN BY HOUR ({today_str}):")
+            report.append(f"⏰ TODAY'S BREAKDOWN BY HOUR ({today_gmt7}):")
             current_hour = datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=7))).hour
             current_hour_bucket = f"{current_hour:02d}:00-{(current_hour+1):02d}:00"
             

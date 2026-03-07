@@ -1,0 +1,157 @@
+═══════════════════════════════════════════════════════════════════════════════════
+SIGNALS_MASTER.jsonl ARCHITECTURE - UNIFIED SINGLE SOURCE OF TRUTH
+═══════════════════════════════════════════════════════════════════════════════════
+
+DECISION DATE: 2026-03-06 11:08 GMT+7
+STATUS: ✅ APPROVED
+
+═══════════════════════════════════════════════════════════════════════════════════
+FILE STRUCTURE (Sequential Lines)
+═══════════════════════════════════════════════════════════════════════════════════
+
+Line 1-853:
+  FOUNDATION (locked baseline)
+  - Date range: Feb 27 - Mar 03 (up to 13:16 UTC)
+  - Status: IMMUTABLE, no changes allowed
+  - Baseline metrics: 25.7% WR, -$5498.59 P&L
+  - Signal origin tag: "FOUNDATION"
+
+Line 854-1,087:
+  NEW IMMUTABLE (locked but newer than foundation)
+  - Date range: Mar 03 (after 13:16 UTC) - Mar 05 (full day)
+  - Count: 234 signals
+  - Status: IMMUTABLE, no changes allowed
+  - Part of Feb 27-Mar 05 locked period
+  - Signal origin tag: "NEW_IMMUTABLE"
+
+Line 1,088-1,275:
+  NEW LIVE (accumulating)
+  - Date range: Mar 06 00:00 onwards (currently accumulating)
+  - Count: 188 signals (as of 11:01 GMT+7)
+  - Status: LIVE, growing as daemon fires
+  - Will be locked at end of Mar 06 (becomes immutable tomorrow)
+  - Signal origin tag: "NEW_LIVE"
+
+═══════════════════════════════════════════════════════════════════════════════════
+TOTALS
+═══════════════════════════════════════════════════════════════════════════════════
+
+FOUNDATION:               853 signals
+NEW IMMUTABLE:           234 signals (Feb 27 - Mar 05, excluding foundation)
+IMMUTABLE TOTAL:       1,087 signals (Feb 27 - Mar 05, all locked)
+
+NEW LIVE (Mar 06+):      188 signals (accumulating)
+
+GRAND TOTAL:           1,275 signals (as of 2026-03-06 11:08 GMT+7)
+
+═══════════════════════════════════════════════════════════════════════════════════
+IMMUTABILITY RULES
+═══════════════════════════════════════════════════════════════════════════════════
+
+✅ FOUNDATION (Line 1-853):
+   - LOCKED: No modifications, no corrections, no deletions
+   - If violated: System resets to zero baseline
+   - Comparison baseline for all new phases
+
+✅ NEW IMMUTABLE (Line 854-1,087):
+   - LOCKED: No modifications, no corrections, no deletions
+   - If violated: System resets to zero baseline
+   - Completed historical data (Feb 27 - Mar 05)
+
+⚠️ NEW LIVE (Line 1,088-onwards):
+   - ACCUMULATING: Daemon writes new signals as they fire
+   - Status changes: OPEN → TP_HIT / SL_HIT / TIMEOUT (allowed, trade outcomes)
+   - Will become IMMUTABLE at end of Mar 06
+   - No modifications to fired_time_utc or entry price (ever)
+
+═══════════════════════════════════════════════════════════════════════════════════
+SIGNAL SCHEMA (Each Line = JSON Object)
+═══════════════════════════════════════════════════════════════════════════════════
+
+{
+  "uuid": "unique-id",
+  "symbol": "BTC-USDT",
+  "timeframe": "1h",
+  "signal_type": "LONG" | "SHORT",
+  "fired_time_utc": "2026-03-06T04:01:03.821504Z",
+  "entry_price": 42500.50,
+  "tp_price": 44000.75,
+  "sl_price": 41500.25,
+  "score": 15,
+  "passed_min_score_gate": true,
+  "confidence": 67.3,
+  "status": "OPEN" | "TP_HIT" | "SL_HIT" | "TIMEOUT",
+  "actual_exit_price": null,
+  "closed_at": null,
+  "pnl": null,
+  "signal_origin": "FOUNDATION" | "NEW_IMMUTABLE" | "NEW_LIVE",
+  "regime": "BULL",
+  "route": "TREND_CONTINUATION",
+  ...
+}
+
+═══════════════════════════════════════════════════════════════════════════════════
+REPORTER (pec_immutable_ledger_reporter.py) READS FROM:
+═══════════════════════════════════════════════════════════════════════════════════
+
+✅ ONE SOURCE: SIGNALS_MASTER.jsonl
+
+Output sections:
+  - FOUNDATION BASELINE: Lines 1-853 (locked reference)
+  - IMMUTABLE PERIOD (Feb 27 - Mar 05): Lines 1-1,087 (all locked)
+  - NEW LIVE (Mar 06+): Lines 1,088+ (accumulating, dynamic)
+  - TOTAL METRICS: All calculations from complete file (1,275+ lines)
+  - HOURLY BREAKDOWN: ALL_SIGNALS.jsonl for quantity (all fired), SIGNALS_MASTER.jsonl for quality
+  - P&L, WR, Durations: Calculated from complete signal set
+
+═══════════════════════════════════════════════════════════════════════════════════
+DAEMON WRITES TO:
+═══════════════════════════════════════════════════════════════════════════════════
+
+SIGNALS_MASTER.jsonl (append-only after line 1,087)
+
+Each fired signal:
+  1. Daemon generates signal (analyze)
+  2. Logs to SIGNALS_MASTER.jsonl as "NEW_LIVE" (with status: OPEN)
+  3. Updates status when trade closes (TP_HIT/SL_HIT/TIMEOUT)
+
+═══════════════════════════════════════════════════════════════════════════════════
+TRANSITION PLAN (Next Steps)
+═══════════════════════════════════════════════════════════════════════════════════
+
+1. Create SIGNALS_MASTER.jsonl
+   - Load SENT_SIGNALS.jsonl (1,087 signals)
+   - Add signal_origin field:
+     * Lines 1-853: "FOUNDATION"
+     * Lines 854-1,087: "NEW_IMMUTABLE"
+   - Verify count: 1,087 total immutable signals
+
+2. Update daemon (main.py)
+   - Change write target: ALL_SIGNALS.jsonl → SIGNALS_MASTER.jsonl
+   - Set signal_origin: "NEW_LIVE" for all new signals
+
+3. Update reporter (pec_immutable_ledger_reporter.py)
+   - Load from SIGNALS_MASTER.jsonl (single source)
+   - Parse signal_origin field for categorization
+   - Remove fallback logic (no more multiple files)
+
+4. Archive old files
+   - SENT_SIGNALS.jsonl ← Keep as reference backup
+   - ALL_SIGNALS.jsonl ← Keep as reference backup
+   - Other files ← Clean up
+
+═══════════════════════════════════════════════════════════════════════════════════
+KEY GUARANTEES
+═══════════════════════════════════════════════════════════════════════════════════
+
+✅ Single file, one source of truth
+✅ FOUNDATION locked at 25.7% WR (immutable)
+✅ 234 NEW IMMUTABLE signals locked (Feb 27-Mar 05)
+✅ 188 NEW LIVE signals accumulating (Mar 06+)
+✅ Complete signal history from Feb 27 forward
+✅ No gaps, no missing hours (except Mar 6 00:00-02:00 already lost)
+✅ Reporter reads ONE file, no fallback logic
+✅ Daemon writes sequentially to one file
+✅ Immutability enforced: violating foundation resets to zero baseline
+
+═══════════════════════════════════════════════════════════════════════════════════
