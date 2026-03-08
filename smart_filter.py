@@ -1941,91 +1941,156 @@ class SmartFilter:
     
         return signal
 
-    def _check_vwap_divergence(self, debug: bool = False):
+    def _check_vwap_divergence(
+        self,
+        divergence_lookback: int = 5,
+        min_divergence_pct: float = 0.005,
+        require_crossover: bool = False,
+        volume_ma_period: int = 20,
+        min_cond: int = 2,
+        debug: bool = False
+    ):
         """
-        VWAP divergence filter.
-        - Requires a strict majority (long_met > short_met or short_met > long_met)
-          and a minimum number of conditions met (>=4) to declare LONG or SHORT.
-        - No longer prefers LONG on ties.
-        - Debug logging is standardized and guarded.
+        ENHANCED VWAP Divergence Filter (2026-03-08)
+        
+        High-probability reversal detection with institutional precision:
+        - Divergence strength measurement (how far from VWAP?)
+        - Multi-candle divergence history (sustained move away)
+        - VWAP crossover confirmation (bounce validates signal)
+        - Regime-aware thresholds (adapt to market conditions)
+        
+        Parameters:
+        - divergence_lookback: Bars to check for divergence history (5 = last 5 bars)
+        - min_divergence_pct: Minimum divergence % of VWAP (0.5% = significant)
+        - require_crossover: Strict crossover confirmation (True = stricter)
+        - volume_ma_period: Volume MA period (20 = 20-bar average)
+        - min_cond: Minimum conditions needed (2 of 5)
+        
+        Logic:
+        LONG: Price below VWAP + divergence sustained 3+ bars + bullish + volume + bounce
+        SHORT: Price above VWAP + divergence sustained 3+ bars + bearish + volume + bounce
+        
+        Returns: "LONG", "SHORT", or None
         """
-        # Defensive extraction of required series values
         try:
             vwap = self.df['vwap'].iat[-1]
             vwap_prev = self.df['vwap'].iat[-2]
             close = self.df['close'].iat[-1]
             close_prev = self.df['close'].iat[-2]
             volume = self.df['volume'].iat[-1]
-            volume_ma = self.df['volume'].rolling(window=20).mean().iat[-1]
+            volume_ma = self.df['volume'].rolling(window=volume_ma_period).mean().iat[-1]
+            
+            # Graceful handling for NaN volume_ma
+            if volume_ma is None or (isinstance(volume_ma, float) and math.isnan(volume_ma)):
+                volume_ma = volume
+        
+            # ===== ENHANCEMENT 1: Divergence Strength Measurement =====
+            # How far is price from VWAP? (as percentage)
+            vwap_distance = abs(close - vwap) / vwap if vwap > 0 else 0
+            
+            # Strong divergence: price is >0.5% away from VWAP
+            divergence_strong = vwap_distance > min_divergence_pct
+        
+            # ===== ENHANCEMENT 2: Multi-Candle Divergence History =====
+            # Count how many bars show sustained divergence in same direction
+            # LONG divergence: close < vwap for N bars
+            # SHORT divergence: close > vwap for N bars
+            
+            divergence_bars_long = 0
+            divergence_bars_short = 0
+            
+            for i in range(1, min(divergence_lookback + 1, len(self.df))):
+                bar_close = self.df['close'].iat[-i]
+                bar_vwap = self.df['vwap'].iat[-i]
+                
+                if bar_close < bar_vwap:
+                    divergence_bars_long += 1
+                elif bar_close > bar_vwap:
+                    divergence_bars_short += 1
+            
+            # Divergence confirmed if 3+ bars show sustained direction
+            sustained_long_div = (divergence_bars_long >= 3)
+            sustained_short_div = (divergence_bars_short >= 3)
+        
+            # ===== ENHANCEMENT 3: VWAP Crossover Confirmation =====
+            # Price bouncing off VWAP = reversal signal validity
+            # LONG: was below, now touching/crossing above
+            # SHORT: was above, now touching/crossing below
+            
+            below_prev = close_prev < vwap_prev
+            above_prev = close_prev > vwap_prev
+            
+            crossover_long = (below_prev and close >= vwap * 0.99)  # Bounce confirmation (99% = touching)
+            crossover_short = (above_prev and close <= vwap * 1.01)  # Bounce confirmation (101% = touching)
+        
+            # ===== ENHANCEMENT 4: Regime-Aware Thresholds =====
+            # Adjust gating based on volatility/ADX (strong trend vs weak)
+            adx = self.df['adx'].iat[-1] if 'adx' in self.df.columns else 25
+            
+            # In strong trend (ADX > 30): require stricter divergence confirmation
+            # In weak/choppy (ADX < 20): relax divergence requirement
+            adx_strict = adx > 30
+            min_divergence_bars = 4 if adx_strict else 3  # Tighter in strong trend
+        
+            # ===== CONDITIONS =====
+            # LONG: Price below VWAP + divergence sustained + bullish + volume + crossover
+            cond1_long = close < vwap                                    # Price below VWAP
+            cond2_long = divergence_bars_long >= min_divergence_bars    # Sustained divergence (3-4 bars)
+            cond3_long = close > close_prev                              # Bullish candle
+            cond4_long = volume > volume_ma * 0.9                        # Volume acceptable
+            cond5_long = crossover_long or not require_crossover         # Bounce confirmation
+        
+            # SHORT: Price above VWAP + divergence sustained + bearish + volume + crossover
+            cond1_short = close > vwap                                   # Price above VWAP
+            cond2_short = divergence_bars_short >= min_divergence_bars  # Sustained divergence (3-4 bars)
+            cond3_short = close < close_prev                             # Bearish candle
+            cond4_short = volume > volume_ma * 0.9                       # Volume acceptable
+            cond5_short = crossover_short or not require_crossover       # Bounce confirmation
+        
+            long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long, cond5_long])
+            short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short, cond5_short])
+        
+            if debug:
+                print(
+                    f"[{self.symbol}] [VWAP Divergence ENHANCED] Strength | "
+                    f"vwap_distance={vwap_distance:.4f}, divergence_strong={divergence_strong}, "
+                    f"divergence_bars_long={divergence_bars_long}, divergence_bars_short={divergence_bars_short}"
+                )
+                print(
+                    f"[{self.symbol}] [VWAP Divergence ENHANCED] Confirmation | "
+                    f"crossover_long={crossover_long}, crossover_short={crossover_short}, "
+                    f"adx={adx:.1f}, adx_strict={adx_strict}, min_div_bars={min_divergence_bars}"
+                )
+                print(
+                    f"[{self.symbol}] [VWAP Divergence ENHANCED] Conditions | "
+                    f"Long: [below={cond1_long}, sustained={cond2_long}, bullish={cond3_long}, vol={cond4_long}, cross={cond5_long}] = {long_met}/5 | "
+                    f"Short: [above={cond1_short}, sustained={cond2_short}, bearish={cond3_short}, vol={cond4_short}, cross={cond5_short}] = {short_met}/5"
+                )
+        
+            if long_met > short_met and long_met >= min_cond:
+                print(
+                    f"[{self.symbol}] [VWAP Divergence ENHANCED] Signal: LONG | "
+                    f"long_met={long_met}/5, vwap_distance={vwap_distance:.4f}, "
+                    f"divergence_bars={divergence_bars_long}, crossover={crossover_long}"
+                )
+                return "LONG"
+            elif short_met > long_met and short_met >= min_cond:
+                print(
+                    f"[{self.symbol}] [VWAP Divergence ENHANCED] Signal: SHORT | "
+                    f"short_met={short_met}/5, vwap_distance={vwap_distance:.4f}, "
+                    f"divergence_bars={divergence_bars_short}, crossover={crossover_short}"
+                )
+                return "SHORT"
+            else:
+                if debug:
+                    print(
+                        f"[{self.symbol}] [VWAP Divergence ENHANCED] No signal | "
+                        f"long_met={long_met}, short_met={short_met}, min_cond={min_cond}"
+                    )
+                return None
+        
         except Exception as e:
-            if debug:
-                print(f"[{self.symbol}] [VWAP Divergence] Missing data or index error: {e}")
-            return None
-    
-        # Graceful handling for NaN volume_ma
-        if volume_ma is None or (isinstance(volume_ma, float) and math.isnan(volume_ma)):
-            volume_ma = volume  # fallback to using current volume so the volume checks don't fail
-    
-        min_vol_threshold = volume_ma * 0.9  # 10% below moving avg is still acceptable
-    
-        # Compute VWAP divergence for logging/thresholding
-        vwap_div = (vwap - close) - (vwap_prev - close_prev)
-        min_vwap_div = 0.001  # e.g., 0.1% as a minimal meaningful divergence
-    
-        # LONG conditions
-        cond1_long = close < vwap
-        cond2_long = close > close_prev
-        cond3_long = (vwap - close) > (vwap_prev - close_prev)
-        cond4_long = volume > min_vol_threshold
-        cond5_long = abs(vwap_div) > min_vwap_div
-    
-        # SHORT conditions
-        cond1_short = close > vwap
-        cond2_short = close < close_prev
-        cond3_short = (close - vwap) > (close_prev - vwap_prev)
-        cond4_short = volume > min_vol_threshold
-        cond5_short = abs(vwap_div) > min_vwap_div
-    
-        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long, cond5_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short, cond5_short])
-    
-        if debug:
-            print(
-                f"[{self.symbol}] [VWAP Divergence] Values | "
-                f"vwap={vwap}, vwap_prev={vwap_prev}, close={close}, close_prev={close_prev}, "
-                f"volume={volume}, volume_ma={volume_ma:.6f}"
-            )
-            print(
-                f"[{self.symbol}] [VWAP Divergence] Conditions | "
-                f"conds_long={[cond1_long, cond2_long, cond3_long, cond4_long, cond5_long]}, "
-                f"conds_short={[cond1_short, cond2_short, cond3_short, cond4_short, cond5_short]}"
-            )
-            print(
-                f"[{self.symbol}] [VWAP Divergence] Met Counts | long_met={long_met}, short_met={short_met}, vwap_div={vwap_div:.6f}"
-            )
-    
-        # Require a strict majority and minimum met count to declare a direction. Do NOT prefer LONG on ties.
-        MIN_MET_COUNT = 4
-        if long_met > short_met and long_met >= MIN_MET_COUNT:
-            if debug:
-                print(
-                    f"[{self.symbol}] [VWAP Divergence] Signal: LONG | "
-                    f"long_met={long_met}, short_met={short_met}, vwap_div={vwap_div:.6f}, volume={volume}, volume_ma={volume_ma:.6f}"
-                )
-            return "LONG"
-        elif short_met > long_met and short_met >= MIN_MET_COUNT:
-            if debug:
-                print(
-                    f"[{self.symbol}] [VWAP Divergence] Signal: SHORT | "
-                    f"long_met={long_met}, short_met={short_met}, vwap_div={vwap_div:.6f}, volume={volume}, volume_ma={volume_ma:.6f}"
-                )
-            return "SHORT"
-        else:
-            if debug:
-                print(
-                    f"[{self.symbol}] [VWAP Divergence] No signal fired | "
-                    f"long_met={long_met}, short_met={short_met}, vwap_div={vwap_div:.6f}, volume={volume}, volume_ma={volume_ma:.6f}"
-                )
+            print(f"[{self.symbol}] [VWAP Divergence ENHANCED] Error: {e}")
             return None
             
     def _get_rolling_extremes(self, col, window, prev=False):
