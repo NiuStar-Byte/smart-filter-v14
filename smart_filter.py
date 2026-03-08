@@ -2355,83 +2355,165 @@ class SmartFilter:
 
     def _check_volatility_squeeze(
         self,
-        min_cond=2,
-        min_squeeze_diff=0.05,
-        volume_confirm=True,
-        debug=False
+        min_cond: int = 2,
+        min_squeeze_diff: float = 0.05,
+        squeeze_exhaustion_bars: int = 3,
+        require_directional_bias: bool = False,
+        momentum_lookback: int = 5,
+        bb_tightening_check: bool = True,
+        volume_into_squeeze_mult: float = 1.2,
+        debug: bool = False
     ):
         """
-        Enhanced Volatility Squeeze:
-        - Minimum squeeze magnitude filter.
-        - Optional volume confirmation for breakouts.
-        - Detailed logging.
+        ENHANCED Volatility Squeeze (2026-03-08)
+        
+        Predicts squeeze breakout direction with institutional-grade precision:
+        - Squeeze exhaustion metric (how long in squeeze = pressure buildup)
+        - Directional bias before breakout (momentum into squeeze predicts direction)
+        - BB tightening analysis (intensity of squeeze)
+        - Volume building confirmation (institutional setup detection)
+        
+        Parameters:
+        - min_squeeze_diff: Squeeze magnitude threshold (0.05 = BB > KC by 5%)
+        - squeeze_exhaustion_bars: Minimum bars in squeeze (3+ bars = pressure ready to release)
+        - require_directional_bias: Strict directional confirmation (True = stricter)
+        - momentum_lookback: How many bars back to measure directional momentum (5 = last 5)
+        - bb_tightening_check: Analyze BB width trend (True = check tightening)
+        - volume_into_squeeze_mult: Volume multiplier at squeeze (1.2 = 20% above avg)
+        
+        Logic:
+        LONG: Squeeze firing + upward momentum into squeeze + optional volume buildup
+        SHORT: Squeeze firing + downward momentum into squeeze + optional volume buildup
+        
+        Returns: "LONG", "SHORT", or None
         """
-        bb_width = self.df['bb_upper'].iat[-1] - self.df['bb_lower'].iat[-1]
-        kc_width = self.df['kc_upper'].iat[-1] - self.df['kc_lower'].iat[-1]
-        bb_width_prev = self.df['bb_upper'].iat[-2] - self.df['bb_lower'].iat[-2]
-        kc_width_prev = self.df['kc_upper'].iat[-2] - self.df['kc_lower'].iat[-2]
-    
-        close = self.df['close'].iat[-1]
-        close_prev = self.df['close'].iat[-2]
-        volume = self.df['volume'].iat[-1]
-        volume_prev = self.df['volume'].iat[-2]
-        volume_ma = self.df['volume'].rolling(10).mean().iat[-1]
-    
-        squeeze_diff = bb_width - kc_width
-        squeeze_firing = (
-            squeeze_diff > min_squeeze_diff
-            and bb_width_prev < kc_width_prev
-        )
-    
-        squeeze = {
-            "bb_width": bb_width,
-            "kc_width": kc_width,
-            "bb_width_prev": bb_width_prev,
-            "kc_width_prev": kc_width_prev,
-            "squeeze_firing": squeeze_firing,
-            "squeeze_diff": squeeze_diff,
-            "min_squeeze_diff": min_squeeze_diff,
-        }
-        volatility = {
-            "close": close,
-            "close_prev": close_prev,
-            "volume": volume,
-            "volume_prev": volume_prev,
-            "volume_ma": volume_ma,
-        }
-    
-        cond1_long = squeeze_firing
-        cond2_long = close > close_prev
-        cond3_long = volume > volume_prev if volume_confirm else True
-        cond4_long = volume > volume_ma if volume_confirm else True
-    
-        cond1_short = squeeze_firing
-        cond2_short = close < close_prev
-        cond3_short = volume > volume_prev if volume_confirm else True
-        cond4_short = volume > volume_ma if volume_confirm else True
-    
-        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
-    
-        if debug:
-            print(
-                f"[{self.symbol}] [Volatility Squeeze] Metrics | squeeze={squeeze}, volatility={volatility}, long_met={long_met}, short_met={short_met}"
-            )
-    
-        if long_met >= min_cond and long_met > short_met:
-            print(
-                f"[{self.symbol}] [Volatility Squeeze] Signal: LONG | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, squeeze={squeeze}, volatility={volatility}"
-            )
-            return "LONG"
-        elif short_met >= min_cond and short_met > long_met:
-            print(
-                f"[{self.symbol}] [Volatility Squeeze] Signal: SHORT | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, squeeze={squeeze}, volatility={volatility}"
-            )
-            return "SHORT"
-        else:
-            print(
-                f"[{self.symbol}] [Volatility Squeeze] No signal fired | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, squeeze={squeeze}, volatility={volatility}"
-            )
+        try:
+            # Get BB and KC data
+            bb_width = self.df['bb_upper'].iat[-1] - self.df['bb_lower'].iat[-1]
+            kc_width = self.df['kc_upper'].iat[-1] - self.df['kc_lower'].iat[-1]
+            bb_width_prev = self.df['bb_upper'].iat[-2] - self.df['bb_lower'].iat[-2]
+            kc_width_prev = self.df['kc_upper'].iat[-2] - self.df['kc_lower'].iat[-2]
+        
+            close = self.df['close'].iat[-1]
+            close_prev = self.df['close'].iat[-2]
+            volume = self.df['volume'].iat[-1]
+            volume_prev = self.df['volume'].iat[-2]
+            volume_ma = self.df['volume'].rolling(10).mean().iat[-1]
+        
+            # ===== ENHANCEMENT 1: Squeeze Firing Detection =====
+            squeeze_diff = bb_width - kc_width
+            squeeze_firing = (squeeze_diff > min_squeeze_diff and bb_width_prev < kc_width_prev)
+        
+            # ===== ENHANCEMENT 2: Squeeze Exhaustion Metric =====
+            # Count how many bars have been in squeeze state (BB inside KC)
+            squeeze_bars = 0
+            for i in range(1, min(squeeze_exhaustion_bars + 2, len(self.df))):  # Check last N+1 bars
+                bb_w_i = self.df['bb_upper'].iat[-i] - self.df['bb_lower'].iat[-i]
+                kc_w_i = self.df['kc_upper'].iat[-i] - self.df['kc_lower'].iat[-i]
+                if bb_w_i < kc_w_i:  # BB inside KC = in squeeze
+                    squeeze_bars += 1
+        
+            exhaustion_valid = (squeeze_bars >= squeeze_exhaustion_bars)  # 3+ bars = pressure buildup
+        
+            # ===== ENHANCEMENT 3: Directional Bias Before Breakout =====
+            # Check momentum BEFORE squeeze breaks (where was price trending into squeeze?)
+            momentum_into_squeeze = 0
+            uptrend_into_squeeze = False
+            downtrend_into_squeeze = False
+        
+            if momentum_lookback <= len(self.df) - 1:
+                close_far = self.df['close'].iat[-momentum_lookback] if momentum_lookback > 0 else close
+                close_mid = self.df['close'].iat[-(momentum_lookback // 2)] if momentum_lookback > 1 else close
+                close_now = close
+            
+                # Uptrend into squeeze: far < mid < now
+                if close_far < close_mid < close_now:
+                    uptrend_into_squeeze = True
+                    momentum_into_squeeze = 1
+            
+                # Downtrend into squeeze: far > mid > now
+                if close_far > close_mid > close_now:
+                    downtrend_into_squeeze = True
+                    momentum_into_squeeze = -1
+        
+            directional_bias_long = uptrend_into_squeeze
+            directional_bias_short = downtrend_into_squeeze
+        
+            # ===== ENHANCEMENT 4: BB Tightening Analysis =====
+            bb_tightening_strength = 0
+            if bb_tightening_check:
+                # Measure BB width trend (tightening = getting narrower)
+                bb_widths = [
+                    self.df['bb_upper'].iat[-5] - self.df['bb_lower'].iat[-5] if len(self.df) > 4 else bb_width,
+                    self.df['bb_upper'].iat[-3] - self.df['bb_lower'].iat[-3] if len(self.df) > 2 else bb_width,
+                    bb_width
+                ]
+            
+                # If tightening: width[-5] > width[-3] > width[-1]
+                if bb_widths[0] > bb_widths[1] > bb_widths[2] and bb_widths[0] > 0:
+                    tightening_pct = (bb_widths[0] - bb_widths[2]) / bb_widths[0]
+                    if tightening_pct > 0.1:  # At least 10% tightening
+                        bb_tightening_strength = 1
+                        if tightening_pct > 0.2:  # 20%+ tightening = very strong
+                            bb_tightening_strength = 2
+        
+            # ===== ENHANCEMENT 5: Volume Building Into Squeeze =====
+            volume_into_squeeze = volume > volume_ma * volume_into_squeeze_mult
+        
+            # ===== CONDITIONS =====
+            cond1_long = squeeze_firing                                  # Squeeze just fired
+            cond2_long = close > close_prev                              # Bullish candle
+            cond3_long = directional_bias_long or not require_directional_bias  # Uptrend or optional
+            cond4_long = exhaustion_valid                                # Pressure buildup (3+ bars)
+            cond5_long = bb_tightening_strength > 0                      # BB tightening (bonus)
+            cond6_long = volume_into_squeeze                             # Volume buildup (bonus)
+        
+            cond1_short = squeeze_firing                                 # Squeeze just fired
+            cond2_short = close < close_prev                             # Bearish candle
+            cond3_short = directional_bias_short or not require_directional_bias  # Downtrend or optional
+            cond4_short = exhaustion_valid                               # Pressure buildup (3+ bars)
+            cond5_short = bb_tightening_strength > 0                     # BB tightening (bonus)
+            cond6_short = volume_into_squeeze                            # Volume buildup (bonus)
+        
+            long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long, cond5_long, cond6_long])
+            short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short, cond5_short, cond6_short])
+        
+            if debug:
+                print(
+                    f"[{self.symbol}] [Volatility Squeeze ENHANCED] Exhaustion | squeeze_bars={squeeze_bars}, "
+                    f"exhaustion_valid={exhaustion_valid}, momentum_into_squeeze={momentum_into_squeeze}, "
+                    f"bb_tightening={bb_tightening_strength}, volume_buildup={volume_into_squeeze}"
+                )
+                print(
+                    f"[{self.symbol}] [Volatility Squeeze ENHANCED] Conditions | "
+                    f"Long: [firing={cond1_long}, bullish={cond2_long}, uptrend={cond3_long}, exhaustion={cond4_long}, "
+                    f"tightening={cond5_long}, volume={cond6_long}] = {long_met}/6"
+                )
+        
+            if long_met >= min_cond and long_met > short_met:
+                print(
+                    f"[{self.symbol}] [Volatility Squeeze ENHANCED] Signal: LONG | "
+                    f"long_met={long_met}/6, squeeze_bars={squeeze_bars}, bb_tightening={bb_tightening_strength}, "
+                    f"momentum={momentum_into_squeeze}, volume_buildup={volume_into_squeeze}"
+                )
+                return "LONG"
+            elif short_met >= min_cond and short_met > long_met:
+                print(
+                    f"[{self.symbol}] [Volatility Squeeze ENHANCED] Signal: SHORT | "
+                    f"short_met={short_met}/6, squeeze_bars={squeeze_bars}, bb_tightening={bb_tightening_strength}, "
+                    f"momentum={momentum_into_squeeze}, volume_buildup={volume_into_squeeze}"
+                )
+                return "SHORT"
+            else:
+                if debug:
+                    print(
+                        f"[{self.symbol}] [Volatility Squeeze ENHANCED] No signal | "
+                        f"long_met={long_met}, short_met={short_met}, min_cond={min_cond}"
+                    )
+                return None
+        
+        except Exception as e:
+            print(f"[{self.symbol}] [Volatility Squeeze ENHANCED] Error: {e}")
             return None
 
     def _check_chop_zone(
