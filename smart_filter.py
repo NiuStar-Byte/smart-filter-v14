@@ -1428,32 +1428,160 @@ class SmartFilter:
             print(f"[{self.symbol}] [Volume Spike] Error: {e}", flush=True)
             return None
 
-    def _check_mtf_volume_agreement(self, debug: bool = False) -> Optional[str]:
+    def _check_mtf_volume_agreement(
+        self,
+        volume_ma_period: int = 10,
+        cumulative_lookback: int = 3,
+        require_divergence_check: bool = False,
+        min_cond: int = 2,
+        debug: bool = False
+    ) -> Optional[str]:
         """
-        Multi-timeframe volume agreement filter.
-        Returns "LONG", "SHORT", or None.
+        ENHANCED Multi-Timeframe Volume Agreement (2026-03-08)
+        
+        Institutional consensus detection across timeframes:
+        - Weighted consensus (volume agreement strength scored)
+        - Temporal alignment (price moved WITH volume on both TFs)
+        - Volume divergence detection (catches false signals)
+        - Cumulative volume trend (volume building = accumulation/distribution)
+        
+        Parameters:
+        - volume_ma_period: Period for volume MA (10 = 10-bar average)
+        - cumulative_lookback: Bars to check for volume trend (3 = last 3 bars)
+        - require_divergence_check: Strict divergence gate (True = reject if diverges)
+        - min_cond: Minimum conditions needed (2 of 4)
+        
+        Logic:
+        LONG: Current TF volume ↑ + Higher TF volume ↑ + Price ↑ + Volume building
+        SHORT: Current TF volume ↓ + Higher TF volume ↓ + Price ↓ + Volume building
+        
+        Returns: "LONG", "SHORT", or None
         """
-        volume = self.df['volume'].iat[-1]
-        volume_prev = self.df['volume'].iat[-2]
-        close = self.df['close'].iat[-1]
-        close_prev = self.df['close'].iat[-2]
-        higher_tf_volume = self.df['higher_tf_volume'].iat[-1]
-        higher_tf_volume_prev = self.df['higher_tf_volume'].iat[-2]
-    
-        conds_long = [volume > volume_prev, higher_tf_volume > higher_tf_volume_prev, close > close_prev]
-        conds_short = [volume < volume_prev, higher_tf_volume < higher_tf_volume_prev, close < close_prev]
-    
-        long_met, short_met = sum(conds_long), sum(conds_short)
-        signal = None
-        if long_met >= 1 and long_met > short_met:
-            signal = "LONG"
-        elif short_met >= 1 and short_met > long_met:
-            signal = "SHORT"
-    
-        if debug:
-            print(f"[{self.symbol}] [MTF Volume Agreement] signal={signal} | long_met={long_met}, short_met={short_met}, conds_long={conds_long}, conds_short={conds_short}")
-    
-        return signal
+        try:
+            volume = self.df['volume'].iat[-1]
+            volume_prev = self.df['volume'].iat[-2]
+            close = self.df['close'].iat[-1]
+            close_prev = self.df['close'].iat[-2]
+            higher_tf_volume = self.df['higher_tf_volume'].iat[-1]
+            higher_tf_volume_prev = self.df['higher_tf_volume'].iat[-2]
+        
+            # ===== ENHANCEMENT 1: Weighted Consensus (Volume Agreement Strength) =====
+            # Score how strongly both TFs agree on volume direction
+            # Perfect agreement (both up or both down) = high score
+            # Disagreement = low score
+            
+            current_tf_vol_up = volume > volume_prev
+            higher_tf_vol_up = higher_tf_volume > higher_tf_volume_prev
+            
+            # Consensus strength: how much agreement?
+            consensus_strength = 0
+            if current_tf_vol_up and higher_tf_vol_up:
+                consensus_strength = 1  # Both TFs showing volume increase
+            elif not current_tf_vol_up and not higher_tf_vol_up:
+                consensus_strength = 1  # Both TFs showing volume decrease
+            else:
+                consensus_strength = 0  # Divergence (one up, one down)
+        
+            # ===== ENHANCEMENT 2: Temporal Alignment (Price Moved WITH Volume) =====
+            # If volume UP, price should also move (bullish or bearish)
+            # If volume DOWN in downtrend, that's weak selling (avoid)
+            
+            price_moved_bullish = close > close_prev
+            price_moved_bearish = close < close_prev
+            
+            # Temporal alignment for LONG: volume up + price up (strong alignment)
+            temporal_align_long = (current_tf_vol_up and price_moved_bullish)
+            
+            # Temporal alignment for SHORT: volume up + price down (weak, caution)
+            temporal_align_short = (current_tf_vol_up and price_moved_bearish)
+        
+            # ===== ENHANCEMENT 3: Volume Divergence Detection =====
+            # Catch false signals where one TF has volume but other doesn't
+            # If higher_tf_volume is NOT confirming current TF volume = potential false signal
+            
+            volume_ratio = volume / (self.df['volume'].rolling(volume_ma_period).mean().iat[-1] + 1e-10)
+            higher_vol_ratio = higher_tf_volume / (self.df['higher_tf_volume'].rolling(volume_ma_period).mean().iat[-1] + 1e-10) if 'higher_tf_volume' in self.df.columns else 1
+            
+            # Divergence: one TF has volume spike (>1.5x) but other doesn't
+            volume_divergence = (volume_ratio > 1.5 and higher_vol_ratio < 1.2) or (higher_vol_ratio > 1.5 and volume_ratio < 1.2)
+            divergence_valid = not volume_divergence  # Good if NO divergence
+        
+            # ===== ENHANCEMENT 4: Cumulative Volume Trend (Institutional Buildup) =====
+            # Check if volume is building consistently over N bars (accumulation/distribution)
+            # Volume building = more bars with volume > MA
+            
+            volume_ma = self.df['volume'].rolling(volume_ma_period).mean().iat[-1]
+            buildup_bars = 0
+            
+            for i in range(1, min(cumulative_lookback + 1, len(self.df))):
+                bar_vol = self.df['volume'].iat[-i]
+                if bar_vol > volume_ma:
+                    buildup_bars += 1
+            
+            # Cumulative trend: need at least 2 of last 3 bars with elevated volume
+            volume_buildup = (buildup_bars >= (cumulative_lookback - 1))
+        
+            # ===== CONDITIONS =====
+            cond1_long = consensus_strength > 0  # Both TFs agree volume UP
+            cond2_long = temporal_align_long     # Volume UP + Price UP
+            cond3_long = divergence_valid or not require_divergence_check  # No divergence (or optional)
+            cond4_long = volume_buildup          # Institutional accumulation (volume building)
+        
+            cond1_short = consensus_strength > 0  # Both TFs agree volume UP (for SHORT, volume up confirms selling)
+            cond2_short = temporal_align_short    # Volume UP + Price DOWN (weakness detected)
+            cond3_short = divergence_valid or not require_divergence_check  # No divergence (or optional)
+            cond4_short = volume_buildup          # Institutional distribution (volume building)
+        
+            long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
+            short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
+        
+            if debug:
+                print(
+                    f"[{self.symbol}] [MTF Volume Agreement ENHANCED] Consensus | "
+                    f"current_tf_vol_up={current_tf_vol_up}, higher_tf_vol_up={higher_tf_vol_up}, "
+                    f"consensus_strength={consensus_strength}, volume_ratio={volume_ratio:.2f}, higher_vol_ratio={higher_vol_ratio:.2f}"
+                )
+                print(
+                    f"[{self.symbol}] [MTF Volume Agreement ENHANCED] Alignment | "
+                    f"price_bullish={price_moved_bullish}, price_bearish={price_moved_bearish}, "
+                    f"temporal_align_long={temporal_align_long}, temporal_align_short={temporal_align_short}"
+                )
+                print(
+                    f"[{self.symbol}] [MTF Volume Agreement ENHANCED] Divergence | "
+                    f"volume_divergence={volume_divergence}, divergence_valid={divergence_valid}, "
+                    f"buildup_bars={buildup_bars}/{cumulative_lookback}, volume_buildup={volume_buildup}"
+                )
+                print(
+                    f"[{self.symbol}] [MTF Volume Agreement ENHANCED] Conditions | "
+                    f"Long: [consensus={cond1_long}, align={cond2_long}, no_div={cond3_long}, buildup={cond4_long}] = {long_met}/4 | "
+                    f"Short: [consensus={cond1_short}, weak={cond2_short}, no_div={cond3_short}, buildup={cond4_short}] = {short_met}/4"
+                )
+        
+            if long_met >= min_cond and long_met > short_met:
+                print(
+                    f"[{self.symbol}] [MTF Volume Agreement ENHANCED] Signal: LONG | "
+                    f"long_met={long_met}/4, consensus={consensus_strength}, volume_ratio={volume_ratio:.2f}, "
+                    f"buildup_bars={buildup_bars}, temporal_align=True"
+                )
+                return "LONG"
+            elif short_met >= min_cond and short_met > long_met:
+                print(
+                    f"[{self.symbol}] [MTF Volume Agreement ENHANCED] Signal: SHORT | "
+                    f"short_met={short_met}/4, consensus={consensus_strength}, volume_ratio={volume_ratio:.2f}, "
+                    f"buildup_bars={buildup_bars}, weakness_detected=True"
+                )
+                return "SHORT"
+            else:
+                if debug:
+                    print(
+                        f"[{self.symbol}] [MTF Volume Agreement ENHANCED] No signal | "
+                        f"long_met={long_met}, short_met={short_met}, min_cond={min_cond}"
+                    )
+                return None
+        
+        except Exception as e:
+            print(f"[{self.symbol}] [MTF Volume Agreement ENHANCED] Error: {e}")
+            return None
         
     def _check_liquidity_awareness(
         self,
