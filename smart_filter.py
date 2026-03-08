@@ -1713,118 +1713,213 @@ class SmartFilter:
     def _check_support_resistance(
         self,
         window: int = 20,
-        buffer_pct: float = 0.005,
-        min_cond: int = 2,
+        use_atr_margin: bool = True,
+        atr_multiplier: float = 0.75,
+        fixed_buffer_pct: float = 0.01,
+        retest_lookback: int = 5,
+        min_retest_touches: int = 0,
+        volume_at_level_check: bool = True,
         require_volume_confirm: bool = False,
+        external_sr_long: Optional[dict] = None,
+        external_sr_short: Optional[dict] = None,
+        min_cond: int = 2,
         debug: bool = False
     ) -> Optional[str]:
         """
-        Support / Resistance proximity filter.
-    
-        Improvements over the original:
-        - Defensive checks for required columns and sufficient history.
-        - Uses safe division to avoid ZeroDivisionError / NaN issues.
-        - Optional volume confirmation toggle (require_volume_confirm).
-        - Clearer proximity calculations and consistent debug messages.
-        - No variable-name typos in debug prints.
-        - Explicit tie handling: only return LONG or SHORT when conditions strictly favor one side.
-    
-        Returns:
-            "LONG", "SHORT", or None
+        ENHANCED Support / Resistance Filter (2026-03-08)
+        
+        Multi-feature S/R detection with institutional-grade confluence signals:
+        - ATR-based dynamic margins (normalized to volatility)
+        - Retest validation (price touches level N times = stronger signal)
+        - Volume at level analysis (absorption strength grading)
+        - Multi-timeframe confluence support (optional external S/R from other TFs)
+        
+        Parameters:
+        - window: Lookback for S/R extremes (20 = ~5h on 15min)
+        - use_atr_margin: Use ATR-based margins instead of fixed % (True = adaptive)
+        - atr_multiplier: Margin = ATR × multiplier / support level (0.5 = conservative)
+        - fixed_buffer_pct: Fallback margin if ATR disabled (0.5% = default)
+        - retest_lookback: How many bars back to count touches (5 = last 5 bars)
+        - min_retest_touches: Minimum touches for strong signal (1 = any touch, 2 = retest)
+        - volume_at_level_check: Analyze volume profile at S/R (True = check absorption)
+        - require_volume_confirm: Volume must support direction (True = stricter)
+        - external_sr_long: Dict {'support': price, 'resistance': price} from another TF (optional confluence)
+        - external_sr_short: Same for short-side external levels (optional)
+        - min_cond: Minimum conditions required (2 = moderate, 3 = strict)
+        
+        Logic:
+        LONG: Price near support OR external support + ≥min_retest_touches + volume absorption → confidence
+              Need N of 3: [proximity, retest, volume_absorption]
+        SHORT: Same but for resistance
+        
+        Confluence Boost: If external S/R from another TF aligns = extra confidence
+        
+        Returns: "LONG", "SHORT", or None
         """
         # Required columns / length check
-        required_cols = ['low', 'high', 'close', 'volume']
+        required_cols = ['low', 'high', 'close', 'volume', 'open']
         missing = [c for c in required_cols if c not in self.df.columns]
         if missing:
             if debug:
-                print(f"[{self.symbol}] [Support/Resistance] Missing columns: {missing}")
+                print(f"[{self.symbol}] [Support/Resistance ENHANCED] Missing columns: {missing}")
             return None
     
-        if len(self.df) < window + 1:
+        if len(self.df) < max(window + 1, retest_lookback + 2):
             if debug:
-                print(f"[{self.symbol}] [Support/Resistance] Not enough data (need at least {window + 1} rows).")
+                print(f"[{self.symbol}] [Support/Resistance ENHANCED] Not enough data (need at least {max(window + 1, retest_lookback + 2)} rows).")
             return None
     
-        # Safely get rolling extremes (the helper may raise if indices are short)
+        # Get current S/R levels
         try:
             support, _ = self._get_rolling_extremes('low', window)
             _, resistance = self._get_rolling_extremes('high', window)
         except Exception as e:
             if debug:
-                print(f"[{self.symbol}] [Support/Resistance] Error getting rolling extremes: {e}")
+                print(f"[{self.symbol}] [Support/Resistance ENHANCED] Error getting rolling extremes: {e}")
             return None
     
         # Latest price/volume values
         try:
             close = float(self.df['close'].iat[-1])
             close_prev = float(self.df['close'].iat[-2])
+            high = float(self.df['high'].iat[-1])
+            low = float(self.df['low'].iat[-1])
             volume = float(self.df['volume'].iat[-1])
             volume_prev = float(self.df['volume'].iat[-2])
+            atr = float(self.df['atr'].iat[-1]) if 'atr' in self.df.columns and self.df['atr'].iat[-1] is not None else None
         except Exception as e:
             if debug:
-                print(f"[{self.symbol}] [Support/Resistance] Error reading price/volume: {e}")
+                print(f"[{self.symbol}] [Support/Resistance ENHANCED] Error reading price/volume: {e}")
             return None
     
+        # ===== ENHANCEMENT 1: ATR-Based Dynamic Margins =====
+        if use_atr_margin and atr is not None and atr > 0:
+            # Normalize ATR to support/resistance levels for adaptive margin
+            support_margin = (atr * atr_multiplier / support) if support > 0 else fixed_buffer_pct
+            resistance_margin = (atr * atr_multiplier / resistance) if resistance > 0 else fixed_buffer_pct
+            # Cap margins to avoid extreme values
+            support_margin = min(support_margin, 0.02)  # Max 2% margin
+            resistance_margin = min(resistance_margin, 0.02)
+        else:
+            support_margin = fixed_buffer_pct
+            resistance_margin = fixed_buffer_pct
+    
         # Safe proximity calculations
-        # support_prox: how far above support the close is (as fraction of support)
         support_prox = self.safe_divide(close - support, support)
-        # resistance_prox: how far below resistance the close is (as fraction of resistance)
         resistance_prox = self.safe_divide(resistance - close, resistance)
     
-        # Volume confirmation (optional)
+        # ===== ENHANCEMENT 2: Retest Validation (count touches in lookback) =====
+        support_touches = 0
+        resistance_touches = 0
+        
+        for i in range(1, min(retest_lookback + 1, len(self.df))):
+            bar_low = self.df['low'].iat[-i]
+            bar_high = self.df['high'].iat[-i]
+            
+            # Touch = bar reaches within margin of level
+            if bar_low <= support * (1 + support_margin):
+                support_touches += 1
+            if bar_high >= resistance * (1 - resistance_margin):
+                resistance_touches += 1
+        
+        # Retest gate: need minimum touches for confidence
+        retest_valid_long = support_touches >= min_retest_touches
+        retest_valid_short = resistance_touches >= min_retest_touches
+        
+        # ===== ENHANCEMENT 3: Volume at Level Analysis =====
+        # Calculate volume profile (average volume at support vs current volume)
+        volume_ma = self.df['volume'].rolling(10).mean().iat[-1] if 'volume' in self.df.columns else volume
+        volume_at_level_long = volume > volume_ma if volume_at_level_check else True  # Strong absorption at support
+        volume_at_level_short = volume > volume_ma if volume_at_level_check else True  # Strong absorption at resistance
+        
         volume_confirm_long = volume > volume_prev if require_volume_confirm else True
         volume_confirm_short = volume < volume_prev if require_volume_confirm else True
     
-        # Conditions (use proximity instead of direct multiplication to avoid rounding issues)
-        cond1_long = support_prox <= buffer_pct  # close within buffer_pct above support
-        cond2_long = close > close_prev
-        cond3_long = volume_confirm_long
+        # ===== ENHANCEMENT 4: Multi-TF Confluence (Optional External S/R) =====
+        external_confluence_long = False
+        external_confluence_short = False
+        
+        if external_sr_long is not None and 'support' in external_sr_long:
+            # Check if price is near external support from another timeframe
+            ext_support = external_sr_long['support']
+            ext_margin = (ext_support * fixed_buffer_pct * 2) if ext_support > 0 else 0  # Use 2x margin for external levels
+            external_confluence_long = (close >= ext_support - ext_margin) and (close <= ext_support * (1 + ext_margin * 2))
+        
+        if external_sr_short is not None and 'resistance' in external_sr_short:
+            # Check if price is near external resistance from another timeframe
+            ext_resistance = external_sr_short['resistance']
+            ext_margin = (ext_resistance * fixed_buffer_pct * 2) if ext_resistance > 0 else 0
+            external_confluence_short = (close >= ext_resistance - ext_margin * 2) and (close <= ext_resistance + ext_margin)
     
-        cond1_short = resistance_prox <= buffer_pct  # close within buffer_pct below resistance
-        cond2_short = close < close_prev
-        cond3_short = volume_confirm_short
-    
+        # ===== SIGNAL CONDITIONS =====
+        # LONG: Proximity to support + retest validation + volume confirmation
+        cond1_long = support_prox <= support_margin          # Price within adaptive margin above support
+        cond2_long = retest_valid_long                       # Support tested N+ times (strength)
+        cond3_long = volume_at_level_long and volume_confirm_long  # Volume confirms absorption
+        cond4_long = external_confluence_long if external_sr_long else False  # Multi-TF confluence (bonus)
+        
+        # SHORT: Proximity to resistance + retest validation + volume confirmation
+        cond1_short = resistance_prox <= resistance_margin    # Price within adaptive margin below resistance
+        cond2_short = retest_valid_short                      # Resistance tested N+ times (strength)
+        cond3_short = volume_at_level_short and volume_confirm_short  # Volume confirms absorption
+        cond4_short = external_confluence_short if external_sr_short else False  # Multi-TF confluence (bonus)
+        
         long_met = sum([cond1_long, cond2_long, cond3_long])
         short_met = sum([cond1_short, cond2_short, cond3_short])
+        
+        # Confluence bonus (if external S/R aligns, increase confidence)
+        if cond4_long:
+            long_met += 1
+        if cond4_short:
+            short_met += 1
     
         if debug:
             print(
-                f"[{self.symbol}] [Support/Resistance] Values | support={support}, resistance={resistance}, "
-                f"close={close}, close_prev={close_prev}, volume={volume}, volume_prev={volume_prev}"
+                f"[{self.symbol}] [S/R ENHANCED] Levels | support={support:.4f}, resistance={resistance:.4f}, close={close:.4f}"
             )
             print(
-                f"[{self.symbol}] [Support/Resistance] Proximity | support_prox={support_prox:.6f}, "
-                f"resistance_prox={resistance_prox:.6f}, buffer_pct={buffer_pct:.6f}"
+                f"[{self.symbol}] [S/R ENHANCED] Margins | support_margin={support_margin:.6f} (ATR={atr}), "
+                f"resistance_margin={resistance_margin:.6f} | ATR-based: {use_atr_margin}"
             )
             print(
-                f"[{self.symbol}] [Support/Resistance] Conditions Long | "
-                f"[near_support={cond1_long}, close_up={cond2_long}, volume_confirm={cond3_long}] -> long_met={long_met}"
+                f"[{self.symbol}] [S/R ENHANCED] Retests | support_touches={support_touches}, "
+                f"resistance_touches={resistance_touches}, min_required={min_retest_touches}"
             )
             print(
-                f"[{self.symbol}] [Support/Resistance] Conditions Short | "
-                f"[near_resistance={cond1_short}, close_down={cond2_short}, volume_confirm={cond3_short}] -> short_met={short_met}"
+                f"[{self.symbol}] [S/R ENHANCED] Volume | current={volume:.0f}, MA={volume_ma:.0f}, "
+                f"confirm_long={volume_confirm_long}, at_level_long={volume_at_level_long}"
+            )
+            if external_sr_long:
+                print(f"[{self.symbol}] [S/R ENHANCED] Multi-TF LONG | ext_support={external_sr_long.get('support')}, confluence={external_confluence_long}")
+            if external_sr_short:
+                print(f"[{self.symbol}] [S/R ENHANCED] Multi-TF SHORT | ext_resistance={external_sr_short.get('resistance')}, confluence={external_confluence_short}")
+            print(
+                f"[{self.symbol}] [S/R ENHANCED] Conditions LONG | [proximity={cond1_long}, retest={cond2_long}, volume={cond3_long}, confluence={cond4_long}] → {long_met}"
+            )
+            print(
+                f"[{self.symbol}] [S/R ENHANCED] Conditions SHORT | [proximity={cond1_short}, retest={cond2_short}, volume={cond3_short}, confluence={cond4_short}] → {short_met}"
             )
     
         # Decision: require strict majority and >= min_cond to declare direction
         if long_met >= min_cond and long_met > short_met:
-            if debug:
-                print(
-                    f"[{self.symbol}] [Support/Resistance] Signal: LONG | support={support}, resistance={resistance}, "
-                    f"close={close}, long_met={long_met}, short_met={short_met}, support_prox={support_prox:.6f}"
-                )
+            print(
+                f"[{self.symbol}] [Support/Resistance ENHANCED] Signal: LONG | "
+                f"support={support:.4f}, proximity={support_prox:.6f}, margin={support_margin:.6f}, "
+                f"touches={support_touches}, long_met={long_met}/{long_met+short_met}, atr_margin={use_atr_margin}"
+            )
             return "LONG"
         elif short_met >= min_cond and short_met > long_met:
-            if debug:
-                print(
-                    f"[{self.symbol}] [Support/Resistance] Signal: SHORT | support={support}, resistance={resistance}, "
-                    f"close={close}, long_met={long_met}, short_met={short_met}, resistance_prox={resistance_prox:.6f}"
-                )
+            print(
+                f"[{self.symbol}] [Support/Resistance ENHANCED] Signal: SHORT | "
+                f"resistance={resistance:.4f}, proximity={resistance_prox:.6f}, margin={resistance_margin:.6f}, "
+                f"touches={resistance_touches}, short_met={short_met}/{long_met+short_met}, atr_margin={use_atr_margin}"
+            )
             return "SHORT"
         else:
             if debug:
                 print(
-                    f"[{self.symbol}] [Support/Resistance] No signal | long_met={long_met}, short_met={short_met}, "
-                    f"support_prox={support_prox:.6f}, resistance_prox={resistance_prox:.6f}"
+                    f"[{self.symbol}] [Support/Resistance ENHANCED] No signal | "
+                    f"long_met={long_met}, short_met={short_met}, min_cond={min_cond}"
                 )
             return None
 
