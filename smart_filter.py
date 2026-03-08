@@ -1604,41 +1604,134 @@ class SmartFilter:
             print(f"[{self.symbol}] [Liquidity Awareness ENHANCED] Error: {e}")
             return None
 
-    def _check_spread_filter(self, window: int = 20, debug: bool = False) -> Optional[str]:
+    def _check_spread_filter(
+        self,
+        window: int = 20,
+        spread_ma_multiplier: float = 1.2,
+        require_market_quality: bool = False,
+        slippage_threshold: float = 0.02,
+        min_cond: int = 2,
+        debug: bool = False
+    ) -> Optional[str]:
         """
-        Spread filter based on current/historical spreads and price action.
-        Returns "LONG", "SHORT", or None.
+        ENHANCED Spread Filter (2026-03-08)
+        
+        Market quality detection with 4 institutional-grade gates:
+        - Spread volatility ratio (normalized to historical baseline)
+        - Market quality gate (skip signals in illiquid periods)
+        - Slippage detection (flag wide spreads indicating poor execution)
+        - Price action confirmation (bullish/bearish momentum)
+        
+        Parameters:
+        - window: Lookback for spread MA (20 = ~5h on 15min)
+        - spread_ma_multiplier: Spread acceptance ratio (1.2 = allow 20% wider than MA)
+        - require_market_quality: Strict quality gate (True = stricter)
+        - slippage_threshold: Maximum acceptable spread as % of price (0.02 = 2%)
+        - min_cond: Minimum conditions needed (2 of 4)
+        
+        Logic:
+        LONG: Spread narrowing + bullish candle + good market quality
+        SHORT: Spread widening + bearish candle + good market quality
+        
+        Returns: "LONG", "SHORT", or None
         """
-        high, low, open_, close = self.df['high'].iat[-1], self.df['low'].iat[-1], self.df['open'].iat[-1], self.df['close'].iat[-1]
-        high_prev, low_prev, open_prev, close_prev = self.df['high'].iat[-2], self.df['low'].iat[-2], self.df['open'].iat[-2], self.df['close'].iat[-2]
-    
-        # Add spread column if missing
-        if 'spread' not in self.df.columns:
-            self.df['spread'] = self.df['high'] - self.df['low']
-    
-        spread = high - low
-        spread_prev = high_prev - low_prev
-        spread_ma = self.df['spread'].rolling(window).mean().iat[-1]
-    
-        conds_long = [spread > spread_prev, close > open_, spread > spread_ma]
-        conds_short = [spread < spread_prev, close < open_, spread < spread_ma]
-    
-        long_met, short_met = sum(conds_long), sum(conds_short)
-        signal = None
-        if long_met >= 1 and long_met > short_met:
-            signal = "LONG"
-        elif short_met >= 1 and short_met > long_met:
-            signal = "SHORT"
-    
-        if debug:
-            # full, non-truncated debug print
-            print(
-                f"[{self.symbol}] [Spread Filter] signal={signal} | "
-                f"spread={spread:.6f}, long_met={long_met}, short_met={short_met}, "
-                f"spread_prev={spread_prev:.6f}, spread_ma={spread_ma:.6f}, close={close}, open={open_}"
-            )
-    
-        return signal
+        try:
+            high, low, open_, close = self.df['high'].iat[-1], self.df['low'].iat[-1], self.df['open'].iat[-1], self.df['close'].iat[-1]
+            high_prev, low_prev, open_prev, close_prev = self.df['high'].iat[-2], self.df['low'].iat[-2], self.df['open'].iat[-2], self.df['close'].iat[-2]
+        
+            # Add spread column if missing
+            if 'spread' not in self.df.columns:
+                self.df['spread'] = self.df['high'] - self.df['low']
+        
+            spread = high - low
+            spread_prev = high_prev - low_prev
+            spread_ma = self.df['spread'].rolling(window).mean().iat[-1]
+        
+            # ===== ENHANCEMENT 1: Spread Volatility Ratio =====
+            # Compare current spread to historical average
+            # Tight spread (< MA) = good liquidity = safe to trade
+            # Wide spread (> MA * 1.2) = poor liquidity = risky
+            
+            spread_ratio = spread / spread_ma if spread_ma > 0 else 1
+            spread_tight = spread < spread_ma  # Tighter than average
+            spread_loose = spread > spread_ma * spread_ma_multiplier  # Wider than acceptable
+        
+            # ===== ENHANCEMENT 2: Market Quality Gate =====
+            # Skip trading in extremely illiquid periods
+            # If spread is more than 3x the MA = market is broken
+            
+            market_quality_ok = (spread < spread_ma * 3)  # 300% is the hard cap
+        
+            # ===== ENHANCEMENT 3: Slippage Detection =====
+            # Calculate spread as percentage of price
+            # If > 2% = expect significant slippage = avoid
+            
+            mid_price = (high + low) / 2 if (high + low) > 0 else 1
+            spread_pct = spread / mid_price if mid_price > 0 else 0
+            slippage_ok = (spread_pct < slippage_threshold)  # Within acceptable slippage
+        
+            # ===== ENHANCEMENT 4: Price Action Confirmation =====
+            # Bullish candle: close > open (strong demand)
+            # Bearish candle: close < open (strong supply)
+            
+            bullish_candle = close > open_
+            bearish_candle = close < open_
+        
+            # ===== CONDITIONS =====
+            cond1_long = spread_tight                          # Spread tightening
+            cond2_long = bullish_candle                        # Bullish price action
+            cond3_long = market_quality_ok and slippage_ok    # Market quality OK (both checks)
+            cond4_long = spread < spread_prev                  # Spread improving (tightening trend)
+        
+            cond1_short = not spread_tight  # Spread loosening or stable
+            cond2_short = bearish_candle                       # Bearish price action
+            cond3_short = market_quality_ok and slippage_ok   # Market quality OK
+            cond4_short = spread > spread_prev                 # Spread worsening (widening trend)
+        
+            long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
+            short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
+        
+            if debug:
+                print(
+                    f"[{self.symbol}] [Spread Filter ENHANCED] Spread Metrics | "
+                    f"spread={spread:.6f}, spread_ma={spread_ma:.6f}, spread_ratio={spread_ratio:.2f}, "
+                    f"spread_pct={spread_pct:.4f}, slippage_ok={slippage_ok}"
+                )
+                print(
+                    f"[{self.symbol}] [Spread Filter ENHANCED] Quality Gates | "
+                    f"market_quality_ok={market_quality_ok}, tight={spread_tight}, loose={spread_loose}"
+                )
+                print(
+                    f"[{self.symbol}] [Spread Filter ENHANCED] Conditions | "
+                    f"Long: [tight={cond1_long}, bullish={cond2_long}, quality={cond3_long}, trend={cond4_long}] = {long_met}/4 | "
+                    f"Short: [loose={cond1_short}, bearish={cond2_short}, quality={cond3_short}, trend={cond4_short}] = {short_met}/4"
+                )
+        
+            if long_met >= min_cond and long_met > short_met:
+                print(
+                    f"[{self.symbol}] [Spread Filter ENHANCED] Signal: LONG | "
+                    f"long_met={long_met}/4, spread_ratio={spread_ratio:.2f}, "
+                    f"spread_pct={spread_pct:.4f}, slippage_ok={slippage_ok}"
+                )
+                return "LONG"
+            elif short_met >= min_cond and short_met > long_met:
+                print(
+                    f"[{self.symbol}] [Spread Filter ENHANCED] Signal: SHORT | "
+                    f"short_met={short_met}/4, spread_ratio={spread_ratio:.2f}, "
+                    f"spread_pct={spread_pct:.4f}, slippage_ok={slippage_ok}"
+                )
+                return "SHORT"
+            else:
+                if debug:
+                    print(
+                        f"[{self.symbol}] [Spread Filter ENHANCED] No signal | "
+                        f"long_met={long_met}, short_met={short_met}, min_cond={min_cond}"
+                    )
+                return None
+        
+        except Exception as e:
+            print(f"[{self.symbol}] [Spread Filter ENHANCED] Error: {e}")
+            return None
 
     def _check_smart_money_bias(self, volume_window: int = 20, min_cond: int = 1, debug: bool = False) -> Optional[str]:
         """
