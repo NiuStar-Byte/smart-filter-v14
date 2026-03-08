@@ -10,7 +10,7 @@ import json
 from datetime import datetime, timezone
 from collections import defaultdict
 
-SIGNALS_FILE = "/Users/geniustarigan/.openclaw/workspace/SENT_SIGNALS.jsonl"
+SIGNALS_FILE = "/Users/geniustarigan/.openclaw/workspace/SIGNALS_MASTER.jsonl"
 
 class RRTracker:
     def __init__(self):
