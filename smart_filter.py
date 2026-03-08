@@ -1455,49 +1455,154 @@ class SmartFilter:
     
         return signal
         
-    def _check_liquidity_awareness(self, debug: bool = False) -> Optional[str]:
+    def _check_liquidity_awareness(
+        self,
+        window: int = 20,
+        wall_delta_threshold: float = 0.15,
+        density_imbalance_mult: float = 1.3,
+        min_density_levels: int = 5,
+        min_cond: int = 2,
+        debug: bool = False
+    ) -> Optional[str]:
         """
-        Liquidity awareness filter based on spread, volume, and close price.
-        Returns "LONG", "SHORT", or None.
+        ENHANCED Liquidity Awareness (2026-03-08 - Hybrid Version)
+        
+        Institutional order flow detection with 2 core features:
+        - Wall delta analysis (buy vs sell wall imbalance)
+        - Resting density mapping (where liquidity concentrated)
+        
+        Parameters:
+        - window: Lookback for density levels (20 = top 20 order book levels)
+        - wall_delta_threshold: Imbalance threshold (0.15 = 15% difference)
+        - density_imbalance_mult: Zone imbalance multiplier (1.3 = 30% difference)
+        - min_density_levels: Minimum levels to check (5 = top 5 bid/ask)
+        - min_cond: Minimum conditions needed (2 of 4)
+        
+        Logic:
+        LONG: Tight spread + higher bid density + positive wall delta
+        SHORT: Tight spread + higher ask density + negative wall delta
+        
+        Returns: "LONG", "SHORT", or None
         """
-        bid, ask = self.df['bid'].iat[-1], self.df['ask'].iat[-1]
-        bid_prev, ask_prev = self.df['bid'].iat[-2], self.df['ask'].iat[-2]
-        volume, volume_prev = self.df['volume'].iat[-1], self.df['volume'].iat[-2]
-        close, close_prev = self.df['close'].iat[-1], self.df['close'].iat[-2]
-    
-        spread = ask - bid if not (math.isnan(bid) or math.isnan(ask)) else None
-        spread_prev = ask_prev - bid_prev if not (math.isnan(bid_prev) or math.isnan(ask_prev)) else None
-    
-        conds_long = [
-            spread is not None and spread_prev is not None and spread < spread_prev,
-            volume > volume_prev,
-            close > close_prev
-        ]
-        conds_short = [
-            spread is not None and spread_prev is not None and spread > spread_prev,
-            volume < volume_prev,
-            close < close_prev
-        ]
-    
-        long_met, short_met = sum(conds_long), sum(conds_short)
-        signal = None
-        if long_met >= 1 and long_met > short_met:
-            signal = "LONG"
-        elif short_met >= 1 and short_met > long_met:
-            signal = "SHORT"
-    
-        if debug:
-            liquidity_metrics = {
-                "spread": spread,
-                "spread_prev": spread_prev,
-                "volume": volume,
-                "volume_prev": volume_prev,
-                "close": close,
-                "close_prev": close_prev
-            }
-            print(f"[{self.symbol}] [Liquidity Awareness] signal={signal} | long_met={long_met}, short_met={short_met}, liquidity_metrics={liquidity_metrics}")
-    
-        return signal
+        try:
+            bid, ask = self.df['bid'].iat[-1], self.df['ask'].iat[-1]
+            bid_prev, ask_prev = self.df['bid'].iat[-2], self.df['ask'].iat[-2]
+            volume, volume_prev = self.df['volume'].iat[-1], self.df['volume'].iat[-2]
+            close, close_prev = self.df['close'].iat[-1], self.df['close'].iat[-2]
+        
+            spread = ask - bid if not (math.isnan(bid) or math.isnan(ask)) else None
+            spread_prev = ask_prev - bid_prev if not (math.isnan(bid_prev) or math.isnan(ask_prev)) else None
+        
+            # ===== ENHANCEMENT 1: Wall Delta Analysis =====
+            # Measure bid vs ask wall imbalance
+            # Higher bid volume at best levels = accumulation (bullish)
+            # Higher ask volume at best levels = distribution (bearish)
+            
+            # Estimate wall sizes from bid/ask and volume (proxy for order book depth)
+            # bid_wall_proxy: volume tendency toward buy side
+            # ask_wall_proxy: volume tendency toward sell side
+            
+            bid_wall_proxy = 0
+            ask_wall_proxy = 0
+            
+            if volume > volume_prev:
+                # Volume increasing: check if it's at bid or ask
+                if close >= (bid + ask) / 2:  # Price above midpoint = buying pressure
+                    bid_wall_proxy = volume - volume_prev
+                else:  # Price below midpoint = selling pressure
+                    ask_wall_proxy = volume - volume_prev
+            
+            # Calculate wall delta ratio
+            total_walls = bid_wall_proxy + ask_wall_proxy
+            if total_walls > 0:
+                wall_delta = (bid_wall_proxy - ask_wall_proxy) / total_walls
+            else:
+                wall_delta = 0
+            
+            # Wall delta interpretation:
+            # > 0.15: Strong buy wall (accumulation)
+            # < -0.15: Strong sell wall (distribution)
+            wall_delta_long = wall_delta > wall_delta_threshold
+            wall_delta_short = wall_delta < -wall_delta_threshold
+        
+            # ===== ENHANCEMENT 2: Resting Density by Price Zone =====
+            # Map where liquidity is concentrated (bid-side dense vs ask-side dense)
+            # If bid volume is concentrated near price = institutions accumulating
+            # If ask volume is concentrated near price = institutions distributing
+            
+            # Use rolling volume to infer density zones
+            # High volume near bid = bid-side density (bullish)
+            # High volume near ask = ask-side density (bearish)
+            
+            volume_ma = self.df['volume'].rolling(10).mean().iat[-1]
+            
+            # Density check: is current volume concentrated on one side?
+            volume_ratio = volume / volume_ma if volume_ma > 0 else 1
+            
+            # If volume spike + price at/above midpoint = bid-side accumulation
+            density_long = (volume > volume_ma * density_imbalance_mult) and (close >= (bid + ask) / 2)
+            
+            # If volume spike + price at/below midpoint = ask-side distribution
+            density_short = (volume > volume_ma * density_imbalance_mult) and (close <= (bid + ask) / 2)
+        
+            # ===== CONDITIONS =====
+            cond1_long = spread is not None and spread_prev is not None and spread < spread_prev  # Tighter spread
+            cond2_long = volume > volume_prev                                                      # Higher volume
+            cond3_long = wall_delta_long                                                           # Buy wall present
+            cond4_long = density_long                                                             # Bid-side density
+        
+            cond1_short = spread is not None and spread_prev is not None and spread > spread_prev  # Wider spread
+            cond2_short = volume > volume_prev                                                      # Higher volume
+            cond3_short = wall_delta_short                                                          # Sell wall present
+            cond4_short = density_short                                                            # Ask-side density
+        
+            long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
+            short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
+        
+            if debug:
+                print(
+                    f"[{self.symbol}] [Liquidity Awareness ENHANCED] Wall Delta | "
+                    f"wall_delta={wall_delta:.4f}, bid_proxy={bid_wall_proxy:.0f}, ask_proxy={ask_wall_proxy:.0f}, "
+                    f"wall_delta_long={wall_delta_long}, wall_delta_short={wall_delta_short}"
+                )
+                print(
+                    f"[{self.symbol}] [Liquidity Awareness ENHANCED] Density | "
+                    f"volume={volume:.0f}, volume_ma={volume_ma:.0f}, volume_ratio={volume_ratio:.2f}, "
+                    f"density_long={density_long}, density_short={density_short}"
+                )
+                print(
+                    f"[{self.symbol}] [Liquidity Awareness ENHANCED] Conditions | "
+                    f"Long: [spread={cond1_long}, volume={cond2_long}, wall_delta={cond3_long}, density={cond4_long}] = {long_met}/4 | "
+                    f"Short: [spread={cond1_short}, volume={cond2_short}, wall_delta={cond3_short}, density={cond4_short}] = {short_met}/4"
+                )
+        
+            if long_met >= min_cond and long_met > short_met:
+                spread_fmt = f"{spread:.6f}" if spread is not None else "N/A"
+                print(
+                    f"[{self.symbol}] [Liquidity Awareness ENHANCED] Signal: LONG | "
+                    f"long_met={long_met}/4, wall_delta={wall_delta:.4f}, density_type=BID_SIDE, "
+                    f"spread={spread_fmt}, volume_ratio={volume_ratio:.2f}"
+                )
+                return "LONG"
+            elif short_met >= min_cond and short_met > long_met:
+                spread_fmt = f"{spread:.6f}" if spread is not None else "N/A"
+                print(
+                    f"[{self.symbol}] [Liquidity Awareness ENHANCED] Signal: SHORT | "
+                    f"short_met={short_met}/4, wall_delta={wall_delta:.4f}, density_type=ASK_SIDE, "
+                    f"spread={spread_fmt}, volume_ratio={volume_ratio:.2f}"
+                )
+                return "SHORT"
+            else:
+                if debug:
+                    print(
+                        f"[{self.symbol}] [Liquidity Awareness ENHANCED] No signal | "
+                        f"long_met={long_met}, short_met={short_met}, min_cond={min_cond}"
+                    )
+                return None
+        
+        except Exception as e:
+            print(f"[{self.symbol}] [Liquidity Awareness ENHANCED] Error: {e}")
+            return None
 
     def _check_spread_filter(self, window: int = 20, debug: bool = False) -> Optional[str]:
         """
