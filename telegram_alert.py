@@ -16,13 +16,47 @@ TELEGRAM_ENABLED = (
 if not TELEGRAM_ENABLED:
     print("[WARNING] Telegram not configured. Edit tg_config.py with your BOT_TOKEN and CHAT_ID from @BotFather and @userinfobot.", flush=True)
 
-# Temporarily disabled due to SSL issue with Binance
-# from check_symbols import get_token_blockchain_info
+# Blockchain consensus mapping (static, no external API required)
+# POW = Proof of Work, POS = Proof of Stake, HYBRID = Mixed
+BLOCKCHAIN_CONSENSUS = {
+    # POW (Proof of Work)
+    "BTC": "POW", "DOGE": "POW", "LTC": "POW",
+    
+    # POS (Proof of Stake) - Major L1s
+    "ETH": "POS", "SOL": "POS", "ADA": "POS", "AVAX": "POS", "DOT": "POS",
+    "ATOM": "POS", "NEAR": "POS", "SUI": "POS", "APT": "POS", "TON": "POS",
+    
+    # DeFi/L2/Tokens
+    "UNI": "POS", "AAVE": "POS", "LINK": "POS", "ARB": "POS", "OP": "POS",
+    "CRV": "POS", "YFI": "POS", "CVX": "POS", "ENS": "POS", "LDO": "POS",
+    
+    # Other blockchain L1s
+    "XRP": "FEDERATED", "BNB": "POA", "ALGO": "POS", "HBAR": "PBFT",
+    "XLM": "FEDERATED", "POL": "POS",
+    
+    # Solana ecosystem (all on SOL)
+    "BONK": "SOL", "WIF": "SOL", "JTO": "SOL", "FIDA": "SOL",
+    
+    # Alt L1s & sidechains
+    "INJ": "POS", "OCEAN": "POS", "TAO": "POS", "BLUR": "POS",
+    "EIGEN": "POS", "ONDO": "POS", "VIRTUAL": "POS", "GALA": "POS",
+    "DYDX": "POS", "ARK": "POS", "ASTER": "POS", "HYPE": "POS",
+    
+    # Default for unmapped
+    "DEFAULT": "POS"
+}
 
-# Fallback: Return None if get_token_blockchain_info not available
-def get_token_blockchain_info(*args, **kwargs):
-    """Fallback: returns None when Binance check is disabled"""
-    return None
+def get_token_blockchain_info(symbol: str):
+    """
+    Returns blockchain consensus for a symbol (static, no external API).
+    Maps symbol to consensus type (POW, POS, HYBRID, SOL, etc.)
+    """
+    try:
+        symbol_clean = str(symbol).split("-")[0].upper() if symbol else ""
+        consensus = BLOCKCHAIN_CONSENSUS.get(symbol_clean, BLOCKCHAIN_CONSENSUS["DEFAULT"])
+        return {"consensus": consensus, "blockchain": "KuCoin"}
+    except Exception:
+        return None
 
 SEND_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 SEND_FILE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendDocument"
@@ -300,16 +334,27 @@ def send_telegram_alert(
     tp_display = f"{_fmt_price(tp_val)} ({tp_pct_display})"
     sl_display = f"{_fmt_price(sl_val)} ({sl_pct_display})"
 
-    # Token consensus info (single-line)
-    token_info = None
+    # Token consensus info (single-line) - Static mapping, no external API
+    consensus_type = "Unknown"
+    consensus_icon_map = {
+        "POW": "⛏️",        # Proof of Work (mining)
+        "POS": "🪙",        # Proof of Stake
+        "POA": "✅",        # Proof of Authority
+        "PBFT": "🔗",       # Practical Byzantine Fault Tolerance
+        "FEDERATED": "🌐",  # Federated consensus
+        "SOL": "🌞",        # Solana (special)
+        "Unknown": "❓"
+    }
+    
     try:
         token_info = get_token_blockchain_info(symbol)
+        if token_info:
+            consensus_type = token_info.get('consensus', 'Unknown')
     except Exception:
-        token_info = None
-    if token_info:
-        consensus_display = f"⛓️ Consensus: {token_info.get('consensus', 'Unknown')} ({token_info.get('blockchain', 'Unknown')})"
-    else:
-        consensus_display = "⛓️ Consensus: Unknown"
+        consensus_type = "Unknown"
+    
+    consensus_icon = consensus_icon_map.get(consensus_type, "❓")
+    consensus_display = f"⛓️ Consensus: {consensus_icon} {consensus_type}"
 
     # RR and TP/SL source line (ATR-based, dynamic ratio)
     rr_line = ""
