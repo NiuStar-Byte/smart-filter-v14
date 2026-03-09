@@ -70,6 +70,17 @@ PHASE2_ENHANCED = {
     "Spread Filter", "MTF Volume Agreement", "VWAP Divergence"
 }
 
+# Phase 3: NOT YET DEPLOYED
+PHASE3_ENHANCED = set()
+
+# Phase 4 Wave 2: OPTIMIZATIONS COMPLETE, AWAITING DEPLOYMENT
+PHASE4_OPTIMIZED = {
+    "Chop Zone",  # KEEP AS-IS
+    "Volatility Model",  # atr_expansion 0.15→0.08, volume_mult 1.3→1.15
+    "HH/LL Trend",  # range_threshold 0.3%→0.5%
+    "Candle Confirmation"  # pin_wick_ratio 2.0→1.5
+}
+
 class DualTracker:
     def __init__(self):
         self.all_signals = []
@@ -180,9 +191,9 @@ class DualTracker:
             "min_score": min(scores),
             "max_score": max(scores),
             "filter_failure_rates": {k: round(v * 100, 1) for k, v in filter_failures.items()},
-            "enhancement_coverage_pct": 60,
-            "enhanced_filters": 12,
-            "not_enhanced_filters": 8,
+            "enhancement_coverage_pct": round((len(PHASE1_ENHANCED) + len(PHASE2_ENHANCED) + len(PHASE3_ENHANCED) + len(PHASE4_OPTIMIZED)) / TOTAL_FILTERS * 100, 1),
+            "enhanced_filters": len(PHASE1_ENHANCED) + len(PHASE2_ENHANCED) + len(PHASE3_ENHANCED) + len(PHASE4_OPTIMIZED),
+            "not_enhanced_filters": TOTAL_FILTERS - (len(PHASE1_ENHANCED) + len(PHASE2_ENHANCED) + len(PHASE3_ENHANCED) + len(PHASE4_OPTIMIZED)),
             "dynamic": True,
             "status": "⏳ DYNAMIC - Updates continuously"
         }
@@ -228,7 +239,7 @@ class DualTracker:
             },
             "interpretation": interpretation,
             "key_insight": {
-                "enhancement_coverage": f"{post_enh['enhanced_filters']}/{TOTAL_FILTERS} filters (60%)",
+                "enhancement_coverage": f"{post_enh['enhanced_filters']}/{TOTAL_FILTERS} filters ({post_enh['enhancement_coverage_pct']}%)",
                 "no_need_to_wait": "Partial enhancement is meaningful - no need to wait for 20/20",
                 "gate_rate_note": "Higher failure rate ≠ bad. May indicate better selectivity filtering weak signals.",
                 "quality_metric": "Compare P&L and win rate (WR) to confirm if delta = good or bad",
@@ -287,8 +298,11 @@ class DualTracker:
             elif filter_name in PHASE2_ENHANCED:
                 phase = "Phase 2 (2026-03-08)"
                 status = "✅ ENHANCED"
+            elif filter_name in PHASE4_OPTIMIZED:
+                phase = "Phase 4 Wave 2 (OPTIMIZED)"
+                status = "🟡 READY TO DEPLOY"
             else:
-                phase = "Phase 3/4 (Pending)"
+                phase = "Phase 3-4 (Pending)"
                 status = "⏳ NEXT TARGET"
             
             print(f"{idx:<5} {filter_name:<25} {fail_pct:<11.1f}% {weight:<8.1f} {phase:<25} {status:<20}")
@@ -318,7 +332,7 @@ class DualTracker:
         print(f"Avg score: {post_enh['avg_score']} / 20")
         print(f"Pass rate: {post_enh['pass_rate_pct']}%")
         print(f"Failure rate: {post_enh['failure_rate_pct']}%")
-        print(f"Enhancement coverage: {post_enh['enhanced_filters']}/{TOTAL_FILTERS} filters (60%)")
+        print(f"Enhancement coverage: {post_enh['enhanced_filters']}/{TOTAL_FILTERS} filters ({post_enh['enhancement_coverage_pct']}%)")
         print(f"Status: ⏳ DYNAMIC (updates continuously)")
         
         self.print_filter_table(post_enh['filter_failure_rates'],
