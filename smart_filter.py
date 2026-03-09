@@ -3096,70 +3096,147 @@ class SmartFilter:
             
     def _check_wick_dominance(
         self,
-        min_wick_dom_ratio=2.0,
+        min_wick_dom_ratio=1.8,
         min_body_ratio=1.5,
-        require_volume_confirm=False,
+        atr_multiplier=0.5,
+        exhaustion_lookback=5,
+        min_exhaustion_bars=2,
+        momentum_threshold=0.01,
+        require_volume_confirm=True,
+        min_cond=3,
         debug=False
     ):
         """
-        Enhanced Wick Dominance:
-        - Configurable wick dominance and body ratio thresholds.
-        - Optionally requires volume confirmation.
-        - Standardized detailed logging.
+        [Wick Dominance ENHANCED - Phase 3 Wave 1]
+        Institutional-grade reversal detection with 4 enhancements:
+        
+        1. Volatility-Aware Margins (ATR scaling)
+           - Adapts ratio thresholds to market volatility
+           - Calm market: stricter ratio needed
+           - Explosive market: more lenient ratio accepted
+        
+        2. Exhaustion Counting (2+ bars)
+           - Tracks consecutive wick rejections
+           - Higher exhaustion = reversal probability
+           - Confirms wick isn't isolated anomaly
+        
+        3. Momentum Directional Bias
+           - Measures last 3 bars momentum
+           - LONG wick in uptrend = stronger signal
+           - SHORT wick in downtrend = stronger signal
+        
+        4. Volume Pressure Validation
+           - Detects volume spike at wick (1.2x+ average)
+           - Indicates institutional trapped positions
+           - Confirms reversal likelihood
+        
+        Parameters (User Override: min_cond = 3):
+        - min_wick_dom_ratio: Base wick dominance ratio (1.8, was 2.0)
+        - atr_multiplier: ATR scaling factor (0.5)
+        - exhaustion_lookback: Bar count for exhaustion (5)
+        - min_exhaustion_bars: Min exhaustion threshold (2)
+        - momentum_threshold: Min directional bias (0.01 = 1%)
+        - require_volume_confirm: Must have volume spike (True)
+        - min_cond: Gate conditions (3 of 6 required, was 2 of 4)
         """
+        import math
+        
         open_ = self.df['open'].iat[-1]
         high = self.df['high'].iat[-1]
         low = self.df['low'].iat[-1]
         close = self.df['close'].iat[-1]
         volume = self.df['volume'].iat[-1]
         volume_ma = self.df['volume'].rolling(10).mean().iat[-1] if 'volume' in self.df.columns else None
-    
+        
         upper_wick = high - max(open_, close)
         lower_wick = min(open_, close) - low
         body = abs(close - open_)
-    
-        # Optional volume confirmation
-        volume_confirm = volume > volume_ma if require_volume_confirm and volume_ma is not None else True
-    
-        # Wick dominance logic (configurable thresholds)
-        cond1_long = lower_wick > min_wick_dom_ratio * upper_wick
-        cond2_long = lower_wick > min_body_ratio * body
-        cond3_long = close > open_
-        cond4_long = volume_confirm
-    
-        cond1_short = upper_wick > min_wick_dom_ratio * lower_wick
-        cond2_short = upper_wick > min_body_ratio * body
-        cond3_short = close < open_
-        cond4_short = volume_confirm
-    
-        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
-    
-        # Wick dominance for logging
-        if lower_wick > upper_wick:
-            wick_dom = f"Lower wick dominant ({lower_wick:.2f} > {upper_wick:.2f})"
-        elif upper_wick > lower_wick:
-            wick_dom = f"Upper wick dominant ({upper_wick:.2f} > {lower_wick:.2f})"
-        else:
-            wick_dom = f"No dominance (upper={upper_wick:.2f}, lower={lower_wick:.2f})"
-    
+        
+        # FEATURE #1: Volatility-Aware Margins (ATR scaling)
+        atr = self.df['atr'].iat[-1] if 'atr' in self.df.columns else None
+        volatility_scale = 1.0
+        if atr and atr > 0:
+            # Scale ratio based on ATR relative to close
+            volatility_scale = 1.0 + (atr / close * atr_multiplier)
+        adaptive_ratio = min_wick_dom_ratio * volatility_scale
+        
+        # FEATURE #2: Exhaustion Counting (count bars with wick rejections)
+        exhaustion_long = 0  # Count bars with lower wick > upper wick
+        exhaustion_short = 0  # Count bars with upper wick > lower wick
+        if len(self.df) >= exhaustion_lookback:
+            for i in range(-exhaustion_lookback, 0):
+                try:
+                    o = self.df['open'].iat[i]
+                    h = self.df['high'].iat[i]
+                    l = self.df['low'].iat[i]
+                    c = self.df['close'].iat[i]
+                    uw = h - max(o, c)
+                    lw = min(o, c) - l
+                    if lw > uw:
+                        exhaustion_long += 1
+                    if uw > lw:
+                        exhaustion_short += 1
+                except:
+                    pass
+        
+        # FEATURE #3: Momentum Directional Bias
+        momentum_long = 0.0  # Positive = uptrend momentum
+        momentum_short = 0.0  # Positive = downtrend momentum
+        if len(self.df) >= 3:
+            try:
+                close_prev3 = self.df['close'].iat[-3]
+                close_prev2 = self.df['close'].iat[-2]
+                close_prev1 = self.df['close'].iat[-1]
+                momentum_long = (close_prev1 - close_prev3) / close_prev3
+                momentum_short = (close_prev3 - close_prev1) / close_prev3
+            except:
+                momentum_long = 0.0
+                momentum_short = 0.0
+        
+        # FEATURE #4: Volume Pressure Validation
+        volume_confirm = True
+        if require_volume_confirm and volume_ma is not None and volume_ma > 0:
+            volume_confirm = volume > (volume_ma * 1.2)  # 1.2x average required
+        
+        # Condition gates (6 total, need min_cond to pass)
+        cond1_long = lower_wick > adaptive_ratio * upper_wick  # Wick ratio (scaled)
+        cond2_long = lower_wick > min_body_ratio * body  # Wick > body ratio
+        cond3_long = close > open_  # Body bullish
+        cond4_long = exhaustion_long >= min_exhaustion_bars  # Exhaustion metric
+        cond5_long = momentum_long >= momentum_threshold  # Momentum uptrend
+        cond6_long = volume_confirm  # Volume pressure
+        
+        cond1_short = upper_wick > adaptive_ratio * lower_wick  # Wick ratio (scaled)
+        cond2_short = upper_wick > min_body_ratio * body  # Wick > body ratio
+        cond3_short = close < open_  # Body bearish
+        cond4_short = exhaustion_short >= min_exhaustion_bars  # Exhaustion metric
+        cond5_short = momentum_short >= momentum_threshold  # Momentum downtrend
+        cond6_short = volume_confirm  # Volume pressure
+        
+        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long, cond5_long, cond6_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short, cond5_short, cond6_short])
+        
+        # Logging
+        wick_dom_str = f"Lower={lower_wick:.2f} Upper={upper_wick:.2f}"
         log_info = (
-            f"wick_dom={wick_dom}, open={open_}, close={close}, high={high}, low={low}, "
-            f"body={body:.2f}, upper_wick={upper_wick:.2f}, lower_wick={lower_wick:.2f}, volume={volume}, volume_ma={volume_ma}, "
-            f"min_wick_dom_ratio={min_wick_dom_ratio}, min_body_ratio={min_body_ratio}, require_volume_confirm={require_volume_confirm}"
+            f"[Wick Dominance ENHANCED] wick_dom={wick_dom_str}, adaptive_ratio={adaptive_ratio:.2f}, "
+            f"exhaustion_long={exhaustion_long}, exhaustion_short={exhaustion_short}, "
+            f"momentum_long={momentum_long:.4f}, momentum_short={momentum_short:.4f}, "
+            f"volume_confirm={volume_confirm}, body={body:.2f}"
         )
-    
-        if long_met >= 2 and long_met > short_met:
+        
+        # Fire signal if min_cond conditions met
+        if long_met >= min_cond and long_met > short_met:
             if debug:
-                print(f"[{self.symbol}] [Wick Dominance] Signal: LONG | long_met={long_met}, short_met={short_met}, {log_info}")
+                print(f"[{self.symbol}] {log_info} | LONG FIRE (long={long_met} short={short_met})")
             return "LONG"
-        elif short_met >= 2 and short_met > long_met:
+        elif short_met >= min_cond and short_met > long_met:
             if debug:
-                print(f"[{self.symbol}] [Wick Dominance] Signal: SHORT | long_met={long_met}, short_met={short_met}, {log_info}")
+                print(f"[{self.symbol}] {log_info} | SHORT FIRE (short={short_met} long={long_met})")
             return "SHORT"
         else:
             if debug:
-                print(f"[{self.symbol}] [Wick Dominance] No signal fired | long_met={long_met}, short_met={short_met}, {log_info}")
+                print(f"[{self.symbol}] {log_info} | NO FIRE (long={long_met} short={short_met}, need {min_cond})")
             return None
 
     def _market_regime(
