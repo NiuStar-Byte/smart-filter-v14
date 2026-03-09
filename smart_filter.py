@@ -84,10 +84,7 @@ class SmartFilter:
         #    print(f"[DEBUG] {self.symbol} Last row after indicators:\n", self.df.iloc[-1])
     
         self.tf = tf
-        # FIXED 2026-03-09: Changed from 12 (weighted) to 4 (simple count of filters)
-        # Root cause: Score calculation uses simple filter counts, not weighted sums
-        # 4+ filters firing = sufficient signal quality (out of ~25 total filters)
-        self.min_score = 4 if min_score == 12 else min_score
+        self.min_score = min_score
         print(f"[CRITICAL-DEBUG] SmartFilter.__init__ {symbol} {tf}: min_score={min_score} (source of truth for ALL timeframes)", flush=True)
         self.required_passed = required_passed
         self.volume_multiplier = volume_multiplier
