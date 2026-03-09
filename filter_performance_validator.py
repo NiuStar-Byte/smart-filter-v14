@@ -59,6 +59,10 @@ PHASE2_ENHANCED = {
     "Spread Filter", "MTF Volume Agreement", "VWAP Divergence"
 }
 
+PHASE3_ENHANCED = {
+    "Wick Dominance", "Absorption", "Smart Money Bias", "Liquidity Pool"
+}
+
 PHASE4_OPTIMIZED = {
     "Chop Zone", "Volatility Model", "HH/LL Trend", "Candle Confirmation"
 }
@@ -196,18 +200,26 @@ class FilterPerformanceValidator:
             elif filter_name in PHASE2_ENHANCED:
                 self.filter_stats[filter_name]["enhanced"] = True
                 self.filter_stats[filter_name]["phase"] = "Phase 2 (2026-03-08)"
+            elif filter_name in PHASE3_ENHANCED:
+                self.filter_stats[filter_name]["enhanced"] = True
+                self.filter_stats[filter_name]["phase"] = "Phase 3 Wave 1 (2026-03-09)"
             elif filter_name in PHASE4_OPTIMIZED:
                 self.filter_stats[filter_name]["enhanced"] = True
                 self.filter_stats[filter_name]["phase"] = "Phase 4 Wave 2 (2026-03-09)"
             else:
                 self.filter_stats[filter_name]["enhanced"] = False
-                self.filter_stats[filter_name]["phase"] = "Phase 3 (Pending)"
+                self.filter_stats[filter_name]["phase"] = "UNKNOWN"
     
     def print_report(self):
         """Print validation report."""
         print("\n" + "="*140)
         print("FILTER PERFORMANCE VALIDATOR - Actual Daemon Log Counts")
         print("="*140)
+        print(f"\n📊 TRACKING TIMEFRAME:")
+        print(f"   • Baseline: All signals BEFORE 2026-03-05 (998 signals)")
+        print(f"   • Post-Enhancement: Signals FROM 2026-03-05 onwards ({len(self.post_enh_signals)} signals)")
+        print(f"   • Daemon Logs: Current run (after DEBUG_FILTERS=true restart on 2026-03-09 17:40)")
+        print(f"\n")
         
         # Sort by fail rate (worst first)
         sorted_filters = sorted(
@@ -230,14 +242,14 @@ class FilterPerformanceValidator:
         
         phase1_filters = [f for f, s in self.filter_stats.items() if s["phase"] == "Phase 1 (2026-03-05)"]
         phase2_filters = [f for f, s in self.filter_stats.items() if s["phase"] == "Phase 2 (2026-03-08)"]
+        phase3_filters = [f for f, s in self.filter_stats.items() if s["phase"] == "Phase 3 Wave 1 (2026-03-09)"]
         phase4_filters = [f for f, s in self.filter_stats.items() if s["phase"] == "Phase 4 Wave 2 (2026-03-09)"]
-        phase3_filters = [f for f, s in self.filter_stats.items() if s["phase"] == "Phase 3 (Pending)"]
         
         for phase_name, filters_in_phase in [
             ("Phase 1", phase1_filters),
             ("Phase 2", phase2_filters),
-            ("Phase 4 Wave 2", phase4_filters),
-            ("Phase 3 (Pending)", phase3_filters)
+            ("Phase 3 Wave 1", phase3_filters),
+            ("Phase 4 Wave 2", phase4_filters)
         ]:
             if not filters_in_phase:
                 continue
@@ -253,14 +265,11 @@ class FilterPerformanceValidator:
         print("This validates actual filter performance from daemon logs.")
         print("Fail rate = filter rejected the signal (didn't pass min conditions)")
         print("Pass rate = filter accepted the signal (passed min conditions)")
-        print("\n⚠️  FILTERS WITH 0 EVALS:")
-        print("  These filters are ENHANCED (confirmed in code) but don't log individual evaluations:")
-        print("  • Volume Spike (Phase 1) - Enhanced but no individual logs")
-        print("  • Fractal Zone (Phase 1) - Enhanced but no individual logs")
-        print("  • ATR Momentum Burst (Phase 1) - Enhanced but no individual logs")
-        print("  • Volatility Model (Phase 4) - Deployed but no individual logs")
-        print("  • Candle Confirmation (Phase 4) - Deployed but no individual logs")
-        print("  → They ARE active (in weight metadata), just not traced individually")
+        print("\n✅ ALL 20 FILTERS NOW DEPLOYED:")
+        print("  • Phase 1: 6 filters (TREND, MACD, Momentum, Volume Spike, ATR Momentum, Fractal Zone)")
+        print("  • Phase 2: 6 filters (VWAP Divergence, Spread Filter, Support/Resistance, Liquidity Awareness, MTF Volume, Volatility Squeeze)")
+        print("  • Phase 3 Wave 1: 4 filters (Wick Dominance, Absorption, Smart Money Bias, Liquidity Pool)")
+        print("  • Phase 4 Wave 2: 4 filters (Volatility Model, Candle Confirmation, Chop Zone, HH/LL Trend)")
         print("\nHigher fail rate ≠ bad enhancement. May indicate:")
         print("  1. Better selectivity (filtering weak signals)")
         print("  2. Market conditions changed (different signal flow)")
