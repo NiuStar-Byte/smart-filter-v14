@@ -1867,7 +1867,7 @@ class SmartFilter:
         volume_spike_mult: float = 1.1,  # Loosened from 1.2 (10% above avg)
         vwap_deviation_pct: float = 0.005,  # Loosened from 0.003 (0.5% instead of 0.3%)
         momentum_threshold: float = 0.0,  # Loosened from implicit
-        min_cond: int = 2,
+        min_cond: int = 1,              # OPTIMIZATION: 2→1 (fire on any condition met)
         debug: bool = False
     ) -> Optional[str]:
         """
@@ -1970,7 +1970,7 @@ class SmartFilter:
         price_proximity_pct: float = 0.02,  # Loosened from 0.01 (2% acceptance)
         volume_threshold: float = 1.1,   # Loosened from 1.3 (10% above avg, not 30%)
         momentum_threshold: float = 0.0,  # Loosened from 0.005 (any positive)
-        min_cond: int = 2,
+        min_cond: int = 1,              # OPTIMIZATION: 2→1 (fire with 1+ conditions)
         debug: bool = False
     ) -> Optional[str]:
         """
@@ -2256,7 +2256,7 @@ class SmartFilter:
         require_volume_confirm: bool = False,
         external_sr_long: Optional[dict] = None,
         external_sr_short: Optional[dict] = None,
-        min_cond: int = 2,
+        min_cond: int = 1,
         debug: bool = False
     ) -> Optional[str]:
         """
@@ -2632,7 +2632,7 @@ class SmartFilter:
         breakout_pct: float = 0.001,  # Loosened from 0.002 (0.1% instead of 0.2%)
         volume_threshold: float = 1.05,  # Loosened from 1.15 (5% above avg, not 15%)
         momentum_threshold: float = 0.0,  # Loosened
-        min_cond: int = 2,
+        min_cond: int = 1,              # OPTIMIZATION: 2→1 (fire with 1+ conditions)
         debug: bool = False
     ):
         """
@@ -3130,8 +3130,8 @@ class SmartFilter:
 
     def _check_chop_zone(
         self,
-        chop_threshold=40,
-        adx_strict=25,
+        chop_threshold=60,  # OPTIMIZATION: 40→60 (only reject EXTREMELY choppy markets)
+        adx_strict=20,      # OPTIMIZATION: 25→20 (less strict trend requirement)
         debug=False
     ):
         """
@@ -3172,12 +3172,12 @@ class SmartFilter:
                 f"[{self.symbol}] [Chop Zone Check] Metrics | chop_zone={chop_zone}, ema9={ema9}, ema21={ema21}, adx={adx}, adx_strict={adx_strict}, long_met={long_met}, short_met={short_met}"
             )
     
-        if long_met >= 2 and long_met > short_met:
+        if long_met >= 1 and long_met > short_met:
             print(
                 f"[{self.symbol}] [Chop Zone Check] Signal: LONG | long_met={long_met}, short_met={short_met}, chop_zone={chop_zone}, ema9={ema9}, ema21={ema21}, adx={adx}"
             )
             return "LONG"
-        elif short_met >= 2 and short_met > long_met:
+        elif short_met >= 1 and short_met > long_met:
             print(
                 f"[{self.symbol}] [Chop Zone Check] Signal: SHORT | long_met={long_met}, short_met={short_met}, chop_zone={chop_zone}, ema9={ema9}, ema21={ema21}, adx={adx}"
             )
@@ -3317,12 +3317,12 @@ class SmartFilter:
             
     def _check_wick_dominance(
         self,
-        min_wick_dom_ratio=1.5,  # Loosened from 1.8
+        min_wick_dom_ratio=1.3,  # OPTIMIZATION: 1.5→1.3 (more realistic pin bar ratio)
         atr_multiplier=0.3,      # Loosened from 0.5
         exhaustion_lookback=5,
         min_exhaustion_bars=1,   # Loosened from 2
         momentum_threshold=0.0,  # Loosened from 0.01 (accept any positive)
-        min_cond=2,
+        min_cond=1,              # OPTIMIZATION: 2→1 (fire with 1+ conditions instead of 2+)
         debug=False
     ):
         """
