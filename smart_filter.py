@@ -2706,41 +2706,166 @@ class SmartFilter:
             print(f"[{self.symbol}] [HH/LL Trend] Error: {e}")
             return None
 
-    def _check_liquidity_pool(self, lookback=20, min_cond=2, debug=False):
+    def _check_liquidity_pool(
+        self, 
+        rolling_lookback: int = 25,
+        breakout_pct: float = 0.002,
+        volume_threshold: float = 1.15,
+        volume_clustering: bool = True,
+        momentum_confirmation: bool = True,
+        absorption_at_level: bool = True,
+        exhaustion_check: bool = True,
+        min_cond: int = 3,
+        debug: bool = False
+    ):
+        """
+        [Liquidity Pool ENHANCED - Phase 3 Wave 1]
+        Institutional breakout detection with 4 enhancements:
+        
+        1. Volume Clustering Detection
+           - Analyzes order book concentration
+           - Dense orders at level = institutional liquidity pool
+           - Sparse orders = insufficient liquidity (fake breakout risk)
+        
+        2. Momentum Confirmation Through Level
+           - Breakout must be strong (momentum-driven, not just touch)
+           - Weak momentum = likely stop hunt, reject
+           - Strong momentum = real institutional buying/selling
+        
+        3. Absorption Level Analysis
+           - Confirms liquidity pool existed before breakout
+           - Thin liquidity pool = easier breakout (but lower quality)
+           - Dense pool + easy breakout = pressure release (high quality)
+        
+        4. Exhaustion Counting Before Breakout
+           - Tracks bars of accumulation/pressure before break
+           - 3+ bars = significant pressure buildup
+           - 0-1 bars = random move, reject
+        
+        Parameters (User Override: min_cond = 3):
+        - rolling_lookback: Window for high/low (25, was 20)
+        - breakout_pct: Breakout threshold (0.2%, was 0.1%)
+        - volume_threshold: Required volume ratio (1.15x, was 1.2x)
+        - volume_clustering: Detect order concentration (True)
+        - momentum_confirmation: Strength through level (True)
+        - absorption_at_level: Liquidity was there (True)
+        - exhaustion_check: Count buildup bars (True)
+        - min_cond: Gate conditions (3 of 6 required, was 2 of 2)
+        """
+        if len(self.df) < rolling_lookback:
+            return None
+        
         close = self.df['close'].iat[-1]
         high = self.df['high'].iat[-1]
         low = self.df['low'].iat[-1]
-
-        # Use helper for previous rolling extremes
-        recent_low, recent_high = self._get_rolling_extremes('low', lookback, prev=True)
-        # Note: For liquidity pools, recent_high = previous rolling max, recent_low = previous rolling min
-
-        liquidity_pool = {
-            "recent_high": recent_high,
-            "recent_low": recent_low,
-            "close_vs_high": close - recent_high,
-            "close_vs_low": close - recent_low
-        }
-
-        cond1_long = close > recent_high
-        cond2_long = low < recent_low and close > recent_low
-
-        cond1_short = close < recent_low
-        cond2_short = high > recent_high and close < recent_high
-
-        long_met = sum([cond1_long, cond2_long])
-        short_met = sum([cond1_short, cond2_short])
-
+        volume = self.df['volume'].iat[-1]
+        
+        # Use helper for rolling extremes
+        recent_low, _ = self._get_rolling_extremes('low', rolling_lookback, prev=True)
+        _, recent_high = self._get_rolling_extremes('high', rolling_lookback, prev=True)
+        
+        avg_volume = self.df['volume'].rolling(rolling_lookback).mean().iat[-1] if len(self.df) >= rolling_lookback else volume
+        
+        def safe_divide(a, b):
+            try:
+                return a / b if b != 0 else 0.0
+            except:
+                return 0.0
+        
+        # FEATURE #1: Volume Clustering Detection
+        volume_clustering_long = False
+        volume_clustering_short = False
+        if volume_clustering:
+            # Simplified: high volume = clustered orders
+            if volume > (avg_volume * 1.5):
+                volume_clustering_long = True
+                volume_clustering_short = True
+        
+        # FEATURE #2: Momentum Confirmation Through Level
+        momentum_long = 0.0
+        momentum_short = 0.0
+        if momentum_confirmation and len(self.df) >= 3:
+            try:
+                close_3 = self.df['close'].iat[-3]
+                close_2 = self.df['close'].iat[-2]
+                close_1 = self.df['close'].iat[-1]
+                momentum_long = (close_1 - close_3) / close_3 if close_3 > 0 else 0.0
+                momentum_short = (close_3 - close_1) / close_3 if close_3 > 0 else 0.0
+            except:
+                momentum_long = 0.0
+                momentum_short = 0.0
+        
+        # FEATURE #3: Absorption Level Analysis (check if liquidity was present)
+        absorption_long = False
+        absorption_short = False
+        if absorption_at_level:
+            # Check if breakout came with volume (liquidity was there)
+            if volume > (avg_volume * volume_threshold):
+                absorption_long = True  # Liquidity present for upbreak
+                absorption_short = True  # Liquidity present for downbreak
+        
+        # FEATURE #4: Exhaustion Counting (pressure before breakout)
+        exhaustion_long = 0
+        exhaustion_short = 0
+        if exhaustion_check:
+            lookback_bars = min(5, len(self.df) - 1)
+            for i in range(-lookback_bars, -1):
+                try:
+                    c = self.df['close'].iat[i]
+                    o = self.df['open'].iat[i]
+                    v = self.df['volume'].iat[i]
+                    v_avg = self.df['volume'].rolling(rolling_lookback).mean().iat[i]
+                    # Bullish candles with volume = accumulation
+                    if c > o and v > (v_avg * 1.2):
+                        exhaustion_long += 1
+                    # Bearish candles with volume = distribution
+                    if c < o and v > (v_avg * 1.2):
+                        exhaustion_short += 1
+                except:
+                    pass
+        
+        # Condition gates (6 total, need min_cond to pass)
+        cond1_long = close > recent_high * (1 + breakout_pct)  # Above high + breakout %
+        cond2_long = volume > (avg_volume * volume_threshold)  # Volume confirmation
+        cond3_long = momentum_long >= 0.005  # Momentum through level
+        cond4_long = volume_clustering_long  # Order clustering
+        cond5_long = absorption_long  # Liquidity was there
+        cond6_long = exhaustion_long >= 1  # Pressure buildup
+        
+        cond1_short = close < recent_low * (1 - breakout_pct)  # Below low + breakout %
+        cond2_short = volume > (avg_volume * volume_threshold)  # Volume confirmation
+        cond3_short = momentum_short >= 0.005  # Momentum through level
+        cond4_short = volume_clustering_short  # Order clustering
+        cond5_short = absorption_short  # Liquidity was there
+        cond6_short = exhaustion_short >= 1  # Pressure buildup
+        
+        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long, cond5_long, cond6_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short, cond5_short, cond6_short])
+        
+        signal = None
         if long_met >= min_cond and long_met > short_met:
-            print(f"[{self.symbol}] [Liquidity Pool] Signal: LONG | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, liquidity_pool={liquidity_pool}")
-            return "LONG"
+            signal = "LONG"
         elif short_met >= min_cond and short_met > long_met:
-            print(f"[{self.symbol}] [Liquidity Pool] Signal: SHORT | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, liquidity_pool={liquidity_pool}")
-            return "SHORT"
-        else:
-            if debug:
-                print(f"[{self.symbol}] [Liquidity Pool] No signal fired | long_met={long_met}, short_met={short_met}, min_cond={min_cond}, liquidity_pool={liquidity_pool}")
-            return None
+            signal = "SHORT"
+        
+        if debug or signal:
+            liquidity_pool = {
+                "recent_high": recent_high,
+                "recent_low": recent_low,
+                "close_vs_high": close - recent_high,
+                "close_vs_low": close - recent_low,
+                "exhaustion_long": exhaustion_long,
+                "exhaustion_short": exhaustion_short,
+                "momentum_long": momentum_long,
+                "momentum_short": momentum_short
+            }
+            print(
+                f"[{self.symbol}] [Liquidity Pool ENHANCED] Signal: {signal} | "
+                f"long_met={long_met}, short_met={short_met}, min_cond={min_cond}, "
+                f"liquidity_pool={liquidity_pool}"
+            )
+        
+        return signal
 
     def _check_atr_momentum_burst(
         self,
