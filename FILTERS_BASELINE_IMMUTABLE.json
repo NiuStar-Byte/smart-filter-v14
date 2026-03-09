@@ -1,0 +1,13 @@
+{
+  "calculated_at": "2026-03-08T22:48:31.092162",
+  "cutoff": "2026-03-05T00:00:00",
+  "description": "IMMUTABLE BASELINE - All signals BEFORE enhancement (2026-03-05)",
+  "signal_count": 998,
+  "avg_score": 14.64,
+  "pass_rate_pct": 73.2,
+  "failure_rate_pct": 26.8,
+  "min_score": 14,
+  "max_score": 16,
+  "immutable": true,
+  "status": "\u2713 LOCKED - Reference for all future comparisons"
+}

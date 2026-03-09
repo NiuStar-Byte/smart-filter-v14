@@ -39,8 +39,9 @@ def run_snapshot():
                     signals.append(signal)
                     total_count += 1
                     
-                    # Count closed signals (status is not OPEN)
-                    if signal.get('status', '').upper() != 'OPEN':
+                    # Count closed signals (status is not OPEN and not null)
+                    status = signal.get('status')
+                    if status and status.upper() != 'OPEN':
                         closed_count += 1
         
         # Write cumulative file

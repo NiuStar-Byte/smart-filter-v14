@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """
-🔒 A/B TEST - Foundation Baseline vs Phase 2-FIXED
-One True Baseline. No conflicting numbers.
+🔒 A/B TEST - Foundation Baseline vs Phase 2-FIXED (FRESH START)
+One True Baseline. Clean signals only.
+
+FRESH START: 2026-03-08 11:20 GMT+7 (2026-03-08 04:20 UTC)
+Old corrupted signals (Mar 3-8) discarded.
 """
 
 import json
@@ -20,29 +23,27 @@ FOUNDATION = {
 }
 
 SIGNALS_FILE = "/Users/geniustarigan/.openclaw/workspace/SENT_SIGNALS.jsonl"  # Daemon writes to workspace root
-PHASE2_CUTOFF = datetime(2026, 3, 3, 13, 16, 0, tzinfo=timezone.utc)
+# FRESH START: 2026-03-08 11:20 GMT+7 = 2026-03-08 04:20 UTC
+PHASE2_CUTOFF = datetime(2026, 3, 8, 4, 20, 0, tzinfo=timezone.utc)
 
 def clear_screen():
     """Clear terminal screen (cross-platform)"""
     subprocess.call('clear' if os.name == 'posix' else 'cls', shell=True)
 
 def get_phase2_signals():
-    """Load Phase 2-FIXED signals (after 13:16 UTC cutoff) from LIVE SENT_SIGNALS.jsonl"""
+    """Load Phase 2-FIXED FRESH signals (after fresh start cutoff) from LIVE SENT_SIGNALS.jsonl"""
     phase2 = []
     try:
         with open(SIGNALS_FILE, 'r') as f:
             for line in f:
                 try:
                     sig = json.loads(line.strip())
-                    # Filter by signal_origin first (NEW signals only)
-                    if sig.get('signal_origin') != 'NEW':
-                        continue
                     fired_str = sig.get('fired_time_utc', '')
                     if not fired_str:
                         continue
-                    # Double-check by timestamp as well (belt + suspenders)
-                    fired = datetime.fromisoformat(fired_str.split('+')[0]).replace(tzinfo=timezone.utc)
-                    if fired >= PHASE2_CUTOFF:
+                    # Filter by timestamp (fresh start: 2026-03-08 04:20 UTC)
+                    # Simple string comparison works because ISO format
+                    if fired_str >= "2026-03-08T04:20:00":
                         phase2.append(sig)
                 except:
                     continue
@@ -64,13 +65,13 @@ def main():
     p2_short_wr = (p2_short_wins / p2_shorts * 100) if p2_shorts > 0 else 0
     
     print("\n" + "="*100)
-    print("🧪 A/B TEST - FOUNDATION vs PHASE 2-FIXED")
+    print("🧪 A/B TEST - FOUNDATION vs PHASE 2-FIXED (FRESH START)")
     print("="*100)
     print()
     print("📊 SIGNAL COMPOSITION:")
     print("   • FOUNDATION: 853 signals (locked baseline, immutable)")
-    print("   • NEW (Phase 2-PRIOR): 141 signals | Fired before Mar 3 13:16 UTC, but chronologically newer")
-    print("   • NEW (Phase 2-FIXED): Fired after Mar 3 13:16 UTC ← THIS PHASE TRACKS ONLY PHASE 2-FIXED")
+    print("   • Phase 2-FIXED FRESH: Fired after Mar 8 11:20 GMT+7 (2026-03-08 04:20 UTC)")
+    print("   • Status: ✅ Corrupted Mar 3-8 signals discarded, counting clean signals only")
     print()
     print(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S GMT+7')}")
     print(f"Foundation (Locked): {FOUNDATION['total_signals']} signals | {FOUNDATION['win_rate']}% WR | ${FOUNDATION['pnl']}")

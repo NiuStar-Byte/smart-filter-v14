@@ -1,137 +1,958 @@
 /Users/geniustarigan/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
   warnings.warn(
-[DAEMON] PEC Auto-Update started at 2026-03-08 00:39:39
+[DAEMON] PEC Auto-Update started at 2026-03-08 01:29:15
 [DAEMON] Updates every 5 minutes
 [DAEMON] Stop with: pkill -f pec_daemon.py
 
-[PEC-STALE-TIMEOUT] AGLD-USDT 1h: 30 bars (25h overdue), actual_timeout=2026-03-06T15:50:53.257468
-[PEC-STALE-TIMEOUT] AGLD-USDT 1h: 30 bars (25h overdue), actual_timeout=2026-03-06T15:54:46.908723
-[PEC-STALE-TIMEOUT] AGLD-USDT 1h: 30 bars (25h overdue), actual_timeout=2026-03-06T15:56:33.144098
-[PEC-STALE-TIMEOUT] ASTER-USDT 1h: 29 bars (24h overdue), actual_timeout=2026-03-06T16:47:17.497181
-[PEC-STALE-TIMEOUT] X-USDT 30min: 59 bars (24h overdue), actual_timeout=2026-03-06T17:07:37.314712
-[PEC-STALE-TIMEOUT] AERO-USDT 30min: 55 bars (22h overdue), actual_timeout=2026-03-06T19:06:33.754863
-[PEC-STALE-TIMEOUT] AERO-USDT 1h: 27 bars (22h overdue), actual_timeout=2026-03-06T19:06:35.873275
-[PEC-STALE-TIMEOUT] ARB-USDT 15min: 109 bars (23h overdue), actual_timeout=2026-03-06T17:57:01.426733
-[PEC-STALE-TIMEOUT] SOL-USDT 15min: 109 bars (23h overdue), actual_timeout=2026-03-06T17:57:36.066057
-[PEC-STALE-TIMEOUT] SOL-USDT 30min: 54 bars (22h overdue), actual_timeout=2026-03-06T19:12:38.736870
-[PEC-STALE-TIMEOUT] WIF-USDT 1h: 27 bars (22h overdue), actual_timeout=2026-03-06T19:16:02.917883
-[PEC-STALE-TIMEOUT] AVNT-USDT 30min: 54 bars (22h overdue), actual_timeout=2026-03-06T19:16:15.452136
-[PEC-STALE-TIMEOUT] TAO-USDT 30min: 54 bars (22h overdue), actual_timeout=2026-03-06T19:16:39.310593
-[PEC-STALE-TIMEOUT] EIGEN-USDT 1h: 27 bars (22h overdue), actual_timeout=2026-03-06T19:17:48.758560
-[PEC-STALE-TIMEOUT] ONDO-USDT 30min: 54 bars (22h overdue), actual_timeout=2026-03-06T19:17:55.904910
-[PEC-STALE-TIMEOUT] ONDO-USDT 1h: 27 bars (22h overdue), actual_timeout=2026-03-06T19:17:58.195238
-[PEC-STALE-TIMEOUT] ARKM-USDT 30min: 54 bars (22h overdue), actual_timeout=2026-03-06T19:18:14.253400
-[PEC-STALE-TIMEOUT] SEI-USDT 30min: 54 bars (22h overdue), actual_timeout=2026-03-06T19:18:47.139214
-[PEC-STALE-TIMEOUT] SEI-USDT 1h: 27 bars (22h overdue), actual_timeout=2026-03-06T19:18:49.234802
-[PEC-STALE-TIMEOUT] DOGE-USDT 30min: 54 bars (22h overdue), actual_timeout=2026-03-06T19:19:44.000162
-[PEC-STALE-TIMEOUT] ALGO-USDT 30min: 54 bars (22h overdue), actual_timeout=2026-03-06T19:19:47.354490
-[PEC-STALE-TIMEOUT] UNI-USDT 30min: 54 bars (22h overdue), actual_timeout=2026-03-06T19:19:57.661181
-[PEC-STALE-TIMEOUT] RAY-USDT 30min: 54 bars (22h overdue), actual_timeout=2026-03-06T19:25:58.153178
-[PEC-STALE-TIMEOUT] TAO-USDT 1h: 27 bars (22h overdue), actual_timeout=2026-03-06T19:36:14.780353
-[PEC-STALE-TIMEOUT] ETH-USDT 1h: 27 bars (22h overdue), actual_timeout=2026-03-06T19:36:24.186411
-[PEC-STALE-TIMEOUT] SOL-USDT 1h: 27 bars (22h overdue), actual_timeout=2026-03-06T19:36:27.080101
-[PEC-STALE-TIMEOUT] XRP-USDT 1h: 27 bars (22h overdue), actual_timeout=2026-03-06T19:36:30.195257
-[PEC-STALE-TIMEOUT] TURBO-USDT 1h: 26 bars (21h overdue), actual_timeout=2026-03-06T19:41:54.886958
-[PEC-STALE-TIMEOUT] ERA-USDT 1h: 26 bars (21h overdue), actual_timeout=2026-03-06T19:42:10.651895
-[PEC-STALE-TIMEOUT] ENA-USDT 1h: 26 bars (21h overdue), actual_timeout=2026-03-06T19:42:17.004073
-[PEC-STALE-TIMEOUT] BIO-USDT 15min: 107 bars (23h overdue), actual_timeout=2026-03-06T18:27:51.396349
-[PEC-STALE-TIMEOUT] ALGO-USDT 1h: 26 bars (21h overdue), actual_timeout=2026-03-06T19:44:31.061885
-[PEC-STALE-TIMEOUT] SUI-USDT 1h: 26 bars (21h overdue), actual_timeout=2026-03-06T19:44:42.472250
-[PEC-STALE-TIMEOUT] UNI-USDT 1h: 26 bars (21h overdue), actual_timeout=2026-03-06T19:44:47.863611
-[PEC-STALE-TIMEOUT] PUMP-USDT 1h: 26 bars (21h overdue), actual_timeout=2026-03-06T19:45:13.393545
-[PEC-STALE-TIMEOUT] ASTER-USDT 30min: 53 bars (21h overdue), actual_timeout=2026-03-06T19:45:26.400734
-[PEC-STALE-TIMEOUT] AVNT-USDT 1h: 26 bars (21h overdue), actual_timeout=2026-03-06T19:45:31.042503
-[PEC-STALE-TIMEOUT] OP-USDT 30min: 53 bars (21h overdue), actual_timeout=2026-03-06T19:45:47.946357
-[PEC-STALE-TIMEOUT] OP-USDT 1h: 26 bars (21h overdue), actual_timeout=2026-03-06T19:45:50.558040
-[PEC-STALE-TIMEOUT] NEAR-USDT 15min: 107 bars (23h overdue), actual_timeout=2026-03-06T18:34:44.223812
-[PEC-STALE-TIMEOUT] IP-USDT 1h: 26 bars (21h overdue), actual_timeout=2026-03-06T19:50:59.136391
-[PEC-STALE-TIMEOUT] HBAR-USDT 1h: 26 bars (21h overdue), actual_timeout=2026-03-06T19:52:38.686557
-[PEC-STALE-TIMEOUT] VOXEL-USDT 15min: 106 bars (22h overdue), actual_timeout=2026-03-06T18:47:39.408429
-[PEC-STALE-TIMEOUT] XAUT-USDT 15min: 106 bars (22h overdue), actual_timeout=2026-03-06T18:49:12.954487
-[PEC-STALE-TIMEOUT] KAITO-USDT 30min: 52 bars (21h overdue), actual_timeout=2026-03-06T20:10:23.573607
-[PEC-STALE-TIMEOUT] XAUT-USDT 30min: 52 bars (21h overdue), actual_timeout=2026-03-06T20:17:45.043319
-[PEC-STALE-TIMEOUT] VOXEL-USDT 15min: 105 bars (22h overdue), actual_timeout=2026-03-06T19:08:14.069744
-[PEC-STALE-TIMEOUT] ROAM-USDT 1h: 26 bars (21h overdue), actual_timeout=2026-03-06T20:25:51.910060
-[PEC-STALE-TIMEOUT] ICNT-USDT 15min: 104 bars (22h overdue), actual_timeout=2026-03-06T19:23:52.293034
-[PEC-STALE-TIMEOUT] ICNT-USDT 30min: 52 bars (21h overdue), actual_timeout=2026-03-06T20:38:54.605117
 
 ================================================================================
-[PEC UPDATE] 2026-03-08 00:39:39
+[PEC UPDATE] 2026-03-08 01:29:15
 ================================================================================
 
-❌ SL HIT (4 signals):
-   ACTSOL-USDT  15min  | P&L: $  -14.99 (-1.50%) | Fired: 22:43:19
-   VOXEL-USDT   15min  | P&L: $  -26.73 (-2.67%) | Fired: 23:01:03
-   SKATE-USDT   15min  | P&L: $  -80.55 (-8.05%) | Fired: 23:21:16
-   PEPE-USDT    15min  | P&L: $   -7.47 (-0.75%) | Fired: 23:49:16
+✅ TP HIT (2 signals):
+   AUCTION-USDT 30min  | P&L: $    7.43 (+0.74%) | Fired: 00:30:19
+   AUCTION-USDT 1h     | P&L: $    7.43 (+0.74%) | Fired: 00:30:23
 
-⚠️  STALE_TIMEOUT (50 signals):
-   AGLD-USDT    1h     | NO P&L (data quality issue) | 25h overdue | Fired: 17:50:53
-   AGLD-USDT    1h     | NO P&L (data quality issue) | 25h overdue | Fired: 17:54:46
-   AGLD-USDT    1h     | NO P&L (data quality issue) | 25h overdue | Fired: 17:56:33
-   ASTER-USDT   1h     | NO P&L (data quality issue) | 24h overdue | Fired: 18:47:17
-   X-USDT       30min  | NO P&L (data quality issue) | 24h overdue | Fired: 19:07:37
-   AERO-USDT    30min  | NO P&L (data quality issue) | 22h overdue | Fired: 21:06:33
-   AERO-USDT    1h     | NO P&L (data quality issue) | 22h overdue | Fired: 21:06:35
-   ARB-USDT     15min  | NO P&L (data quality issue) | 23h overdue | Fired: 21:12:01
-   SOL-USDT     15min  | NO P&L (data quality issue) | 23h overdue | Fired: 21:12:36
-   SOL-USDT     30min  | NO P&L (data quality issue) | 22h overdue | Fired: 21:12:38
-   WIF-USDT     1h     | NO P&L (data quality issue) | 22h overdue | Fired: 21:16:02
-   AVNT-USDT    30min  | NO P&L (data quality issue) | 22h overdue | Fired: 21:16:15
-   TAO-USDT     30min  | NO P&L (data quality issue) | 22h overdue | Fired: 21:16:39
-   EIGEN-USDT   1h     | NO P&L (data quality issue) | 22h overdue | Fired: 21:17:48
-   ONDO-USDT    30min  | NO P&L (data quality issue) | 22h overdue | Fired: 21:17:55
-   ONDO-USDT    1h     | NO P&L (data quality issue) | 22h overdue | Fired: 21:17:58
-   ARKM-USDT    30min  | NO P&L (data quality issue) | 22h overdue | Fired: 21:18:14
-   SEI-USDT     30min  | NO P&L (data quality issue) | 22h overdue | Fired: 21:18:47
-   SEI-USDT     1h     | NO P&L (data quality issue) | 22h overdue | Fired: 21:18:49
-   DOGE-USDT    30min  | NO P&L (data quality issue) | 22h overdue | Fired: 21:19:44
-   ALGO-USDT    30min  | NO P&L (data quality issue) | 22h overdue | Fired: 21:19:47
-   UNI-USDT     30min  | NO P&L (data quality issue) | 22h overdue | Fired: 21:19:57
-   RAY-USDT     30min  | NO P&L (data quality issue) | 22h overdue | Fired: 21:25:58
-   TAO-USDT     1h     | NO P&L (data quality issue) | 22h overdue | Fired: 21:36:14
-   ETH-USDT     1h     | NO P&L (data quality issue) | 22h overdue | Fired: 21:36:24
-   SOL-USDT     1h     | NO P&L (data quality issue) | 22h overdue | Fired: 21:36:27
-   XRP-USDT     1h     | NO P&L (data quality issue) | 22h overdue | Fired: 21:36:30
-   TURBO-USDT   1h     | NO P&L (data quality issue) | 21h overdue | Fired: 21:41:54
-   ERA-USDT     1h     | NO P&L (data quality issue) | 21h overdue | Fired: 21:42:10
-   ENA-USDT     1h     | NO P&L (data quality issue) | 21h overdue | Fired: 21:42:17
-   BIO-USDT     15min  | NO P&L (data quality issue) | 23h overdue | Fired: 21:42:51
-   ALGO-USDT    1h     | NO P&L (data quality issue) | 21h overdue | Fired: 21:44:31
-   SUI-USDT     1h     | NO P&L (data quality issue) | 21h overdue | Fired: 21:44:42
-   UNI-USDT     1h     | NO P&L (data quality issue) | 21h overdue | Fired: 21:44:47
-   PUMP-USDT    1h     | NO P&L (data quality issue) | 21h overdue | Fired: 21:45:13
-   ASTER-USDT   30min  | NO P&L (data quality issue) | 21h overdue | Fired: 21:45:26
-   AVNT-USDT    1h     | NO P&L (data quality issue) | 21h overdue | Fired: 21:45:31
-   OP-USDT      30min  | NO P&L (data quality issue) | 21h overdue | Fired: 21:45:47
-   OP-USDT      1h     | NO P&L (data quality issue) | 21h overdue | Fired: 21:45:50
-   NEAR-USDT    15min  | NO P&L (data quality issue) | 23h overdue | Fired: 21:49:44
-   IP-USDT      1h     | NO P&L (data quality issue) | 21h overdue | Fired: 21:50:59
-   HBAR-USDT    1h     | NO P&L (data quality issue) | 21h overdue | Fired: 21:52:38
-   VOXEL-USDT   15min  | NO P&L (data quality issue) | 22h overdue | Fired: 22:02:39
-   XAUT-USDT    15min  | NO P&L (data quality issue) | 22h overdue | Fired: 22:04:12
-   KAITO-USDT   30min  | NO P&L (data quality issue) | 21h overdue | Fired: 22:10:23
-   XAUT-USDT    30min  | NO P&L (data quality issue) | 21h overdue | Fired: 22:17:45
-   VOXEL-USDT   15min  | NO P&L (data quality issue) | 22h overdue | Fired: 22:23:14
-   ROAM-USDT    1h     | NO P&L (data quality issue) | 21h overdue | Fired: 22:25:51
-   ICNT-USDT    15min  | NO P&L (data quality issue) | 22h overdue | Fired: 22:38:52
-   ICNT-USDT    30min  | NO P&L (data quality issue) | 21h overdue | Fired: 22:38:54
+❌ SL HIT (1 signals):
+   AUCTION-USDT 30min  | P&L: $   -5.16 (-0.52%) | Fired: 01:28:40
 
 📊 PEC STATS:
-   Total: 2116 | Open: 37 | TP: 323 | SL: 631 | TIMEOUT: 196 (64W/132L) | STALE: 252
-   Win Rate (TP/SL only): 33.9% | Total P&L: $-3096.87
+   Total: 2128 | Open: 38 | TP: 326 | SL: 639 | TIMEOUT: 196 (64W/132L) | STALE: 252
+   Win Rate (TP/SL only): 33.8% | Total P&L: $-3185.08
 ================================================================================
 
 
 ================================================================================
-[PEC UPDATE] 2026-03-08 00:45:00
+[PEC UPDATE] 2026-03-08 01:34:24
+================================================================================
+
+❌ SL HIT (1 signals):
+   XAUT-USDT    1h     | P&L: $   -1.07 (-0.11%) | Fired: 22:44:35
+
+📊 PEC STATS:
+   Total: 2131 | Open: 40 | TP: 326 | SL: 640 | TIMEOUT: 196 (64W/132L) | STALE: 252
+   Win Rate (TP/SL only): 33.7% | Total P&L: $-3186.15
+================================================================================
+
+[PEC-TIMEOUT-HIT] PEPE-USDT 1h: 5 bars >= 4 max, actual_timeout=2026-03-07T19:35:50.918803 [CHALLENGER]
+[PEC-TIMEOUT-HIT] WIF-USDT 1h: 5 bars >= 5 max, actual_timeout=2026-03-07T20:36:27.818192 [CHAMPION]
+[PEC-TIMEOUT-HIT] BIO-USDT 15min: 11 bars >= 8 max, actual_timeout=2026-03-07T20:00:33.047630 [CHALLENGER]
+[PEC-TIMEOUT-HIT] BERA-USDT 15min: 11 bars >= 8 max, actual_timeout=2026-03-07T20:04:04.498690 [CHALLENGER]
+[PEC-TIMEOUT-HIT] APT-USDT 15min: 11 bars >= 8 max, actual_timeout=2026-03-07T20:04:21.769217 [CHALLENGER]
+[PEC-TIMEOUT-HIT] HIPPO-USDT 15min: 10 bars >= 8 max, actual_timeout=2026-03-07T20:23:19.253659 [CHALLENGER]
+
+================================================================================
+[PEC UPDATE] 2026-03-08 03:53:51
 ================================================================================
 
 ✅ TP HIT (1 signals):
-   HIPPO-USDT   15min  | P&L: $    7.19 (+0.72%) | Fired: 23:04:34
+   FUN-USDT     30min  | P&L: $   18.38 (+1.84%) | Fired: 22:57:00
+
+❌ SL HIT (4 signals):
+   BERA-USDT    30min  | P&L: $  -11.82 (-1.18%) | Fired: 01:04:06
+   BIO-USDT     15min  | P&L: $  -27.86 (-2.79%) | Fired: 01:29:24
+   BIO-USDT     30min  | P&L: $  -26.51 (-2.65%) | Fired: 01:29:26
+   FUEL-USDT    15min  | P&L: $   -4.45 (-0.44%) | Fired: 03:38:37
+
+⏱️  TIMEOUT (6 signals):
+   PEPE-USDT    1h     | P&L: $    4.51 (+0.45%) | Fired: 22:35:50 | Timeout: 2026-03-07T19:35
+   WIF-USDT     1h     | P&L: $    6.78 (+0.68%) | Fired: 22:36:27 | Timeout: 2026-03-07T20:36
+   BIO-USDT     15min  | P&L: $  -13.22 (-1.32%) | Fired: 01:00:33 | Timeout: 2026-03-07T20:00
+   BERA-USDT    15min  | P&L: $  -11.82 (-1.18%) | Fired: 01:04:04 | Timeout: 2026-03-07T20:04
+   APT-USDT     15min  | P&L: $    1.12 (+0.11%) | Fired: 01:04:21 | Timeout: 2026-03-07T20:04
+   HIPPO-USDT   15min  | P&L: $   -1.00 (-0.10%) | Fired: 01:23:19 | Timeout: 2026-03-07T20:23
 
 📊 PEC STATS:
-   Total: 2117 | Open: 37 | TP: 324 | SL: 631 | TIMEOUT: 196 (64W/132L) | STALE: 252
-   Win Rate (TP/SL only): 33.9% | Total P&L: $-3089.68
+   Total: 2136 | Open: 34 | TP: 327 | SL: 644 | TIMEOUT: 202 (67W/135L) | STALE: 252
+   Win Rate (TP/SL only): 33.7% | Total P&L: $-3252.04
+================================================================================
+
+[PEC-TIMEOUT-HIT] FUN-USDT 1h: 6 bars >= 5 max, actual_timeout=2026-03-07T21:12:42.680864 [CHAMPION]
+[PEC-STALE-TIMEOUT] FUN-USDT 30min: 10 bars (2h overdue), actual_timeout=2026-03-07T20:24:22.246958
+[PEC-TIMEOUT-HIT] SPK-USDT 1h: 4 bars >= 4 max, actual_timeout=2026-03-07T21:42:10.241630 [CHALLENGER]
+[PEC-TIMEOUT-HIT] OP-USDT 30min: 8 bars >= 6 max, actual_timeout=2026-03-07T21:04:38.417060 [CHALLENGER]
+[PEC-STALE-TIMEOUT] X-USDT 15min: 15 bars (1h overdue), actual_timeout=2026-03-07T20:30:11.813845
+
+================================================================================
+[PEC UPDATE] 2026-03-08 05:29:33
+================================================================================
+
+✅ TP HIT (2 signals):
+   FUEL-USDT    15min  | P&L: $    6.93 (+0.69%) | Fired: 03:00:05
+   FUEL-USDT    30min  | P&L: $    5.05 (+0.51%) | Fired: 03:17:49
+
+❌ SL HIT (4 signals):
+   BIO-USDT     1h     | P&L: $  -22.15 (-2.22%) | Fired: 01:00:35
+   AUCTION-USDT 15min  | P&L: $  -27.83 (-2.78%) | Fired: 04:25:36
+   AUCTION-USDT 30min  | P&L: $  -27.83 (-2.78%) | Fired: 04:25:39
+   AUCTION-USDT 1h     | P&L: $  -21.77 (-2.18%) | Fired: 04:55:15
+
+⏱️  TIMEOUT (3 signals):
+   FUN-USDT     1h     | P&L: $   18.47 (+1.85%) | Fired: 23:12:42 | Timeout: 2026-03-07T21:12
+   SPK-USDT     1h     | P&L: $  -22.64 (-2.26%) | Fired: 00:42:10 | Timeout: 2026-03-07T21:42
+   OP-USDT      30min  | P&L: $   11.79 (+1.18%) | Fired: 01:04:38 | Timeout: 2026-03-07T21:04
+
+⚠️  STALE_TIMEOUT (2 signals):
+   FUN-USDT     30min  | NO P&L (data quality issue) | 2h overdue | Fired: 00:24:22
+   X-USDT       15min  | NO P&L (data quality issue) | 1h overdue | Fired: 01:30:11
+
+📊 PEC STATS:
+   Total: 2139 | Open: 26 | TP: 329 | SL: 648 | TIMEOUT: 205 (69W/136L) | STALE: 254
+   Win Rate (TP/SL only): 33.7% | Total P&L: $-3332.03
+================================================================================
+
+[PEC-STALE-TIMEOUT] APT-USDT 30min: 13 bars (3h overdue), actual_timeout=2026-03-07T21:04:24.202930
+[PEC-TIMEOUT-HIT] APT-USDT 1h: 6 bars >= 5 max, actual_timeout=2026-03-07T23:04:26.677050 [CHAMPION]
+[PEC-TIMEOUT-HIT] DYDX-USDT 1h: 6 bars >= 5 max, actual_timeout=2026-03-07T23:23:48.794102 [CHAMPION]
+[PEC-TIMEOUT-HIT] OP-USDT 1h: 5 bars >= 5 max, actual_timeout=2026-03-07T23:52:17.237005 [CHAMPION]
+[PEC-TIMEOUT-HIT] AVNT-USDT 1h: 5 bars >= 5 max, actual_timeout=2026-03-08T00:42:25.354960 [CHAMPION]
+
+================================================================================
+[PEC UPDATE] 2026-03-08 07:43:07
+================================================================================
+
+❌ SL HIT (5 signals):
+   PEPE-USDT    15min  | P&L: $   -5.66 (-0.57%) | Fired: 05:40:11
+   NMR-USDT     15min  | P&L: $  -51.89 (-5.19%) | Fired: 06:12:15
+   NMR-USDT     30min  | P&L: $  -52.36 (-5.24%) | Fired: 06:12:17
+   ZORA-USDT    1h     | P&L: $  -23.39 (-2.34%) | Fired: 06:30:52
+   HIPPO-USDT   15min  | P&L: $   -6.58 (-0.66%) | Fired: 06:47:30
+
+⏱️  TIMEOUT (4 signals):
+   APT-USDT     1h     | P&L: $    7.39 (+0.74%) | Fired: 01:04:26 | Timeout: 2026-03-07T23:04
+   DYDX-USDT    1h     | P&L: $   18.55 (+1.86%) | Fired: 01:23:48 | Timeout: 2026-03-07T23:23
+   OP-USDT      1h     | P&L: $   10.09 (+1.01%) | Fired: 01:52:17 | Timeout: 2026-03-07T23:52
+   AVNT-USDT    1h     | P&L: $    6.04 (+0.60%) | Fired: 02:42:25 | Timeout: 2026-03-08T00:42
+
+⚠️  STALE_TIMEOUT (1 signals):
+   APT-USDT     30min  | NO P&L (data quality issue) | 3h overdue | Fired: 01:04:24
+
+📊 PEC STATS:
+   Total: 2144 | Open: 21 | TP: 329 | SL: 653 | TIMEOUT: 209 (73W/136L) | STALE: 255
+   Win Rate (TP/SL only): 33.5% | Total P&L: $-3429.84
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 08:46:35
+================================================================================
+
+❌ SL HIT (1 signals):
+   X-USDT       15min  | P&L: $   -8.23 (-0.82%) | Fired: 08:21:24
+
+📊 PEC STATS:
+   Total: 2147 | Open: 23 | TP: 329 | SL: 654 | TIMEOUT: 209 (73W/136L) | STALE: 255
+   Win Rate (TP/SL only): 33.5% | Total P&L: $-3438.07
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 08:51:40
+================================================================================
+
+❌ SL HIT (1 signals):
+   PARTI-USDT   30min  | P&L: $   -9.38 (-0.94%) | Fired: 08:40:19
+
+📊 PEC STATS:
+   Total: 2147 | Open: 22 | TP: 329 | SL: 655 | TIMEOUT: 209 (73W/136L) | STALE: 255
+   Win Rate (TP/SL only): 33.4% | Total P&L: $-3447.45
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 09:32:26
+================================================================================
+
+❌ SL HIT (2 signals):
+   KAITO-USDT   15min  | P&L: $   -5.54 (-0.55%) | Fired: 09:11:37
+   PARTI-USDT   1h     | P&L: $  -10.60 (-1.06%) | Fired: 09:17:31
+
+📊 PEC STATS:
+   Total: 2154 | Open: 27 | TP: 329 | SL: 657 | TIMEOUT: 209 (73W/136L) | STALE: 255
+   Win Rate (TP/SL only): 33.4% | Total P&L: $-3463.59
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 09:53:02
+================================================================================
+
+✅ TP HIT (1 signals):
+   WIF-USDT     15min  | P&L: $    7.53 (+0.75%) | Fired: 09:13:11
+
+📊 PEC STATS:
+   Total: 2156 | Open: 28 | TP: 330 | SL: 657 | TIMEOUT: 209 (73W/136L) | STALE: 255
+   Win Rate (TP/SL only): 33.4% | Total P&L: $-3456.06
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 10:13:35
+================================================================================
+
+❌ SL HIT (1 signals):
+   PORTAL-USDT  15min  | P&L: $   -2.80 (-0.28%) | Fired: 10:12:25
+
+📊 PEC STATS:
+   Total: 2159 | Open: 30 | TP: 330 | SL: 658 | TIMEOUT: 209 (73W/136L) | STALE: 255
+   Win Rate (TP/SL only): 33.4% | Total P&L: $-3458.87
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 11:05:16
+================================================================================
+
+❌ SL HIT (1 signals):
+   DOGE-USDT    15min  | P&L: $   -3.47 (-0.35%) | Fired: 10:40:54
+
+📊 PEC STATS:
+   Total: 2165 | Open: 35 | TP: 330 | SL: 659 | TIMEOUT: 209 (73W/136L) | STALE: 255
+   Win Rate (TP/SL only): 33.4% | Total P&L: $-3462.33
+================================================================================
+
+[PEC-TIMEOUT-HIT] IP-USDT 15min: 8 bars >= 8 max, actual_timeout=2026-03-08T04:13:57.004975 [CHALLENGER]
+
+================================================================================
+[PEC UPDATE] 2026-03-08 11:21:03
+================================================================================
+
+⏱️  TIMEOUT (1 signals):
+   IP-USDT      15min  | P&L: $    7.24 (+0.72%) | Fired: 09:13:57 | Timeout: 2026-03-08T04:13
+
+📊 PEC STATS:
+   Total: 2170 | Open: 39 | TP: 330 | SL: 659 | TIMEOUT: 210 (74W/136L) | STALE: 255
+   Win Rate (TP/SL only): 33.4% | Total P&L: $-3455.10
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 11:31:27
+================================================================================
+
+✅ TP HIT (1 signals):
+   ATH-USDT     30min  | P&L: $   21.76 (+2.18%) | Fired: 09:14:56
+
+📊 PEC STATS:
+   Total: 2170 | Open: 38 | TP: 331 | SL: 659 | TIMEOUT: 210 (74W/136L) | STALE: 255
+   Win Rate (TP/SL only): 33.4% | Total P&L: $-3433.34
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 11:36:39
+================================================================================
+
+✅ TP HIT (1 signals):
+   PORTAL-USDT  15min  | P&L: $    7.11 (+0.71%) | Fired: 09:52:20
+
+📊 PEC STATS:
+   Total: 2170 | Open: 37 | TP: 332 | SL: 659 | TIMEOUT: 210 (74W/136L) | STALE: 255
+   Win Rate (TP/SL only): 33.5% | Total P&L: $-3426.23
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 11:57:34
+================================================================================
+
+✅ TP HIT (1 signals):
+   ETH-USDT     15min  | P&L: $    5.76 (+0.58%) | Fired: 11:16:28
+
+📊 PEC STATS:
+   Total: 2173 | Open: 39 | TP: 333 | SL: 659 | TIMEOUT: 210 (74W/136L) | STALE: 255
+   Win Rate (TP/SL only): 33.6% | Total P&L: $-3420.47
+================================================================================
+
+[PEC-STALE-TIMEOUT] IP-USDT 15min: 13 bars (1h overdue), actual_timeout=2026-03-08T04:47:36.302415
+[PEC-TIMEOUT-HIT] ONDO-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-08T04:55:12.067318 [CHALLENGER]
+[PEC-TIMEOUT-HIT] ONDO-USDT 15min: 10 bars >= 8 max, actual_timeout=2026-03-08T05:39:04.775234 [CHALLENGER]
+[PEC-TIMEOUT-HIT] ROAM-USDT 15min: 8 bars >= 8 max, actual_timeout=2026-03-08T05:59:00.503858 [CHALLENGER]
+
+================================================================================
+[PEC UPDATE] 2026-03-08 13:09:09
+================================================================================
+
+✅ TP HIT (1 signals):
+   KAITO-USDT   15min  | P&L: $   15.83 (+1.58%) | Fired: 11:13:09
+
+❌ SL HIT (3 signals):
+   NEWT-USDT    30min  | P&L: $   -8.98 (-0.90%) | Fired: 10:43:01
+   SUI-USDT     30min  | P&L: $   -5.88 (-0.59%) | Fired: 10:53:30
+   DYDX-USDT    15min  | P&L: $   -8.59 (-0.86%) | Fired: 11:54:24
+
+⏱️  TIMEOUT (3 signals):
+   ONDO-USDT    15min  | P&L: $   -3.12 (-0.31%) | Fired: 09:55:12 | Timeout: 2026-03-08T04:55
+   ONDO-USDT    15min  | P&L: $   -2.47 (-0.25%) | Fired: 10:39:04 | Timeout: 2026-03-08T05:39
+   ROAM-USDT    15min  | P&L: $  -13.39 (-1.34%) | Fired: 10:59:00 | Timeout: 2026-03-08T05:59
+
+⚠️  STALE_TIMEOUT (1 signals):
+   IP-USDT      15min  | NO P&L (data quality issue) | 1h overdue | Fired: 09:47:36
+
+📊 PEC STATS:
+   Total: 2177 | Open: 35 | TP: 334 | SL: 662 | TIMEOUT: 213 (74W/139L) | STALE: 256
+   Win Rate (TP/SL only): 33.5% | Total P&L: $-3447.07
+================================================================================
+
+[PEC-TIMEOUT-HIT] TAO-USDT 1h: 6 bars >= 4 max, actual_timeout=2026-03-08T05:30:03.561808 [CHALLENGER]
+[PEC-TIMEOUT-HIT] DOT-USDT 1h: 5 bars >= 4 max, actual_timeout=2026-03-08T06:23:19.948549 [CHALLENGER]
+[PEC-TIMEOUT-HIT] PEPE-USDT 1h: 5 bars >= 5 max, actual_timeout=2026-03-08T07:31:34.082468 [CHAMPION]
+[PEC-TIMEOUT-HIT] KAITO-USDT 15min: 10 bars >= 8 max, actual_timeout=2026-03-08T07:14:23.703697 [CHALLENGER]
+
+================================================================================
+[PEC UPDATE] 2026-03-08 14:49:42
+================================================================================
+
+❌ SL HIT (8 signals):
+   ARKM-USDT    30min  | P&L: $  -12.09 (-1.21%) | Fired: 09:53:15
+   WIF-USDT     30min  | P&L: $  -24.52 (-2.45%) | Fired: 11:03:53
+   ZKJ-USDT     30min  | P&L: $  -10.44 (-1.04%) | Fired: 11:05:38
+   IP-USDT      30min  | P&L: $  -18.11 (-1.81%) | Fired: 11:46:15
+   SKATE-USDT   15min  | P&L: $  -78.32 (-7.83%) | Fired: 13:08:48
+   FUN-USDT     30min  | P&L: $  -13.32 (-1.33%) | Fired: 13:09:03
+   HBAR-USDT    1h     | P&L: $   -7.04 (-0.70%) | Fired: 13:24:46
+   PORTAL-USDT  15min  | P&L: $   -7.99 (-0.80%) | Fired: 14:49:32
+
+⏱️  TIMEOUT (4 signals):
+   TAO-USDT     1h     | P&L: $   -3.04 (-0.30%) | Fired: 08:30:03 | Timeout: 2026-03-08T05:30
+   DOT-USDT     1h     | P&L: $   -4.33 (-0.43%) | Fired: 09:23:19 | Timeout: 2026-03-08T06:23
+   PEPE-USDT    1h     | P&L: $   -2.87 (-0.29%) | Fired: 09:31:34 | Timeout: 2026-03-08T07:31
+   KAITO-USDT   15min  | P&L: $    4.73 (+0.47%) | Fired: 12:14:23 | Timeout: 2026-03-08T07:14
+
+📊 PEC STATS:
+   Total: 2180 | Open: 26 | TP: 334 | SL: 670 | TIMEOUT: 217 (75W/142L) | STALE: 256
+   Win Rate (TP/SL only): 33.3% | Total P&L: $-3624.41
+================================================================================
+
+[PEC-TIMEOUT-HIT] TAO-USDT 30min: 9 bars >= 6 max, actual_timeout=2026-03-08T07:19:07.528116 [CHALLENGER]
+[PEC-TIMEOUT-HIT] KAS-USDT 1h: 4 bars >= 4 max, actual_timeout=2026-03-08T08:42:45.335693 [CHALLENGER]
+[PEC-TIMEOUT-HIT] SPK-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-08T08:08:52.760424 [CHALLENGER]
+[PEC-TIMEOUT-HIT] KAITO-USDT 15min: 11 bars >= 8 max, actual_timeout=2026-03-08T08:25:02.877216 [CHALLENGER]
+
+================================================================================
+[PEC UPDATE] 2026-03-08 16:17:33
+================================================================================
+
+⏱️  TIMEOUT (4 signals):
+   TAO-USDT     30min  | P&L: $  -12.47 (-1.25%) | Fired: 11:19:07 | Timeout: 2026-03-08T07:19
+   KAS-USDT     1h     | P&L: $   -9.57 (-0.96%) | Fired: 11:42:45 | Timeout: 2026-03-08T08:42
+   SPK-USDT     15min  | P&L: $    0.52 (+0.05%) | Fired: 13:08:52 | Timeout: 2026-03-08T08:08
+   KAITO-USDT   15min  | P&L: $   -1.30 (-0.13%) | Fired: 13:25:02 | Timeout: 2026-03-08T08:25
+
+📊 PEC STATS:
+   Total: 2182 | Open: 24 | TP: 334 | SL: 670 | TIMEOUT: 221 (76W/145L) | STALE: 256
+   Win Rate (TP/SL only): 33.3% | Total P&L: $-3647.23
+================================================================================
+
+[PEC-TIMEOUT-HIT] TAO-USDT 1h: 6 bars >= 5 max, actual_timeout=2026-03-08T09:19:11.099783 [CHAMPION]
+
+================================================================================
+[PEC UPDATE] 2026-03-08 17:23:49
+================================================================================
+
+✅ TP HIT (1 signals):
+   PORTAL-USDT  15min  | P&L: $   21.73 (+2.17%) | Fired: 15:32:27
+
+❌ SL HIT (1 signals):
+   X-USDT       1h     | P&L: $  -19.98 (-2.00%) | Fired: 15:16:54
+
+⏱️  TIMEOUT (1 signals):
+   TAO-USDT     1h     | P&L: $  -20.51 (-2.05%) | Fired: 11:19:11 | Timeout: 2026-03-08T09:19
+
+📊 PEC STATS:
+   Total: 2186 | Open: 25 | TP: 335 | SL: 671 | TIMEOUT: 222 (76W/146L) | STALE: 256
+   Win Rate (TP/SL only): 33.3% | Total P&L: $-3666.00
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 17:28:56
+================================================================================
+
+❌ SL HIT (2 signals):
+   TURBO-USDT   15min  | P&L: $   -3.20 (-0.32%) | Fired: 17:25:33
+   ADA-USDT     15min  | P&L: $   -4.49 (-0.45%) | Fired: 17:27:00
+
+📊 PEC STATS:
+   Total: 2204 | Open: 41 | TP: 335 | SL: 673 | TIMEOUT: 222 (76W/146L) | STALE: 256
+   Win Rate (TP/SL only): 33.2% | Total P&L: $-3673.70
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 17:34:07
+================================================================================
+
+❌ SL HIT (9 signals):
+   APT-USDT     15min  | P&L: $   -5.20 (-0.52%) | Fired: 17:24:18
+   DOGE-USDT    15min  | P&L: $   -4.40 (-0.44%) | Fired: 17:25:38
+   AAVE-USDT    15min  | P&L: $   -5.58 (-0.56%) | Fired: 17:26:00
+   INJ-USDT     15min  | P&L: $   -6.21 (-0.62%) | Fired: 17:26:29
+   SOL-USDT     15min  | P&L: $   -4.21 (-0.42%) | Fired: 17:26:55
+   XLM-USDT     15min  | P&L: $   -5.59 (-0.56%) | Fired: 17:27:04
+   NEWT-USDT    30min  | P&L: $   -5.88 (-0.59%) | Fired: 17:29:57
+   NEWT-USDT    1h     | P&L: $  -11.00 (-1.10%) | Fired: 17:29:59
+   ACTSOL-USDT  15min  | P&L: $   -4.08 (-0.41%) | Fired: 17:33:16
+
+📊 PEC STATS:
+   Total: 2207 | Open: 35 | TP: 335 | SL: 682 | TIMEOUT: 222 (76W/146L) | STALE: 256
+   Win Rate (TP/SL only): 32.9% | Total P&L: $-3725.84
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 17:39:19
+================================================================================
+
+❌ SL HIT (2 signals):
+   BTC-USDT     15min  | P&L: $   -2.97 (-0.30%) | Fired: 17:24:41
+   ONDO-USDT    15min  | P&L: $   -4.34 (-0.43%) | Fired: 17:25:56
+
+📊 PEC STATS:
+   Total: 2208 | Open: 34 | TP: 335 | SL: 684 | TIMEOUT: 222 (76W/146L) | STALE: 256
+   Win Rate (TP/SL only): 32.9% | Total P&L: $-3733.14
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 17:44:28
+================================================================================
+
+❌ SL HIT (1 signals):
+   UNI-USDT     15min  | P&L: $   -5.88 (-0.59%) | Fired: 17:23:42
+
+📊 PEC STATS:
+   Total: 2208 | Open: 33 | TP: 335 | SL: 685 | TIMEOUT: 222 (76W/146L) | STALE: 256
+   Win Rate (TP/SL only): 32.8% | Total P&L: $-3739.02
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 17:49:38
+================================================================================
+
+❌ SL HIT (1 signals):
+   RAY-USDT     15min  | P&L: $   -2.89 (-0.29%) | Fired: 17:25:01
+
+📊 PEC STATS:
+   Total: 2208 | Open: 32 | TP: 335 | SL: 686 | TIMEOUT: 222 (76W/146L) | STALE: 256
+   Win Rate (TP/SL only): 32.8% | Total P&L: $-3741.91
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 17:54:46
+================================================================================
+
+❌ SL HIT (1 signals):
+   HYPE-USDT    15min  | P&L: $   -5.57 (-0.56%) | Fired: 17:28:10
+
+📊 PEC STATS:
+   Total: 2208 | Open: 31 | TP: 335 | SL: 687 | TIMEOUT: 222 (76W/146L) | STALE: 256
+   Win Rate (TP/SL only): 32.8% | Total P&L: $-3747.48
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 17:59:54
+================================================================================
+
+✅ TP HIT (1 signals):
+   ORDER-USDT   15min  | P&L: $    8.22 (+0.82%) | Fired: 17:24:12
+
+❌ SL HIT (1 signals):
+   ERA-USDT     15min  | P&L: $   -6.61 (-0.66%) | Fired: 17:28:00
+
+📊 PEC STATS:
+   Total: 2210 | Open: 31 | TP: 336 | SL: 688 | TIMEOUT: 222 (76W/146L) | STALE: 256
+   Win Rate (TP/SL only): 32.8% | Total P&L: $-3745.87
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 18:05:05
+================================================================================
+
+❌ SL HIT (5 signals):
+   EIGEN-USDT   15min  | P&L: $   -6.56 (-0.66%) | Fired: 17:23:38
+   KAITO-USDT   30min  | P&L: $  -10.60 (-1.06%) | Fired: 17:24:02
+   KAITO-USDT   15min  | P&L: $  -12.08 (-1.21%) | Fired: 17:26:13
+   KAITO-USDT   1h     | P&L: $  -11.67 (-1.17%) | Fired: 17:38:06
+   INJ-USDT     15min  | P&L: $   -3.79 (-0.38%) | Fired: 17:56:36
+
+📊 PEC STATS:
+   Total: 2211 | Open: 27 | TP: 336 | SL: 693 | TIMEOUT: 222 (76W/146L) | STALE: 256
+   Win Rate (TP/SL only): 32.7% | Total P&L: $-3790.56
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 18:10:13
+================================================================================
+
+❌ SL HIT (1 signals):
+   BERA-USDT    30min  | P&L: $   -6.89 (-0.69%) | Fired: 18:00:27
+
+📊 PEC STATS:
+   Total: 2211 | Open: 26 | TP: 336 | SL: 694 | TIMEOUT: 222 (76W/146L) | STALE: 256
+   Win Rate (TP/SL only): 32.6% | Total P&L: $-3797.45
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 18:15:24
+================================================================================
+
+❌ SL HIT (1 signals):
+   NEAR-USDT    30min  | P&L: $   -8.44 (-0.84%) | Fired: 17:26:32
+
+📊 PEC STATS:
+   Total: 2211 | Open: 25 | TP: 336 | SL: 695 | TIMEOUT: 222 (76W/146L) | STALE: 256
+   Win Rate (TP/SL only): 32.6% | Total P&L: $-3805.90
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 18:25:36
+================================================================================
+
+❌ SL HIT (1 signals):
+   PORTAL-USDT  15min  | P&L: $  -10.45 (-1.04%) | Fired: 18:20:17
+
+📊 PEC STATS:
+   Total: 2214 | Open: 27 | TP: 336 | SL: 696 | TIMEOUT: 222 (76W/146L) | STALE: 256
+   Win Rate (TP/SL only): 32.6% | Total P&L: $-3816.34
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 18:51:14
+================================================================================
+
+✅ TP HIT (1 signals):
+   HIPPO-USDT   15min  | P&L: $   15.29 (+1.53%) | Fired: 18:22:44
+
+📊 PEC STATS:
+   Total: 2224 | Open: 36 | TP: 337 | SL: 696 | TIMEOUT: 222 (76W/146L) | STALE: 256
+   Win Rate (TP/SL only): 32.6% | Total P&L: $-3801.05
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 18:56:23
+================================================================================
+
+❌ SL HIT (3 signals):
+   FUEL-USDT    15min  | P&L: $  -11.23 (-1.12%) | Fired: 18:53:29
+   FUEL-USDT    30min  | P&L: $  -11.23 (-1.12%) | Fired: 18:53:32
+   FUEL-USDT    1h     | P&L: $  -12.07 (-1.21%) | Fired: 18:56:10
+
+📊 PEC STATS:
+   Total: 2227 | Open: 36 | TP: 337 | SL: 699 | TIMEOUT: 222 (76W/146L) | STALE: 256
+   Win Rate (TP/SL only): 32.5% | Total P&L: $-3835.58
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 19:06:37
+================================================================================
+
+❌ SL HIT (1 signals):
+   AERO-USDT    15min  | P&L: $   -4.44 (-0.44%) | Fired: 18:50:54
+
+📊 PEC STATS:
+   Total: 2227 | Open: 35 | TP: 337 | SL: 700 | TIMEOUT: 222 (76W/146L) | STALE: 256
+   Win Rate (TP/SL only): 32.5% | Total P&L: $-3840.02
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 19:11:45
+================================================================================
+
+❌ SL HIT (3 signals):
+   HYPE-USDT    30min  | P&L: $   -8.54 (-0.85%) | Fired: 18:15:54
+   EIGEN-USDT   15min  | P&L: $   -9.94 (-0.99%) | Fired: 18:28:53
+   EIGEN-USDT   15min  | P&L: $  -10.50 (-1.05%) | Fired: 18:29:37
+
+📊 PEC STATS:
+   Total: 2229 | Open: 34 | TP: 337 | SL: 703 | TIMEOUT: 222 (76W/146L) | STALE: 256
+   Win Rate (TP/SL only): 32.4% | Total P&L: $-3869.00
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 19:16:54
+================================================================================
+
+❌ SL HIT (2 signals):
+   APT-USDT     15min  | P&L: $   -7.65 (-0.76%) | Fired: 18:49:29
+   ZKJ-USDT     15min  | P&L: $   -6.59 (-0.66%) | Fired: 19:06:53
+
+📊 PEC STATS:
+   Total: 2229 | Open: 32 | TP: 337 | SL: 705 | TIMEOUT: 222 (76W/146L) | STALE: 256
+   Win Rate (TP/SL only): 32.3% | Total P&L: $-3883.23
+================================================================================
+
+[PEC-TIMEOUT-HIT] SKATE-USDT 15min: 8 bars >= 8 max, actual_timeout=2026-03-08T12:20:56.013253 [CHALLENGER]
+
+================================================================================
+[PEC UPDATE] 2026-03-08 19:27:16
+================================================================================
+
+❌ SL HIT (1 signals):
+   ETH-USDT     15min  | P&L: $   -5.69 (-0.57%) | Fired: 19:19:48
+
+⏱️  TIMEOUT (1 signals):
+   SKATE-USDT   15min  | P&L: $   -4.67 (-0.47%) | Fired: 17:20:56 | Timeout: 2026-03-08T12:20
+
+📊 PEC STATS:
+   Total: 2238 | Open: 39 | TP: 337 | SL: 706 | TIMEOUT: 223 (76W/147L) | STALE: 256
+   Win Rate (TP/SL only): 32.3% | Total P&L: $-3893.60
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 19:32:26
+================================================================================
+
+❌ SL HIT (4 signals):
+   AAVE-USDT    15min  | P&L: $   -6.53 (-0.65%) | Fired: 18:41:23
+   AAVE-USDT    30min  | P&L: $   -7.79 (-0.78%) | Fired: 18:43:38
+   AAVE-USDT    30min  | P&L: $   -7.45 (-0.74%) | Fired: 18:43:58
+   AAVE-USDT    30min  | P&L: $   -7.36 (-0.74%) | Fired: 18:44:12
+
+📊 PEC STATS:
+   Total: 2243 | Open: 40 | TP: 337 | SL: 710 | TIMEOUT: 223 (76W/147L) | STALE: 256
+   Win Rate (TP/SL only): 32.2% | Total P&L: $-3922.73
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 19:37:38
+================================================================================
+
+✅ TP HIT (1 signals):
+   BERA-USDT    30min  | P&L: $   10.35 (+1.04%) | Fired: 19:19:05
+
+❌ SL HIT (1 signals):
+   SKATE-USDT   15min  | P&L: $ -183.00 (-18.30%) | Fired: 18:38:24
+
+📊 PEC STATS:
+   Total: 2246 | Open: 41 | TP: 338 | SL: 711 | TIMEOUT: 223 (76W/147L) | STALE: 256
+   Win Rate (TP/SL only): 32.2% | Total P&L: $-4095.38
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 19:42:49
+================================================================================
+
+✅ TP HIT (5 signals):
+   TON-USDT     30min  | P&L: $   11.64 (+1.16%) | Fired: 17:25:52
+   ZKJ-USDT     30min  | P&L: $   22.65 (+2.27%) | Fired: 19:06:55
+   APT-USDT     15min  | P&L: $   10.91 (+1.09%) | Fired: 19:22:20
+   ZKJ-USDT     15min  | P&L: $   16.96 (+1.70%) | Fired: 19:27:11
+   SKATE-USDT   1h     | P&L: $  194.76 (+19.48%) | Fired: 19:39:04
+
+📊 PEC STATS:
+   Total: 2251 | Open: 41 | TP: 343 | SL: 711 | TIMEOUT: 223 (76W/147L) | STALE: 256
+   Win Rate (TP/SL only): 32.5% | Total P&L: $-3838.45
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 19:48:00
+================================================================================
+
+❌ SL HIT (3 signals):
+   NMR-USDT     1h     | P&L: $  -22.49 (-2.25%) | Fired: 16:54:12
+   X-USDT       1h     | P&L: $  -27.98 (-2.80%) | Fired: 17:59:13
+   SKATE-USDT   15min  | P&L: $ -101.10 (-10.11%) | Fired: 19:41:58
+
+📊 PEC STATS:
+   Total: 2252 | Open: 39 | TP: 343 | SL: 714 | TIMEOUT: 223 (76W/147L) | STALE: 256
+   Win Rate (TP/SL only): 32.5% | Total P&L: $-3990.02
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 19:58:20
+================================================================================
+
+❌ SL HIT (1 signals):
+   PARTI-USDT   15min  | P&L: $   -5.67 (-0.57%) | Fired: 19:29:49
+
+📊 PEC STATS:
+   Total: 2252 | Open: 38 | TP: 343 | SL: 715 | TIMEOUT: 223 (76W/147L) | STALE: 256
+   Win Rate (TP/SL only): 32.4% | Total P&L: $-3995.69
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 20:03:30
+================================================================================
+
+✅ TP HIT (1 signals):
+   ORDER-USDT   15min  | P&L: $    9.85 (+0.99%) | Fired: 19:41:18
+
+❌ SL HIT (1 signals):
+   SPK-USDT     15min  | P&L: $   -4.60 (-0.46%) | Fired: 20:00:54
+
+📊 PEC STATS:
+   Total: 2253 | Open: 37 | TP: 344 | SL: 716 | TIMEOUT: 223 (76W/147L) | STALE: 256
+   Win Rate (TP/SL only): 32.5% | Total P&L: $-3990.44
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 20:08:39
+================================================================================
+
+❌ SL HIT (2 signals):
+   AVAX-USDT    15min  | P&L: $   -5.01 (-0.50%) | Fired: 19:28:23
+   ALGO-USDT    15min  | P&L: $   -6.99 (-0.70%) | Fired: 19:29:16
+
+📊 PEC STATS:
+   Total: 2255 | Open: 37 | TP: 344 | SL: 718 | TIMEOUT: 223 (76W/147L) | STALE: 256
+   Win Rate (TP/SL only): 32.4% | Total P&L: $-4002.44
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 20:13:50
+================================================================================
+
+❌ SL HIT (4 signals):
+   APT-USDT     15min  | P&L: $   -9.00 (-0.90%) | Fired: 19:21:29
+   PUMP-USDT    15min  | P&L: $   -9.86 (-0.99%) | Fired: 19:27:34
+   PUMP-USDT    15min  | P&L: $  -11.41 (-1.14%) | Fired: 19:28:22
+   TON-USDT     1h     | P&L: $  -10.51 (-1.05%) | Fired: 19:44:59
+
+📊 PEC STATS:
+   Total: 2259 | Open: 37 | TP: 344 | SL: 722 | TIMEOUT: 223 (76W/147L) | STALE: 256
+   Win Rate (TP/SL only): 32.3% | Total P&L: $-4043.22
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 21:06:24
+================================================================================
+
+❌ SL HIT (2 signals):
+   HIPPO-USDT   15min  | P&L: $   -9.14 (-0.91%) | Fired: 20:12:40
+   XPL-USDT     15min  | P&L: $  -10.50 (-1.05%) | Fired: 20:14:57
+
+📊 PEC STATS:
+   Total: 2261 | Open: 37 | TP: 344 | SL: 724 | TIMEOUT: 223 (76W/147L) | STALE: 256
+   Win Rate (TP/SL only): 32.2% | Total P&L: $-4062.86
+================================================================================
+
+[PEC-TIMEOUT-HIT] BERA-USDT 15min: 8 bars >= 8 max, actual_timeout=2026-03-08T14:19:51.429647 [CHALLENGER]
+[PEC-TIMEOUT-HIT] BERA-USDT 15min: 8 bars >= 8 max, actual_timeout=2026-03-08T14:19:55.959688 [CHALLENGER]
+[PEC-TIMEOUT-HIT] BERA-USDT 15min: 8 bars >= 8 max, actual_timeout=2026-03-08T14:21:09.833528 [CHALLENGER]
+
+================================================================================
+[PEC UPDATE] 2026-03-08 21:22:08
+================================================================================
+
+⏱️  TIMEOUT (3 signals):
+   BERA-USDT    15min  | P&L: $    5.31 (+0.53%) | Fired: 19:19:51 | Timeout: 2026-03-08T14:19
+   BERA-USDT    15min  | P&L: $    5.69 (+0.57%) | Fired: 19:19:55 | Timeout: 2026-03-08T14:19
+   BERA-USDT    15min  | P&L: $    2.52 (+0.25%) | Fired: 19:21:09 | Timeout: 2026-03-08T14:21
+
+📊 PEC STATS:
+   Total: 2261 | Open: 34 | TP: 344 | SL: 724 | TIMEOUT: 226 (79W/147L) | STALE: 256
+   Win Rate (TP/SL only): 32.2% | Total P&L: $-4049.34
+================================================================================
+
+[PEC-TIMEOUT-HIT] SOL-USDT 15min: 8 bars >= 8 max, actual_timeout=2026-03-08T14:34:37.264049 [CHALLENGER]
+
+================================================================================
+[PEC UPDATE] 2026-03-08 21:37:52
+================================================================================
+
+✅ TP HIT (1 signals):
+   PEPE-USDT    15min  | P&L: $    9.56 (+0.96%) | Fired: 20:11:03
+
+⏱️  TIMEOUT (1 signals):
+   SOL-USDT     15min  | P&L: $    3.13 (+0.31%) | Fired: 19:34:37 | Timeout: 2026-03-08T14:34
+
+📊 PEC STATS:
+   Total: 2262 | Open: 33 | TP: 345 | SL: 724 | TIMEOUT: 227 (80W/147L) | STALE: 256
+   Win Rate (TP/SL only): 32.3% | Total P&L: $-4036.66
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 21:43:07
+================================================================================
+
+✅ TP HIT (1 signals):
+   LINK-USDT    15min  | P&L: $    9.63 (+0.96%) | Fired: 19:38:57
+
+📊 PEC STATS:
+   Total: 2262 | Open: 32 | TP: 346 | SL: 724 | TIMEOUT: 227 (80W/147L) | STALE: 256
+   Win Rate (TP/SL only): 32.3% | Total P&L: $-4027.03
+================================================================================
+
+[PEC-TIMEOUT-HIT] BTC-USDT 15min: 9 bars >= 8 max, actual_timeout=2026-03-08T14:33:16.996633 [CHALLENGER]
+
+================================================================================
+[PEC UPDATE] 2026-03-08 21:48:21
+================================================================================
+
+⏱️  TIMEOUT (1 signals):
+   BTC-USDT     15min  | P&L: $    2.35 (+0.23%) | Fired: 19:33:16 | Timeout: 2026-03-08T14:33
+
+📊 PEC STATS:
+   Total: 2263 | Open: 32 | TP: 346 | SL: 724 | TIMEOUT: 228 (81W/147L) | STALE: 256
+   Win Rate (TP/SL only): 32.3% | Total P&L: $-4024.68
+================================================================================
+
+[PEC-TIMEOUT-HIT] ETH-USDT 30min: 6 bars >= 6 max, actual_timeout=2026-03-08T14:47:57.351927 [CHALLENGER]
+
+================================================================================
+[PEC UPDATE] 2026-03-08 21:53:34
+================================================================================
+
+⏱️  TIMEOUT (1 signals):
+   ETH-USDT     30min  | P&L: $    0.93 (+0.09%) | Fired: 18:47:57 | Timeout: 2026-03-08T14:47
+
+📊 PEC STATS:
+   Total: 2263 | Open: 31 | TP: 346 | SL: 724 | TIMEOUT: 229 (82W/147L) | STALE: 256
+   Win Rate (TP/SL only): 32.3% | Total P&L: $-4023.76
+================================================================================
+
+[PEC-TIMEOUT-HIT] ETH-USDT 15min: 8 bars >= 8 max, actual_timeout=2026-03-08T15:07:47.699241 [CHALLENGER]
+
+================================================================================
+[PEC UPDATE] 2026-03-08 22:08:55
+================================================================================
+
+⏱️  TIMEOUT (1 signals):
+   ETH-USDT     15min  | P&L: $   -1.66 (-0.17%) | Fired: 20:07:47 | Timeout: 2026-03-08T15:07
+
+📊 PEC STATS:
+   Total: 2263 | Open: 30 | TP: 346 | SL: 724 | TIMEOUT: 230 (82W/148L) | STALE: 256
+   Win Rate (TP/SL only): 32.3% | Total P&L: $-4025.42
+================================================================================
+
+[PEC-TIMEOUT-HIT] ATOM-USDT 15min: 8 bars >= 8 max, actual_timeout=2026-03-08T15:07:19.710935 [CHALLENGER]
+[PEC-TIMEOUT-HIT] LINK-USDT 15min: 8 bars >= 8 max, actual_timeout=2026-03-08T15:12:01.496476 [CHALLENGER]
+[PEC-TIMEOUT-HIT] ENA-USDT 15min: 8 bars >= 8 max, actual_timeout=2026-03-08T15:14:33.023273 [CHALLENGER]
+
+================================================================================
+[PEC UPDATE] 2026-03-08 22:19:09
+================================================================================
+
+⏱️  TIMEOUT (3 signals):
+   ATOM-USDT    15min  | P&L: $    3.37 (+0.34%) | Fired: 20:07:19 | Timeout: 2026-03-08T15:07
+   LINK-USDT    15min  | P&L: $    3.41 (+0.34%) | Fired: 20:12:01 | Timeout: 2026-03-08T15:12
+   ENA-USDT     15min  | P&L: $    3.02 (+0.30%) | Fired: 20:14:33 | Timeout: 2026-03-08T15:14
+
+📊 PEC STATS:
+   Total: 2264 | Open: 28 | TP: 346 | SL: 724 | TIMEOUT: 233 (85W/148L) | STALE: 256
+   Win Rate (TP/SL only): 32.3% | Total P&L: $-4015.61
+================================================================================
+
+[PEC-TIMEOUT-HIT] AERO-USDT 15min: 8 bars >= 8 max, actual_timeout=2026-03-08T15:13:48.161187 [CHALLENGER]
+
+================================================================================
+[PEC UPDATE] 2026-03-08 22:24:16
+================================================================================
+
+❌ SL HIT (1 signals):
+   MAGIC-USDT   30min  | P&L: $   -2.68 (-0.27%) | Fired: 22:21:31
+
+⏱️  TIMEOUT (1 signals):
+   AERO-USDT    15min  | P&L: $    1.82 (+0.18%) | Fired: 20:13:48 | Timeout: 2026-03-08T15:13
+
+📊 PEC STATS:
+   Total: 2269 | Open: 31 | TP: 346 | SL: 725 | TIMEOUT: 234 (86W/148L) | STALE: 256
+   Win Rate (TP/SL only): 32.3% | Total P&L: $-4016.47
+================================================================================
+
+[PEC-TIMEOUT-HIT] BERA-USDT 30min: 6 bars >= 6 max, actual_timeout=2026-03-08T15:19:53.965511 [CHALLENGER]
+
+================================================================================
+[PEC UPDATE] 2026-03-08 22:29:24
+================================================================================
+
+❌ SL HIT (1 signals):
+   ZKJ-USDT     1h     | P&L: $  -14.05 (-1.40%) | Fired: 19:39:10
+
+⏱️  TIMEOUT (1 signals):
+   BERA-USDT    30min  | P&L: $   -4.71 (-0.47%) | Fired: 19:19:53 | Timeout: 2026-03-08T15:19
+
+📊 PEC STATS:
+   Total: 2274 | Open: 34 | TP: 346 | SL: 726 | TIMEOUT: 235 (86W/149L) | STALE: 256
+   Win Rate (TP/SL only): 32.3% | Total P&L: $-4035.23
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 22:34:32
+================================================================================
+
+❌ SL HIT (1 signals):
+   DUCK-USDT    15min  | P&L: $   -1.93 (-0.19%) | Fired: 22:29:47
+
+📊 PEC STATS:
+   Total: 2277 | Open: 36 | TP: 346 | SL: 727 | TIMEOUT: 235 (86W/149L) | STALE: 256
+   Win Rate (TP/SL only): 32.2% | Total P&L: $-4037.16
+================================================================================
+
+[PEC-TIMEOUT-HIT] SOL-USDT 30min: 6 bars >= 6 max, actual_timeout=2026-03-08T15:34:39.795682 [CHALLENGER]
+
+================================================================================
+[PEC UPDATE] 2026-03-08 22:39:41
+================================================================================
+
+⏱️  TIMEOUT (1 signals):
+   SOL-USDT     30min  | P&L: $    4.46 (+0.45%) | Fired: 19:34:39 | Timeout: 2026-03-08T15:34
+
+📊 PEC STATS:
+   Total: 2279 | Open: 37 | TP: 346 | SL: 727 | TIMEOUT: 236 (87W/149L) | STALE: 256
+   Win Rate (TP/SL only): 32.2% | Total P&L: $-4032.70
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 22:49:58
+================================================================================
+
+❌ SL HIT (1 signals):
+   NEWT-USDT    1h     | P&L: $  -11.89 (-1.19%) | Fired: 22:35:40
+
+📊 PEC STATS:
+   Total: 2280 | Open: 37 | TP: 346 | SL: 728 | TIMEOUT: 236 (87W/149L) | STALE: 256
+   Win Rate (TP/SL only): 32.2% | Total P&L: $-4044.59
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 23:00:14
+================================================================================
+
+❌ SL HIT (1 signals):
+   AERO-USDT    15min  | P&L: $   -6.36 (-0.64%) | Fired: 22:23:19
+
+📊 PEC STATS:
+   Total: 2281 | Open: 37 | TP: 346 | SL: 729 | TIMEOUT: 236 (87W/149L) | STALE: 256
+   Win Rate (TP/SL only): 32.2% | Total P&L: $-4050.95
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-08 23:05:24
+================================================================================
+
+❌ SL HIT (1 signals):
+   PUMP-USDT    15min  | P&L: $  -13.20 (-1.32%) | Fired: 22:26:25
+
+📊 PEC STATS:
+   Total: 2282 | Open: 37 | TP: 346 | SL: 730 | TIMEOUT: 236 (87W/149L) | STALE: 256
+   Win Rate (TP/SL only): 32.2% | Total P&L: $-4064.15
 ================================================================================
 

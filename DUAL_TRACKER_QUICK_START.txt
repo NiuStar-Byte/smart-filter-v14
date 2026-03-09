@@ -1,0 +1,171 @@
+╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                    DUAL TRACKER - QUICK START GUIDE (2 Versions)                                ║
+║           Immutable Baseline (Pre-Enhancement) + Dynamic Tracker (Post-Enhancement)             ║
+╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+
+VERSION 1: ONE-TIME REPORT (Single Run, Fast)
+══════════════════════════════════════════════════════════════════════════════════════════════════
+
+📊 Quick Status Check - Shows baseline, tracker, and comparison once then exits.
+
+COMMAND (Copy & Paste):
+────────────────────────────────────────────────────────────────────────────────────────────────
+cd /Users/geniustarigan/.openclaw/workspace && python3 dual_tracker_immutable_dynamic.py --save
+────────────────────────────────────────────────────────────────────────────────────────────────
+
+Or using shell wrapper:
+────────────────────────────────────────────────────────────────────────────────────────────────
+./dual_tracker.sh once
+────────────────────────────────────────────────────────────────────────────────────────────────
+
+⏱️  Time: ~2-3 seconds
+
+📋 Output:
+  ✓ Immutable baseline (pre-enhancement, 998 signals, LOCKED)
+  ✓ Dynamic tracker (post-enhancement, 605+ signals, LIVE)
+  ✓ Comparison & analysis (delta, interpretation)
+  ✓ Saves 3 JSON files
+
+💾 Files Created:
+  • FILTERS_BASELINE_IMMUTABLE.json
+  • FILTERS_TRACKER_POST_ENHANCEMENT.json
+  • FILTERS_COMPARISON_REPORT.json
+
+✅ Use this for: Quick status checks between deployments
+
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+VERSION 2: LIVE MONITORING (Continuous, Updates Every 60 Seconds)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+🔄 Real-Time Tracking - Shows baseline, tracker, and comparison every 60 seconds. Keep in terminal.
+
+COMMAND (Copy & Paste):
+────────────────────────────────────────────────────────────────────────────────────────────────
+cd /Users/geniustarigan/.openclaw/workspace && python3 dual_tracker_immutable_dynamic.py --watch --save
+────────────────────────────────────────────────────────────────────────────────────────────────
+
+Or using shell wrapper:
+────────────────────────────────────────────────────────────────────────────────────────────────
+./dual_tracker.sh watch
+────────────────────────────────────────────────────────────────────────────────────────────────
+
+⏱️  Time: Continuous (Press Ctrl+C to stop)
+
+📋 Output (Every 60 seconds):
+  ✓ Immutable baseline (UNCHANGED - locked reference)
+  ✓ Dynamic tracker (UPDATED - signal count grows, scores update)
+  ✓ Comparison & analysis (UPDATED - delta changes as signals arrive)
+  ✓ Updates 3 JSON files continuously
+
+💾 Files Updated Every 60s:
+  • FILTERS_BASELINE_IMMUTABLE.json (static)
+  • FILTERS_TRACKER_POST_ENHANCEMENT.json (grows)
+  • FILTERS_COMPARISON_REPORT.json (updates)
+
+✅ Use this for: 
+  - While deploying Phase 3/4 (keep running in background)
+  - Watch signal accumulation in real-time
+  - See delta change as more post-enhancement signals arrive
+
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+SIDE-BY-SIDE COMPARISON
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+                          VERSION 1              │              VERSION 2
+                        (One-Time)              │             (Live)
+────────────────────────────────────────────────┼────────────────────────────────────
+Command                  python3 ... --save     │  python3 ... --watch --save
+Duration                 ~3 seconds             │  Continuous (Ctrl+C to stop)
+Refresh Rate             Never (exits)          │  Every 60 seconds
+Use Case                 Quick checks           │  Monitoring deployments
+Best For                 Status snapshots       │  Real-time tracking
+JSON Files               Creates once           │  Updates continuously
+Terminal Occupancy       Minimal                │  Long-running (background ok)
+
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+TYPICAL WORKFLOW
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+1. ESTABLISH BASELINE (one-time):
+   $ cd /Users/geniustarigan/.openclaw/workspace && python3 dual_tracker_immutable_dynamic.py --save
+   → See immutable baseline: 14.64 avg score (98 pre-enhancement signals)
+
+2. DEPLOY PHASE 3/4 (while live monitoring):
+   $ cd /Users/geniustarigan/.openclaw/workspace && python3 dual_tracker_immutable_dynamic.py --watch --save
+   → Keep this running in background
+   → Watch dynamic tracker update every 60s as signals arrive
+
+3. MONITOR COMPARISON:
+   → Initially: -2.13 score delta (might be selectivity or strictness)
+   → As signals accumulate: Delta should stabilize or improve
+   → Check P&L/WR to confirm if delta is good (selectivity) or bad (strictness)
+
+4. ANALYZE RESULTS (after 24h of data):
+   $ cd /Users/geniustarigan/.openclaw/workspace && python3 dual_tracker_immutable_dynamic.py --save
+   → See final comparison with full post-enhancement data
+   → Decide: Deploy Phase 4? Fix any enhancements?
+
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+UNDERSTANDING THE OUTPUT
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+IMMUTABLE BASELINE (locked forever):
+  Signal count: 998 (pre-enhancement, before 2026-03-05)
+  Avg score: 14.64 / 20
+  Pass rate: 73.2%
+  → This NEVER changes. It's your reference point.
+
+DYNAMIC TRACKER (updates live):
+  Signal count: 605+ (post-enhancement, from 2026-03-05 onwards)
+  Avg score: 12.51 / 20 (changes as signals arrive)
+  Pass rate: 62.5% (updates every 60s)
+  → This GROWS and UPDATES as new signals arrive
+
+COMPARISON DELTA:
+  Score change: -2.13 (post vs pre)
+  Pass rate change: -10.7%
+  
+  Interpretation (key insight):
+    ⚠️ More strict filtering (high gate rate)
+    ? Could be GOOD (blocking weak signals) OR BAD (too restrictive)
+    → Check P&L and win rate to confirm quality
+
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+JSON FILES (Detailed Info)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+View any JSON file:
+  $ cat /Users/geniustarigan/.openclaw/workspace/FILTERS_BASELINE_IMMUTABLE.json | python3 -m json.tool
+  $ cat /Users/geniustarigan/.openclaw/workspace/FILTERS_TRACKER_POST_ENHANCEMENT.json | python3 -m json.tool
+  $ cat /Users/geniustarigan/.openclaw/workspace/FILTERS_COMPARISON_REPORT.json | python3 -m json.tool
+
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+YOU'RE ALL SET! 🚀
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+Ready to go with OPTION 1 + DUAL TRACKER:
+
+1. Quick check (one-time):
+   cd /Users/geniustarigan/.openclaw/workspace && python3 dual_tracker_immutable_dynamic.py --save
+
+2. Live tracking (continuous):
+   cd /Users/geniustarigan/.openclaw/workspace && python3 dual_tracker_immutable_dynamic.py --watch --save
+
+3. Deploy Phase 3/4 while live monitoring runs in background
+
+4. Check comparison after 24h of post-enhancement data accumulation
+
+Questions? Check DUAL_TRACKER_COMMANDS.md for detailed reference.
