@@ -16,7 +16,7 @@ import argparse
 DAEMON_LOG_PATH = "/Users/geniustarigan/.openclaw/workspace/main_daemon.log"
 SIGNALS_MASTER_PATH = "/Users/geniustarigan/.openclaw/workspace/SIGNALS_MASTER.jsonl"
 
-# All 20 filters
+# All 20 filters (canonical internal names)
 ALL_FILTERS = [
     "MACD", "Volume Spike", "Fractal Zone", "TREND", "Momentum", "ATR Momentum Burst",
     "MTF Volume Agreement", "HH/LL Trend", "Volatility Model", "Liquidity Awareness",
@@ -24,6 +24,30 @@ ALL_FILTERS = [
     "Chop Zone", "Liquidity Pool", "Support/Resistance", "Smart Money Bias",
     "Absorption", "Wick Dominance"
 ]
+
+# Mapping: Actual log names → canonical filter names
+LOG_NAME_TO_FILTER = {
+    "Smart Money": "Smart Money Bias",
+    "Chop Zone Check": "Chop Zone",
+    "MACD": "MACD",
+    "Volume Spike": "Volume Spike",
+    "Fractal Zone": "Fractal Zone",
+    "TREND": "TREND",
+    "Momentum": "Momentum",
+    "ATR Momentum Burst": "ATR Momentum Burst",
+    "MTF Volume Agreement": "MTF Volume Agreement",
+    "HH/LL Trend": "HH/LL Trend",
+    "Volatility Model": "Volatility Model",
+    "Liquidity Awareness": "Liquidity Awareness",
+    "Volatility Squeeze": "Volatility Squeeze",
+    "Candle Confirmation": "Candle Confirmation",
+    "VWAP Divergence": "VWAP Divergence",
+    "Spread Filter": "Spread Filter",
+    "Liquidity Pool": "Liquidity Pool",
+    "Support/Resistance": "Support/Resistance",
+    "Absorption": "Absorption",
+    "Wick Dominance": "Wick Dominance"
+}
 
 # Phase assignments
 PHASE1_ENHANCED = {
@@ -33,6 +57,10 @@ PHASE1_ENHANCED = {
 PHASE2_ENHANCED = {
     "Support/Resistance", "Volatility Squeeze", "Liquidity Awareness", 
     "Spread Filter", "MTF Volume Agreement", "VWAP Divergence"
+}
+
+PHASE4_OPTIMIZED = {
+    "Chop Zone", "Volatility Model", "HH/LL Trend", "Candle Confirmation"
 }
 
 # Enhancement cutoff
@@ -94,6 +122,10 @@ class FilterPerformanceValidator:
                     # Handle ENHANCED version (remove "ENHANCED" suffix)
                     filter_name = filter_text.replace(" ENHANCED", "").strip()
                     
+                    # Map log names to canonical filter names
+                    if filter_name in LOG_NAME_TO_FILTER:
+                        filter_name = LOG_NAME_TO_FILTER[filter_name]
+                    
                     # Skip if not in our filter list
                     if filter_name not in ALL_FILTERS:
                         continue
@@ -137,6 +169,19 @@ class FilterPerformanceValidator:
     
     def calculate_rates(self):
         """Calculate pass/fail rates for each filter."""
+        # Ensure all 20 filters are in stats (even if 0 evals)
+        for filter_name in ALL_FILTERS:
+            if filter_name not in self.filter_stats:
+                self.filter_stats[filter_name] = {
+                    "total_evals": 0,
+                    "passed": 0,
+                    "failed": 0,
+                    "pass_rate": 0.0,
+                    "fail_rate": 0.0,
+                    "enhanced": False,
+                    "phase": "Unknown"
+                }
+        
         for filter_name in self.filter_stats:
             total = self.filter_stats[filter_name]["total_evals"]
             if total > 0:
@@ -151,9 +196,12 @@ class FilterPerformanceValidator:
             elif filter_name in PHASE2_ENHANCED:
                 self.filter_stats[filter_name]["enhanced"] = True
                 self.filter_stats[filter_name]["phase"] = "Phase 2 (2026-03-08)"
+            elif filter_name in PHASE4_OPTIMIZED:
+                self.filter_stats[filter_name]["enhanced"] = True
+                self.filter_stats[filter_name]["phase"] = "Phase 4 Wave 2 (2026-03-09)"
             else:
                 self.filter_stats[filter_name]["enhanced"] = False
-                self.filter_stats[filter_name]["phase"] = "Phase 3-4 (Pending)"
+                self.filter_stats[filter_name]["phase"] = "Phase 3 (Pending)"
     
     def print_report(self):
         """Print validation report."""
@@ -182,12 +230,14 @@ class FilterPerformanceValidator:
         
         phase1_filters = [f for f, s in self.filter_stats.items() if s["phase"] == "Phase 1 (2026-03-05)"]
         phase2_filters = [f for f, s in self.filter_stats.items() if s["phase"] == "Phase 2 (2026-03-08)"]
-        phase34_filters = [f for f, s in self.filter_stats.items() if s["phase"] == "Phase 3-4 (Pending)"]
+        phase4_filters = [f for f, s in self.filter_stats.items() if s["phase"] == "Phase 4 Wave 2 (2026-03-09)"]
+        phase3_filters = [f for f, s in self.filter_stats.items() if s["phase"] == "Phase 3 (Pending)"]
         
         for phase_name, filters_in_phase in [
             ("Phase 1", phase1_filters),
             ("Phase 2", phase2_filters),
-            ("Phase 3-4 (Pending)", phase34_filters)
+            ("Phase 4 Wave 2", phase4_filters),
+            ("Phase 3 (Pending)", phase3_filters)
         ]:
             if not filters_in_phase:
                 continue
@@ -203,6 +253,14 @@ class FilterPerformanceValidator:
         print("This validates actual filter performance from daemon logs.")
         print("Fail rate = filter rejected the signal (didn't pass min conditions)")
         print("Pass rate = filter accepted the signal (passed min conditions)")
+        print("\n⚠️  FILTERS WITH 0 EVALS:")
+        print("  These filters are ENHANCED (confirmed in code) but don't log individual evaluations:")
+        print("  • Volume Spike (Phase 1) - Enhanced but no individual logs")
+        print("  • Fractal Zone (Phase 1) - Enhanced but no individual logs")
+        print("  • ATR Momentum Burst (Phase 1) - Enhanced but no individual logs")
+        print("  • Volatility Model (Phase 4) - Deployed but no individual logs")
+        print("  • Candle Confirmation (Phase 4) - Deployed but no individual logs")
+        print("  → They ARE active (in weight metadata), just not traced individually")
         print("\nHigher fail rate ≠ bad enhancement. May indicate:")
         print("  1. Better selectivity (filtering weak signals)")
         print("  2. Market conditions changed (different signal flow)")

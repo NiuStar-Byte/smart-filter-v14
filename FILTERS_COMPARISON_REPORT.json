@@ -1,25 +1,25 @@
 {
-  "generated_at": "2026-03-09T09:40:16.917569",
-  "baseline_timestamp": "2026-03-09T09:40:16.917185",
-  "tracker_timestamp": "2026-03-09T09:40:16.917516",
+  "generated_at": "2026-03-09T17:40:28.460986",
+  "baseline_timestamp": "2026-03-09T17:40:28.460596",
+  "tracker_timestamp": "2026-03-09T17:40:28.460929",
   "comparison": {
     "baseline_avg_score": 14.64,
-    "post_enhancement_avg_score": 12.49,
-    "score_delta": -2.15,
-    "score_delta_pct": -14.7,
+    "post_enhancement_avg_score": 12.48,
+    "score_delta": -2.16,
+    "score_delta_pct": -14.8,
     "baseline_pass_rate": 73.2,
-    "post_pass_rate": 62.5,
-    "pass_rate_delta": -10.7
+    "post_pass_rate": 62.4,
+    "pass_rate_delta": -10.8
   },
   "sample_sizes": {
     "baseline_signals": 998,
-    "post_enhancement_signals": 646,
-    "baseline_pct": 60.7,
-    "post_enhancement_pct": 39.3
+    "post_enhancement_signals": 665,
+    "baseline_pct": 60.0,
+    "post_enhancement_pct": 40.0
   },
   "interpretation": "\u26a0\ufe0f Potential degradation - enhancements may be too strict (high gate rate)",
   "key_insight": {
-    "enhancement_coverage": "12/20 filters (60%)",
+    "enhancement_coverage": "16/20 filters (80.0%)",
     "no_need_to_wait": "Partial enhancement is meaningful - no need to wait for 20/20",
     "gate_rate_note": "Higher failure rate \u2260 bad. May indicate better selectivity filtering weak signals.",
     "quality_metric": "Compare P&L and win rate (WR) to confirm if delta = good or bad",
