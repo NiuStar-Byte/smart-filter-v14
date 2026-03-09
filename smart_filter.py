@@ -1910,6 +1910,7 @@ class SmartFilter:
         - min_cond: Gate conditions (3 of 6 required, was 1 of 2)
         """
         if len(self.df) < volume_ma_period:
+            print(f"[{self.symbol}] [Smart Money Bias ENHANCED] Insufficient data: {len(self.df)} < {volume_ma_period}")
             return None
         
         close = self.df['close'].iat[-1]
@@ -1992,7 +1993,14 @@ class SmartFilter:
         elif short_met >= min_cond and short_met > long_met:
             signal = "SHORT"
         
-        if debug:
+        if signal is None and not debug:
+            print(
+                f"[{self.symbol}] [Smart Money Bias ENHANCED] No signal | "
+                f"long_met={long_met} (need {min_cond}), short_met={short_met}"
+            )
+        elif signal and not debug:
+            print(f"[{self.symbol}] [Smart Money Bias ENHANCED] SIGNAL {signal} | long_met={long_met}, short_met={short_met}")
+        elif debug:
             smart_money = {
                 "volume_ratio": safe_divide(volume, avg_volume),
                 "consensus_long": consensus_long,
@@ -2063,6 +2071,8 @@ class SmartFilter:
         import math
         
         if len(self.df) < window:
+            if not debug:
+                print(f"[{self.symbol}] [Absorption ENHANCED] Insufficient data: {len(self.df)} < {window}")
             return None
         
         low = self.df['low'].rolling(window).min().iat[-1]
@@ -2154,7 +2164,19 @@ class SmartFilter:
         elif short_met >= min_cond and short_met > long_met:
             signal = "SHORT"
         
-        if debug:
+        if signal is None and not debug:
+            print(
+                f"[{self.symbol}] [Absorption ENHANCED] No signal | "
+                f"long_met={long_met} (need {min_cond}), short_met={short_met} | "
+                f"price_low={cond1_long}, volume={cond2_long}, buildup={cond3_long}, "
+                f"pressure={cond4_long}, false_break={cond5_long}, liquidity={cond6_long}"
+            )
+        elif signal and not debug:
+            print(
+                f"[{self.symbol}] [Absorption ENHANCED] SIGNAL {signal} | "
+                f"long_met={long_met}, short_met={short_met}"
+            )
+        elif debug:
             print(
                 f"[{self.symbol}] [Absorption ENHANCED] signal={signal} | "
                 f"long_met={long_met}, short_met={short_met}, "
@@ -2753,6 +2775,7 @@ class SmartFilter:
         - min_cond: Gate conditions (3 of 6 required, was 2 of 2)
         """
         if len(self.df) < rolling_lookback:
+            print(f"[{self.symbol}] [Liquidity Pool ENHANCED] Insufficient data: {len(self.df)} < {rolling_lookback}")
             return None
         
         close = self.df['close'].iat[-1]
@@ -2848,7 +2871,12 @@ class SmartFilter:
         elif short_met >= min_cond and short_met > long_met:
             signal = "SHORT"
         
-        if debug or signal:
+        if signal is None and not debug:
+            print(
+                f"[{self.symbol}] [Liquidity Pool ENHANCED] No signal | "
+                f"long_met={long_met} (need {min_cond}), short_met={short_met}"
+            )
+        elif signal or debug:
             liquidity_pool = {
                 "recent_high": recent_high,
                 "recent_low": recent_low,
@@ -2861,8 +2889,7 @@ class SmartFilter:
             }
             print(
                 f"[{self.symbol}] [Liquidity Pool ENHANCED] Signal: {signal} | "
-                f"long_met={long_met}, short_met={short_met}, min_cond={min_cond}, "
-                f"liquidity_pool={liquidity_pool}"
+                f"long_met={long_met}, short_met={short_met}, min_cond={min_cond}"
             )
         
         return signal
@@ -3575,16 +3602,13 @@ class SmartFilter:
         
         # Fire signal if min_cond conditions met
         if long_met >= min_cond and long_met > short_met:
-            if debug:
-                print(f"[{self.symbol}] {log_info} | LONG FIRE (long={long_met} short={short_met})")
+            print(f"[{self.symbol}] {log_info} | LONG FIRE (long={long_met} short={short_met})")
             return "LONG"
         elif short_met >= min_cond and short_met > long_met:
-            if debug:
-                print(f"[{self.symbol}] {log_info} | SHORT FIRE (short={short_met} long={long_met})")
+            print(f"[{self.symbol}] {log_info} | SHORT FIRE (short={short_met} long={long_met})")
             return "SHORT"
         else:
-            if debug:
-                print(f"[{self.symbol}] {log_info} | NO FIRE (long={long_met} short={short_met}, need {min_cond})")
+            print(f"[{self.symbol}] {log_info} | NO FIRE (long={long_met} short={short_met}, need {min_cond})")
             return None
 
     def _market_regime(
