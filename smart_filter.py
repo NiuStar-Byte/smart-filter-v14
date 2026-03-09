@@ -1864,12 +1864,9 @@ class SmartFilter:
     def _check_smart_money_bias(
         self, 
         volume_ma_period: int = 15,
-        volume_spike_mult: float = 1.2,
-        vwap_deviation_pct: float = 0.003,
-        consensus_strength: bool = True,
-        temporal_alignment: bool = True,
-        order_flow_direction: bool = True,
-        accumulation_bars: int = 3,
+        volume_spike_mult: float = 1.1,  # Loosened from 1.2 (10% above avg)
+        vwap_deviation_pct: float = 0.005,  # Loosened from 0.003 (0.5% instead of 0.3%)
+        momentum_threshold: float = 0.0,  # Loosened from implicit
         min_cond: int = 2,
         debug: bool = False
     ) -> Optional[str]:
@@ -1925,67 +1922,31 @@ class SmartFilter:
             except:
                 return 0.0
         
-        # FEATURE #1: Weighted Consensus Strength (simplified - single TF, but ready for multi-TF)
-        consensus_long = 0.0
-        consensus_short = 0.0
-        if volume > avg_volume:
-            if close > close_prev:
-                consensus_long = 1.0  # Volume up + price up = consensus
-            elif close < close_prev:
-                consensus_short = 1.0  # Volume up + price down = consensus
+        # FEATURE #1: Volume spike (loosened from 1.2x to 1.1x)
+        vol_spike = volume > (avg_volume * volume_spike_mult)
         
-        # FEATURE #2: Temporal Alignment (volume AND price move together)
-        temporal_align_long = False
-        temporal_align_short = False
-        if temporal_alignment:
-            vol_ratio = safe_divide(volume, avg_volume)
-            price_change = close - close_prev
-            if vol_ratio > volume_spike_mult and price_change > 0:
-                temporal_align_long = True  # Volume up AND price up
-            elif vol_ratio > volume_spike_mult and price_change < 0:
-                temporal_align_short = True  # Volume up AND price down
+        # FEATURE #2: Price vs VWAP alignment (loosened threshold)
+        vwap_check = vwap if vwap is not None and vwap > 0 else close
+        above_vwap = close > vwap_check * (1 - vwap_deviation_pct)
+        below_vwap = close < vwap_check * (1 + vwap_deviation_pct)
         
-        # FEATURE #3: Order Flow Direction (buy/sell wall detection)
-        order_flow_long = False
-        order_flow_short = False
-        if order_flow_direction:
-            # Simplified: if volume spike + price above VWAP = buy pressure
-            # if volume spike + price below VWAP = sell pressure
-            if volume > (avg_volume * volume_spike_mult):
-                if close > vwap:
-                    order_flow_long = True
-                elif close < vwap:
-                    order_flow_short = True
+        # FEATURE #3: Price momentum (any positive change counts)
+        price_momentum_long = close > close_prev
+        price_momentum_short = close < close_prev
         
-        # FEATURE #4: Accumulation Pattern Detection (3-bar buildup)
-        accumulation_count = 0
-        if len(self.df) >= accumulation_bars:
-            for i in range(-accumulation_bars, 0):
-                try:
-                    v = self.df['volume'].iat[i]
-                    v_avg = self.df['volume'].rolling(volume_ma_period).mean().iat[i]
-                    if v > (v_avg * volume_spike_mult):
-                        accumulation_count += 1
-                except:
-                    pass
+        # 4 Loose conditions
+        cond1_long = vol_spike
+        cond2_long = above_vwap
+        cond3_long = price_momentum_long
+        cond4_long = True  # Placeholder
         
-        # Condition gates (6 total, need min_cond to pass)
-        cond1_long = volume > (avg_volume * volume_spike_mult)  # Volume spike
-        cond2_long = close > vwap - (vwap * vwap_deviation_pct)  # Above VWAP
-        cond3_long = consensus_long > 0.5  # Consensus strength
-        cond4_long = temporal_align_long  # Temporal alignment
-        cond5_long = order_flow_long  # Order flow buy pressure
-        cond6_long = accumulation_count >= 1  # Accumulation detected
+        cond1_short = vol_spike
+        cond2_short = below_vwap
+        cond3_short = price_momentum_short
+        cond4_short = True  # Placeholder
         
-        cond1_short = volume > (avg_volume * volume_spike_mult)  # Volume spike
-        cond2_short = close < vwap + (vwap * vwap_deviation_pct)  # Below VWAP
-        cond3_short = consensus_short > 0.5  # Consensus strength
-        cond4_short = temporal_align_short  # Temporal alignment
-        cond5_short = order_flow_short  # Order flow sell pressure
-        cond6_short = accumulation_count >= 1  # Accumulation detected
-        
-        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long, cond5_long, cond6_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short, cond5_short, cond6_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
         
         signal = None
         if long_met >= min_cond and long_met > short_met:
@@ -1993,37 +1954,22 @@ class SmartFilter:
         elif short_met >= min_cond and short_met > long_met:
             signal = "SHORT"
         
-        if signal is None and not debug:
-            print(
-                f"[{self.symbol}] [Smart Money Bias ENHANCED] No signal | "
-                f"long_met={long_met} (need {min_cond}), short_met={short_met}"
-            )
-        elif signal and not debug:
-            print(f"[{self.symbol}] [Smart Money Bias ENHANCED] SIGNAL {signal} | long_met={long_met}, short_met={short_met}")
-        elif debug:
-            smart_money = {
-                "volume_ratio": safe_divide(volume, avg_volume),
-                "consensus_long": consensus_long,
-                "consensus_short": consensus_short,
-                "accumulation_count": accumulation_count
-            }
-            print(
-                f"[{self.symbol}] [Smart Money Bias ENHANCED] signal={signal} | "
-                f"long_met={long_met}, short_met={short_met}, smart_money={smart_money}"
-            )
+        vol_ratio = safe_divide(volume, avg_volume)
+        log_info = f"[Smart Money] vol_ratio={vol_ratio:.2f} above_vwap={above_vwap} below_vwap={below_vwap}"
+        
+        if signal:
+            print(f"[{self.symbol}] {log_info} | {signal} ({long_met}/{short_met})")
+        else:
+            print(f"[{self.symbol}] {log_info} | No signal (long={long_met} short={short_met}, need {min_cond})")
         
         return signal
 
     def _check_absorption(
         self, 
-        window: int = 30, 
-        price_proximity_pct: float = 0.01,
-        atr_multiplier: float = 0.75,
-        volume_threshold: float = 1.3,
-        volume_buildup_bars: int = 3,
-        directional_pressure: bool = True,
-        false_breakout_gate: bool = True,
-        liquidity_depth_check: bool = True,
+        window: int = 25,        # Loosened from 30
+        price_proximity_pct: float = 0.02,  # Loosened from 0.01 (2% acceptance)
+        volume_threshold: float = 1.1,   # Loosened from 1.3 (10% above avg, not 30%)
+        momentum_threshold: float = 0.0,  # Loosened from 0.005 (any positive)
         min_cond: int = 2,
         debug: bool = False
     ) -> Optional[str]:
@@ -2088,75 +2034,40 @@ class SmartFilter:
             except:
                 return 0.0
         
-        # FEATURE #1: Volatility-Adaptive Proximity
-        atr = self.df['atr'].iat[-1] if 'atr' in self.df.columns else None
-        adaptive_proximity = price_proximity_pct
-        if atr and close > 0:
-            vol_scale = (atr / close) * atr_multiplier
-            adaptive_proximity = price_proximity_pct * (1.0 + vol_scale)
+        # FEATURE #1: Price near support/resistance
+        price_near_low = close <= low * (1 + price_proximity_pct)
+        price_near_high = close >= high * (1 - price_proximity_pct)
         
-        # FEATURE #2: Volume Accumulation (3-bar buildup)
-        volume_buildup = 0
-        if len(self.df) >= volume_buildup_bars:
-            for i in range(-volume_buildup_bars, 0):
-                try:
-                    v = self.df['volume'].iat[i]
-                    v_avg = self.df['volume'].rolling(window).mean().iat[i]
-                    if v > (v_avg * volume_threshold):
-                        volume_buildup += 1
-                except:
-                    pass
+        # FEATURE #2: Volume confirmation (loosened from 1.3x to 1.1x)
+        vol_spike = volume > (avg_volume * volume_threshold)
         
-        # FEATURE #3: Directional Pressure Detection
-        pressure_long = 0.0  # Positive = price pushing down into low
-        pressure_short = 0.0  # Positive = price pushing up into high
-        if len(self.df) >= 3:
+        # FEATURE #3: Directional pressure (any positive, not 0.5%+)
+        pressure_long = 0.0
+        pressure_short = 0.0
+        if len(self.df) >= 2:
             try:
-                close_3 = self.df['close'].iat[-3]
-                close_2 = self.df['close'].iat[-2]
-                close_1 = self.df['close'].iat[-1]
-                pressure_long = (close_3 - close_1) / close_3 if close_3 > 0 else 0.0
-                pressure_short = (close_1 - close_3) / close_3 if close_3 > 0 else 0.0
+                close_prev = self.df['close'].iat[-2]
+                close_now = self.df['close'].iat[-1]
+                if close_prev > 0:
+                    pressure_long = (close_prev - close_now) / close_prev  # Moving down
+                    pressure_short = (close_now - close_prev) / close_prev  # Moving up
             except:
                 pressure_long = 0.0
                 pressure_short = 0.0
         
-        # FEATURE #4: False Breakout Rejection
-        false_breakout_reject_long = False
-        false_breakout_reject_short = False
-        if false_breakout_gate:
-            # Long: check if touching low but on thin volume
-            if close <= low * (1 + adaptive_proximity):
-                false_breakout_reject_long = volume <= avg_volume
-            # Short: check if touching high but on thin volume
-            if close >= high * (1 - adaptive_proximity):
-                false_breakout_reject_short = volume <= avg_volume
+        # 4 Loose conditions
+        cond1_long = price_near_low
+        cond2_long = vol_spike
+        cond3_long = pressure_long >= momentum_threshold
+        cond4_long = True  # Always pass (placeholder for future enhancements)
         
-        # FEATURE #5: Liquidity Depth Analysis (simplified - check volume concentration)
-        liquidity_dense_long = False
-        liquidity_dense_short = False
-        if liquidity_depth_check:
-            # Dense liquidity if volume 1.5x+ average (orders concentrated)
-            liquidity_dense_long = volume > (avg_volume * 1.5)
-            liquidity_dense_short = volume > (avg_volume * 1.5)
+        cond1_short = price_near_high
+        cond2_short = vol_spike
+        cond3_short = pressure_short >= momentum_threshold
+        cond4_short = True  # Always pass
         
-        # Condition gates (6 total, need min_cond to pass)
-        cond1_long = close <= low * (1 + adaptive_proximity)  # Price near low
-        cond2_long = volume > (avg_volume * volume_threshold)  # Volume spike
-        cond3_long = volume_buildup >= 1  # Accumulation detected
-        cond4_long = pressure_long >= 0.005  # Directional pressure
-        cond5_long = not false_breakout_reject_long  # Not a thin-volume touch
-        cond6_long = liquidity_dense_long or not liquidity_depth_check  # Liquidity dense or check disabled
-        
-        cond1_short = close >= high * (1 - adaptive_proximity)  # Price near high
-        cond2_short = volume > (avg_volume * volume_threshold)  # Volume spike
-        cond3_short = volume_buildup >= 1  # Accumulation detected
-        cond4_short = pressure_short >= 0.005  # Directional pressure
-        cond5_short = not false_breakout_reject_short  # Not a thin-volume touch
-        cond6_short = liquidity_dense_short or not liquidity_depth_check  # Liquidity dense or check disabled
-        
-        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long, cond5_long, cond6_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short, cond5_short, cond6_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
         
         signal = None
         if long_met >= min_cond and long_met > short_met:
@@ -2164,25 +2075,12 @@ class SmartFilter:
         elif short_met >= min_cond and short_met > long_met:
             signal = "SHORT"
         
-        if signal is None and not debug:
-            print(
-                f"[{self.symbol}] [Absorption ENHANCED] No signal | "
-                f"long_met={long_met} (need {min_cond}), short_met={short_met} | "
-                f"price_low={cond1_long}, volume={cond2_long}, buildup={cond3_long}, "
-                f"pressure={cond4_long}, false_break={cond5_long}, liquidity={cond6_long}"
-            )
-        elif signal and not debug:
-            print(
-                f"[{self.symbol}] [Absorption ENHANCED] SIGNAL {signal} | "
-                f"long_met={long_met}, short_met={short_met}"
-            )
-        elif debug:
-            print(
-                f"[{self.symbol}] [Absorption ENHANCED] signal={signal} | "
-                f"long_met={long_met}, short_met={short_met}, "
-                f"pressure_long={pressure_long:.4f}, pressure_short={pressure_short:.4f}, "
-                f"volume_buildup={volume_buildup}, liquidity_dense={liquidity_dense_long or liquidity_dense_short}"
-            )
+        log_info = f"[Absorption] price_low={cond1_long} vol={cond2_long} pressure_long={pressure_long:.4f} pressure_short={pressure_short:.4f}"
+        
+        if signal:
+            print(f"[{self.symbol}] {log_info} | {signal} ({long_met}/{short_met})")
+        else:
+            print(f"[{self.symbol}] {log_info} | No signal (long={long_met} short={short_met}, need {min_cond})")
         
         return signal
 
@@ -2730,13 +2628,10 @@ class SmartFilter:
 
     def _check_liquidity_pool(
         self, 
-        rolling_lookback: int = 25,
-        breakout_pct: float = 0.002,
-        volume_threshold: float = 1.15,
-        volume_clustering: bool = True,
-        momentum_confirmation: bool = True,
-        absorption_at_level: bool = True,
-        exhaustion_check: bool = True,
+        rolling_lookback: int = 20,  # Loosened from 25
+        breakout_pct: float = 0.001,  # Loosened from 0.002 (0.1% instead of 0.2%)
+        volume_threshold: float = 1.05,  # Loosened from 1.15 (5% above avg, not 15%)
+        momentum_threshold: float = 0.0,  # Loosened
         min_cond: int = 2,
         debug: bool = False
     ):
@@ -2795,75 +2690,40 @@ class SmartFilter:
             except:
                 return 0.0
         
-        # FEATURE #1: Volume Clustering Detection
-        volume_clustering_long = False
-        volume_clustering_short = False
-        if volume_clustering:
-            # Simplified: high volume = clustered orders
-            if volume > (avg_volume * 1.5):
-                volume_clustering_long = True
-                volume_clustering_short = True
+        # FEATURE #1: Breakout past recent level
+        breakout_long = close > recent_high * (1 + breakout_pct)
+        breakout_short = close < recent_low * (1 - breakout_pct)
         
-        # FEATURE #2: Momentum Confirmation Through Level
+        # FEATURE #2: Volume confirmation (loosened from 1.15x to 1.05x)
+        vol_confirm = volume > (avg_volume * volume_threshold)
+        
+        # FEATURE #3: Momentum/direction (any positive change)
         momentum_long = 0.0
         momentum_short = 0.0
-        if momentum_confirmation and len(self.df) >= 3:
+        if len(self.df) >= 2:
             try:
-                close_3 = self.df['close'].iat[-3]
-                close_2 = self.df['close'].iat[-2]
-                close_1 = self.df['close'].iat[-1]
-                momentum_long = (close_1 - close_3) / close_3 if close_3 > 0 else 0.0
-                momentum_short = (close_3 - close_1) / close_3 if close_3 > 0 else 0.0
+                close_prev = self.df['close'].iat[-2]
+                close_now = self.df['close'].iat[-1]
+                if close_prev > 0:
+                    momentum_long = (close_now - close_prev) / close_prev  # Moving up
+                    momentum_short = (close_prev - close_now) / close_prev  # Moving down
             except:
                 momentum_long = 0.0
                 momentum_short = 0.0
         
-        # FEATURE #3: Absorption Level Analysis (check if liquidity was present)
-        absorption_long = False
-        absorption_short = False
-        if absorption_at_level:
-            # Check if breakout came with volume (liquidity was there)
-            if volume > (avg_volume * volume_threshold):
-                absorption_long = True  # Liquidity present for upbreak
-                absorption_short = True  # Liquidity present for downbreak
+        # 4 Loose conditions
+        cond1_long = breakout_long
+        cond2_long = vol_confirm
+        cond3_long = momentum_long >= momentum_threshold
+        cond4_long = True  # Placeholder
         
-        # FEATURE #4: Exhaustion Counting (pressure before breakout)
-        exhaustion_long = 0
-        exhaustion_short = 0
-        if exhaustion_check:
-            lookback_bars = min(5, len(self.df) - 1)
-            for i in range(-lookback_bars, -1):
-                try:
-                    c = self.df['close'].iat[i]
-                    o = self.df['open'].iat[i]
-                    v = self.df['volume'].iat[i]
-                    v_avg = self.df['volume'].rolling(rolling_lookback).mean().iat[i]
-                    # Bullish candles with volume = accumulation
-                    if c > o and v > (v_avg * 1.2):
-                        exhaustion_long += 1
-                    # Bearish candles with volume = distribution
-                    if c < o and v > (v_avg * 1.2):
-                        exhaustion_short += 1
-                except:
-                    pass
+        cond1_short = breakout_short
+        cond2_short = vol_confirm
+        cond3_short = momentum_short >= momentum_threshold
+        cond4_short = True  # Placeholder
         
-        # Condition gates (6 total, need min_cond to pass)
-        cond1_long = close > recent_high * (1 + breakout_pct)  # Above high + breakout %
-        cond2_long = volume > (avg_volume * volume_threshold)  # Volume confirmation
-        cond3_long = momentum_long >= 0.005  # Momentum through level
-        cond4_long = volume_clustering_long  # Order clustering
-        cond5_long = absorption_long  # Liquidity was there
-        cond6_long = exhaustion_long >= 1  # Pressure buildup
-        
-        cond1_short = close < recent_low * (1 - breakout_pct)  # Below low + breakout %
-        cond2_short = volume > (avg_volume * volume_threshold)  # Volume confirmation
-        cond3_short = momentum_short >= 0.005  # Momentum through level
-        cond4_short = volume_clustering_short  # Order clustering
-        cond5_short = absorption_short  # Liquidity was there
-        cond6_short = exhaustion_short >= 1  # Pressure buildup
-        
-        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long, cond5_long, cond6_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short, cond5_short, cond6_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
         
         signal = None
         if long_met >= min_cond and long_met > short_met:
@@ -2871,26 +2731,12 @@ class SmartFilter:
         elif short_met >= min_cond and short_met > long_met:
             signal = "SHORT"
         
-        if signal is None and not debug:
-            print(
-                f"[{self.symbol}] [Liquidity Pool ENHANCED] No signal | "
-                f"long_met={long_met} (need {min_cond}), short_met={short_met}"
-            )
-        elif signal or debug:
-            liquidity_pool = {
-                "recent_high": recent_high,
-                "recent_low": recent_low,
-                "close_vs_high": close - recent_high,
-                "close_vs_low": close - recent_low,
-                "exhaustion_long": exhaustion_long,
-                "exhaustion_short": exhaustion_short,
-                "momentum_long": momentum_long,
-                "momentum_short": momentum_short
-            }
-            print(
-                f"[{self.symbol}] [Liquidity Pool ENHANCED] Signal: {signal} | "
-                f"long_met={long_met}, short_met={short_met}, min_cond={min_cond}"
-            )
+        log_info = f"[Liquidity Pool] breakout_long={breakout_long} breakout_short={breakout_short} vol_ratio={volume/avg_volume:.2f}"
+        
+        if signal:
+            print(f"[{self.symbol}] {log_info} | {signal} ({long_met}/{short_met})")
+        else:
+            print(f"[{self.symbol}] {log_info} | No signal (long={long_met} short={short_met}, need {min_cond})")
         
         return signal
 
@@ -3471,48 +3317,22 @@ class SmartFilter:
             
     def _check_wick_dominance(
         self,
-        min_wick_dom_ratio=1.8,
-        min_body_ratio=1.5,
-        atr_multiplier=0.5,
+        min_wick_dom_ratio=1.5,  # Loosened from 1.8
+        atr_multiplier=0.3,      # Loosened from 0.5
         exhaustion_lookback=5,
-        min_exhaustion_bars=2,
-        momentum_threshold=0.01,
-        require_volume_confirm=True,
+        min_exhaustion_bars=1,   # Loosened from 2
+        momentum_threshold=0.0,  # Loosened from 0.01 (accept any positive)
         min_cond=2,
         debug=False
     ):
         """
-        [Wick Dominance ENHANCED - Phase 3 Wave 1]
-        Institutional-grade reversal detection with 4 enhancements:
+        [Wick Dominance ENHANCED - Phase 3 Wave 1 - SIMPLIFIED]
         
-        1. Volatility-Aware Margins (ATR scaling)
-           - Adapts ratio thresholds to market volatility
-           - Calm market: stricter ratio needed
-           - Explosive market: more lenient ratio accepted
-        
-        2. Exhaustion Counting (2+ bars)
-           - Tracks consecutive wick rejections
-           - Higher exhaustion = reversal probability
-           - Confirms wick isn't isolated anomaly
-        
-        3. Momentum Directional Bias
-           - Measures last 3 bars momentum
-           - LONG wick in uptrend = stronger signal
-           - SHORT wick in downtrend = stronger signal
-        
-        4. Volume Pressure Validation
-           - Detects volume spike at wick (1.2x+ average)
-           - Indicates institutional trapped positions
-           - Confirms reversal likelihood
-        
-        Parameters (User Override: min_cond = 3):
-        - min_wick_dom_ratio: Base wick dominance ratio (1.8, was 2.0)
-        - atr_multiplier: ATR scaling factor (0.5)
-        - exhaustion_lookback: Bar count for exhaustion (5)
-        - min_exhaustion_bars: Min exhaustion threshold (2)
-        - momentum_threshold: Min directional bias (0.01 = 1%)
-        - require_volume_confirm: Must have volume spike (True)
-        - min_cond: Gate conditions (3 of 6 required, was 2 of 4)
+        4 Conditions (reduced from 6, loosened for possible gating):
+        1. Wick ratio dominance (adaptive to volatility)
+        2. Exhaustion metric (1+ bars showing directional wick)
+        3. Momentum alignment (any positive directional bias)
+        4. Close alignment (bullish/bearish candle body)
         """
         import math
         
@@ -3520,24 +3340,21 @@ class SmartFilter:
         high = self.df['high'].iat[-1]
         low = self.df['low'].iat[-1]
         close = self.df['close'].iat[-1]
-        volume = self.df['volume'].iat[-1]
-        volume_ma = self.df['volume'].rolling(10).mean().iat[-1] if 'volume' in self.df.columns else None
         
         upper_wick = high - max(open_, close)
         lower_wick = min(open_, close) - low
         body = abs(close - open_)
         
-        # FEATURE #1: Volatility-Aware Margins (ATR scaling)
+        # FEATURE #1: Wick dominance (ATR-scaled, loosened)
         atr = self.df['atr'].iat[-1] if 'atr' in self.df.columns else None
         volatility_scale = 1.0
-        if atr and atr > 0:
-            # Scale ratio based on ATR relative to close
+        if atr and atr > 0 and close > 0:
             volatility_scale = 1.0 + (atr / close * atr_multiplier)
         adaptive_ratio = min_wick_dom_ratio * volatility_scale
         
-        # FEATURE #2: Exhaustion Counting (count bars with wick rejections)
-        exhaustion_long = 0  # Count bars with lower wick > upper wick
-        exhaustion_short = 0  # Count bars with upper wick > lower wick
+        # FEATURE #2: Exhaustion counting (loosened to 1+ bars)
+        exhaustion_long = 0
+        exhaustion_short = 0
         if len(self.df) >= exhaustion_lookback:
             for i in range(-exhaustion_lookback, 0):
                 try:
@@ -3554,61 +3371,48 @@ class SmartFilter:
                 except:
                     pass
         
-        # FEATURE #3: Momentum Directional Bias
-        momentum_long = 0.0  # Positive = uptrend momentum
-        momentum_short = 0.0  # Positive = downtrend momentum
+        # FEATURE #3: Momentum (loosened to accept 0.0+)
+        momentum_long = 0.0
+        momentum_short = 0.0
         if len(self.df) >= 3:
             try:
                 close_prev3 = self.df['close'].iat[-3]
-                close_prev2 = self.df['close'].iat[-2]
                 close_prev1 = self.df['close'].iat[-1]
-                momentum_long = (close_prev1 - close_prev3) / close_prev3
-                momentum_short = (close_prev3 - close_prev1) / close_prev3
+                momentum_long = (close_prev1 - close_prev3) / close_prev3 if close_prev3 > 0 else 0.0
+                momentum_short = (close_prev3 - close_prev1) / close_prev3 if close_prev3 > 0 else 0.0
             except:
                 momentum_long = 0.0
                 momentum_short = 0.0
         
-        # FEATURE #4: Volume Pressure Validation
-        volume_confirm = True
-        if require_volume_confirm and volume_ma is not None and volume_ma > 0:
-            volume_confirm = volume > (volume_ma * 1.2)  # 1.2x average required
+        # FEATURE #4: Close alignment (bullish/bearish)
+        bullish_close = close > open_
+        bearish_close = close < open_
         
-        # Condition gates (6 total, need min_cond to pass)
-        cond1_long = lower_wick > adaptive_ratio * upper_wick  # Wick ratio (scaled)
-        cond2_long = lower_wick > min_body_ratio * body  # Wick > body ratio
-        cond3_long = close > open_  # Body bullish
-        cond4_long = exhaustion_long >= min_exhaustion_bars  # Exhaustion metric
-        cond5_long = momentum_long >= momentum_threshold  # Momentum uptrend
-        cond6_long = volume_confirm  # Volume pressure
+        # 4 Conditions (loosened)
+        cond1_long = lower_wick > adaptive_ratio * upper_wick if upper_wick > 0 else lower_wick > 0
+        cond2_long = exhaustion_long >= min_exhaustion_bars
+        cond3_long = momentum_long >= momentum_threshold
+        cond4_long = bullish_close
         
-        cond1_short = upper_wick > adaptive_ratio * lower_wick  # Wick ratio (scaled)
-        cond2_short = upper_wick > min_body_ratio * body  # Wick > body ratio
-        cond3_short = close < open_  # Body bearish
-        cond4_short = exhaustion_short >= min_exhaustion_bars  # Exhaustion metric
-        cond5_short = momentum_short >= momentum_threshold  # Momentum downtrend
-        cond6_short = volume_confirm  # Volume pressure
+        cond1_short = upper_wick > adaptive_ratio * lower_wick if lower_wick > 0 else upper_wick > 0
+        cond2_short = exhaustion_short >= min_exhaustion_bars
+        cond3_short = momentum_short >= momentum_threshold
+        cond4_short = bearish_close
         
-        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long, cond5_long, cond6_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short, cond5_short, cond6_short])
+        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
+        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
         
-        # Logging
-        wick_dom_str = f"Lower={lower_wick:.2f} Upper={upper_wick:.2f}"
-        log_info = (
-            f"[Wick Dominance ENHANCED] wick_dom={wick_dom_str}, adaptive_ratio={adaptive_ratio:.2f}, "
-            f"exhaustion_long={exhaustion_long}, exhaustion_short={exhaustion_short}, "
-            f"momentum_long={momentum_long:.4f}, momentum_short={momentum_short:.4f}, "
-            f"volume_confirm={volume_confirm}, body={body:.2f}"
-        )
+        log_info = f"[Wick Dominance] lower={lower_wick:.4f} upper={upper_wick:.4f} ratio={adaptive_ratio:.2f} exhaust_long={exhaustion_long} exhaust_short={exhaustion_short}"
         
-        # Fire signal if min_cond conditions met
         if long_met >= min_cond and long_met > short_met:
-            print(f"[{self.symbol}] {log_info} | LONG FIRE (long={long_met} short={short_met})")
+            print(f"[{self.symbol}] {log_info} | LONG ({long_met}/4)")
             return "LONG"
         elif short_met >= min_cond and short_met > long_met:
-            print(f"[{self.symbol}] {log_info} | SHORT FIRE (short={short_met} long={long_met})")
+            print(f"[{self.symbol}] {log_info} | SHORT ({short_met}/4)")
             return "SHORT"
         else:
-            print(f"[{self.symbol}] {log_info} | NO FIRE (long={long_met} short={short_met}, need {min_cond})")
+            if long_met >= min_cond or short_met >= min_cond:
+                print(f"[{self.symbol}] {log_info} | TIED (long={long_met} short={short_met})")
             return None
 
     def _market_regime(
