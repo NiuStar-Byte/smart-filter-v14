@@ -128,8 +128,9 @@ except Exception as e:
 # --- Configuration ---
 # Full liquid pairs from kucoin_orderbook.py - 90+ symbols
 TOKENS = [
-    # === 91 SYMBOLS (82 original + 10 new - 1 delisted: ELDE-USDT removed 2026-03-05 23:58) ===
-    # NEW ADDS: ATOM-USDT, AGLD-USDT, APT-USDT, INJ-USDT, NEAR-USDT, OCEAN-USDT, OP-USDT, RNDR-USDT, SEI-USDT, TAO-USDT
+    # === 101 SYMBOLS (82 original + 20 new - 1 delisted: ELDE-USDT removed 2026-03-05 23:58) ===
+    # WAVE 1 ADDS (2026-03-05): ATOM-USDT, AGLD-USDT, APT-USDT, INJ-USDT, NEAR-USDT, OCEAN-USDT, OP-USDT, RNDR-USDT, SEI-USDT, TAO-USDT
+    # WAVE 2 ADDS (2026-03-09): BLUR-USDT, LDO-USDT, MKR-USDT, CRV-USDT, CVX-USDT, BAL-USDT, YFI-USDT, ENS-USDT, BONK-USDT, FLR-USDT
     # REMOVED: ELDE-USDT (no data on KuCoin perpetuals)
     "BTC-USDT", "ETH-USDT", "SOL-USDT", "XRP-USDT", "ADA-USDT", "AVAX-USDT", 
     "XLM-USDT", "LINK-USDT", "POL-USDT", "BNB-USDT", "SKATE-USDT", "LA-USDT", 
@@ -145,8 +146,10 @@ TOKENS = [
     "PUMP-USDT", "WIF-USDT", "BERA-USDT", "DYDX-USDT", "KAITO-USDT", "ARKM-USDT", 
     "ATH-USDT", "NMR-USDT", "ARB-USDT", "WLFI-USDT", "BIO-USDT", "ASTER-USDT", 
     "XPL-USDT", "AVNT-USDT", "ORDER-USDT", "XAUT-USDT",
-    # NEW SYMBOLS (2026-03-05 14:25 GMT+7) - 10 validated dual-listed perpetuals (ATOM, AGLD, APT, INJ, NEAR, OCEAN, OP, RNDR, SEI, TAO)
-    "ATOM-USDT", "AGLD-USDT", "APT-USDT", "INJ-USDT", "NEAR-USDT", "OCEAN-USDT", "OP-USDT", "RNDR-USDT", "SEI-USDT", "TAO-USDT"
+    # WAVE 1 NEW SYMBOLS (2026-03-05 14:25 GMT+7) - 10 validated dual-listed perpetuals
+    "ATOM-USDT", "AGLD-USDT", "APT-USDT", "INJ-USDT", "NEAR-USDT", "OCEAN-USDT", "OP-USDT", "RNDR-USDT", "SEI-USDT", "TAO-USDT",
+    # WAVE 2 NEW SYMBOLS (2026-03-09 21:49 GMT+7) - 10 additional validated dual-listed perpetuals (DeFi/NFT/Solana ecosystem)
+    "BLUR-USDT", "LDO-USDT", "MKR-USDT", "CRV-USDT", "CVX-USDT", "BAL-USDT", "YFI-USDT", "ENS-USDT", "BONK-USDT", "FLR-USDT"
 ]
 
 COOLDOWN = {"15min": 120, "30min": 240, "1h": 600}
