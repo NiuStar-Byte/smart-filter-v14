@@ -1870,7 +1870,7 @@ class SmartFilter:
         temporal_alignment: bool = True,
         order_flow_direction: bool = True,
         accumulation_bars: int = 3,
-        min_cond: int = 3,
+        min_cond: int = 2,
         debug: bool = False
     ) -> Optional[str]:
         """
@@ -2024,7 +2024,7 @@ class SmartFilter:
         directional_pressure: bool = True,
         false_breakout_gate: bool = True,
         liquidity_depth_check: bool = True,
-        min_cond: int = 3,
+        min_cond: int = 2,
         debug: bool = False
     ) -> Optional[str]:
         """
@@ -2737,7 +2737,7 @@ class SmartFilter:
         momentum_confirmation: bool = True,
         absorption_at_level: bool = True,
         exhaustion_check: bool = True,
-        min_cond: int = 3,
+        min_cond: int = 2,
         debug: bool = False
     ):
         """
