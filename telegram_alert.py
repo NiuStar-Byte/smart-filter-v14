@@ -94,6 +94,41 @@ def _pct_for_sl(entry: float, sl: float, signal_type: str) -> str:
         return "N/A"
 
 
+def _get_symbol_group(symbol: str) -> str:
+    """
+    Categorize symbol into trading group (MAIN_BLOCKCHAIN, TOP_ALTS, MID_ALTS, LOW_ALTS)
+    Based on market cap tier and prominence.
+    """
+    symbol = str(symbol).upper()
+    
+    # MAIN_BLOCKCHAIN: Core L1 infrastructure (BTC, ETH, SOL, BNB, ADA, AVAX, NEAR)
+    main_blockchain = {"BTC", "ETH", "SOL", "BNB", "ADA", "AVAX", "NEAR", "XRP"}
+    
+    # TOP_ALTS: Major altcoins (DeFi leaders, exchanges, major L2s)
+    top_alts = {
+        "XRP", "LINK", "POL", "XLM", "UNI", "AAVE", "DOGE", "ALGO", "DOT", "TON", "SUI",
+        "ARB", "OP", "CRV", "YFI", "ENS", "CVX", "APT", "INJ", "OCEAN", "TAO"
+    }
+    
+    # MID_ALTS: Medium cap, established projects
+    mid_alts = {
+        "HBAR", "GALA", "DYDX", "ATH", "KAITO", "ARKM", "ONDO", "VIRTUAL", "EIGEN",
+        "BLUR", "LDO", "BONK", "HYPE", "PUMP", "WIF", "BERA", "ASTER"
+    }
+    
+    # Extract symbol base (remove -USDT)
+    sym_base = symbol.split("-")[0] if "-" in symbol else symbol
+    
+    if sym_base in main_blockchain:
+        return "MAIN_BLOCKCHAIN"
+    elif sym_base in top_alts:
+        return "TOP_ALTS"
+    elif sym_base in mid_alts:
+        return "MID_ALTS"
+    else:
+        return "LOW_ALTS"
+
+
 def send_telegram_alert(
     numbered_signal: str,
     symbol: str,
@@ -284,6 +319,11 @@ def send_telegram_alert(
         source_display = f"ATR-Based {achieved_rr:.1f}:1 RR" if isinstance(achieved_rr, (int, float)) else "ATR-Based RR"
         rr_line = f"📊 R:R: {rr_str}:1 | {source_display}"
 
+    # Symbol Group categorization (at bottom of message)
+    symbol_group = _get_symbol_group(symbol)
+    symbol_group_icon = "⛓️‍💥"
+    symbol_group_display = f"{symbol_group_icon} {symbol_group}"
+
     # Build message lines WITHOUT any blank empty lines
     lines = []
     
@@ -317,6 +357,8 @@ def send_telegram_alert(
         lines.append(rr_line)
     if fallback_used:
         lines.append("⚠️ Note: TP/SL fallback used")
+    # Symbol group at the very bottom
+    lines.append(symbol_group_display)
 
     # Join with single newline (no extra blank lines)
     message = "\n".join(lines)
