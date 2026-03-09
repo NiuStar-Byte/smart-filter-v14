@@ -3451,7 +3451,7 @@ class SmartFilter:
         min_exhaustion_bars=2,
         momentum_threshold=0.01,
         require_volume_confirm=True,
-        min_cond=3,
+        min_cond=2,
         debug=False
     ):
         """
