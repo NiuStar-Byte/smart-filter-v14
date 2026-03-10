@@ -19,13 +19,13 @@ from typing import List, Optional, Set
 try:
     from main import TOKENS as ACTIVE_SYMBOLS
 except ImportError:
-    # Fallback: 92 symbols (includes 10 new ones)
+    # Fallback: 107 symbols (82 original + 10 Wave 1 + 7 Wave 2 + 7 Wave 3 + 1 legacy)
     ACTIVE_SYMBOLS = [
         "BTC-USDT", "ETH-USDT", "SOL-USDT", "XRP-USDT", "ADA-USDT",
         "AVAX-USDT", "XLM-USDT", "LINK-USDT", "POL-USDT", "BNB-USDT",
         "SKATE-USDT", "LA-USDT", "SPK-USDT", "ZKJ-USDT", "IP-USDT",
         "AERO-USDT", "BMT-USDT", "LQTY-USDT", "X-USDT", "RAY-USDT",
-        "EPT-USDT", "ELDE-USDT", "MAGIC-USDT", "ACTSOL-USDT", "FUN-USDT",
+        "EPT-USDT", "MAGIC-USDT", "ACTSOL-USDT", "FUN-USDT",
         "CROSS-USDT", "KNC-USDT", "AIN-USDT", "ARK-USDT", "PORTAL-USDT",
         "ICNT-USDT", "OMNI-USDT", "PARTI-USDT", "VINE-USDT", "ZORA-USDT",
         "DUCK-USDT", "AUCTION-USDT", "ROAM-USDT", "FUEL-USDT", "TUT-USDT",
@@ -38,9 +38,13 @@ except ImportError:
         "KAITO-USDT", "ARKM-USDT", "ATH-USDT", "NMR-USDT", "ARB-USDT",
         "WLFI-USDT", "BIO-USDT", "ASTER-USDT", "XPL-USDT", "AVNT-USDT",
         "ORDER-USDT", "XAUT-USDT",
-        # NEW (2026-03-05)
+        # WAVE 1: 2026-03-05 - 10 validated dual-listed perpetuals
         "ATOM-USDT", "AGLD-USDT", "APT-USDT", "INJ-USDT", "NEAR-USDT",
-        "OCEAN-USDT", "OP-USDT", "RNDR-USDT", "SEI-USDT", "TAO-USDT"
+        "OCEAN-USDT", "OP-USDT", "RNDR-USDT", "SEI-USDT", "TAO-USDT",
+        # WAVE 2: 2026-03-09 - 7 validated dual-listed perpetuals (Binance & KuCoin)
+        "BLUR-USDT", "LDO-USDT", "CRV-USDT", "CVX-USDT", "YFI-USDT", "ENS-USDT", "BONK-USDT",
+        # WAVE 3: 2026-03-10 - 7 validated dual-listed perpetuals (KuCoin & Binance)
+        "STRK-USDT", "ORDI-USDT", "JUP-USDT", "PYTH-USDT", "STX-USDT", "GMX-USDT", "ETHFI-USDT"
     ]
 
 # Convert to set for O(1) lookup
@@ -49,7 +53,7 @@ ACTIVE_SYMBOLS_SET: Set[str] = set(ACTIVE_SYMBOLS)
 # Metadata
 TOTAL_SYMBOLS = len(set(ACTIVE_SYMBOLS))
 UNIQUE_SYMBOLS = TOTAL_SYMBOLS
-LAST_UPDATED = "2026-03-05 14:20 GMT+7"
+LAST_UPDATED = "2026-03-10 13:35 GMT+7 (Fixed fallback list for Wave 2-3)"
 
 
 class SymbolNotRegisteredError(ValueError):
