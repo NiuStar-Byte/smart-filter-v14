@@ -2197,3 +2197,197 @@
 [2026-03-10 15:40:41,051] INFO: 🤖 BOT SHUTDOWN
 [2026-03-10 15:40:41,051] INFO: Trades executed: 0
 [2026-03-10 15:40:41,051] INFO: ================================================================================
+[2026-03-10 17:12:39,510] INFO: ✅ Aster Client initialized with API key
+[2026-03-10 17:12:39,510] INFO: 🚀 Asterdex Trading Bot initialized
+[2026-03-10 17:12:39,510] INFO: Pairs: ['BTCUSDT', 'ETHUSDT']
+[2026-03-10 17:12:39,510] INFO: Position size: $1.0
+[2026-03-10 17:12:39,510] INFO: TP: +3.0% | SL: -2.0%
+[2026-03-10 17:12:39,510] INFO: 🚀 Starting trading bot...
+[2026-03-10 17:12:39,510] INFO: 
+📊 CYCLE 1 - 2026-03-10T10:12:39.510832+00:00
+[2026-03-10 17:12:40,120] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v3/account?timestamp=1773137559510&recvWindow=5000&signature=be8e9d9e5aef4e809985f1d9bb09cf530d12745c0b2b5a334cd7eafacc1829a2
+[2026-03-10 17:12:40,121] ERROR: Response: {'code': -1000, 'msg': 'Signature check failed'}
+[2026-03-10 17:12:40,121] ERROR: ❌ No account data
+[2026-03-10 17:12:40,121] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:13:10,125] INFO: 
+📊 CYCLE 2 - 2026-03-10T10:13:10.124868+00:00
+[2026-03-10 17:13:10,481] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v3/account?timestamp=1773137590126&recvWindow=5000&signature=e632991716ae7afa10ffe8c3e4a888dac3613e75e3955cf7b2438558576e1693
+[2026-03-10 17:13:10,481] ERROR: Response: {'code': -1000, 'msg': 'Signature check failed'}
+[2026-03-10 17:13:10,481] ERROR: ❌ No account data
+[2026-03-10 17:13:10,481] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:13:40,140] INFO: 
+⏹️  Bot stopped
+[2026-03-10 17:13:41,597] INFO: ✅ Aster Client initialized with API key
+[2026-03-10 17:13:41,597] INFO: 🚀 Asterdex Trading Bot initialized
+[2026-03-10 17:13:41,597] INFO: Pairs: ['BTCUSDT', 'ETHUSDT']
+[2026-03-10 17:13:41,597] INFO: Position size: $1.0
+[2026-03-10 17:13:41,597] INFO: TP: +3.0% | SL: -2.0%
+[2026-03-10 17:13:41,597] INFO: 🚀 Starting trading bot...
+[2026-03-10 17:13:41,597] INFO: 
+📊 CYCLE 1 - 2026-03-10T10:13:41.597301+00:00
+[2026-03-10 17:13:41,988] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v3/account?timestamp=1773137621597&recvWindow=5000&signature=eed6f0780603f8fa5a89979c1d4f2722a0ab59fa67e9c2509838c52ec9479686
+[2026-03-10 17:13:41,988] ERROR: Response: {'code': -1000, 'msg': 'Signature check failed'}
+[2026-03-10 17:13:41,989] ERROR: ❌ No account data
+[2026-03-10 17:13:41,989] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:14:11,994] INFO: 
+📊 CYCLE 2 - 2026-03-10T10:14:11.994466+00:00
+[2026-03-10 17:14:12,546] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v3/account?timestamp=1773137651997&recvWindow=5000&signature=4a2042c599e52dddd63b2b856b6ccf0c52d9652308d228107d888a83cf557eb0
+[2026-03-10 17:14:12,547] ERROR: Response: {'code': -1000, 'msg': 'Signature check failed'}
+[2026-03-10 17:14:12,547] ERROR: ❌ No account data
+[2026-03-10 17:14:12,547] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:14:28,432] INFO: 
+⏹️  Bot stopped
+[2026-03-10 17:16:09,187] INFO: ✅ Aster Client initialized with API key
+[2026-03-10 17:16:09,187] INFO: 🚀 Asterdex Trading Bot initialized
+[2026-03-10 17:16:09,187] INFO: Pairs: ['BTCUSDT', 'ETHUSDT']
+[2026-03-10 17:16:09,187] INFO: Position size: $1.0
+[2026-03-10 17:16:09,187] INFO: TP: +3.0% | SL: -2.0%
+[2026-03-10 17:16:09,187] INFO: 🚀 Starting trading bot...
+[2026-03-10 17:16:09,188] INFO: 
+📊 CYCLE 1 - 2026-03-10T10:16:09.187887+00:00
+[2026-03-10 17:16:09,561] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v3/account?timestamp=1773137769188&recvWindow=5000&signature=569fecd6f4a379ac68841d2045661c3746571e5aa5e0a0edb85bec711a4f672a
+[2026-03-10 17:16:09,562] ERROR: Response: {'code': -1000, 'msg': 'Signature check failed'}
+[2026-03-10 17:16:09,562] ERROR: ❌ No account data
+[2026-03-10 17:16:09,562] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:16:39,567] INFO: 
+📊 CYCLE 2 - 2026-03-10T10:16:39.567328+00:00
+[2026-03-10 17:16:39,736] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v3/account?timestamp=1773137799568&recvWindow=5000&signature=5b2e3c28550c10b92587b5eba58c27a72004d2e4d5a83a899971c2a09515d3e7
+[2026-03-10 17:16:39,736] ERROR: Response: {'code': -1000, 'msg': 'Signature check failed'}
+[2026-03-10 17:16:39,736] ERROR: ❌ No account data
+[2026-03-10 17:16:39,736] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:16:54,627] INFO: 
+⏹️  Bot stopped
+[2026-03-10 17:21:17,308] INFO: ✅ Aster Client initialized with API key
+[2026-03-10 17:21:17,308] INFO: 🚀 Asterdex Trading Bot initialized
+[2026-03-10 17:21:17,308] INFO: Pairs: ['BTCUSDT', 'ETHUSDT']
+[2026-03-10 17:21:17,308] INFO: Position size: $1.0
+[2026-03-10 17:21:17,308] INFO: TP: +3.0% | SL: -2.0%
+[2026-03-10 17:21:17,308] INFO: 🚀 Starting trading bot...
+[2026-03-10 17:21:17,308] INFO: 
+📊 CYCLE 1 - 2026-03-10T10:21:17.308870+00:00
+[2026-03-10 17:21:18,168] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v1/account?timestamp=1773138077309&recvWindow=5000&signature=981accc477f489058098f06502cfeb4d70044de7462c84557eb90a3d26d185e0
+[2026-03-10 17:21:18,168] ERROR: Response: {'code': -1022, 'msg': 'Signature for this request is not valid.'}
+[2026-03-10 17:21:18,168] ERROR: ❌ No account data
+[2026-03-10 17:21:18,168] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:21:48,173] INFO: 
+📊 CYCLE 2 - 2026-03-10T10:21:48.173158+00:00
+[2026-03-10 17:21:48,283] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v1/account?timestamp=1773138108173&recvWindow=5000&signature=a8563eb5c72dd73626cf3fe5f3561011d332a87ad36e22e1877dea7273e94de7
+[2026-03-10 17:21:48,284] ERROR: Response: {'code': -1022, 'msg': 'Signature for this request is not valid.'}
+[2026-03-10 17:21:48,284] ERROR: ❌ No account data
+[2026-03-10 17:21:48,284] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:22:18,290] INFO: 
+📊 CYCLE 3 - 2026-03-10T10:22:18.290430+00:00
+[2026-03-10 17:22:18,405] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v1/account?timestamp=1773138138292&recvWindow=5000&signature=6f90e7ddd918a51afc886cee7060e59935b257c83196cc2873847a510c212431
+[2026-03-10 17:22:18,405] ERROR: Response: {'code': -1022, 'msg': 'Signature for this request is not valid.'}
+[2026-03-10 17:22:18,405] ERROR: ❌ No account data
+[2026-03-10 17:22:18,405] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:22:48,408] INFO: 
+📊 CYCLE 4 - 2026-03-10T10:22:48.408855+00:00
+[2026-03-10 17:22:48,715] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v1/account?timestamp=1773138168410&recvWindow=5000&signature=1f6cafb749830e52db59d80686b95e570d9cb94564c0de719ecb99be038affa5
+[2026-03-10 17:22:48,716] ERROR: Response: {'code': -1022, 'msg': 'Signature for this request is not valid.'}
+[2026-03-10 17:22:48,716] ERROR: ❌ No account data
+[2026-03-10 17:22:48,716] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:23:18,719] INFO: 
+📊 CYCLE 5 - 2026-03-10T10:23:18.718276+00:00
+[2026-03-10 17:23:18,838] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v1/account?timestamp=1773138198721&recvWindow=5000&signature=c9812142ca5cbb2050902f3b6398e3d831b086f0577bd3dc101127c4100a5f49
+[2026-03-10 17:23:18,839] ERROR: Response: {'code': -1022, 'msg': 'Signature for this request is not valid.'}
+[2026-03-10 17:23:18,839] ERROR: ❌ No account data
+[2026-03-10 17:23:18,839] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:23:48,844] INFO: 
+📊 CYCLE 6 - 2026-03-10T10:23:48.844100+00:00
+[2026-03-10 17:23:48,994] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v1/account?timestamp=1773138228844&recvWindow=5000&signature=d52ea277cbbca39c8a3f4e608d8db1c4585a897cfd79b7b1b9d1d9f8f5daa30f
+[2026-03-10 17:23:48,994] ERROR: Response: {'code': -1022, 'msg': 'Signature for this request is not valid.'}
+[2026-03-10 17:23:48,995] ERROR: ❌ No account data
+[2026-03-10 17:23:48,995] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:24:19,000] INFO: 
+📊 CYCLE 7 - 2026-03-10T10:24:19.000330+00:00
+[2026-03-10 17:24:19,397] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v1/account?timestamp=1773138259001&recvWindow=5000&signature=594a55234b4aa2e14996235470a8cbdc51bfc40675789cc2267c0cb6c73d8d39
+[2026-03-10 17:24:19,397] ERROR: Response: {'code': -1022, 'msg': 'Signature for this request is not valid.'}
+[2026-03-10 17:24:19,397] ERROR: ❌ No account data
+[2026-03-10 17:24:19,397] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:24:49,400] INFO: 
+📊 CYCLE 8 - 2026-03-10T10:24:49.399542+00:00
+[2026-03-10 17:24:49,534] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v1/account?timestamp=1773138289402&recvWindow=5000&signature=f234d7be6adf73f841ab78df448201b5d0962096fda6250409f0455034b27c5d
+[2026-03-10 17:24:49,534] ERROR: Response: {'code': -1022, 'msg': 'Signature for this request is not valid.'}
+[2026-03-10 17:24:49,534] ERROR: ❌ No account data
+[2026-03-10 17:24:49,534] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:25:19,539] INFO: 
+📊 CYCLE 9 - 2026-03-10T10:25:19.539670+00:00
+[2026-03-10 17:25:19,653] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v1/account?timestamp=1773138319541&recvWindow=5000&signature=812668d502d88e478b0c9f014b23d55e8859227974860912b11e093fd2005df7
+[2026-03-10 17:25:19,654] ERROR: Response: {'code': -1022, 'msg': 'Signature for this request is not valid.'}
+[2026-03-10 17:25:19,654] ERROR: ❌ No account data
+[2026-03-10 17:25:19,654] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:25:49,659] INFO: 
+📊 CYCLE 10 - 2026-03-10T10:25:49.659412+00:00
+[2026-03-10 17:25:50,262] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v1/account?timestamp=1773138349660&recvWindow=5000&signature=e5595007d6ce0b4402c82824c2eb8687a5da9c9a61715068454684fa7c3225bb
+[2026-03-10 17:25:50,262] ERROR: Response: {'code': -1022, 'msg': 'Signature for this request is not valid.'}
+[2026-03-10 17:25:50,262] ERROR: ❌ No account data
+[2026-03-10 17:25:50,262] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:26:20,269] INFO: 
+📊 CYCLE 11 - 2026-03-10T10:26:20.268598+00:00
+[2026-03-10 17:26:20,484] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v1/account?timestamp=1773138380271&recvWindow=5000&signature=9828a005061617e3f7153546b9d15c3b5f95171ca738b1f4c90851aea67f054f
+[2026-03-10 17:26:20,485] ERROR: Response: {'code': -1022, 'msg': 'Signature for this request is not valid.'}
+[2026-03-10 17:26:20,486] ERROR: ❌ No account data
+[2026-03-10 17:26:20,486] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:26:50,487] INFO: 
+📊 CYCLE 12 - 2026-03-10T10:26:50.487133+00:00
+[2026-03-10 17:26:50,610] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v1/account?timestamp=1773138410489&recvWindow=5000&signature=b8874fefb650dba8df5866a6e1fab540872e4bdeef28e774f14ca16ec20798ab
+[2026-03-10 17:26:50,611] ERROR: Response: {'code': -1022, 'msg': 'Signature for this request is not valid.'}
+[2026-03-10 17:26:50,611] ERROR: ❌ No account data
+[2026-03-10 17:26:50,611] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:27:20,616] INFO: 
+📊 CYCLE 13 - 2026-03-10T10:27:20.616337+00:00
+[2026-03-10 17:27:20,918] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v1/account?timestamp=1773138440617&recvWindow=5000&signature=845647de993d613cdf32cb1be2c029ff8639b6b0dc7d4f5a8713c1b3bfb382ae
+[2026-03-10 17:27:20,919] ERROR: Response: {'code': -1022, 'msg': 'Signature for this request is not valid.'}
+[2026-03-10 17:27:20,919] ERROR: ❌ No account data
+[2026-03-10 17:27:20,919] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:27:50,920] INFO: 
+📊 CYCLE 14 - 2026-03-10T10:27:50.920136+00:00
+[2026-03-10 17:27:51,445] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v1/account?timestamp=1773138470921&recvWindow=5000&signature=11c6591447b98e31a6727f57d3ad599889f089564fa7753d9f1e4ec4d0577d2f
+[2026-03-10 17:27:51,446] ERROR: Response: {'code': -1022, 'msg': 'Signature for this request is not valid.'}
+[2026-03-10 17:27:51,446] ERROR: ❌ No account data
+[2026-03-10 17:27:51,446] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:28:21,448] INFO: 
+📊 CYCLE 15 - 2026-03-10T10:28:21.448755+00:00
+[2026-03-10 17:28:21,559] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v1/account?timestamp=1773138501449&recvWindow=5000&signature=27f93945478ba2a018f057794381d3abf4adcd2c0ddac9c67efbf30d3678d353
+[2026-03-10 17:28:21,559] ERROR: Response: {'code': -1022, 'msg': 'Signature for this request is not valid.'}
+[2026-03-10 17:28:21,559] ERROR: ❌ No account data
+[2026-03-10 17:28:21,559] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:28:51,562] INFO: 
+📊 CYCLE 16 - 2026-03-10T10:28:51.562208+00:00
+[2026-03-10 17:28:51,897] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v1/account?timestamp=1773138531563&recvWindow=5000&signature=43cf1a264a16ec653bc529bb414dd6a59d095bfe166b2f5f7caf2a0296a526cb
+[2026-03-10 17:28:51,897] ERROR: Response: {'code': -1022, 'msg': 'Signature for this request is not valid.'}
+[2026-03-10 17:28:51,898] ERROR: ❌ No account data
+[2026-03-10 17:28:51,898] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:29:21,899] INFO: 
+📊 CYCLE 17 - 2026-03-10T10:29:21.899502+00:00
+[2026-03-10 17:29:22,023] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v1/account?timestamp=1773138561901&recvWindow=5000&signature=e04150633c79d1e0679faf6fbdebaa5c17259c5d8d7a6a192a371dec4df03176
+[2026-03-10 17:29:22,024] ERROR: Response: {'code': -1022, 'msg': 'Signature for this request is not valid.'}
+[2026-03-10 17:29:22,024] ERROR: ❌ No account data
+[2026-03-10 17:29:22,024] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:29:52,024] INFO: 
+📊 CYCLE 18 - 2026-03-10T10:29:52.024688+00:00
+[2026-03-10 17:29:52,186] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v1/account?timestamp=1773138592025&recvWindow=5000&signature=c23568a195b700984dc1a078d412129f016d0ca174592f78d34a1b185b7d79a8
+[2026-03-10 17:29:52,187] ERROR: Response: {'code': -1022, 'msg': 'Signature for this request is not valid.'}
+[2026-03-10 17:29:52,187] ERROR: ❌ No account data
+[2026-03-10 17:29:52,187] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:30:22,189] INFO: 
+📊 CYCLE 19 - 2026-03-10T10:30:22.189670+00:00
+[2026-03-10 17:30:22,451] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v1/account?timestamp=1773138622191&recvWindow=5000&signature=187933d63584be8558ec528cb2cbef25b58f86775073a9cb09d076270f09f071
+[2026-03-10 17:30:22,451] ERROR: Response: {'code': -1022, 'msg': 'Signature for this request is not valid.'}
+[2026-03-10 17:30:22,451] ERROR: ❌ No account data
+[2026-03-10 17:30:22,451] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:30:52,453] INFO: 
+📊 CYCLE 20 - 2026-03-10T10:30:52.452824+00:00
+[2026-03-10 17:30:52,591] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v1/account?timestamp=1773138652453&recvWindow=5000&signature=a4bbe044f2a6db0d4f63a366aa19304c5b5b90f23ba079d472e7c82d5563d59d
+[2026-03-10 17:30:52,591] ERROR: Response: {'code': -1022, 'msg': 'Signature for this request is not valid.'}
+[2026-03-10 17:30:52,591] ERROR: ❌ No account data
+[2026-03-10 17:30:52,591] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:31:22,595] INFO: 
+📊 CYCLE 21 - 2026-03-10T10:31:22.595060+00:00
+[2026-03-10 17:31:22,723] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v1/account?timestamp=1773138682596&recvWindow=5000&signature=e12620373e2f811c74751daa552d4923b6359e294de3a08b299324485948d326
+[2026-03-10 17:31:22,724] ERROR: Response: {'code': -1022, 'msg': 'Signature for this request is not valid.'}
+[2026-03-10 17:31:22,724] ERROR: ❌ No account data
+[2026-03-10 17:31:22,724] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:31:28,093] INFO: 
+⏹️  Bot stopped

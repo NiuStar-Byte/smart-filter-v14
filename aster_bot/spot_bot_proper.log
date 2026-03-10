@@ -1,0 +1,58 @@
+[2026-03-10 16:57:33,343] INFO: ✅ Aster Spot Client initialized: 0xAba133068338893cA5dA20e54e175C3BbC4076E2
+[2026-03-10 16:57:33,343] INFO: 🚀 Asterdex Spot Bot initialized
+[2026-03-10 16:57:33,343] INFO: Pairs: ['BTC-USDT', 'ETH-USDT']
+[2026-03-10 16:57:33,343] INFO: Position size: $1.0
+[2026-03-10 16:57:33,343] INFO: TP: +3.0% | SL: -2.0%
+[2026-03-10 16:57:33,343] INFO: 🚀 Starting bot...
+[2026-03-10 16:57:33,343] INFO: 
+📊 CYCLE 1 - 2026-03-10T09:57:33.343912+00:00
+[2026-03-10 16:57:33,872] ERROR: ❌ API request failed: 401 Client Error: Unauthorized for url: https://sapi.asterdex.com/api/v1/account?nonce=1773136653343935&user=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signer=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signature=fe6c0c6a0d5790032ad3c7433da21c8d4de0e6835cc495479692686e4d1ecce33833502b698a80ec17c8b8445ea267ff6e7d3375ded3b204f00861f1fa904ba61b
+[2026-03-10 16:57:33,873] ERROR: Response: {'code': -2014, 'msg': 'API-key format invalid.'}
+[2026-03-10 16:57:33,873] ERROR: ❌ No balances in response: {}
+[2026-03-10 16:57:33,873] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 16:57:55,853] INFO: 
+⏹️  Bot stopped
+[2026-03-10 16:58:08,597] INFO: ✅ Aster Spot Client initialized: 0xAba133068338893cA5dA20e54e175C3BbC4076E2
+[2026-03-10 16:58:08,597] INFO: 🚀 Asterdex Spot Bot initialized
+[2026-03-10 16:58:08,597] INFO: Pairs: ['BTC-USDT', 'ETH-USDT']
+[2026-03-10 16:58:08,597] INFO: Position size: $1.0
+[2026-03-10 16:58:08,597] INFO: TP: +3.0% | SL: -2.0%
+[2026-03-10 16:58:08,597] INFO: 🚀 Starting bot...
+[2026-03-10 16:58:08,597] INFO: 
+📊 CYCLE 1 - 2026-03-10T09:58:08.597990+00:00
+[2026-03-10 16:58:08,965] ERROR: ❌ API request failed: 401 Client Error: Unauthorized for url: https://sapi.asterdex.com/api/v1/account?nonce=1773136688598014&user=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signer=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signature=12ab0453e233a7c484464a2207ac1ffb8c86a7682446de25e007fa63e811a56038b1eb9011d1385fd74b7da2104cdef98f0c6eb4fc67b11072c572f109c328db1c
+[2026-03-10 16:58:08,965] ERROR: Response: {'code': -2014, 'msg': 'API-key format invalid.'}
+[2026-03-10 16:58:08,965] ERROR: ❌ No balances in response: {}
+[2026-03-10 16:58:08,966] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 16:58:38,971] INFO: 
+📊 CYCLE 2 - 2026-03-10T09:58:38.970841+00:00
+[2026-03-10 16:58:39,401] ERROR: ❌ API request failed: 401 Client Error: Unauthorized for url: https://sapi.asterdex.com/api/v1/account?nonce=1773136718972689&user=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signer=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signature=b7b5afbf69b2319d9f6c402775ea4d06128fd7a855b99c8bc9fb8b286cb7f13d61257db73d23e17d58b4469a555e22d4eea5536ab27109758cb763d1133adabe1c
+[2026-03-10 16:58:39,402] ERROR: Response: {'code': -2014, 'msg': 'API-key format invalid.'}
+[2026-03-10 16:58:39,402] ERROR: ❌ No balances in response: {}
+[2026-03-10 16:58:39,402] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 16:59:09,406] INFO: 
+📊 CYCLE 3 - 2026-03-10T09:59:09.406318+00:00
+[2026-03-10 16:59:10,103] ERROR: ❌ API request failed: 401 Client Error: Unauthorized for url: https://sapi.asterdex.com/api/v1/account?nonce=1773136749407145&user=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signer=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signature=f05f02965ca86182b2ae02c81ae8aadab638199732775f8d590ed9c282f938486aec821ef9e45c2a7dc00c25f17c8cf37924669595eab8889564e42351ef07001b
+[2026-03-10 16:59:10,104] ERROR: Response: {'code': -2014, 'msg': 'API-key format invalid.'}
+[2026-03-10 16:59:10,104] ERROR: ❌ No balances in response: {}
+[2026-03-10 16:59:10,104] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 16:59:40,108] INFO: 
+📊 CYCLE 4 - 2026-03-10T09:59:40.108577+00:00
+[2026-03-10 16:59:40,240] ERROR: ❌ API request failed: 401 Client Error: Unauthorized for url: https://sapi.asterdex.com/api/v1/account?nonce=1773136780109629&user=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signer=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signature=9cd5d2cfcb426c1d05a05c805d80b113920a09243ef5ed862bca3cfd0ea1cc290aaef2050450b2119af56beee3a76f91a62811f9fca9c1f7b3601e7d3ec0dbc11b
+[2026-03-10 16:59:40,240] ERROR: Response: {'code': -2014, 'msg': 'API-key format invalid.'}
+[2026-03-10 16:59:40,240] ERROR: ❌ No balances in response: {}
+[2026-03-10 16:59:40,240] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:00:10,246] INFO: 
+📊 CYCLE 5 - 2026-03-10T10:00:10.245968+00:00
+[2026-03-10 17:00:10,765] ERROR: ❌ API request failed: 401 Client Error: Unauthorized for url: https://sapi.asterdex.com/api/v1/account?nonce=1773136810248124&user=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signer=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signature=f963f3b9a2b79d4e2d2d163422a27b0cd4c317d1436a19e74d51dc2a106635bc73ca736a2c20c4a1de1057be6fea5caaf4ccc9a43c162d756509d9ac74bfb9e41b
+[2026-03-10 17:00:10,765] ERROR: Response: {'code': -2014, 'msg': 'API-key format invalid.'}
+[2026-03-10 17:00:10,765] ERROR: ❌ No balances in response: {}
+[2026-03-10 17:00:10,765] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:00:40,769] INFO: 
+📊 CYCLE 6 - 2026-03-10T10:00:40.769650+00:00
+[2026-03-10 17:00:41,075] ERROR: ❌ API request failed: 401 Client Error: Unauthorized for url: https://sapi.asterdex.com/api/v1/account?nonce=1773136840771729&user=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signer=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signature=b954332b972bae5b11bc3d0a737fe7a85245611050ea861f5f12b54c88e5667c3f3d087c31005d1eb6f512934ae3ee7d6970820b947656b06d935978ea60d56b1c
+[2026-03-10 17:00:41,075] ERROR: Response: {'code': -2014, 'msg': 'API-key format invalid.'}
+[2026-03-10 17:00:41,075] ERROR: ❌ No balances in response: {}
+[2026-03-10 17:00:41,075] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:01:00,529] INFO: 
+⏹️  Bot stopped

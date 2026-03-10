@@ -36,7 +36,7 @@ CHECK_INTERVAL = 30
 # ===== ASTERDEX SPOT API =====
 
 # Asterdex Spot API base URL (mainnet or testnet)
-# Mainnet: https://sapi.asterdex.com
+# Mainnet: https://sapi.asterdex.com (uses /api/v1/ endpoints)
 # Testnet: https://sapi.asterdex-testnet.com
 ASTERDEX_SPOT_BASE_URL = "https://sapi.asterdex.com"
 

@@ -66,9 +66,10 @@ class AsterdexSpotBot:
     def update_account_balance(self):
         """Fetch current USDT balance."""
         try:
-            balance = self.client.get_account_balance()
+            balance = self.client.get_account_balance_spot()
             self.account_balance = balance
-            usdt_balance = balance.get('USDT', 0)
+            usdt_info = balance.get('USDT', {})
+            usdt_balance = usdt_info.get('total', 0) if isinstance(usdt_info, dict) else usdt_info
             logger.info(f"💰 Account balance: ${usdt_balance} USDT")
             return usdt_balance
         except Exception as e:
@@ -110,11 +111,11 @@ class AsterdexSpotBot:
             
             logger.info(f"📈 BUY {symbol}: {quantity} @ ${current_price} (total: ${amount_usdt})")
             
-            # Place market order
-            order = self.client.place_market_order(
+            # Place market order (using quoteOrderQty for USDT amount)
+            order = self.client.place_market_order_spot(
                 symbol=symbol,
                 side="BUY",
-                quantity=quantity
+                quoteOrderQty=amount_usdt
             )
             
             if order:
@@ -166,7 +167,7 @@ class AsterdexSpotBot:
             logger.info(f"📉 SELL {symbol}: {quantity} @ ${current_price} ({reason})")
             
             # Place market sell
-            order = self.client.place_market_order(
+            order = self.client.place_market_order_spot(
                 symbol=symbol,
                 side="SELL",
                 quantity=quantity

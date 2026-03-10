@@ -1,0 +1,106 @@
+[2026-03-10 17:01:03,570] INFO: ✅ Aster Client initialized: 0xAba133068338893cA5dA20e54e175C3BbC4076E2
+[2026-03-10 17:01:03,570] INFO: 🚀 Asterdex Trading Bot initialized
+[2026-03-10 17:01:03,570] INFO: Pairs: ['BTCUSDT', 'ETHUSDT']
+[2026-03-10 17:01:03,570] INFO: Position size: $1.0
+[2026-03-10 17:01:03,570] INFO: TP: +3.0% | SL: -2.0%
+[2026-03-10 17:01:03,570] INFO: 🚀 Starting trading bot...
+[2026-03-10 17:01:03,570] INFO: 
+📊 CYCLE 1 - 2026-03-10T10:01:03.570301+00:00
+[2026-03-10 17:01:04,291] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v3/account?nonce=1773136863570462&user=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signer=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signature=d5e042de4cb62397719c76c1b69484155f7a3230da437e837669194c28a55ffc014efc7cf6977a6ecf61294a5972a699a857825c717ad4ea07946feb261b30b91c
+[2026-03-10 17:01:04,291] ERROR: Response: {'code': -1000, 'msg': 'No aster user found'}
+[2026-03-10 17:01:04,291] ERROR: ❌ No account data
+[2026-03-10 17:01:04,291] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:01:27,280] INFO: 
+⏹️  Bot stopped
+[2026-03-10 17:03:16,593] INFO: ✅ Aster Client initialized: 0xAba133068338893cA5dA20e54e175C3BbC4076E2
+[2026-03-10 17:03:16,593] INFO: 🚀 Asterdex Trading Bot initialized
+[2026-03-10 17:03:16,593] INFO: Pairs: ['BTCUSDT', 'ETHUSDT']
+[2026-03-10 17:03:16,593] INFO: Position size: $1.0
+[2026-03-10 17:03:16,593] INFO: TP: +3.0% | SL: -2.0%
+[2026-03-10 17:03:16,593] INFO: 🚀 Starting trading bot...
+[2026-03-10 17:03:16,593] INFO: 
+📊 CYCLE 1 - 2026-03-10T10:03:16.593625+00:00
+[2026-03-10 17:03:17,140] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v3/account?nonce=1773136996593838&user=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signer=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signature=e61ac025cabf8c988a8750dc2b3ddfb3e3676268c25002aa76f42e7f26ab23533a8b73a47355c1c569dc37500db1f84b4061f41b7c4402924bd350b6a3a130891c
+[2026-03-10 17:03:17,141] ERROR: Response: {'code': -1000, 'msg': 'No aster user found'}
+[2026-03-10 17:03:17,141] ERROR: ❌ No account data
+[2026-03-10 17:03:17,141] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:03:47,146] INFO: 
+📊 CYCLE 2 - 2026-03-10T10:03:47.145949+00:00
+[2026-03-10 17:03:47,325] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v3/account?nonce=1773137027147530&user=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signer=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signature=65b708a4f029e902ac5afe069d076528dda65ebedd2a5e6fd9c5dbc035070b2b1c3ad1b374521fbefd3639f3ce45302ab361b2d3963999525c6e723a690c0ed21b
+[2026-03-10 17:03:47,325] ERROR: Response: {'code': -1000, 'msg': 'No aster user found'}
+[2026-03-10 17:03:47,325] ERROR: ❌ No account data
+[2026-03-10 17:03:47,326] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:04:17,332] INFO: 
+📊 CYCLE 3 - 2026-03-10T10:04:17.332143+00:00
+[2026-03-10 17:04:17,452] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v3/account?nonce=1773137057334604&user=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signer=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signature=a1c46a58f00e4c8b4cfbcb62436e1a811d26f6e21143dd8e29429448822c7e876e6f5e4b1a086fba89dda8f9bd2fb3a25f2c0a3c76226f8484b54231e0355bed1b
+[2026-03-10 17:04:17,453] ERROR: Response: {'code': -1000, 'msg': 'No aster user found'}
+[2026-03-10 17:04:17,453] ERROR: ❌ No account data
+[2026-03-10 17:04:17,453] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:04:47,455] INFO: 
+📊 CYCLE 4 - 2026-03-10T10:04:47.454977+00:00
+[2026-03-10 17:04:47,779] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v3/account?nonce=1773137087456619&user=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signer=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signature=d0c439dc4a1bb7ad352e8344058aed31238851920754827e03b81941058c62c95dca2d09e7fb8ca3d973e007b6aade345d759ba1862402e5186b390e9fdee81b1c
+[2026-03-10 17:04:47,779] ERROR: Response: {'code': -1000, 'msg': 'No aster user found'}
+[2026-03-10 17:04:47,779] ERROR: ❌ No account data
+[2026-03-10 17:04:47,780] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:05:17,783] INFO: 
+📊 CYCLE 5 - 2026-03-10T10:05:17.783049+00:00
+[2026-03-10 17:05:18,042] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v3/account?nonce=1773137117784816&user=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signer=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signature=4113dbc6d4905506b5228b8b2099e735b20e6cb7386f5ec82a7f6a3f492deeff3ceaac142fb1d5d5245e9c2ad065712485fa10aa8c2ebf805f31eb8c18fc5c9d1b
+[2026-03-10 17:05:18,042] ERROR: Response: {'code': -1000, 'msg': 'No aster user found'}
+[2026-03-10 17:05:18,042] ERROR: ❌ No account data
+[2026-03-10 17:05:18,042] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:05:48,047] INFO: 
+📊 CYCLE 6 - 2026-03-10T10:05:48.047685+00:00
+[2026-03-10 17:05:48,212] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v3/account?nonce=1773137148048639&user=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signer=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signature=86f45e52b34d025de4f7ff1f0834decd62a98e07b6b8178c13967774f2868f0b08a45c022e8cb9bacda1d86562e64425ffd2378ae92a6c9f21020a401aa0d0851c
+[2026-03-10 17:05:48,212] ERROR: Response: {'code': -1000, 'msg': 'No aster user found'}
+[2026-03-10 17:05:48,212] ERROR: ❌ No account data
+[2026-03-10 17:05:48,212] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:06:18,214] INFO: 
+📊 CYCLE 7 - 2026-03-10T10:06:18.214810+00:00
+[2026-03-10 17:06:18,922] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v3/account?nonce=1773137178216453&user=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signer=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signature=7d6ff3489e6bee7829e781f1a259444000d4e2b8f03e34840c7a2bb89cceaf1b4d3340137323bd930585864fa1c2c258d1c101a2d558c71d14225766f96083071c
+[2026-03-10 17:06:18,922] ERROR: Response: {'code': -1000, 'msg': 'No aster user found'}
+[2026-03-10 17:06:18,922] ERROR: ❌ No account data
+[2026-03-10 17:06:18,923] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:06:48,925] INFO: 
+📊 CYCLE 8 - 2026-03-10T10:06:48.925167+00:00
+[2026-03-10 17:06:49,209] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v3/account?nonce=1773137208927170&user=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signer=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signature=b0bf1edb3d7e6f081881ebcdf1fc5149003f87dea4e595d6057724df46375a8610693eb7891b4c4d1745f47586e0cf64cb32426a88604a660b8e3015986e57421c
+[2026-03-10 17:06:49,210] ERROR: Response: {'code': -1000, 'msg': 'No aster user found'}
+[2026-03-10 17:06:49,210] ERROR: ❌ No account data
+[2026-03-10 17:06:49,210] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:07:19,216] INFO: 
+📊 CYCLE 9 - 2026-03-10T10:07:19.215381+00:00
+[2026-03-10 17:07:19,343] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v3/account?nonce=1773137239218047&user=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signer=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signature=55300b435e825f367b0fff3cabc46dae2850868ae93c6c20c675b0e5229ee29914c5738d7fc1b8c207d70821fd61b6d95837ffd09d9e13ebe54f7b256a040dd61c
+[2026-03-10 17:07:19,344] ERROR: Response: {'code': -1000, 'msg': 'No aster user found'}
+[2026-03-10 17:07:19,344] ERROR: ❌ No account data
+[2026-03-10 17:07:19,344] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:07:49,345] INFO: 
+📊 CYCLE 10 - 2026-03-10T10:07:49.345444+00:00
+[2026-03-10 17:07:49,692] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v3/account?nonce=1773137269346417&user=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signer=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signature=fca1f10976acf367888bf3fa06a43dcdc91efcf4683f8a381f38953623f281a84f772ef304a5356d3d384da3906ae15cf894a48273ca5e15b8d53d1f78048ba21b
+[2026-03-10 17:07:49,693] ERROR: Response: {'code': -1000, 'msg': 'No aster user found'}
+[2026-03-10 17:07:49,693] ERROR: ❌ No account data
+[2026-03-10 17:07:49,693] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:08:19,698] INFO: 
+📊 CYCLE 11 - 2026-03-10T10:08:19.698821+00:00
+[2026-03-10 17:08:19,955] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v3/account?nonce=1773137299699423&user=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signer=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signature=1f8ffc0570cfe96f110c5e1927fafe7b8446019f660d4f3c42224d102dea68ab4080408823dd0172d9920f3de1b3b00d6d41f6c5d3d83010b07b83add7a2a8811c
+[2026-03-10 17:08:19,955] ERROR: Response: {'code': -1000, 'msg': 'No aster user found'}
+[2026-03-10 17:08:19,956] ERROR: ❌ No account data
+[2026-03-10 17:08:19,956] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:08:49,961] INFO: 
+📊 CYCLE 12 - 2026-03-10T10:08:49.961010+00:00
+[2026-03-10 17:08:50,095] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v3/account?nonce=1773137329963586&user=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signer=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signature=6de0132368d74099261c6c74127b7d6f417c35f2ecedabb31238cc0736100fd51ace1af352ccb6ee2b38ef3a9136425b8f746ec121bb25a40fee5604baa6d0201c
+[2026-03-10 17:08:50,096] ERROR: Response: {'code': -1000, 'msg': 'No aster user found'}
+[2026-03-10 17:08:50,096] ERROR: ❌ No account data
+[2026-03-10 17:08:50,096] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:09:20,100] INFO: 
+📊 CYCLE 13 - 2026-03-10T10:09:20.100257+00:00
+[2026-03-10 17:09:20,506] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v3/account?nonce=1773137360101187&user=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signer=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signature=afd2ccbeb47ff56de443a418780bc5ab5a748d38722af88ae3a90b39a01be80c4c27a7796f6649e13b65025d6c62360c60cd06e1a1298120927cdfe7c48198191c
+[2026-03-10 17:09:20,507] ERROR: Response: {'code': -1000, 'msg': 'No aster user found'}
+[2026-03-10 17:09:20,507] ERROR: ❌ No account data
+[2026-03-10 17:09:20,507] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:09:50,508] INFO: 
+📊 CYCLE 14 - 2026-03-10T10:09:50.507959+00:00
+[2026-03-10 17:09:50,781] ERROR: ❌ API request failed: 400 Client Error: Bad Request for url: https://fapi.asterdex.com/fapi/v3/account?nonce=1773137390509449&user=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signer=0xAba133068338893cA5dA20e54e175C3BbC4076E2&signature=211c1ca73de1efa5ed32f85d5617624503a5875825a30eab5a01516fc2719a4c56f7679e2bea25c212ffeb56b392e314b5dcbfae6ebaf920fe2b5b289104d2111c
+[2026-03-10 17:09:50,782] ERROR: Response: {'code': -1000, 'msg': 'No aster user found'}
+[2026-03-10 17:09:50,782] ERROR: ❌ No account data
+[2026-03-10 17:09:50,783] WARNING: ⚠️  Insufficient balance. Need $1.0, have $0.00
+[2026-03-10 17:10:01,321] INFO: 
+⏹️  Bot stopped
