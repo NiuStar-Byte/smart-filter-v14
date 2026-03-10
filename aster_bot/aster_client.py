@@ -120,7 +120,7 @@ class AsterClient:
         """Fetch current price (no auth needed)."""
         try:
             r = requests.get(
-                f"{self.base_url}/api/v3/ticker/price",
+                f"{self.base_url}/fapi/v3/ticker/price",
                 params={"symbol": symbol},
                 timeout=5
             )
@@ -141,7 +141,7 @@ class AsterClient:
         """
         try:
             r = requests.get(
-                f"{self.base_url}/api/v3/klines",
+                f"{self.base_url}/fapi/v3/klines",
                 params={
                     "symbol": symbol,
                     "interval": interval,
@@ -161,7 +161,7 @@ class AsterClient:
     def get_server_time(self) -> Optional[int]:
         """Fetch server time (for clock sync)."""
         try:
-            r = requests.get(f"{self.base_url}/api/v3/time", timeout=5)
+            r = requests.get(f"{self.base_url}/fapi/v3/time", timeout=5)
             if r.status_code == 200:
                 return r.json()['serverTime']
             return None
@@ -179,7 +179,7 @@ class AsterClient:
             params['signature'] = signature
             
             r = requests.get(
-                f"{self.base_url}/api/v3/balance",
+                f"{self.base_url}/fapi/v3/balance",
                 params=params,
                 timeout=5,
                 headers={"X-MBX-APIKEY": self.api_key}
@@ -207,7 +207,7 @@ class AsterClient:
             params['signature'] = signature
             
             r = requests.get(
-                f"{self.base_url}/api/v3/positionRisk",
+                f"{self.base_url}/fapi/v3/positionRisk",
                 params=params,
                 timeout=5,
                 headers={"X-MBX-APIKEY": self.api_key}
@@ -255,7 +255,7 @@ class AsterClient:
             logger.info(f"Placing {side} order: {quantity} {symbol} @ {price}")
             
             r = requests.post(
-                f"{self.base_url}/api/v3/order",
+                f"{self.base_url}/fapi/v3/order",
                 data=params,
                 timeout=10,
                 headers={
@@ -287,7 +287,7 @@ class AsterClient:
             params['signature'] = signature
             
             r = requests.delete(
-                f"{self.base_url}/api/v3/order",
+                f"{self.base_url}/fapi/v3/order",
                 data=params,
                 timeout=10,
                 headers={
@@ -314,7 +314,7 @@ class AsterClient:
             params['signature'] = signature
             
             r = requests.get(
-                f"{self.base_url}/api/v3/openOrders",
+                f"{self.base_url}/fapi/v3/openOrders",
                 params=params,
                 timeout=5,
                 headers={"X-MBX-APIKEY": self.api_key}
