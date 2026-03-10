@@ -5,8 +5,8 @@ Aster Bot Configuration
 
 # ===== TRADING PARAMETERS =====
 
-# Trading pairs to focus on
-TRADING_PAIRS = ["BTC-USDT", "ETH-USDT"]
+# Trading pairs to focus on (Aster Futures format: no dash)
+TRADING_PAIRS = ["BTCUSDT", "ETHUSDT"]
 
 # Position size: $1 per trade (fixed)
 POSITION_SIZE_USD = 1.0
