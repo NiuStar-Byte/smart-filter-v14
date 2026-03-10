@@ -13,7 +13,7 @@ import signal
 
 # Configuration
 WORK_DIR = os.path.dirname(os.path.abspath(__file__))  # Workspace root
-PEC_SCRIPT_PATH = os.path.join(WORK_DIR, "smart-filter-v14-main", "pec_executor.py")  # Absolute path to executor
+PEC_SCRIPT_PATH = os.path.join(WORK_DIR, "pec_executor.py")  # Absolute path to executor (workspace root)
 PEC_SCRIPT = "pec_executor.py"  # Process name for pgrep
 CHECK_INTERVAL = 30  # seconds
 LOG_FILE = "pec_watchdog.log"

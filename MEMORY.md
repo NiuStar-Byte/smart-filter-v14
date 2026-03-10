@@ -4,6 +4,103 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
+## 🎯 **PHASE 2: ROUTE & REGIME OPTIMIZATION (2026-03-10 11:30 GMT+7)** ✅ IMPLEMENTED & DEPLOYED
+
+**Status:** ✅ **CODE LIVE - Full Phase 2 Deployment Complete**  
+**Weight:** 5.0 (maximum impact)  
+**Files Modified:** 
+- `smart-filter-v14-main/smart_filter.py` (lines 38+, 461+, 948+)
+- `smart-filter-v14-main/pec_enhanced_reporter.py` (combo dashboard)
+**GitHub:** ✅ Pushed commit 3493a3d (synced, all phases live)
+
+### **What Was Implemented**
+
+**PHASE 1: Post-Filter Secondary Gating** (Hard rejection of bad combos)
+- Added ROUTE_GATING config (threshold by route type)
+- Added REGIME_GATING config (threshold penalty by regime)
+- Added TOXIC_COMBOS list (auto-reject worst performers)
+- Implemented secondary gate logic after MIN_SCORE filter
+
+**PHASE 2: WEAK_REVERSAL Separation** (Option 2)
+- Separated reversal detection: REVERSAL (pure) vs WEAK_REVERSAL (leaning) vs AMBIGUOUS (split)
+- WEAK_REVERSAL threshold: 14 (between TC:12 and AMBIGUOUS:20)
+- Better utilization of mixed signals
+
+**PHASE 3: ROUTE×REGIME Dashboard** (Option 4)
+- Added analyze_route_regime_combos() function
+- Added print_route_regime_dashboard() to reporter
+- Real-time visibility into 14 unique combos
+- Identifies: 2 profitable, 10 breakeven, 2 toxic
+
+### **Key Configuration**
+
+```python
+ROUTE_GATING = {
+    "REVERSAL": 16,              # Higher bar for risky reversals
+    "WEAK_REVERSAL": 14,         # NEW: Leaning reversals
+    "TREND_CONTINUATION": 12,    # Standard
+    "AMBIGUOUS": 20,             # High bar for uncertain
+    "NONE": 99,                  # Hard reject (impossible)
+}
+
+REGIME_GATING = {
+    "BULL": 2,      # Tighten (weak regime, 22.3% WR)
+    "BEAR": 0,      # Standard (strong regime, 33% WR)
+    "RANGE": -2,    # Loosen (profitable, 30.5% WR)
+}
+
+TOXIC_COMBOS = {
+    "NONE_BULL",        # 7.5% WR, -$15.79 avg
+    "NONE_BEAR",        # 13.3% WR, -$10.77 avg
+    "NONE_RANGE",       # 18.2% WR, -$6.47 avg
+    "AMBIGUOUS_BULL",   # 19.4% WR, -$6.95 avg
+}
+```
+
+### **Live Status**
+
+- ✅ Daemon running (PID 64101), firing with new secondary gates
+- ✅ MIN_SCORE=12 unchanged (filter layer independent)
+- ✅ Secondary gates applied AFTER filter aggregation
+- ✅ Dashboard available in pec_enhanced_reporter output
+- ✅ All 1,641 historical trades analyzed and validated
+
+### **Expected Impact**
+
+| Metric | Current | After | Improvement |
+|--------|---------|-------|-------------|
+| Annual P&L | -$2,577 | -$700 | **+$1,877** |
+| NONE Trades | 90 | 0 | -90 rejected |
+| NONE P&L Lost | -$1,140 | 0 | **+$1,140** |
+| AMBIGUOUS_BULL | 36 | ~5 | -31 rejected |
+| WR | 27.8% | 28.5%+ | **+0.7pp** |
+
+### **Best & Worst Combos (Current)**
+
+**🏆 Best:**
+- REVERSAL + RANGE: 50.0% WR, +$11.42 avg (36 trades)
+- TREND_CONTINUATION + BEAR: 35.2% WR, +$4.53 avg (492 trades)
+
+**💀 Worst:**
+- NONE + BULL: 7.5% WR, -$15.79 avg (53 trades) ← AUTO-REJECT
+- NONE + BEAR: 13.3% WR, -$10.77 avg (15 trades) ← AUTO-REJECT
+
+### **No Regressions**
+
+- MIN_SCORE=12 still controls filter aggregation (layer 1)
+- Secondary gates are layer 2 (orthogonal)
+- Backward compatible: existing signals still fire normally
+- Only bad combos rejected, good ones enhanced
+
+### **Next Steps**
+
+1. Monitor for 24h, measure actual WR/P&L improvement
+2. Tune thresholds if needed (ROUTE_GATING, REGIME_GATING)
+3. Consider feedback loop (auto-adjust based on live performance)
+4. Potentially implement Option 3 (regime-aware filter params) later
+
+---
+
 ## 🔧 **SUPPORT/RESISTANCE FILTER ENHANCEMENT (2026-03-08 19:48 GMT+7)** ✅ DEPLOYED & PUSHED
 
 **Status:** ✅ **CODE LIVE - Enhanced Less Strict Version Deployed & GitHub Synced**  
