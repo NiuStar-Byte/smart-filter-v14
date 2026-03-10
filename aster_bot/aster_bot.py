@@ -33,7 +33,7 @@ os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,  # Show debug messages too
     format='[%(asctime)s] %(levelname)s: %(message)s',
     handlers=[
         logging.FileHandler(LOG_FILE),
@@ -74,8 +74,15 @@ class AsterBot:
         """
         try:
             # Fetch klines
+            logger.debug(f"Fetching klines for {symbol}...")
             klines = self.client.get_klines(symbol, interval=MA_INTERVAL, limit=max(MA_FAST, MA_SLOW) + 5)
-            if not klines or len(klines) < MA_SLOW:
+            
+            if not klines:
+                logger.debug(f"No klines returned for {symbol}")
+                return None
+            
+            if len(klines) < MA_SLOW:
+                logger.debug(f"Not enough klines for {symbol} (got {len(klines)}, need {MA_SLOW})")
                 return None
             
             # Calculate MAs
@@ -262,22 +269,32 @@ class AsterBot:
     def run(self):
         """Main bot loop."""
         try:
+            logger.info("🔄 Main loop started...")
+            cycle = 0
             while True:
                 try:
+                    cycle += 1
+                    logger.info(f"\n[CYCLE {cycle}] Checking for signals...")
+                    
                     # Check each pair for entry signals
                     for symbol in TRADING_PAIRS:
                         # Skip if already have position
                         if symbol in self.open_positions:
+                            logger.debug(f"  {symbol}: Position already open, skipping")
                             continue
                         
+                        logger.debug(f"  {symbol}: Checking for buy signal...")
                         # Check for buy signal
                         signal = self.should_buy(symbol)
                         if signal:
                             self.place_buy_order(symbol, signal['price'])
+                        else:
+                            logger.debug(f"  {symbol}: No signal")
                     
                     # Monitor existing positions
                     self.monitor_positions()
                     
+                    logger.info(f"[CYCLE {cycle}] Complete. Sleeping {CHECK_INTERVAL}s...")
                     # Sleep before next cycle
                     time.sleep(CHECK_INTERVAL)
                 

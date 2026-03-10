@@ -1,0 +1,85 @@
+/Users/geniustarigan/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+[INIT] Executor ready, monitoring /Users/geniustarigan/.openclaw/workspace/SIGNALS_MASTER.jsonl
+[PEC-TIMEOUT-HIT] IP-USDT 30min: 9 bars >= 6 max, actual_timeout=2026-03-10T05:09:18.880938 [CHALLENGER]
+[PEC-TIMEOUT-HIT] ETH-USDT 30min: 8 bars >= 6 max, actual_timeout=2026-03-10T05:36:54.378546 [CHALLENGER]
+[PEC-TIMEOUT-HIT] IP-USDT 30min: 7 bars >= 6 max, actual_timeout=2026-03-10T05:52:30.608112 [CHALLENGER]
+[PEC-STALE-TIMEOUT] TAO-USDT 15min: 13 bars (1h overdue), actual_timeout=2026-03-10T05:11:21.781570
+[PEC-TIMEOUT-HIT] ZKJ-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-10T05:35:11.509311 [CHALLENGER]
+
+================================================================================
+[PEC UPDATE] 2026-03-10 13:40:39
+================================================================================
+
+❌ SL HIT (1 signals):
+   XRP-USDT     30min  | P&L: $   -5.84 (-0.58%) | Fired: 09:54:43
+
+⏱️  TIMEOUT (4 signals):
+   IP-USDT      30min  | P&L: $    0.79 (+0.08%) | Fired: 09:09:18 | Timeout: 2026-03-10T05:09
+   ETH-USDT     30min  | P&L: $   -0.12 (-0.01%) | Fired: 09:36:54 | Timeout: 2026-03-10T05:36
+   IP-USDT      30min  | P&L: $   -8.32 (-0.83%) | Fired: 09:52:30 | Timeout: 2026-03-10T05:52
+   ZKJ-USDT     15min  | P&L: $    0.23 (+0.02%) | Fired: 10:35:11 | Timeout: 2026-03-10T05:35
+
+⚠️  STALE_TIMEOUT (1 signals):
+   TAO-USDT     15min  | NO P&L (data quality issue) | 1h overdue | Fired: 10:11:21
+
+📊 PEC STATS:
+   Total: 2544 | Open: 77 | TP: 356 | SL: 773 | TIMEOUT: 299 (106W/193L) | STALE: 362
+   Win Rate (TP/SL only): 31.5% | Total P&L: $-7227.92
+================================================================================
+
+
+================================================================================
+[PEC UPDATE] 2026-03-10 14:17:32
+================================================================================
+
+❌ SL HIT (1 signals):
+   WIF-USDT     30min  | P&L: $  -14.66 (-1.47%) | Fired: 12:35:32
+
+📊 PEC STATS:
+   Total: 2547 | Open: 53 | TP: 357 | SL: 783 | TIMEOUT: 315 (110W/205L) | STALE: 362
+   Win Rate (TP/SL only): 31.3% | Total P&L: $-7364.40
+================================================================================
+
+[PEC-TIMEOUT-HIT] PUMP-USDT 30min: 6 bars >= 6 max, actual_timeout=2026-03-10T07:47:42.595401 [CHALLENGER]
+
+================================================================================
+[PEC UPDATE] 2026-03-10 14:48:48
+================================================================================
+
+⏱️  TIMEOUT (1 signals):
+   PUMP-USDT    30min  | P&L: $    0.96 (+0.10%) | Fired: 11:47:42 | Timeout: 2026-03-10T07:47
+
+📊 PEC STATS:
+   Total: 2548 | Open: 44 | TP: 359 | SL: 788 | TIMEOUT: 318 (113W/205L) | STALE: 362
+   Win Rate (TP/SL only): 31.3% | Total P&L: $-7582.37
+================================================================================
+
+[PEC-TIMEOUT-HIT] ROAM-USDT 15min: 8 bars >= 8 max, actual_timeout=2026-03-10T07:54:06.732547 [CHALLENGER]
+
+================================================================================
+[PEC UPDATE] 2026-03-10 14:53:59
+================================================================================
+
+⏱️  TIMEOUT (1 signals):
+   ROAM-USDT    15min  | P&L: $    2.74 (+0.27%) | Fired: 12:54:06 | Timeout: 2026-03-10T07:54
+
+📊 PEC STATS:
+   Total: 2549 | Open: 43 | TP: 360 | SL: 788 | TIMEOUT: 319 (114W/205L) | STALE: 362
+   Win Rate (TP/SL only): 31.4% | Total P&L: $-7573.70
+================================================================================
+
+[PEC-TIMEOUT-HIT] LINK-USDT 30min: 6 bars >= 6 max, actual_timeout=2026-03-10T07:59:14.712086 [CHALLENGER]
+
+================================================================================
+[PEC UPDATE] 2026-03-10 14:59:10
+================================================================================
+
+⏱️  TIMEOUT (1 signals):
+   LINK-USDT    30min  | P&L: $    5.36 (+0.54%) | Fired: 11:59:14 | Timeout: 2026-03-10T07:59
+
+📊 PEC STATS:
+   Total: 2549 | Open: 41 | TP: 360 | SL: 788 | TIMEOUT: 321 (116W/205L) | STALE: 362
+   Win Rate (TP/SL only): 31.4% | Total P&L: $-7557.25
+================================================================================
+
