@@ -30,8 +30,8 @@ class PECExecutor:
     def __init__(self, signals_master_path: str = None):
         # Use absolute path to workspace root - read from SIGNALS_MASTER.jsonl (unified source)
         if signals_master_path is None:
-            # pec_executor.py lives in workspace root
-            workspace_root = os.path.abspath(os.path.dirname(__file__))
+            # pec_executor.py lives in smart-filter-v14-main submodule, but reads from workspace root
+            workspace_root = "/Users/geniustarigan/.openclaw/workspace"
             signals_master_path = os.path.join(workspace_root, 'SIGNALS_MASTER.jsonl')
         self.signals_master_path = signals_master_path
         self.kucoin_api_base = "https://api.kucoin.com"
