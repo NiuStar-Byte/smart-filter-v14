@@ -165,7 +165,7 @@ class PECEnhancedReporter:
             
             entry = float(entry_price)
             exit_val = float(exit_price)
-            notional_position = 1000.0  # $100 entry × 10x leverage = $1,000 notional
+            notional_position = 100.0  # $10 margin × 10x leverage = $100 notional
             
             dir_up = str(direction).strip().upper() == "LONG"
             dir_down = str(direction).strip().upper() == "SHORT"

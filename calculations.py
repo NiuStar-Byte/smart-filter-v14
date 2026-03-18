@@ -353,7 +353,7 @@ def calculate_tp_sl_from_atr(entry_price: float, atr_value: float, direction: st
 
 
 def calculate_pnl(entry_price: float, exit_price: float, direction: str, 
-                  notional_position: float = 1000.0) -> dict:
+                  notional_position: float = 100.0) -> dict:
     """
     Calculate P&L (USD and percentage) for a closed trade.
     
@@ -362,13 +362,13 @@ def calculate_pnl(entry_price: float, exit_price: float, direction: str,
       - P&L USD = ((exit - entry) / entry) × notional_position
     
     Notional position represents leverage-adjusted capital:
-      - Default: $100 position × 10x leverage = $1,000 notional
+      - Default: $10 margin × 10x leverage = $100 notional
     
     Args:
         entry_price: Entry price
         exit_price: Exit price
         direction: "LONG" or "SHORT"
-        notional_position: Notional position size for P&L calc (default $1000)
+        notional_position: Notional position size for P&L calc (default $100 = $10 margin × 10x leverage)
     
     Returns:
         dict: {
