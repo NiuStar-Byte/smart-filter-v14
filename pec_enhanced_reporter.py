@@ -364,6 +364,92 @@ class PECEnhancedReporter:
         report.append("=" * 200)
         report.append("")
         
+        # === SECTION 1 & 2 (Summary Statistics) ===
+        # Foundation: Through Mar 10 | NEW: Mar 16+ onwards (Mac restarted Mar 16)
+        foundation_cutoff = datetime(2026, 3, 16, tzinfo=timezone.utc)
+        foundation_signals = []
+        new_signals = []
+        for s in self.signals:
+            try:
+                fired = datetime.fromisoformat(s.get('fired_time_utc', '').replace('Z', '+00:00'))
+                if fired.tzinfo is None:
+                    fired = fired.replace(tzinfo=timezone.utc)
+                if fired < foundation_cutoff:
+                    foundation_signals.append(s)
+                else:
+                    new_signals.append(s)
+            except:
+                foundation_signals.append(s)  # Default to foundation if parse fails
+        
+        # SECTION 1: Foundation + New
+        combined = foundation_signals + new_signals
+        combined_stats = self._analyze_signal_group(combined)
+        
+        report.append("=" * 200)
+        report.append("📊 SECTION 1: TOTAL SIGNALS (Foundation + New)")
+        report.append("=" * 200)
+        report.append(f"Total Signals (Foundation + New): {combined_stats['total']}")
+        report.append(f"Count Win (TP_HIT): {combined_stats['tp']}")
+        report.append(f"Count Loss (SL_HIT): {combined_stats['sl']}")
+        report.append(f"Count TimeOut: {combined_stats['timeout']}")
+        report.append(f"Count Open: {combined_stats['open']}")
+        report.append(f"Closed Trades (Clean Data): {combined_stats['closed']}")
+        report.append(f"  TP_HIT: {combined_stats['tp']}")
+        report.append(f"  SL_HIT: {combined_stats['sl']}")
+        report.append(f"  TimeOut Win: {combined_stats['timeout_win']} (approximate)")
+        report.append(f"  TimeOut Loss: {combined_stats['timeout_loss']} (approximate)")
+        report.append(f"")
+        report.append(f"Overall Win Rate: {combined_stats['wr']:.2f}%")
+        report.append(f"Calculation: ({combined_stats['tp']} TP + {combined_stats['timeout_win']} TIMEOUT_WIN) / {combined_stats['closed']} Closed = {combined_stats['wins']} / {combined_stats['closed']} = {combined_stats['wr']:.2f}%")
+        report.append(f"")
+        report.append(f"Total P&L (Clean Data): ${combined_stats['total_pnl']:+,.2f}")
+        report.append(f"Avg P&L per Signal: ${combined_stats['avg_pnl_signal']:+.2f}")
+        report.append(f"Avg P&L per Closed Trade: ${combined_stats['avg_pnl_closed']:+.2f}")
+        report.append(f"")
+        report.append(f"P&L Breakdown by Exit Type:")
+        report.append(f"  Total P&L TP_HIT: ${combined_stats['tp_pnl']:+,.2f}")
+        report.append(f"  Total P&L SL_HIT: ${combined_stats['sl_pnl']:+,.2f}")
+        report.append(f"  Total P&L TIMEOUT: ${combined_stats['timeout_pnl']:+,.2f}")
+        report.append(f"")
+        report.append(f"Average P&L per Count:")
+        report.append(f"  Avg P&L TP per Count TP: ${combined_stats['avg_tp_pnl']:+.2f}" if combined_stats['tp'] > 0 else f"  Avg P&L TP per Count TP: N/A (0 TP trades)")
+        report.append(f"  Avg P&L SL per Count SL: ${combined_stats['avg_sl_pnl']:+.2f}" if combined_stats['sl'] > 0 else f"  Avg P&L SL per Count SL: N/A (0 SL trades)")
+        report.append("")
+        
+        # SECTION 2: New Only (Mar 16+)
+        new_stats = self._analyze_signal_group(new_signals)
+        
+        report.append("=" * 200)
+        report.append("📊 SECTION 2: TOTAL SIGNALS (NEW ONLY - Mar 16+ onwards)")
+        report.append("=" * 200)
+        report.append(f"Total Signals (New ONLY): {new_stats['total']}")
+        report.append(f"Count Win (TP_HIT): {new_stats['tp']}")
+        report.append(f"Count Loss (SL_HIT): {new_stats['sl']}")
+        report.append(f"Count TimeOut: {new_stats['timeout']}")
+        report.append(f"Count Open: {new_stats['open']}")
+        report.append(f"Closed Trades (Clean Data): {new_stats['closed']}")
+        report.append(f"  TP_HIT: {new_stats['tp']}")
+        report.append(f"  SL_HIT: {new_stats['sl']}")
+        report.append(f"  TimeOut Win: {new_stats['timeout_win']} (approximate)")
+        report.append(f"  TimeOut Loss: {new_stats['timeout_loss']} (approximate)")
+        report.append(f"")
+        report.append(f"Overall Win Rate: {new_stats['wr']:.2f}%")
+        if new_stats['closed'] > 0:
+            report.append(f"Calculation: ({new_stats['tp']} TP + {new_stats['timeout_win']} TIMEOUT_WIN) / {new_stats['closed']} Closed = {new_stats['wins']} / {new_stats['closed']} = {new_stats['wr']:.2f}%")
+        else:
+            report.append(f"Note: Insufficient closed trades for reliable WR")
+        report.append(f"")
+        report.append(f"Total P&L (Clean Data): ${new_stats['total_pnl']:+,.2f}")
+        report.append(f"Avg P&L per Signal: ${new_stats['avg_pnl_signal']:+.2f}")
+        report.append(f"Avg P&L per Closed Trade: ${new_stats['avg_pnl_closed']:+.2f}")
+        report.append(f"")
+        report.append(f"P&L Breakdown by Exit Type:")
+        report.append(f"  Total P&L TP_HIT: ${new_stats['tp_pnl']:+,.2f}")
+        report.append(f"  Total P&L SL_HIT: ${new_stats['sl_pnl']:+,.2f}")
+        report.append(f"  Total P&L TIMEOUT: ${new_stats['timeout_pnl']:+,.2f}")
+        report.append(f"")
+        report.append("")
+        
         # Aggregates Section
         report.append("=" * 200)
         report.append("📊 AGGREGATES - DIMENSIONAL BREAKDOWN")
@@ -1282,6 +1368,52 @@ class PECEnhancedReporter:
         report.append(hierarchy_section)
         
         return "\n".join(report)
+    
+    def _analyze_signal_group(self, signals):
+        """Analyze a group of signals (for SECTION 1 & 2)"""
+        tp = sum(1 for s in signals if s.get('status') == 'TP_HIT')
+        sl = sum(1 for s in signals if s.get('status') == 'SL_HIT')
+        timeout = sum(1 for s in signals if s.get('status') == 'TIMEOUT')
+        open_trades = sum(1 for s in signals if s.get('status') == 'OPEN')
+        
+        timeout_win = sum(1 for s in signals if s.get('status') == 'TIMEOUT' and float(s.get('pnl_usd') or 0) > 0)
+        timeout_loss = timeout - timeout_win
+        
+        closed = tp + sl + timeout
+        total_pnl = sum(float(s.get('pnl_usd') or 0) for s in signals)
+        
+        tp_pnl = sum(float(s.get('pnl_usd') or 0) for s in signals if s.get('status') == 'TP_HIT')
+        sl_pnl = sum(float(s.get('pnl_usd') or 0) for s in signals if s.get('status') == 'SL_HIT')
+        timeout_pnl = sum(float(s.get('pnl_usd') or 0) for s in signals if s.get('status') == 'TIMEOUT')
+        
+        avg_pnl_signal = total_pnl / len(signals) if signals else 0
+        avg_pnl_closed = total_pnl / closed if closed > 0 else 0
+        avg_tp_pnl = tp_pnl / tp if tp > 0 else 0
+        avg_sl_pnl = sl_pnl / sl if sl > 0 else 0
+        
+        wins = tp + timeout_win
+        wr = (wins / closed * 100) if closed > 0 else 0
+        
+        return {
+            'total': len(signals),
+            'tp': tp,
+            'sl': sl,
+            'timeout': timeout,
+            'open': open_trades,
+            'closed': closed,
+            'timeout_win': timeout_win,
+            'timeout_loss': timeout_loss,
+            'total_pnl': total_pnl,
+            'avg_pnl_signal': avg_pnl_signal,
+            'avg_pnl_closed': avg_pnl_closed,
+            'tp_pnl': tp_pnl,
+            'sl_pnl': sl_pnl,
+            'timeout_pnl': timeout_pnl,
+            'avg_tp_pnl': avg_tp_pnl,
+            'avg_sl_pnl': avg_sl_pnl,
+            'wr': wr,
+            'wins': wins,
+        }
     
     def _aggregate_by(self, dimension):
         """Aggregate statistics by dimension (all lowercase field names)"""
