@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 
 # Import consolidated calculation functions
-from calculations import calculate_atr_for_tp_sl, calculate_tp_sl_from_atr
+from calculations import calculate_atr_for_tp_sl, calculate_tp_sl_from_atr, calculate_tp_sl_from_df
 
 DEFAULT_ATR_LOOKBACK = int(os.getenv("TP_SL_LOOKBACK", "14"))
 DEFAULT_ATR_MULT_TP = float(os.getenv("TP_SL_ATR_MULT_TP", "1.5"))  # 1.5:1 RR (market optimization)
@@ -92,20 +92,40 @@ def calculate_tp_sl(df: pd.DataFrame, entry_price: float, direction: str,
     df_clean['low'] = low
     df_clean['close'] = close
 
-    # Use consolidated ATR calculation
-    atr = calculate_atr_for_tp_sl(df_clean, entry_f, lookback)
+    # TRY MARKET-DRIVEN TP/SL FIRST (2026-03-18 NEW)
+    md_result = calculate_tp_sl_from_df(df_clean, entry_f, direction, regime=regime)
+    
+    if md_result is not None:
+        # Market-driven succeeded
+        try:
+            print(
+                f"[tp_sl_retracement] MARKET_DRIVEN | direction={direction} entry={entry_f:.8f} "
+                f"tp={md_result['tp']:.8f} sl={md_result['sl']:.8f} rr={md_result['achieved_rr']} source={md_result['source']}",
+                flush=True
+            )
+        except Exception:
+            pass
+        return md_result
+    else:
+        # Market-driven rejected or no structure, fall back to ATR
+        try:
+            print(
+                f"[tp_sl_retracement] MARKET_DRIVEN returned None, falling back to ATR (regime={regime})",
+                flush=True
+            )
+        except Exception:
+            pass
+        
+        atr = calculate_atr_for_tp_sl(df_clean, entry_f, lookback)
+        result = calculate_tp_sl_from_atr(entry_f, atr, direction, atr_mult_tp, atr_mult_sl, regime=regime)
 
-    # Use consolidated TP/SL calculation from ATR
-    # Pass regime for Option C: RANGE trades get 3:1 RR instead of 2:1
-    result = calculate_tp_sl_from_atr(entry_f, atr, direction, atr_mult_tp, atr_mult_sl, regime=regime)
+        try:
+            print(
+                f"[tp_sl_retracement] ATR_FALLBACK_REGIME_AWARE | direction={direction} entry={entry_f:.8f} "
+                f"atr={atr:.8f} tp={result['tp']:.8f} sl={result['sl']:.8f} rr={result['achieved_rr']} regime={regime}",
+                flush=True
+            )
+        except Exception:
+            pass
 
-    try:
-        print(
-            f"[tp_sl_retracement] ATR_2_1_RR | direction={direction} entry={entry_f:.8f} "
-            f"atr={atr:.8f} tp={result['tp']:.8f} sl={result['sl']:.8f} rr={result['achieved_rr']}",
-            flush=True
-        )
-    except Exception:
-        pass
-
-    return result
+        return result
