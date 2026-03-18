@@ -353,7 +353,7 @@ def calculate_tp_sl_from_atr(entry_price: float, atr_value: float, direction: st
 
 
 def calculate_pnl(entry_price: float, exit_price: float, direction: str, 
-                  notional_position: float = 1000.0) -> dict:
+                  notional_position: float = 100.0) -> dict:
     """
     Calculate P&L (USD and percentage) for a closed trade.
     
@@ -362,13 +362,13 @@ def calculate_pnl(entry_price: float, exit_price: float, direction: str,
       - P&L USD = ((exit - entry) / entry) × notional_position
     
     Notional position represents leverage-adjusted capital:
-      - Default: $100 position × 10x leverage = $1,000 notional
+      - Default: $10 margin × 10x leverage = $100 notional
     
     Args:
         entry_price: Entry price
         exit_price: Exit price
         direction: "LONG" or "SHORT"
-        notional_position: Notional position size for P&L calc (default $1000)
+        notional_position: Notional position size for P&L calc (default $100 = $10 margin × 10x leverage)
     
     Returns:
         dict: {
@@ -439,27 +439,27 @@ def detect_early_breakout(df: pd.DataFrame, lookback: int = 3) -> bool:
 
 def calculate_tp_sl_from_df(df, entry_price, direction, regime=None):
     """
-    MARKET-DRIVEN TP/SL using actual price structure (2026-03-18 NEW).
+    MARKET-DRIVEN TP/SL using actual price structure (CORRECTED 2026-03-18).
     
     Strategy:
-    1. Find recent swing highs and lows (last 20 candles)
-    2. Use nearest support/resistance as natural TP/SL
-    3. Calculate RR from actual market distances
-    4. Quality gates: Reject if RR < 0.5 or RR > 4.0
-    5. Fallback: None (caller uses ATR fallback)
+    1. MARKET-DRIVEN (PREFERRED): Use recent swing highs/lows as S&R
+       - Calculate natural RR from actual price structure
+       - Accept if RR is within reasonable bounds (0.5-4.0)
     
-    This replaces hardcoded 1.5:1 with natural market-driven targets.
-    Expected: RR varies 1.2-2.5 (natural), not flat 1.5.
+    2. FALLBACK (IF NO S&R): Use fixed 1.25:1 RR ratio
+       - Risk = ATR-based distance
+       - Reward = Risk × 1.25 (proper 1.25:1 ratio in distance)
+       - This ensures risk/reward is properly calibrated
     
     Args:
         df: DataFrame with OHLCV data
         entry_price: Entry price
         direction: "LONG" or "SHORT"
-        regime: Market regime (optional, for future use)
+        regime: Market regime (optional)
     
     Returns:
-        dict: {'tp': float, 'sl': float, 'achieved_rr': float, 'source': str, ...}
-        or None: If quality gates reject or no structure found
+        dict: {'tp': float, 'sl': float, 'achieved_rr': float, 'source': str}
+        or None: If no valid setup found (will use ATR fallback)
     """
     try:
         if df is None or len(df) < 5:
@@ -479,65 +479,105 @@ def calculate_tp_sl_from_df(df, entry_price, direction, regime=None):
         supports = sorted([x for x in recent_lows if x < current_price], reverse=True)
         resistances = sorted([x for x in recent_highs if x > current_price])
         
-        # Determine TP/SL based on direction
+        # === MARKET-DRIVEN: Use S&R if both exist ===
         if direction.upper() == "LONG":
-            if not supports:
-                return None  # No support found, will use ATR fallback
-            
-            sl = supports[0]  # Nearest support
-            
-            if resistances:
+            if supports and resistances:
+                # Both S&R exist - use natural market structure
+                sl = supports[0]  # Nearest support
                 tp = resistances[0]  # Nearest resistance
-                source = "market_structure_long"
-            else:
-                # No resistance, use 1.25:1 ratio from SL distance (TIGHTENED 2026-03-18)
-                tp_dist = (current_price - sl) * 1.25
-                tp = current_price + tp_dist
-                source = "hybrid_market_atr_long"
+                reward = tp - current_price
+                risk = current_price - sl
+                achieved_rr = round(reward / risk, 2) if risk > 0 else 0
+                
+                # Quality gate: reject if RR unrealistic
+                if achieved_rr < 0.5 or achieved_rr > 4.0:
+                    print(f"[MARKET_DRIVEN] REJECTED {direction}: RR {achieved_rr} outside bounds (0.5-4.0)", flush=True)
+                    return None
+                
+                return {
+                    'tp': float(tp),
+                    'sl': float(sl),
+                    'achieved_rr': achieved_rr,
+                    'source': 'market_structure_long',
+                    'reward': float(reward),
+                    'risk': float(risk),
+                    'fib_levels': None,
+                    'chosen_ratio': None,
+                    'sl_capped': False
+                }
+            
+            # === FALLBACK: Use 1.25:1 RR with ATR ===
+            elif supports:
+                # Only support exists - use fixed 1.25:1 RR
+                atr = calculate_atr_for_tp_sl(df, entry_price, 14)
+                sl = supports[0]
+                risk = current_price - sl
+                reward = risk * 1.25  # Fixed 1.25:1 ratio
+                tp = current_price + reward
+                achieved_rr = 1.25
+                
+                return {
+                    'tp': float(tp),
+                    'sl': float(sl),
+                    'achieved_rr': achieved_rr,
+                    'source': 'fallback_125_long',
+                    'reward': float(reward),
+                    'risk': float(risk),
+                    'fib_levels': None,
+                    'chosen_ratio': 1.25,
+                    'sl_capped': False
+                }
         
         else:  # SHORT
-            if not resistances:
-                return None  # No resistance found, will use ATR fallback
-            
-            sl = resistances[0]  # Nearest resistance
-            
-            if supports:
+            if supports and resistances:
+                # Both S&R exist - use natural market structure
+                sl = resistances[0]  # Nearest resistance
                 tp = supports[0]  # Nearest support
-                source = "market_structure_short"
-            else:
-                # No support, use 1.25:1 ratio from SL distance (TIGHTENED 2026-03-18)
-                tp_dist = (sl - current_price) * 1.25
-                tp = current_price - tp_dist
-                source = "hybrid_market_atr_short"
+                reward = current_price - tp
+                risk = sl - current_price
+                achieved_rr = round(reward / risk, 2) if risk > 0 else 0
+                
+                # Quality gate: reject if RR unrealistic
+                if achieved_rr < 0.5 or achieved_rr > 4.0:
+                    print(f"[MARKET_DRIVEN] REJECTED {direction}: RR {achieved_rr} outside bounds (0.5-4.0)", flush=True)
+                    return None
+                
+                return {
+                    'tp': float(tp),
+                    'sl': float(sl),
+                    'achieved_rr': achieved_rr,
+                    'source': 'market_structure_short',
+                    'reward': float(reward),
+                    'risk': float(risk),
+                    'fib_levels': None,
+                    'chosen_ratio': None,
+                    'sl_capped': False
+                }
+            
+            # === FALLBACK: Use 1.25:1 RR with ATR ===
+            elif resistances:
+                # Only resistance exists - use fixed 1.25:1 RR
+                atr = calculate_atr_for_tp_sl(df, entry_price, 14)
+                sl = resistances[0]
+                risk = sl - current_price
+                reward = risk * 1.25  # Fixed 1.25:1 ratio
+                tp = current_price - reward
+                achieved_rr = 1.25
+                
+                return {
+                    'tp': float(tp),
+                    'sl': float(sl),
+                    'achieved_rr': achieved_rr,
+                    'source': 'fallback_125_short',
+                    'reward': float(reward),
+                    'risk': float(risk),
+                    'fib_levels': None,
+                    'chosen_ratio': 1.25,
+                    'sl_capped': False
+                }
         
-        # Calculate ACTUAL RR from market structure
-        reward = abs(tp - current_price)
-        risk = abs(current_price - sl)
-        
-        if risk == 0:
-            return None
-        
-        achieved_rr = round(reward / risk, 2)
-        
-        # QUALITY GATES: Reject unrealistic RR
-        if achieved_rr < 0.5:
-            print(f"[MARKET_DRIVEN] REJECTED {direction} at {entry_price}: RR too low ({achieved_rr} < 0.5)", flush=True)
-            return None
-        if achieved_rr > 4.0:
-            print(f"[MARKET_DRIVEN] REJECTED {direction} at {entry_price}: RR too high ({achieved_rr} > 4.0)", flush=True)
-            return None
-        
-        return {
-            'tp': float(tp),
-            'sl': float(sl),
-            'achieved_rr': achieved_rr,
-            'source': source,
-            'reward': float(reward),
-            'risk': float(risk),
-            'fib_levels': None,
-            'chosen_ratio': None,
-            'sl_capped': False
-        }
+        # No valid setup found
+        return None
     
     except Exception as e:
         print(f"[calculate_tp_sl_from_df] Error: {e}", flush=True)

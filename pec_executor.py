@@ -160,7 +160,7 @@ class PECExecutor:
                 # Normal timeout - calculate P&L
                 print(f"[PEC-TIMEOUT-HIT] {symbol} {timeframe}: {bars_elapsed} bars >= {max_bars} max, "
                       f"actual_timeout={actual_timeout_time.isoformat()} [{cc_group}]", flush=True)
-                NOTIONAL_POSITION = 1000.0
+                NOTIONAL_POSITION = 100.0  # $10 margin × 10x leverage
                 pnl_result = calculate_pnl(entry_price, current_price, signal.get('signal_type'), NOTIONAL_POSITION)
                 
                 return {
@@ -177,7 +177,7 @@ class PECExecutor:
             print(f"[PEC-TIMEOUT-ERROR] {symbol}: {e}", flush=True)
         
         # ONLY check TP/SL if signal is STILL within timeout window
-        NOTIONAL_POSITION = 1000.0
+        NOTIONAL_POSITION = 100.0  # $10 margin × 10x leverage
         signal_type = signal.get('signal_type')
         
         if signal_type == 'LONG':
