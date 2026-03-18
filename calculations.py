@@ -314,8 +314,19 @@ def calculate_tp_sl_from_atr(entry_price: float, atr_value: float, direction: st
             sl = entry_price - (atr_mult_sl * atr_value)
             source = "atr_1_5_to_1_default_long"
         
-        # Calculate achieved RR (now always 1.5:1, RANGE adjustment disabled)
-        achieved_rr = atr_mult_tp / atr_mult_sl  # Will be 1.5 for all regimes
+        # Calculate achieved RR from ACTUAL TP/SL distances (not just multiplier ratio)
+        # FIX #1: Properly calculate RR instead of hardcoding to 1.5
+        try:
+            reward = abs(tp - entry_price)
+            risk = abs(entry_price - sl)
+            if risk > 0:
+                achieved_rr = round(reward / risk, 2)
+            else:
+                achieved_rr = 1.5
+            print(f"[FIX1-ACTIVE] dir={direction} entry={entry_price:.8f} tp={tp:.8f} sl={sl:.8f} → reward={reward:.8f} risk={risk:.8f} rr={achieved_rr}", flush=True)
+        except Exception as e:
+            print(f"[FIX1-ERROR] Exception in RR calc: {e}", flush=True)
+            achieved_rr = 1.5
         
         return {
             'tp': round(float(tp), 8),
@@ -424,3 +435,110 @@ def detect_early_breakout(df: pd.DataFrame, lookback: int = 3) -> bool:
     except Exception as e:
         print(f"[detect_early_breakout] Error: {e}", flush=True)
         return False
+
+
+def calculate_tp_sl_from_df(df, entry_price, direction, regime=None):
+    """
+    MARKET-DRIVEN TP/SL using actual price structure (2026-03-18 NEW).
+    
+    Strategy:
+    1. Find recent swing highs and lows (last 20 candles)
+    2. Use nearest support/resistance as natural TP/SL
+    3. Calculate RR from actual market distances
+    4. Quality gates: Reject if RR < 0.5 or RR > 4.0
+    5. Fallback: None (caller uses ATR fallback)
+    
+    This replaces hardcoded 1.5:1 with natural market-driven targets.
+    Expected: RR varies 1.2-2.5 (natural), not flat 1.5.
+    
+    Args:
+        df: DataFrame with OHLCV data
+        entry_price: Entry price
+        direction: "LONG" or "SHORT"
+        regime: Market regime (optional, for future use)
+    
+    Returns:
+        dict: {'tp': float, 'sl': float, 'achieved_rr': float, 'source': str, ...}
+        or None: If quality gates reject or no structure found
+    """
+    try:
+        if df is None or len(df) < 5:
+            return None
+        
+        high = pd.to_numeric(df['high'], errors='coerce')
+        low = pd.to_numeric(df['low'], errors='coerce')
+        close = pd.to_numeric(df['close'], errors='coerce')
+        current_price = close.iloc[-1]
+        
+        # Find recent swing highs and lows (last 20 candles)
+        lookback = min(20, len(df))
+        recent_highs = high.tail(lookback).nlargest(3).values
+        recent_lows = low.tail(lookback).nsmallest(3).values
+        
+        # Filter for actual support/resistance levels
+        supports = sorted([x for x in recent_lows if x < current_price], reverse=True)
+        resistances = sorted([x for x in recent_highs if x > current_price])
+        
+        # Determine TP/SL based on direction
+        if direction.upper() == "LONG":
+            if not supports:
+                return None  # No support found, will use ATR fallback
+            
+            sl = supports[0]  # Nearest support
+            
+            if resistances:
+                tp = resistances[0]  # Nearest resistance
+                source = "market_structure_long"
+            else:
+                # No resistance, use 1.25:1 ratio from SL distance (TIGHTENED 2026-03-18)
+                tp_dist = (current_price - sl) * 1.25
+                tp = current_price + tp_dist
+                source = "hybrid_market_atr_long"
+        
+        else:  # SHORT
+            if not resistances:
+                return None  # No resistance found, will use ATR fallback
+            
+            sl = resistances[0]  # Nearest resistance
+            
+            if supports:
+                tp = supports[0]  # Nearest support
+                source = "market_structure_short"
+            else:
+                # No support, use 1.25:1 ratio from SL distance (TIGHTENED 2026-03-18)
+                tp_dist = (sl - current_price) * 1.25
+                tp = current_price - tp_dist
+                source = "hybrid_market_atr_short"
+        
+        # Calculate ACTUAL RR from market structure
+        reward = abs(tp - current_price)
+        risk = abs(current_price - sl)
+        
+        if risk == 0:
+            return None
+        
+        achieved_rr = round(reward / risk, 2)
+        
+        # QUALITY GATES: Reject unrealistic RR
+        if achieved_rr < 0.5:
+            print(f"[MARKET_DRIVEN] REJECTED {direction} at {entry_price}: RR too low ({achieved_rr} < 0.5)", flush=True)
+            return None
+        if achieved_rr > 4.0:
+            print(f"[MARKET_DRIVEN] REJECTED {direction} at {entry_price}: RR too high ({achieved_rr} > 4.0)", flush=True)
+            return None
+        
+        return {
+            'tp': float(tp),
+            'sl': float(sl),
+            'achieved_rr': achieved_rr,
+            'source': source,
+            'reward': float(reward),
+            'risk': float(risk),
+            'fib_levels': None,
+            'chosen_ratio': None,
+            'sl_capped': False
+        }
+    
+    except Exception as e:
+        print(f"[calculate_tp_sl_from_df] Error: {e}", flush=True)
+        return None
