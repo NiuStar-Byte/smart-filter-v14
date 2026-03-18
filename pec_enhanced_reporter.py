@@ -365,8 +365,8 @@ class PECEnhancedReporter:
         report.append("")
         
         # === SECTION 1 & 2 (Summary Statistics) ===
-        # Foundation: Through Mar 10 | NEW: Mar 11+ onwards (actual signal restart was Mar 18 after 8-day daemon downtime)
-        foundation_cutoff = datetime(2026, 3, 11, tzinfo=timezone.utc)
+        # Foundation: Through Mar 10 | NEW: Mar 16+ onwards (Mac restarted Mar 16)
+        foundation_cutoff = datetime(2026, 3, 16, tzinfo=timezone.utc)
         foundation_signals = []
         new_signals = []
         for s in self.signals:
@@ -420,7 +420,7 @@ class PECEnhancedReporter:
         new_stats = self._analyze_signal_group(new_signals)
         
         report.append("=" * 200)
-        report.append("📊 SECTION 2: TOTAL SIGNALS (NEW ONLY - Mar 11+ onwards, actual restart: Mar 18 after daemon downtime)")
+        report.append("📊 SECTION 2: TOTAL SIGNALS (NEW ONLY - Mar 16+ onwards)")
         report.append("=" * 200)
         report.append(f"Total Signals (New ONLY): {new_stats['total']}")
         report.append(f"Count Win (TP_HIT): {new_stats['tp']}")
