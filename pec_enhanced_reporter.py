@@ -158,14 +158,14 @@ class PECEnhancedReporter:
             return str(utc_time_str)[:19]
     
     def _calculate_pnl_usd(self, entry_price: float, exit_price: float, direction: str) -> float:
-        """Calculate P&L USD using notional position of $1,000 ($100 × 10x leverage)"""
+        """Calculate P&L USD using notional position of $1000 ($100 margin × 10x leverage)"""
         try:
             if not entry_price or entry_price == 0 or not exit_price or exit_price == 0:
                 return None
             
             entry = float(entry_price)
             exit_val = float(exit_price)
-            notional_position = 100.0  # $10 margin × 10x leverage = $100 notional
+            notional_position = 1000.0  # $100 margin × 10x leverage = $1000 notional
             
             dir_up = str(direction).strip().upper() == "LONG"
             dir_down = str(direction).strip().upper() == "SHORT"
@@ -260,7 +260,7 @@ class PECEnhancedReporter:
         # Main header for detailed signal list
         detail_lines.append("")
         detail_lines.append("=" * 290)
-        detail_lines.append("📋 DETAILED SIGNAL LIST: FIXED POSITION SIZE $100, LEVERAGE 10x")
+        detail_lines.append("📋 DETAILED SIGNAL LIST: FIXED POSITION SIZE $100, LEVERAGE 10x, NOTIONAL $1000")
         detail_lines.append(f"Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S GMT+7')}")
         detail_lines.append(f"Total Signals Loaded: {len(self.signals)}")
         detail_lines.append("")
@@ -293,7 +293,7 @@ class PECEnhancedReporter:
             else:
                 exit_str = "N/A"
             
-            # P&L - RECALCULATE using notional position of $1,000
+            # P&L - RECALCULATE using notional position of $1000 ($100 margin × 10x leverage)
             if exit_price and status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
                 pnl_calc = self._calculate_pnl_usd(signal.get('entry_price'), exit_price, direction)
                 if pnl_calc is not None:
@@ -635,7 +635,7 @@ class PECEnhancedReporter:
             
             wr = ((tp + timeout_wins) / closed * 100) if closed > 0 else 0
             
-            # RECALCULATE P&L using notional position of $1,000
+            # RECALCULATE P&L using notional position of $1000 ($100 margin × 10x leverage)
             pnl = 0.0
             for s in signals_list:
                 if s.get('status') in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
@@ -1448,7 +1448,7 @@ class PECEnhancedReporter:
                         elif pnl_calc < 0:
                             stats[key]['timeout_loss'] += 1
             
-            # RECALCULATE P&L using notional position of $1,000
+            # RECALCULATE P&L using notional position of $1000 ($100 margin × 10x leverage)
             if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
                 pnl_calc = self._calculate_pnl_usd(
                     signal.get('entry_price'),
@@ -1507,7 +1507,7 @@ class PECEnhancedReporter:
                         elif pnl_calc < 0:
                             stats[key]['timeout_loss'] += 1
             
-            # RECALCULATE P&L using notional position of $1,000
+            # RECALCULATE P&L using notional position of $1000 ($100 margin × 10x leverage)
             if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
                 pnl_calc = self._calculate_pnl_usd(
                     signal.get('entry_price'),
@@ -1569,7 +1569,7 @@ class PECEnhancedReporter:
                         elif pnl_calc < 0:
                             stats[key]['timeout_loss'] += 1
             
-            # RECALCULATE P&L using notional position of $1,000
+            # RECALCULATE P&L using notional position of $1000 ($100 margin × 10x leverage)
             if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
                 pnl_calc = self._calculate_pnl_usd(
                     signal.get('entry_price'),
