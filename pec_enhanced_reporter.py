@@ -14,21 +14,15 @@ from datetime import datetime, timezone, timedelta
 from collections import defaultdict
 import os
 from tier_config import TIER_THRESHOLDS
-
-# === SYMBOL GROUPING (5D DIMENSION) ===
-SYMBOL_GROUPS = {
-    "MAIN_BLOCKCHAIN": [
-        "BTC-USDT", "ETH-USDT", "SOL-USDT", "XRP-USDT", "ADA-USDT",
-        "AVAX-USDT", "BNB-USDT", "XLM-USDT", "LINK-USDT", "POL-USDT"
-    ],
-    "TOP_ALTS": [
-        "ZKJ-USDT", "ROAM-USDT", "XAUT-USDT", "SAHARA-USDT"
-    ],
-    "MID_ALTS": [
-        "XPL-USDT", "DOT-USDT", "FUEL-USDT", "VIRTUAL-USDT", "BERA-USDT",
-        "CROSS-USDT", "FUN-USDT", "ENA-USDT", "SOL-USDT", "AVAX-USDT"
-    ]
-}
+from pec_reporter_config import (
+    NEW_SIGNALS_CUTOFF_DATE,
+    TIMEOUT_WINDOW_MULTIPLIERS,
+    TIMEOUT_TOLERANCE_PERCENT,
+    FIXED_MARGIN_USD,
+    FIXED_LEVERAGE,
+    SYMBOL_GROUPS,
+    get_notional_position
+)
 
 class PECEnhancedReporter:
     def __init__(self, sent_signals_file=None):
@@ -158,14 +152,14 @@ class PECEnhancedReporter:
             return str(utc_time_str)[:19]
     
     def _calculate_pnl_usd(self, entry_price: float, exit_price: float, direction: str) -> float:
-        """Calculate P&L USD using notional position of $1000 ($100 margin × 10x leverage)"""
+        """Calculate P&L USD using notional position (from pec_reporter_config)"""
         try:
             if not entry_price or entry_price == 0 or not exit_price or exit_price == 0:
                 return None
             
             entry = float(entry_price)
             exit_val = float(exit_price)
-            notional_position = 1000.0  # $100 margin × 10x leverage = $1000 notional
+            notional_position = get_notional_position()  # From config: $100 margin × 10x leverage
             
             dir_up = str(direction).strip().upper() == "LONG"
             dir_down = str(direction).strip().upper() == "SHORT"
@@ -260,7 +254,7 @@ class PECEnhancedReporter:
         # Main header for detailed signal list
         detail_lines.append("")
         detail_lines.append("=" * 290)
-        detail_lines.append("📋 DETAILED SIGNAL LIST: FIXED POSITION SIZE $100, LEVERAGE 10x, NOTIONAL $1000")
+        detail_lines.append(f"📋 DETAILED SIGNAL LIST: FIXED POSITION SIZE ${FIXED_MARGIN_USD:.0f}, LEVERAGE {FIXED_LEVERAGE:.0f}x, NOTIONAL ${get_notional_position():.0f}")
         detail_lines.append(f"Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S GMT+7')}")
         detail_lines.append(f"Total Signals Loaded: {len(self.signals)}")
         detail_lines.append("")
@@ -373,8 +367,8 @@ class PECEnhancedReporter:
         report.append("")
         
         # === SECTION 1 & 2 (Summary Statistics) ===
-        # Foundation: Through Mar 10 | NEW: Mar 16+ onwards (Mac restarted Mar 16)
-        foundation_cutoff = datetime(2026, 3, 16, tzinfo=timezone.utc)
+        # Foundation: Before cutoff | NEW: At or after cutoff (from pec_reporter_config)
+        foundation_cutoff = NEW_SIGNALS_CUTOFF_DATE
         foundation_signals = []
         new_signals = []
         for s in self.signals:
@@ -1098,10 +1092,15 @@ class PECEnhancedReporter:
         
         # Calculate ACTUAL MAX TIMEOUT WINDOW by timeframe
         # EXCLUDING stale timeouts (quality issues - overdue signals that inflate averages)
-        # Only calculate from clean timeouts within expected design limits (with 10% tolerance for timing slippage)
+        # Only calculate from clean timeouts within expected design limits (with tolerance for timing slippage)
         max_timeout_clean = {'15min': 0, '30min': 0, '1h': 0}
-        expected_max_by_tf = {'15min': 15*15*60, '30min': 10*30*60, '1h': 5*60*60}  # Expected maximums (in seconds)
-        tolerance = 0.10  # Allow 10% tolerance for minor timing variations
+        # From pec_reporter_config: timeout windows & tolerance
+        expected_max_by_tf = {
+            '15min': TIMEOUT_WINDOW_MULTIPLIERS['15min'] * 15 * 60,  # 15 × 15min = 13,500s
+            '30min': TIMEOUT_WINDOW_MULTIPLIERS['30min'] * 30 * 60,  # 10 × 30min = 18,000s
+            '1h': TIMEOUT_WINDOW_MULTIPLIERS['1h'] * 60 * 60         # 5 × 1h = 18,000s
+        }
+        tolerance = TIMEOUT_TOLERANCE_PERCENT  # From config
         
         for s in self.signals:
             # SKIP stale timeouts completely (data quality issues)
