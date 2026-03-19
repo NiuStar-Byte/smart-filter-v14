@@ -26,16 +26,16 @@ from pec_reporter_config import (
 
 class PECEnhancedReporter:
     def __init__(self, sent_signals_file=None):
-        # Use SIGNALS_MASTER.jsonl as single source of truth
-        # Falls back to CUMULATIVE for historical data if MASTER not available
+        # Use SIGNALS_MASTER_LOCKED.jsonl as immutable baseline (prevents duplicate signal bugs)
+        # Falls back to CUMULATIVE for historical data if LOCKED not available
         if sent_signals_file is None:
             workspace = "/Users/geniustarigan/.openclaw/workspace"
             
-            # Primary: SIGNALS_MASTER (single source of truth)
-            signals_master = os.path.join(workspace, "SIGNALS_MASTER.jsonl")
-            if os.path.exists(signals_master) and os.path.getsize(signals_master) > 1000:
-                sent_signals_file = signals_master
-                print(f"[INFO] Using SIGNALS_MASTER.jsonl: {signals_master}", flush=True)
+            # Primary: SIGNALS_MASTER_LOCKED_2457.jsonl (immutable 2,457 baseline from 2026-03-20 00:22)
+            signals_locked = os.path.join(workspace, "SIGNALS_MASTER_LOCKED_2457.jsonl")
+            if os.path.exists(signals_locked) and os.path.getsize(signals_locked) > 1000:
+                sent_signals_file = signals_locked
+                print(f"[INFO] Using SIGNALS_MASTER_LOCKED_2457.jsonl (immutable baseline, 2,457 signals): {signals_locked}", flush=True)
             else:
                 # Fallback: CUMULATIVE (immutable hourly snapshots for historical data)
                 import glob
