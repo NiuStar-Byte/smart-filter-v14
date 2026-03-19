@@ -374,16 +374,8 @@ class PECEnhancedReporter:
         report.append("=" * 200)
         report.append("")
         
-        # === FOUNDATION BASELINE (IMMUTABLE - LOCKED at commit c535c34) ===
-        report.append("=" * 200)
-        report.append("🔒 FOUNDATION BASELINE (IMMUTABLE - Locked at commit c535c34)")
-        report.append("=" * 200)
-        report.append(f"Total Signals: 853 | Closed: 830 | WR: 25.7%")
-        report.append(f"LONG WR: 29.6% | SHORT WR: 46.2% | P&L: $-5,498.59")
-        report.append("")
-        
         # === SECTION 1 & 2 (Summary Statistics) ===
-        # Foundation: Through Mar 10 | NEW: Mar 16+ onwards (Mac restarted Mar 16)
+        # Foundation: Before Mar 16 | NEW: Mar 16+ onwards (Mac restarted Mar 16)
         foundation_cutoff = datetime(2026, 3, 16, tzinfo=timezone.utc)
         foundation_signals = []
         new_signals = []
@@ -398,6 +390,17 @@ class PECEnhancedReporter:
                     new_signals.append(s)
             except:
                 foundation_signals.append(s)  # Default to foundation if parse fails
+        
+        # Calculate foundation stats DYNAMICALLY (not hardcoded)
+        foundation_stats = self._analyze_signal_group(foundation_signals)
+        
+        # === DISPLAY FOUNDATION BASELINE (CALCULATED, not hardcoded) ===
+        report.append("=" * 200)
+        report.append("🔒 FOUNDATION BASELINE (Calculated from signals before Mar 16)")
+        report.append("=" * 200)
+        report.append(f"Total Signals: {foundation_stats['total']} | Closed: {foundation_stats['closed']} | WR: {foundation_stats['wr']:.1f}%")
+        report.append(f"LONG WR: {self._calculate_wr_by_direction(foundation_signals, 'LONG'):.1f}% | SHORT WR: {self._calculate_wr_by_direction(foundation_signals, 'SHORT'):.1f}% | P&L: ${foundation_stats['total_pnl']:+,.2f}")
+        report.append("")
         
         # SECTION 1: Foundation + New
         combined = foundation_signals + new_signals
@@ -1377,6 +1380,28 @@ class PECEnhancedReporter:
         report.append(hierarchy_section)
         
         return "\n".join(report)
+    
+    def _calculate_wr_by_direction(self, signals, direction):
+        """Calculate win rate for a specific direction (LONG or SHORT)"""
+        dir_signals = [s for s in signals if s.get('signal_type') == direction]
+        if not dir_signals:
+            return 0.0
+        
+        wins = 0
+        closed = 0
+        
+        for s in dir_signals:
+            status = s.get('status')
+            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                closed += 1
+                if status == 'TP_HIT':
+                    wins += 1
+                elif status == 'TIMEOUT':
+                    pnl = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                    if pnl and pnl > 0:
+                        wins += 1
+        
+        return (wins / closed * 100) if closed > 0 else 0.0
     
     def _analyze_signal_group(self, signals):
         """Analyze a group of signals (for SECTION 1 & 2)"""
