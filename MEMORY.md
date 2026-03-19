@@ -4,6 +4,87 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
+## 🚨 **CRITICAL BLOCKER: FALLBACK TP/SL RATIO BUG (2026-03-18 Post-Compaction) — DO NOT IGNORE**
+
+**Status:** ⛔ **BLOCKING - Fallback 1.25:1 ratio broken, Section 2 metrics inverted**  
+**Impact:** Section 2 (NEW signals Mar 18) shows 80.25% WR but -$26,417.84 P&L — losses 121× larger than wins  
+**Root Cause:** Fallback TP/SL calculation uses **distance-based ratio** instead of **dollar-based risk/reward**
+
+### **The Math the User Explained**
+> "if you put 1.25:1 Reward Risk Ratio, means that you willing to Loss 1 to get profit 1.25... you dont even understand math of Reward Risk Ratio?"
+
+**Translation:** 1.25:1 RR means WILLING TO LOSE $1 → GET PROFIT $1.25, NOT distance units.
+
+### **What's Actually Broken (2026-03-19 CORRECTED)**
+
+**The REAL Bug (Not just 1.5 vs 1.25):**
+- **178 out of 1,673 trades have NEGATIVE TP distance** (TP is BELOW entry for LONG trades!)
+- **Example:** BIO-USDT LONG with Entry=$0.0224, TP=$0.0218 (TP distance: -2.81%?!)
+- This makes NO SENSE for LONG positions → TP should be ABOVE entry
+
+**Impact Analysis:**
+- **TP/SL calculation is INVERTED** for some trades (likely SHORT handling)
+- **OR direction field is wrong** (marked LONG but should be SHORT)
+- TIMEOUT uses current market price (fair, market-driven)
+- TP/SL have wrong directions → creates asymmetric P&L structure
+- Result: Avg TP win = $12.08, Avg SL loss = -$228.54 (19.2× inverted)
+
+**Root Cause Location:**
+- **File:** `/Users/geniustarigan/.openclaw/workspace/smart-filter-v14-main/calculations.py` (line 430+)
+- **Function:** `calculate_tp_sl_from_df()` — SHORT direction handling
+- **Suspect:** Line 535+ where SHORT TP/SL are calculated
+- **Check:** Are SHORT TP and SL being correctly set?
+
+### **What Needs Fixing**
+The fallback needs to calculate distances that create **dollar-based risk/reward**:
+1. For $100 notional position, desired risk: ~$8-10 (if SL hit)
+2. Desired reward: ~$10-12.50 (if TP hit) → creates 1.25:1 ratio in dollars
+3. Convert these dollar amounts → distance in price points (varies by symbol)
+
+**Formula needed:**
+```
+risk_dollars = 8  # Fixed risk per trade
+reward_dollars = risk_dollars * 1.25  # = $10
+
+For each symbol:
+  - Get current price
+  - Get notional position size ($100)
+  - sl_distance = (risk_dollars / 100) * current_price
+  - tp_distance = (reward_dollars / 100) * current_price
+```
+
+### **Constraint: DO NOT MODIFY pec_enhanced_reporter.py**
+User was explicit: "do not make any changes on pec reporter without my confirmation"  
+Agreed header locked: "SECTION 2: TOTAL SIGNALS (NEW ONLY - Mar 16+ onwards)"
+
+### **Critical File Paths**
+- Fallback ratio calc: `/Users/geniustarigan/.openclaw/workspace/smart-filter-v14-main/calculations.py` line 410+
+- Market-driven TP/SL: `/Users/geniustarigan/.openclaw/workspace/smart-filter-v14-main/calculations.py` line 432+
+- Caller: `/Users/geniustarigan/.openclaw/workspace/smart-filter-v14-main/tp_sl_retracement.py` line 102+
+- Reporter (synced, DO NOT CHANGE): `/Users/geniustarigan/.openclaw/workspace/pec_enhanced_reporter.py`
+- Live signals: `/Users/geniustarigan/.openclaw/workspace/SIGNALS_MASTER.jsonl`
+- Daemon: `/Users/geniustarigan/.openclaw/workspace/smart-filter-v14-main/main.py`
+
+### **Next Action (MUST ASK USER FIRST)**
+1. Review the dollar-to-distance conversion needed
+2. Get user approval for fallback ratio fix
+3. Implement fix (do NOT change reporter)
+4. Re-run `python3 pec_enhanced_reporter.py` 
+5. Validate: Avg loss should be ~$8-10, avg win ~$10-12.50 (1.25:1 ratio in dollars)
+
+### **Section 2 Anomaly (Proof of Bug)**
+| Metric | Current | Status |
+|--------|---------|--------|
+| Signals | 161 (all Mar 18) | ✓ Data quality good |
+| Win Rate | 80.25% | ✅ Excellent |
+| Total P&L | -$26,417.84 | ❌ CRITICAL BUG |
+| Avg Win | $14.16 | ❌ Tiny |
+| Avg Loss | -$1,708.65 | ❌ MASSIVE |
+| Loss:Win Ratio | 121× | 🚨 **INVERTED** |
+| Intended RR | 1.25:1 (dollars) | ❌ Actual: 0.008:1 |
+
+---
+
 ## 🚀 **PROJECT-4: ASTERDEX SPOT BOT (2026-03-10 16:05 GMT+7)** ✅ BUILT & DEPLOYED
 
 **Status:** ✅ **CODE COMPLETE - Ready to run (5-min setup)**
