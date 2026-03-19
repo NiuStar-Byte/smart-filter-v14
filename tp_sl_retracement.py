@@ -1,12 +1,17 @@
 """
-tp_sl_retracement.py (2026-03-06: FLAT 1.5:1 RR - No Regime Adjustment)
+tp_sl_retracement.py (2026-03-19 PHASE 3 FIX: 1.25:1 Fallback RR + 2.5:1 Market-Driven Cap)
 
 TP/SL calculation for Smart Filter.
-- ATR-based 1.5:1 Risk:Reward ratio (uniform across all market regimes)
-- TP = Entry ± (1.5 × ATR)
+- Market-driven S&R PREFERRED: Uses actual support/resistance levels
+- Market-driven RR CAP: Maximum 2.5:1 (capped if higher)
+- ATR-based FALLBACK: 1.25:1 Risk:Reward ratio (when market structure unavailable)
+- TP = Entry ± (1.25 × ATR)
 - SL = Entry ± (1.0 × ATR)
-- RANGE adjustment DISABLED: All signals now use 1.5:1 (previously RANGE got 2.25:1)
-- Always returns achieved_rr = 1.5
+
+PHASE 3 Fixes:
+- Changed fallback from 1.5:1 to 1.25:1 (user specification)
+- Added 2.5:1 cap to market-driven RR
+- PEC Executor now uses historical close at timeout (not current price)
 
 NOTE: Refactored to use consolidated calculations from calculations.py
 to avoid duplication of ATR and TP/SL logic.
@@ -22,7 +27,7 @@ import pandas as pd
 from calculations import calculate_atr_for_tp_sl, calculate_tp_sl_from_atr, calculate_tp_sl_from_df
 
 DEFAULT_ATR_LOOKBACK = int(os.getenv("TP_SL_LOOKBACK", "14"))
-DEFAULT_ATR_MULT_TP = float(os.getenv("TP_SL_ATR_MULT_TP", "1.5"))  # 1.5:1 RR (market optimization)
+DEFAULT_ATR_MULT_TP = float(os.getenv("TP_SL_ATR_MULT_TP", "1.25"))  # 1.25:1 RR (user-specified fallback, PHASE 3 FIX 2026-03-19)
 DEFAULT_ATR_MULT_SL = float(os.getenv("TP_SL_ATR_MULT_SL", "1.0"))
 
 
@@ -43,13 +48,14 @@ def calculate_tp_sl(df: pd.DataFrame, entry_price: float, direction: str,
                     atr_multiplier: Optional[float] = None, lookback: Optional[int] = None,
                     regime: Optional[str] = None) -> Dict[str, Any]:
     """
-    ATR-Based 1.5:1 RR TP/SL Calculation (FLAT across all regimes).
-    TP = Entry ± (1.5 × ATR)
-    SL = Entry ± (1.0 × ATR)
+    PHASE 3 FIX (2026-03-19): Market-Driven TP/SL with 1.25:1 Fallback
     
-    NOTE: RANGE regime adjustment is DISABLED.
-    Previously: RANGE trades used 2.25:1 RR (TP × 1.5x multiplier)
-    Now: All trades use uniform 1.5:1 RR
+    STRATEGY (in order of preference):
+    1. MARKET-DRIVEN: Uses actual support/resistance levels
+       - If RR > 2.5:1, cap at 2.5:1 max
+    2. FALLBACK (no market structure): ATR-based 1.25:1 RR
+       - TP = Entry ± (1.25 × ATR)
+       - SL = Entry ± (1.0 × ATR)
     
     REFACTORED: Uses consolidated functions from calculations.py
     """

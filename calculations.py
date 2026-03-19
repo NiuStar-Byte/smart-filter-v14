@@ -266,19 +266,21 @@ def calculate_atr_for_tp_sl(df: pd.DataFrame, entry_price: float, lookback: int 
 
 
 def calculate_tp_sl_from_atr(entry_price: float, atr_value: float, direction: str,
-                             atr_mult_tp: float = 1.5, atr_mult_sl: float = 1.0,
+                             atr_mult_tp: float = 1.25, atr_mult_sl: float = 1.0,
                              regime: str = None) -> dict:
     """
-    Calculate TP/SL from ATR value using 1.5:1 Risk:Reward ratio (flat across all regimes).
+    Calculate TP/SL from ATR value using 1.25:1 Risk:Reward ratio (FALLBACK - market-driven preferred).
     
-    UNIFORM 1.5:1 RR:
-    LONG:  TP = Entry + (1.5 × ATR), SL = Entry - (1.0 × ATR)
-    SHORT: TP = Entry - (1.5 × ATR), SL = Entry + (1.0 × ATR)
+    UNIFORM 1.25:1 RR (FALLBACK when market-driven not available):
+    LONG:  TP = Entry + (1.25 × ATR), SL = Entry - (1.0 × ATR)
+    SHORT: TP = Entry - (1.25 × ATR), SL = Entry + (1.0 × ATR)
     
-    NOTE: OPTION C (1.5x RANGE multiplier) is DISABLED.
-    Previously: RANGE trades got 3:1 RR (multiplier 2.0 × 1.5). Now: flat 1.5:1 everywhere.
+    RULES (2026-03-19 FIXED):
+    - Market-driven TP/SL PREFERRED: Uses actual support/resistance
+    - If market-driven RR > 2.5:1: CAP at 2.5:1 max
+    - FALLBACK (no market structure): Use 1.25:1 ATR ratio
     
-    Rationale: User requested market-optimized 1.5:1 RR across all market conditions.
+    Rationale: User specified 1.25:1 fallback, 2.5:1 market-driven cap.
     
     Args:
         entry_price: Entry price
@@ -303,16 +305,16 @@ def calculate_tp_sl_from_atr(entry_price: float, atr_value: float, direction: st
         if dir_up:
             tp = entry_price + (atr_mult_tp * atr_value)
             sl = entry_price - (atr_mult_sl * atr_value)
-            source = "atr_1_5_to_1_long"
+            source = "atr_1_25_to_1_long"
         elif dir_down:
             tp = entry_price - (atr_mult_tp * atr_value)
             sl = entry_price + (atr_mult_sl * atr_value)
-            source = "atr_1_5_to_1_short"
+            source = "atr_1_25_to_1_short"
         else:
             # Default to LONG
             tp = entry_price + (atr_mult_tp * atr_value)
             sl = entry_price - (atr_mult_sl * atr_value)
-            source = "atr_1_5_to_1_default_long"
+            source = "atr_1_25_to_1_default_long"
         
         # Calculate achieved RR from ACTUAL TP/SL distances (not just multiplier ratio)
         # FIX #1: Properly calculate RR instead of hardcoding to 1.5
@@ -489,21 +491,31 @@ def calculate_tp_sl_from_df(df, entry_price, direction, regime=None):
                 risk = current_price - sl
                 achieved_rr = round(reward / risk, 2) if risk > 0 else 0
                 
-                # Quality gate: reject if RR unrealistic
+                # Quality gate: reject if RR unrealistic (0.5-4.0) OR cap if RR > 2.5:1
                 if achieved_rr < 0.5 or achieved_rr > 4.0:
                     print(f"[MARKET_DRIVEN] REJECTED {direction}: RR {achieved_rr} outside bounds (0.5-4.0)", flush=True)
                     return None
                 
+                # CAP at 2.5:1 max (2026-03-19 FIXED)
+                if achieved_rr > 2.5:
+                    tp_capped = current_price + (risk * 2.5)
+                    achieved_rr = 2.5
+                    sl_capped_flag = True
+                    print(f"[MARKET_DRIVEN] CAP {direction}: RR reduced from {round(reward/risk,2)} to 2.5:1", flush=True)
+                else:
+                    tp_capped = float(tp)
+                    sl_capped_flag = False
+                
                 return {
-                    'tp': float(tp),
+                    'tp': float(tp_capped),
                     'sl': float(sl),
                     'achieved_rr': achieved_rr,
                     'source': 'market_structure_long',
-                    'reward': float(reward),
+                    'reward': float(risk * achieved_rr),
                     'risk': float(risk),
                     'fib_levels': None,
                     'chosen_ratio': None,
-                    'sl_capped': False
+                    'sl_capped': sl_capped_flag
                 }
             
             # === FALLBACK: Use 1.25:1 RR with ATR ===
@@ -537,21 +549,31 @@ def calculate_tp_sl_from_df(df, entry_price, direction, regime=None):
                 risk = sl - current_price
                 achieved_rr = round(reward / risk, 2) if risk > 0 else 0
                 
-                # Quality gate: reject if RR unrealistic
+                # Quality gate: reject if RR unrealistic (0.5-4.0) OR cap if RR > 2.5:1
                 if achieved_rr < 0.5 or achieved_rr > 4.0:
                     print(f"[MARKET_DRIVEN] REJECTED {direction}: RR {achieved_rr} outside bounds (0.5-4.0)", flush=True)
                     return None
                 
+                # CAP at 2.5:1 max (2026-03-19 FIXED)
+                if achieved_rr > 2.5:
+                    tp_capped = current_price - (risk * 2.5)
+                    achieved_rr = 2.5
+                    sl_capped_flag = True
+                    print(f"[MARKET_DRIVEN] CAP {direction}: RR reduced from {round(reward/risk,2)} to 2.5:1", flush=True)
+                else:
+                    tp_capped = float(tp)
+                    sl_capped_flag = False
+                
                 return {
-                    'tp': float(tp),
+                    'tp': float(tp_capped),
                     'sl': float(sl),
                     'achieved_rr': achieved_rr,
                     'source': 'market_structure_short',
-                    'reward': float(reward),
+                    'reward': float(risk * achieved_rr),
                     'risk': float(risk),
                     'fib_levels': None,
                     'chosen_ratio': None,
-                    'sl_capped': False
+                    'sl_capped': sl_capped_flag
                 }
             
             # === FALLBACK: Use 1.25:1 RR with ATR ===
