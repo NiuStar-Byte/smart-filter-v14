@@ -3601,3 +3601,47 @@
 [2026-03-19 03:21:24 GMT+7] 🔴 WATCHDOG        | START_FAILED         | PEC Executor process exited immediately after start
 [2026-03-19 09:12:01 GMT+7] 🔴 WATCHDOG        | START_FAILED         | PEC Executor process exited immediately after start
 [2026-03-19 17:36:52 GMT+7] 🔴 WATCHDOG        | START_FAILED         | PEC Executor process exited immediately after start
+[2026-03-19 22:54:56 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 22:55:56 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 22:56:56 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 22:57:56 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 22:58:57 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 22:59:57 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:00:57 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:01:57 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:02:57 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:03:57 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:04:57 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:05:57 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:06:57 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:07:57 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:08:57 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:09:58 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-19 23:09:58 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:10:58 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-19 23:10:58 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:11:58 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-19 23:11:58 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:12:58 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-19 23:12:58 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:13:58 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-19 23:13:58 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:14:58 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-19 23:14:58 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:15:58 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-19 23:15:58 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:16:58 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-19 23:16:58 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:17:58 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-03-19 23:17:58 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:18:58 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:19:58 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:20:59 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:21:59 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:22:59 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:23:59 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:24:59 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:25:59 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:26:59 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:27:59 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-19 23:28:59 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
