@@ -364,6 +364,14 @@ class PECEnhancedReporter:
         report.append("=" * 200)
         report.append("")
         
+        # === FOUNDATION BASELINE (IMMUTABLE - LOCKED at commit c535c34) ===
+        report.append("=" * 200)
+        report.append("🔒 FOUNDATION BASELINE (IMMUTABLE - Locked at commit c535c34)")
+        report.append("=" * 200)
+        report.append(f"Total Signals: 853 | Closed: 830 | WR: 25.7%")
+        report.append(f"LONG WR: 29.6% | SHORT WR: 46.2% | P&L: $-5,498.59")
+        report.append("")
+        
         # === SECTION 1 & 2 (Summary Statistics) ===
         # Foundation: Through Mar 10 | NEW: Mar 16+ onwards (Mac restarted Mar 16)
         foundation_cutoff = datetime(2026, 3, 16, tzinfo=timezone.utc)
