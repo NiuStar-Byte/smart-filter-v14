@@ -2,11 +2,21 @@
 """
 PEC Enhanced Reporter - Multi-Dimensional Signal Tracking
 Breaks down PEC results by: TimeFrame, Direction, Confidence, Regime, Route
+
+CRITICAL ARCHITECTURE (Option B - Correct Separation of Concerns):
+- Daemon writes raw signals to SIGNALS_MASTER.jsonl (NO P&L calculation)
+- Reporter READS signals and RECALCULATES P&L with Phase 1-3 logic
+- Single source of truth: Reporter's _calculate_pnl_usd() function
+- All P&L values use consistent, verified calculation logic
+
+This prevents daemon from pre-calculating P&L with old/broken logic.
+
 Enhanced Features:
 - Position size & leverage header
 - Extended columns: Route, Exit Price, Exit Time, Duration
 - 5D aggregates: TF, Direction, Route, Regime, Confidence
 - Dynamic tier configuration from tier_config.py
+- Phase 1-3 P&L fixes applied at report-time (not fire-time)
 """
 
 import json
@@ -1027,20 +1037,15 @@ class PECEnhancedReporter:
                 continue
             
             if s.get('status') in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
-                # PREFER stored pnl_usd (may use max_bar price for timeouts)
-                # Fall back to recalculation if not available
-                stored_pnl = s.get('pnl_usd')
-                if stored_pnl is not None:
-                    total_pnl += float(stored_pnl)
-                else:
-                    # Fallback calculation
-                    pnl_calc = self._calculate_pnl_usd(
-                        s.get('entry_price'),
-                        s.get('actual_exit_price'),
-                        s.get('signal_type')
-                    )
-                    if pnl_calc is not None:
-                        total_pnl += pnl_calc
+                # RECALCULATE P&L with Phase 1-3 logic (ignore daemon's stored pnl_usd)
+                # This ensures all P&L uses consistent, correct calculation logic
+                pnl_calc = self._calculate_pnl_usd(
+                    s.get('entry_price'),
+                    s.get('actual_exit_price'),
+                    s.get('signal_type')
+                )
+                if pnl_calc is not None:
+                    total_pnl += pnl_calc
         
         # Calculate P&L breakdown by outcome type (EXCLUDING stale timeouts)
         pnl_tp = 0.0
@@ -1057,17 +1062,13 @@ class PECEnhancedReporter:
             
             status = s.get('status', 'OPEN')
             if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
-                # Get P&L for this signal
-                stored_pnl = s.get('pnl_usd')
-                if stored_pnl is not None:
-                    pnl_val = float(stored_pnl)
-                else:
-                    pnl_val_calc = self._calculate_pnl_usd(
-                        s.get('entry_price'),
-                        s.get('actual_exit_price'),
-                        s.get('signal_type')
-                    )
-                    pnl_val = pnl_val_calc if pnl_val_calc is not None else 0.0
+                # RECALCULATE P&L with Phase 1-3 logic (ignore daemon's stored pnl_usd)
+                pnl_val_calc = self._calculate_pnl_usd(
+                    s.get('entry_price'),
+                    s.get('actual_exit_price'),
+                    s.get('signal_type')
+                )
+                pnl_val = pnl_val_calc if pnl_val_calc is not None else 0.0
                 
                 # Categorize by outcome type
                 if status == 'TP_HIT':
@@ -1384,15 +1385,34 @@ class PECEnhancedReporter:
         timeout = sum(1 for s in signals if s.get('status') == 'TIMEOUT')
         open_trades = sum(1 for s in signals if s.get('status') == 'OPEN')
         
-        timeout_win = sum(1 for s in signals if s.get('status') == 'TIMEOUT' and float(s.get('pnl_usd') or 0) > 0)
+        # RECALCULATE all P&L with Phase 1-3 logic (ignore daemon's stored pnl_usd)
+        timeout_win = 0
+        total_pnl = 0.0
+        tp_pnl = 0.0
+        sl_pnl = 0.0
+        timeout_pnl = 0.0
+        
+        for s in signals:
+            status = s.get('status')
+            pnl_calc = self._calculate_pnl_usd(
+                s.get('entry_price'),
+                s.get('actual_exit_price'),
+                s.get('signal_type')
+            )
+            pnl_val = pnl_calc if pnl_calc is not None else 0.0
+            
+            total_pnl += pnl_val
+            if status == 'TP_HIT':
+                tp_pnl += pnl_val
+            elif status == 'SL_HIT':
+                sl_pnl += pnl_val
+            elif status == 'TIMEOUT':
+                timeout_pnl += pnl_val
+                if pnl_val > 0:
+                    timeout_win += 1
+        
         timeout_loss = timeout - timeout_win
-        
         closed = tp + sl + timeout
-        total_pnl = sum(float(s.get('pnl_usd') or 0) for s in signals)
-        
-        tp_pnl = sum(float(s.get('pnl_usd') or 0) for s in signals if s.get('status') == 'TP_HIT')
-        sl_pnl = sum(float(s.get('pnl_usd') or 0) for s in signals if s.get('status') == 'SL_HIT')
-        timeout_pnl = sum(float(s.get('pnl_usd') or 0) for s in signals if s.get('status') == 'TIMEOUT')
         
         avg_pnl_signal = total_pnl / len(signals) if signals else 0
         avg_pnl_closed = total_pnl / closed if closed > 0 else 0
