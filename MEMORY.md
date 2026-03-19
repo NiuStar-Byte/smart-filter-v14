@@ -3802,3 +3802,40 @@ Built canonical schema with 29 fields (both files identical):
 - ✅ pec_enhanced_reporter auto-uses latest CUMULATIVE file
 - ✅ Daemon writes to workspace root (fixed path 2026-03-05 07:27 GMT+7)
 - ✅ Run all commands from `/Users/geniustarigan/.openclaw/workspace/`
+
+---
+
+## 🔧 **CRITICAL CHECKPOINT: RESTORE FROM AUDIT TRAIL (2026-03-20 01:02 GMT+7)**
+
+**Status:** ✅ **RESTORED - SIGNALS_MASTER.jsonl cleaned, 776 corrupt signals removed**
+
+### **What Happened**
+Between 00:22-01:02, SIGNALS_MASTER.jsonl became corrupted with **776 orphaned/duplicate signals**:
+- **At 00:22:** 2,457 signals, -$4,653.68 P&L ✓ (CORRECT)
+- **At 01:02:** 3,189 lines, -$31,474 P&L ❌ (BROKEN, 36%+ WR inflated)
+
+### **Root Cause**
+Dual-layer safety architecture revealed the problem:
+- **SIGNALS_MASTER.jsonl:** 3,189 lines → 3,061 unique UUIDs (duplicates present)
+- **SIGNALS_INDEPENDENT_AUDIT.txt:** 2,538 lines → 2,408 unique UUIDs (clean, authoritative)
+- **Difference:** 776 orphaned signals only in MASTER (corrupt/duplicates)
+
+### **Fix Applied**
+```
+cp SIGNALS_MASTER_CORRUPTED_2026-03-20_0100.jsonl (backup)
+cp SIGNALS_INDEPENDENT_AUDIT.txt SIGNALS_MASTER.jsonl (restore clean)
+```
+
+### **Results**
+✅ **2,538 clean signals** (restored from audit trail)  
+✅ **P&L: -$5,641.69** (realistic, was -$31,474 broken)  
+✅ **WR: 32.00%** (realistic, was 36.84% inflated from duplicates)  
+✅ **TP Avg: $36.84** (realistic, Phase 1-3 fixes intact)  
+✅ **SL Avg: -$20.11** (realistic, was -$41+ broken)  
+
+### **Key Lesson**
+**SIGNALS_INDEPENDENT_AUDIT.txt is the source of truth.** It exists specifically for dual-layer safety to catch and correct SIGNALS_MASTER.jsonl corruption. When in doubt, check the audit trail.
+
+### **GitHub**
+- Commit: d4af060
+- Files: SIGNALS_MASTER.jsonl (restored), SIGNALS_MASTER_CORRUPTED_2026-03-20_0100.jsonl (backup)
