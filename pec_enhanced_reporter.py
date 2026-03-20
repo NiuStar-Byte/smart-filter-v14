@@ -42,27 +42,33 @@ SYMBOL_GROUPS = {
 
 class PECEnhancedReporter:
     def __init__(self, sent_signals_file=None):
-        # Use SIGNALS_MASTER_CLEAN_2538.jsonl (LOCKED baseline - Phase 1-3 verified)
-        # Falls back to CUMULATIVE for historical data if CLEAN not available
+        # Use SIGNALS_MASTER.jsonl (REAL-TIME source - includes foundation + new signals)
+        # Falls back to CLEAN for foundation-only baseline if needed
         if sent_signals_file is None:
             workspace = "/Users/geniustarigan/.openclaw/workspace"
             
-            # Primary: SIGNALS_MASTER_CLEAN_2538 (LOCKED, verified, Phase 1-3 fixes applied)
-            signals_clean = os.path.join(workspace, "SIGNALS_MASTER_CLEAN_2538.jsonl")
-            if os.path.exists(signals_clean) and os.path.getsize(signals_clean) > 1000:
-                sent_signals_file = signals_clean
-                print(f"[INFO] Using SIGNALS_MASTER_CLEAN_2538.jsonl (LOCKED baseline): {signals_clean}", flush=True)
+            # Primary: SIGNALS_MASTER.jsonl (live, includes both FOUNDATION + NEW_LIVE)
+            signals_master = os.path.join(workspace, "SIGNALS_MASTER.jsonl")
+            if os.path.exists(signals_master) and os.path.getsize(signals_master) > 1000:
+                sent_signals_file = signals_master
+                print(f"[INFO] Using SIGNALS_MASTER.jsonl (live data): {signals_master}", flush=True)
             else:
-                # Fallback: CUMULATIVE (immutable hourly snapshots for historical data)
-                import glob
-                cumulative_files = sorted(glob.glob(os.path.join(workspace, "SENT_SIGNALS_CUMULATIVE_*.jsonl")))
-                if cumulative_files:
-                    sent_signals_file = cumulative_files[-1]
-                    print(f"[INFO] SIGNALS_MASTER not available, using CUMULATIVE: {os.path.basename(sent_signals_file)}", flush=True)
+                # Fallback: SIGNALS_MASTER_CLEAN_2538 (foundation-only if live unavailable)
+                signals_clean = os.path.join(workspace, "SIGNALS_MASTER_CLEAN_2538.jsonl")
+                if os.path.exists(signals_clean) and os.path.getsize(signals_clean) > 1000:
+                    sent_signals_file = signals_clean
+                    print(f"[INFO] Using SIGNALS_MASTER_CLEAN_2538.jsonl (foundation baseline): {signals_clean}", flush=True)
                 else:
-                    # Last resort: ARCHIVE (Foundation baseline)
-                    sent_signals_file = os.path.join(workspace, "SENT_SIGNALS_ARCHIVE_2026-03-05.jsonl")
-                    print(f"[INFO] Using ARCHIVE file (Foundation): SENT_SIGNALS_ARCHIVE_2026-03-05.jsonl", flush=True)
+                    # Fallback: CUMULATIVE (immutable hourly snapshots for historical data)
+                    import glob
+                    cumulative_files = sorted(glob.glob(os.path.join(workspace, "SENT_SIGNALS_CUMULATIVE_*.jsonl")))
+                    if cumulative_files:
+                        sent_signals_file = cumulative_files[-1]
+                        print(f"[INFO] Using CUMULATIVE: {os.path.basename(sent_signals_file)}", flush=True)
+                    else:
+                        # Last resort: ARCHIVE (Foundation baseline)
+                        sent_signals_file = os.path.join(workspace, "SENT_SIGNALS_ARCHIVE_2026-03-05.jsonl")
+                        print(f"[INFO] Using ARCHIVE file: SENT_SIGNALS_ARCHIVE_2026-03-05.jsonl", flush=True)
         
         self.sent_signals_file = sent_signals_file
         self.signals = []
@@ -461,7 +467,6 @@ class PECEnhancedReporter:
                     # Parse UTC time and convert to GMT+7
                     fired_utc_str = s.get('fired_time_utc', '')
                     if fired_utc_str:
-                        from datetime import datetime, timezone, timedelta
                         fired_utc = datetime.fromisoformat(fired_utc_str.replace('Z', '+00:00'))
                         fired_gmt7 = fired_utc + timedelta(hours=7)
                         fired_gmt7_date = fired_gmt7.strftime('%Y-%m-%d')
