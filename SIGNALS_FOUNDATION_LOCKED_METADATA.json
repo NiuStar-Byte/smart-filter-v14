@@ -1,0 +1,14 @@
+{
+  "locked_at": "2026-03-20T18:24:16.195705",
+  "period": "2026-02-27 to 2026-03-14",
+  "total_signals": 2224,
+  "closed_trades": 1339,
+  "tp_hit": 348,
+  "sl_hit": 746,
+  "timeout": 245,
+  "timeout_win": 89,
+  "win_rate_pct": 32.6,
+  "total_pnl_usd": -4637.12,
+  "immutable": true,
+  "signal_origin": "FOUNDATION"
+}
