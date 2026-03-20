@@ -96,6 +96,32 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
+## 🔧 **CRITICAL FIX: Reporter Date Filtering (2026-03-21 01:35 GMT+7)**
+
+**Issue Found:** Reporter was showing "NEW ONLY - Mar 16+ onwards" but should show "Mar 21+ onwards"
+
+**Root Causes:**
+1. Hardcoded "Mar 16+" text label in reporter
+2. Filter was using `signal_origin != 'FOUNDATION'` without date check
+3. Daemon was adding signals dated Mar 20 (historical market processing)
+4. This caused NEW section to include Mar 16-20 contaminated period
+
+**Fix Applied:**
+- ✅ Changed label: "Mar 16+" → "Mar 21+"
+- ✅ Updated filter: Added `fired_time_utc >= 2026-03-21` check
+- ✅ Created backups of files before cleanup:
+  - `SIGNALS_MASTER_BEFORE_MAR16_REMOVAL.jsonl`
+  - `SIGNALS_INDEPENDENT_AUDIT_BEFORE_MAR16_REMOVAL.txt`
+
+**Correct Architecture (Now Enforced):**
+- **FOUNDATION:** Feb 27 - Mar 14 (2,224 signals, LOCKED FOREVER)
+- **NEW_LIVE:** Mar 21+ onwards (accumulating fresh start)
+- **Mar 15-20:** Completely removed (contaminated, never recovered)
+
+**Commit:** `71a3e02`
+
+---
+
 ### **✅ CONCEPT CONFIRMED**
 
 PEC Architecture has THREE TEMPORAL SEGMENTS:
