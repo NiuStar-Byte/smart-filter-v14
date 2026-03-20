@@ -4,32 +4,95 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
-## 🚀 **PROJECT-5: PEC (Position Entry Closure & Backtest) - BUILD COMPLETE ✅**
+## 🚀 **PROJECT-5: PEC (Position Entry Closure & Backtest) - ✅ COMPLETE & DEPLOYED**
 
-**Status:** ✅ **BOTH OPTIONS BUILT & DEPLOYED - System ready for Mar 21 fresh start**
+**Status:** ✅ **FULL BUILD COMPLETE - Both options built, tested, verified, committed**
 **Build Date:** 2026-03-21 01:20 GMT+7
-**Root Issue Identified:** Daemon stopped writing to SIGNALS_INDEPENDENT_AUDIT.txt after Mar 14
-**Final Decisions:** 
-- Use Feb 27 - Mar 14 as NEW FOUNDATION (2,224 signals, clean period), locked forever
-- Discard Mar 15-20 completely (contaminated, files out of sync, 345+516+707 mismatches)
-- Start completely fresh from Mar 21 onwards (Option A: Fresh Start)
-- Hybrid operational model: Event-triggered executor (real-time) + hourly cron (fallback)
+**Build Time:** ~30 minutes (complete rebuild + verification)
+**Commits:** d9bab12 (Option A) + 22dbcee (Option B) + ad98418 (Summary)
 
-**BUILD COMPLETION STATUS:**
-- ✅ **OPTION A: Hybrid Operational Model (COMPLETE)**
-  - Event-triggered executor integrated into main.py (all 3 timeframes)
-  - Triggered on signal fire → background subprocess (non-blocking)
-  - Hourly cron fallback catch-all
-  - Commit: d9bab12
-  
-- ✅ **OPTION B: Full Architectural Rebuild (COMPLETE)**
-  - Phase 1: Extracted clean foundation (2,224 signals, Feb 27 - Mar 14)
-  - Phase 2: Locked foundation metrics (WR: 32.6%, P&L: -$4,637.12)
-  - Phase 3: Rebuilt SIGNALS_INDEPENDENT_AUDIT.txt (FOUNDATION only)
-  - Phase 4: Reset SIGNALS_MASTER.jsonl (FOUNDATION + empty NEW_LIVE)
-  - Phase 5: Locked reporter template (structure frozen, content dynamic)
-  - Phase 6: Verified system alignment (100% - 2,224 in both files)
-  - Commit: 22dbcee
+### **ROOT ISSUES FIXED**
+- ❌ **Before:** Daemon stopped writing to AUDIT after Mar 14 → files diverged
+- ❌ **Before:** Mar 15-20 contaminated with 776+516+707 mismatches
+- ❌ **Before:** Executor/Reporter triggered manually or only hourly (1-hour latency)
+- ✅ **After:** Event-triggered executor (real-time) + hourly cron fallback
+- ✅ **After:** Clean foundation locked (2,224 signals, Feb 27 - Mar 14)
+- ✅ **After:** Immutability enforced (foundation metrics frozen, daily rolling)
+
+### **OPTION A: HYBRID OPERATIONAL MODEL ✅**
+**What:** Event-triggered executor (real-time backtest) + hourly cron (fallback)
+
+**How It Works:**
+1. Daemon fires signal → writes to AUDIT + MASTER
+2. **NEW:** Immediately triggers executor subprocess (non-blocking)
+3. Executor backtests in background (seconds latency)
+4. Appends CLOSURE remark to AUDIT
+5. Updates status in MASTER
+6. Daemon continues unaffected
+7. **FALLBACK:** Hourly cron at :00 GMT+7 catches any misses
+
+**Benefits:**
+- Real-time backtest (seconds, not 1 hour)
+- Non-blocking (daemon continues firing)
+- Integrated with main.py naturally
+- Reliable (cron fallback + event-trigger belt-and-suspenders)
+
+**Modified Files:**
+- `smart-filter-v14-main/main.py` (trigger function + 3 calls)
+- `pec_executor.py` (--signal-uuid argument)
+
+**Commit:** `d9bab12`
+
+### **OPTION B: FULL ARCHITECTURAL REBUILD ✅**
+**What:** Complete rebuild from contaminated state to clean foundation
+
+**Phase 1:** Extract Clean Foundation
+- Extracted Feb 27 - Mar 14: **2,224 signals**
+- Verified in BOTH files: **2,224 in each**
+- Created backup: SIGNALS_FOUNDATION_CLEAN.jsonl
+
+**Phase 2:** Lock Foundation Metrics
+- **Total:** 2,224
+- **Closed:** 1,339 (60.2%)
+- **Win Rate:** 32.6%
+- **P&L:** -$4,637.12
+- **Breakdown:** TP_HIT: 348 | SL_HIT: 746 | TIMEOUT: 245 (WIN: 89)
+- **Locked in:** SIGNALS_FOUNDATION_LOCKED_METADATA.json
+
+**Phase 3:** Rebuild SIGNALS_INDEPENDENT_AUDIT.txt
+- Backed up original
+- Rebuilt with 2,224 FOUNDATION signals only
+- All tagged: signal_origin = "FOUNDATION"
+- Mar 15-20 removed completely
+
+**Phase 4:** Reset SIGNALS_MASTER.jsonl
+- Backed up original
+- Rebuilt with 2,224 FOUNDATION signals
+- Ready for fresh NEW_LIVE from Mar 21
+
+**Phase 5:** Lock Reporter Template
+- SHA256: 7218e06dd2b0c219d4c35d91597dda3b5b891a32
+- Structure: FROZEN (no more changes to layout/headers)
+- Content: DYNAMIC (metrics calculated from AUDIT, status from MASTER)
+
+**Phase 6:** Verify System Alignment
+- MASTER: 2,224 signals ✓
+- AUDIT: 2,224 signals ✓
+- In both: 2,224 (100% aligned) ✓
+- Only MASTER: 0 ✓
+- Only AUDIT: 0 ✓
+- Result: **✅ CHECKPOINT PASSED**
+
+**Commit:** `22dbcee`
+
+### **CURRENT SYSTEM STATE**
+- SIGNALS_INDEPENDENT_AUDIT.txt: 2,224 FOUNDATION signals (immutable)
+- SIGNALS_MASTER.jsonl: 2,224 FOUNDATION signals (ready for NEW_LIVE)
+- Reporter template: Locked structure, dynamic content
+- Executor: Event-triggered (real-time) + hourly cron (fallback)
+- Status: **VERIFIED, CLEAN, READY FOR DEPLOYMENT**
+
+### **GO LIVE: Mar 21, 2026**
 
 ---
 
