@@ -1,4 +1,4 @@
-Timestamp: 2026-03-21 00:00:35 GMT+7
+Timestamp: 2026-03-21 00:12:28 GMT+7
 ========================================================================================================================
 
 [INFO] Using SIGNALS_MASTER_CLEAN_2538.jsonl (LOCKED baseline): /Users/geniustarigan/.openclaw/workspace/SIGNALS_MASTER_CLEAN_2538.jsonl
@@ -48,28 +48,28 @@ Average P&L per Count:
 ========================================================================================================================================================================================================
 📊 SECTION 2: TOTAL SIGNALS (NEW ONLY - Mar 16+ onwards)
 ========================================================================================================================================================================================================
-Total Signals (New ONLY): 0
-Count Win (TP_HIT): 0
-Count Loss (SL_HIT): 0
-Count TimeOut: 0
+Total Signals (New ONLY): 1687
+Count Win (TP_HIT): 153
+Count Loss (SL_HIT): 301
+Count TimeOut: 610
 Count Open: 0
-Closed Trades (Clean Data): 0
-  TP_HIT: 0
-  SL_HIT: 0
-  TimeOut Win: 0 (approximate)
-  TimeOut Loss: 0 (approximate)
+Closed Trades (Clean Data): 1064
+  TP_HIT: 153
+  SL_HIT: 301
+  TimeOut Win: 33 (approximate)
+  TimeOut Loss: 577 (approximate)
 
-Overall Win Rate: 0.00%
-Note: Insufficient closed trades for reliable WR
+Overall Win Rate: 17.48%
+Calculation: (153 TP + 33 TIMEOUT_WIN) / 1064 Closed = 186 / 1064 = 17.48%
 
-Total P&L (Clean Data): $+0.00
-Avg P&L per Signal: $+0.00
-Avg P&L per Closed Trade: $+0.00
+Total P&L (Clean Data): $-442.64
+Avg P&L per Signal: $-0.26
+Avg P&L per Closed Trade: $-0.42
 
 P&L Breakdown by Exit Type:
-  Total P&L TP_HIT: $+0.00
-  Total P&L SL_HIT: $+0.00
-  Total P&L TIMEOUT: $+0.00
+  Total P&L TP_HIT: $+6,439.33
+  Total P&L SL_HIT: $-6,030.66
+  Total P&L TIMEOUT: $-913.09
 
 
 ========================================================================================================================================================================================================
@@ -425,7 +425,7 @@ TF       | Route                | Regime   | Total  | TP   | SL   | TIMEOUT  | C
 
 ==================================================================================================================================================================================================================================================================================================
 📋 DETAILED SIGNAL LIST: FIXED POSITION SIZE $100, LEVERAGE 10x, NOTIONAL $1000
-Report Generated: 2026-03-21 00:00:35 GMT+7
+Report Generated: 2026-03-21 00:12:28 GMT+7
 Total Signals Loaded: 2540
 
 ⚠️  NOTE: Signals marked 'STALE_TIMEOUT' in Data Quality column are EXCLUDED from Aggregates/Summary/Hierarchy
@@ -3011,7 +3011,7 @@ Max TIMEOUT Actual (Clean Data): 15min=4h 4m | 30min=5h 26m | 1h=5h 13m
   2026-03-20: Total Fired=31 | Unique Fired=31 | Tele Sent=31 | 00:37:11-01:03:17 | ✓ IMMUTABLE
 
 ⏰ TODAY'S BREAKDOWN BY HOUR (2026-03-21):
-  00:00-01:00: Total=1 | Unique=1 | TeleSent=1 | 🔄 still accumulating
+  00:00-01:00: Total=6 | Unique=6 | TeleSent=6 | 🔄 still accumulating
 
 ========================================================================================================================================================================================================
 🎯 HIERARCHY RANKING - 5D / 4D / 3D / 2D PERFORMANCE TRACKING
@@ -3072,5 +3072,5 @@ Max TIMEOUT Actual (Clean Data): 15min=4h 4m | 30min=5h 26m | 1h=5h 13m
   Tier-1: 60% WR, $5.50+ avg, 60+ trades
   Tier-2: 50% WR, $3.50+ avg, 50+ trades
   Tier-3: 40% WR, $2.00+ avg, 40+ trades
-[TIER-SAVE] Appended tier entry to SIGNAL_TIERS.json (total entries: 777)
+[TIER-SAVE] Appended tier entry to SIGNAL_TIERS.json (total entries: 780)
 ✅ Signal tiers appended to SIGNAL_TIERS.json

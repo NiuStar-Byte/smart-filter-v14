@@ -173,3 +173,4 @@
 {"hour_key": "2026-03-20_14", "hour_utc": "2026-03-20T14:00:00+00:00", "signal_count": 0, "locked_at_utc": "2026-03-20T16:18:17.537628", "status": "IMMUTABLE"}
 {"hour_key": "2026-03-20_15", "hour_utc": "2026-03-20T15:00:00+00:00", "signal_count": 0, "locked_at_utc": "2026-03-20T16:18:17.569608", "status": "IMMUTABLE"}
 {"hour_key": "2026-03-20_16", "hour_utc": "2026-03-20T16:00:00+00:00", "signal_count": 753, "locked_at_utc": "2026-03-20T17:00:04.279371", "status": "IMMUTABLE"}
+{"hour_key": "2026-03-20_17", "hour_utc": "2026-03-20T17:00:00+00:00", "signal_count": 1294, "locked_at_utc": "2026-03-20T18:00:04.571264", "status": "IMMUTABLE"}

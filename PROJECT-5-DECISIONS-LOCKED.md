@@ -91,10 +91,13 @@ For 1 month, PEC kept breaking because daemon stopped writing to SIGNALS_INDEPEN
 
 **SIGNALS_INDEPENDENT_AUDIT.txt**
 - Immutable source of truth
-- Append-only (never modified)
-- Contains every fired signal
-- Read by: Reporter (metrics), Executor (facts)
-- Recovery use: Rebuild MASTER anytime
+- Append-only (never modified - only new lines added)
+- Contains TWO types of entries:
+  - **FIRED lines:** Signal fired with all daemon-created fields (uuid, symbol, entry_price, tp_price, sl_price, fired_time_utc, signal_origin, status="OPEN")
+  - **CLOSURE remarks:** Signal closed with executor results (signal_uuid, status="TP_HIT/SL_HIT/TIMEOUT", actual_exit_price, pnl_usd, pnl_pct, closed_at)
+- Read by: Reporter (metrics), Executor (facts + verification)
+- Recovery use: Rebuild MASTER completely from FIRED + CLOSURE remarks
+- Guarantee: If AUDIT is clean, MASTER is completely recoverable
 
 **SIGNALS_MASTER.jsonl**
 - Current status tracker
@@ -108,9 +111,11 @@ For 1 month, PEC kept breaking because daemon stopped writing to SIGNALS_INDEPEN
 - Both writes must succeed or fail together
 
 **Executor (Backtest engine)**
-- Read SIGNALS_INDEPENDENT_AUDIT.txt (get signal facts)
-- Update SIGNALS_MASTER.jsonl (status only)
-- Never modify AUDIT
+- Read SIGNALS_INDEPENDENT_AUDIT.txt (get FIRED lines with immutable facts)
+- Update SIGNALS_MASTER.jsonl (status, exit_price, pnl)
+- Append CLOSURE remarks to SIGNALS_INDEPENDENT_AUDIT.txt (executor results only)
+- CLOSURE remarks: {type: "CLOSURE", signal_uuid, status, actual_exit_price, pnl_usd, pnl_pct, closed_at}
+- Never modify existing FIRED lines in AUDIT (append-only)
 - Must be idempotent (safe to retry)
 
 **Reporter**
