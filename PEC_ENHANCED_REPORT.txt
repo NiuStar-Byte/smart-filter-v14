@@ -420,7 +420,7 @@ TF       | Route                | Regime   | Total  | TP   | SL   | TIMEOUT  | C
 
 ==================================================================================================================================================================================================================================================================================================
 📋 DETAILED SIGNAL LIST: FIXED POSITION SIZE $100, LEVERAGE 10x, NOTIONAL $1000
-Report Generated: 2026-03-21 01:00:41 GMT+7
+Report Generated: 2026-03-21 01:31:23 GMT+7
 Total Signals Loaded: 2540
 
 ⚠️  NOTE: Signals marked 'STALE_TIMEOUT' in Data Quality column are EXCLUDED from Aggregates/Summary/Hierarchy
@@ -3006,8 +3006,8 @@ Max TIMEOUT Actual (Clean Data): 15min=4h 4m | 30min=5h 26m | 1h=5h 13m
   2026-03-20: Total Fired=31 | Unique Fired=31 | Tele Sent=31 | 00:37:11-01:03:17 | ✓ IMMUTABLE
 
 ⏰ TODAY'S BREAKDOWN BY HOUR (2026-03-21):
-  00:00-01:00: Total=40 | Unique=40 | TeleSent=40 | ✓ IMMUTABLE
-  01:00-02:00: Total=0 | Unique=0 | TeleSent=0 | 🔄 still accumulating
+  00:00-01:00: Total=0 | Unique=0 | TeleSent=0 | ✓ IMMUTABLE
+  01:00-02:00: Total=29 | Unique=29 | TeleSent=29 | 🔄 still accumulating
 
 ========================================================================================================================================================================================================
 🎯 HIERARCHY RANKING - 5D / 4D / 3D / 2D PERFORMANCE TRACKING

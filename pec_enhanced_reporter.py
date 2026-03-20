@@ -452,12 +452,12 @@ class PECEnhancedReporter:
         report.append("")
         
         # SECTION 2: New Only (Show NEW_LIVE signals - all signals after initial foundation)
-        # "NEW" = any signal marked as NEW_LIVE or NEW_IMMUTABLE (i.e., not FOUNDATION)
-        new_signals_by_origin = [s for s in self.signals if s.get('signal_origin') != 'FOUNDATION']
+        # "NEW" = signals fired on Mar 21+ onwards (not FOUNDATION, and after rebuild cutoff)
+        new_signals_by_origin = [s for s in self.signals if s.get('signal_origin') != 'FOUNDATION' and s.get('fired_time_utc', '')[:10] >= '2026-03-21']
         new_stats = self._analyze_signal_group(new_signals_by_origin)
         
         report.append("=" * 200)
-        report.append("📊 SECTION 2: TOTAL SIGNALS (NEW ONLY - Mar 16+ onwards)")
+        report.append("📊 SECTION 2: TOTAL SIGNALS (NEW ONLY - Mar 21+ onwards)")
         report.append("=" * 200)
         report.append(f"Total Signals (New ONLY): {new_stats['total']}")
         report.append(f"Count Win (TP_HIT): {new_stats['tp']}")
