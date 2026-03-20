@@ -378,20 +378,31 @@ class PECEnhancedReporter:
         # FOUNDATION_CUTOFF_TIME: LOCKED to 2026-03-19T18:03:17.605610 (last signal in clean baseline)
         # Foundation: All signals fired <= this time (IMMUTABLE snapshot)
         # New: All signals fired > this time (dynamic, calculated as Total - Foundation)
-        foundation_cutoff = datetime.fromisoformat('2026-03-19T18:03:17.605610'.replace('Z', '+00:00'))
+        # Parse cutoff as naive datetime (signals are stored as naive UTC times)
+        cutoff_naive = datetime.fromisoformat('2026-03-19T18:03:17.605610')
+        
         foundation_signals = []
         new_signals = []
         for s in self.signals:
             try:
-                fired = datetime.fromisoformat(s.get('fired_time_utc', '').replace('Z', '+00:00'))
-                if fired.tzinfo is None:
-                    fired = fired.replace(tzinfo=timezone.utc)
-                if fired < foundation_cutoff:
+                # Parse fired_time_utc - comes as naive datetime string (assumed UTC)
+                fired_str = s.get('fired_time_utc', '')
+                if not fired_str:
+                    foundation_signals.append(s)
+                    continue
+                
+                # Remove Z or timezone info to get naive datetime
+                fired_str = fired_str.replace('Z', '').replace('+00:00', '')
+                fired = datetime.fromisoformat(fired_str)
+                
+                # Compare naive datetimes (both assumed UTC)
+                if fired <= cutoff_naive:
                     foundation_signals.append(s)
                 else:
                     new_signals.append(s)
-            except:
-                foundation_signals.append(s)  # Default to foundation if parse fails
+            except Exception as e:
+                # If parse fails, default to foundation (safe fallback)
+                foundation_signals.append(s)
         
         # Calculate foundation stats DYNAMICALLY (not hardcoded)
         foundation_stats = self._analyze_signal_group(foundation_signals)

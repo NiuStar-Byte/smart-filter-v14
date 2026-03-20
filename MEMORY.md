@@ -4,6 +4,72 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
+## ⚡ **PEC BACKTEST PROGRESS TRACKER (2026-03-20 02:30 GMT+7)**
+
+**Status:** 🟡 **IN PROGRESS - Hourly cron running, 75.5% signals closed via proper OHLCV walking**
+
+### **Key Achievement**
+- ✅ Implemented real PEC backtest: Fetch OHLCV from KuCoin, walk bars forward, detect TP/SL/TIMEOUT hits
+- ✅ Closed all 515 OPEN signals in initial test batch (20 symbol/TF combos)
+- ✅ Set up hourly cron job (every :00 GMT+7) for continuous backtest
+- ✅ Created progress tracking (pec_reporter_hourly.py + track_pec_progress.py)
+
+### **Current Metrics (Partial Backtest: 75.5% Complete)**
+- **Total:** 2,540 signals
+- **Closed:** 1,917 (75.5%) | **Open:** 623 (24.5%)
+- **WR:** 23.0% (LONG: 23.9%, SHORT: 21.0%)
+- **P&L:** -$6,037.58 | Avg Win: $37.01 | Avg Loss: -$20.45
+- **Outcomes:** TP_HIT: 327 | SL_HIT: 684 | TIMEOUT: 906 | REJECTED: 677
+
+### **Expected Final Metrics (When 100% Complete)**
+- All 2,540 signals processed
+- WR will stabilize once remaining 623 signals processed
+- Full P&L impact visible in hourly reports
+
+### **How to Track Progress**
+```bash
+# Check hourly snapshots (table format)
+python3 track_pec_progress.py
+
+# View latest hourly report
+tail -f pec_hourly_reports/
+
+# Verify cron job running
+cron list | grep pec_reporter_hourly
+```
+
+### **Next Steps**
+1. Continue hourly backtest on remaining 623 signals (all symbol/TF combos)
+2. Monitor `track_pec_progress.py` to see closed signals increase 1,917 → 2,540
+3. Once complete, recalculate final WR/P&L metrics
+4. Compare partial (75.5%) vs final (100%) results for variance analysis
+
+---
+
+## 🔧 **CRITICAL FIX: FOUNDATION BASELINE RESTORED (2026-03-20 02:04 GMT+7)**
+
+**Status:** ✅ **FIXED - Baseline integrity restored, cron inconsistencies resolved**
+**What Happened:** Cron job reported conflicting baselines (2,540 vs 853 signals, 32.1% vs 25.7% WR)
+**Root Cause:** SIGNALS_FOUNDATION_BASELINE.jsonl file was missing; metrics were from stale cache
+**Solution:** Recreated foundation from SIGNALS_MASTER_CLEAN_2538.jsonl (2026-03-20 01:02 clean restore)
+**Result:** ✅ Single source of truth, cron job now has correct baseline file
+
+### **Authoritative Foundation Baseline (IMMUTABLE)**
+- **Total:** 2,540 signals
+- **Closed:** 1,348 (53.1%)
+- **WR:** 32.0% | LONG: 28.5% | SHORT: 45.5%
+- **P&L:** -$5,641.69 | Avg Win: $33.74 | Avg Loss: -$22.01
+- **Source:** SIGNALS_FOUNDATION_BASELINE.jsonl (locked at commit 8f58cec)
+- **Metadata:** FOUNDATION_BASELINE_METADATA.json
+
+### **Why Restoration Was Critical**
+1. Cron job had no baseline file to reference → using stale cached metrics
+2. Reporter was showing 2 different baselines (2,540 vs 853) → confusion about data integrity
+3. NEW signals couldn't be properly calculated (TOTAL - FOUNDATION) without the file
+4. All future hourly reports now have correct reference point
+
+---
+
 ## ✅ **PHASE 1-3 COMPLETE: TP/SL BUG FIXED (2026-03-19) — All Systems Corrected**
 
 **Status:** ✅ **FIXED - Timeout logic + TP/SL engine corrected + Metrics recalculated**  
