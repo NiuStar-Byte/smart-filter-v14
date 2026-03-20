@@ -4,134 +4,167 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
-## 🚀 **PROJECT-5: PEC (Position Entry Closure & Backtest) - ARCHITECTURAL REBUILD**
+## 🚀 **PROJECT-5: PEC (Position Entry Closure & Backtest) - ARCHITECTURAL REBUILD APPROVED**
 
-**Status:** ❌ **BROKEN - Needs fundamental architectural fix (Month-long patch cycle)**
-**Decision Date:** 2026-03-21 00:37 GMT+7
-**Root Issue:** Reading mutable data from SIGNALS_MASTER.jsonl instead of immutable SIGNALS_INDEPENDENT_AUDIT.txt
+**Status:** 🟡 **REBUILD IN PROGRESS - Clean foundation established**
+**Decision Date:** 2026-03-21 00:49 GMT+7
+**Root Issue Identified:** Daemon stopped writing to SIGNALS_INDEPENDENT_AUDIT.txt after Mar 14
+**Decision Made:** Use Feb 27 - Mar 14 as NEW FOUNDATION (clean period), discard Mar 15-20 (broken)
 
-### **CONCEPT UNDERSTOOD ✅**
+---
+
+### **✅ CONCEPT CONFIRMED**
 
 PEC Architecture has THREE TEMPORAL SEGMENTS:
-1. **FOUNDATION** (locked immutable baseline)
-2. **NEW_IMMUTABLE** (locked completed periods)
-3. **NEW_LIVE** (accumulating current period)
+1. **FOUNDATION** (locked immutable baseline - NEW: Feb 27 - Mar 14)
+2. **NEW_IMMUTABLE** (locked completed periods after Mar 14)
+3. **NEW_LIVE** (accumulating current period, starting fresh)
 
 Each signal has `signal_origin` field tagging which period.
-
 Rolling daily immutability: NEW_LIVE locks at day-end, becomes NEW_IMMUTABLE tomorrow.
 
-### **IMPLEMENTATION FAILED ❌**
+---
 
-For 1 month, system suffered from:
-- Foundation metrics kept changing (corrupted)
-- NEW metrics unreliable (reporter modified)
-- Reporter template hardcoded (not dynamic)
-- Executor and Reporter read from SIGNALS_MASTER.jsonl (mutable, corruption-prone)
-- Only SIGNALS_INDEPENDENT_AUDIT.txt is append-only immutable source
+### **✅ ROOT ISSUE IDENTIFIED & SCOPED**
 
-### **ROOT ARCHITECTURAL FLAW**
-
-Current (Broken):
+**Timeline of Failure:**
 ```
-Executor reads SIGNALS_MASTER.jsonl (mutable)
-Reporter reads SIGNALS_MASTER.jsonl (mutable)
-Both update SIGNALS_MASTER.jsonl
-Result: Metrics shift, foundation corrupts, reporter changes
+🟢 PERIOD 1: Feb 27 - Mar 14 (HEALTHY)
+   ├─ 2,224 signals in BOTH files
+   ├─ Both SIGNALS_MASTER.jsonl and SIGNALS_INDEPENDENT_AUDIT.txt in perfect sync
+   ├─ Dual-write working correctly
+   └─ Status: ✅ CLEAN BASELINE
+
+🔴 PERIOD 2: Mar 15-18 (DIVERGENCE STARTS)
+   ├─ 345 signals ONLY in MASTER
+   ├─ AUDIT stopped receiving writes from daemon
+   ├─ Executor updated MASTER, but AUDIT never received these signals
+   └─ Status: ❌ Files split
+
+🟡 PERIOD 3: Mar 19-20 (CHAOS)
+   ├─ 431 signals ONLY in MASTER
+   ├─ 542 signals ONLY in AUDIT
+   ├─ 255 signals in BOTH
+   └─ Status: ❌ Competing data streams
 ```
 
-Correct (Immutable):
+**Root Cause:** Around Mar 15, daemon stopped writing to SIGNALS_INDEPENDENT_AUDIT.txt
+
+---
+
+### **✅ DECISION: NEW FOUNDATION**
+
+**NEW_FOUNDATION = Feb 27 - Mar 14 (2,224 signals, both files in sync)**
+
+This period will become:
+- Locked immutable baseline
+- Source of truth for all metrics
+- Read from SIGNALS_INDEPENDENT_AUDIT.txt only
+- Never modified or recalculated
+
+**Discard Mar 15-20:** All signals from this broken period removed from analysis
+- Not counted in foundation
+- Not counted in new signals
+- System restarts fresh from Mar 21 onwards
+
+---
+
+### **✅ CORRECT ARCHITECTURE (To Build)**
+
 ```
 SIGNALS_INDEPENDENT_AUDIT.txt = Immutable Source of Truth
-├─ Role: Complete historical record (append-only)
-├─ What: Every fired signal, complete metadata
-└─ Never modified (recovery source if MASTER corrupts)
+├─ Role: Complete append-only historical record
+├─ Content: Every fired signal (from Feb 27 onwards)
+├─ Mutability: NEVER modified (append-only)
+└─ Used by: Reporter (for locked metrics)
 
 SIGNALS_MASTER.jsonl = Current Status Tracker
-├─ Role: Working copy of current signal state
-├─ What: status (OPEN/TP_HIT/SL_HIT/TIMEOUT), actual_exit_price, pnl
-└─ Updated by executor only for status/exit
+├─ Role: Working copy of signal current state
+├─ Content: status (OPEN/TP_HIT/SL_HIT/TIMEOUT), actual_exit_price, pnl
+├─ Mutability: Updated by executor for status changes ONLY
+└─ Used by: Executor (writes), Reporter (reads current state)
+
+DAEMON:
+├─ Write to SIGNALS_INDEPENDENT_AUDIT.txt (append) - MANDATORY
+├─ Write to SIGNALS_MASTER.jsonl (append) - MANDATORY
+└─ Every fired signal goes to BOTH immediately
+
+EXECUTOR:
+├─ Read from SIGNALS_INDEPENDENT_AUDIT.txt (get signal facts)
+├─ Update SIGNALS_MASTER.jsonl (status + exit price ONLY)
+└─ Never modify AUDIT
 
 REPORTER:
-├─ Read SIGNALS_INDEPENDENT_AUDIT.txt (immutable facts)
-│  └─ Extract: signal_origin, fired_time, entry_price, tp/sl (locked)
-├─ Read SIGNALS_MASTER.jsonl (current state)
-│  └─ Get: status, actual_exit_price, pnl (dynamic)
+├─ Read SIGNALS_INDEPENDENT_AUDIT.txt (immutable facts: signal_origin, entry_price, tp/sl)
+├─ Read SIGNALS_MASTER.jsonl (current state: status, actual_exit_price, pnl)
 ├─ Merge: Combine both sources
-└─ Output: Metrics from AUDIT (stable) + Status from MASTER (current)
+└─ Output: Metrics locked from AUDIT, status dynamic from MASTER
 ```
 
-### **ARCHITECTURAL REQUIREMENTS FOR REBUILD**
+---
 
-**Immutability Contract:**
-- All historical metrics derived from SIGNALS_INDEPENDENT_AUDIT.txt (append-only)
-- All current status from SIGNALS_MASTER.jsonl (status-only updates)
-- Reporter template never changes (locked, dynamic content only)
-- No hardcoded numbers (all calculated from immutable source)
+### **✅ IMMUTABILITY CONTRACT (Enforced)**
 
-**File Responsibilities:**
-- **SIGNALS_INDEPENDENT_AUDIT.txt:** Source of truth for signal_origin grouping + metrics
-- **SIGNALS_MASTER.jsonl:** Current state tracker (executor updates only)
-- **Daemon:** Appends to both AUDIT + MASTER
-- **Executor:** Updates MASTER status/exit ONLY (never modifies AUDIT)
-- **Reporter:** Reads AUDIT (metrics) + MASTER (status) → merged output
+```
+FOUNDATION (Feb 27 - Mar 14):
+├─ Lines from AUDIT: Read-only
+├─ Metrics: Locked, never recalculated
+├─ Comparison baseline: All new periods compared against this
+└─ Rule: Violation = System reset to zero
 
-**Enforcement Rules:**
-- FOUNDATION + NEW_IMMUTABLE: Locked forever (read from AUDIT only)
-- NEW_LIVE: Accumulating, status mutable (update in MASTER, read from AUDIT)
-- signal_origin: Immutable proof of which period signal belongs
+NEW_IMMUTABLE (After each day ends):
+├─ Lines from AUDIT: Read-only
+├─ Status updatable in MASTER until day-end
+├─ Locked at midnight (becomes immutable)
+└─ Rule: No modifications to fired_time or entry_price (ever)
 
-### **ISSUES TO FIX ARCHITECTURALLY**
+NEW_LIVE (Current day accumulating):
+├─ Daemon appends new signals
+├─ Executor updates status in MASTER
+├─ Not yet locked (still mutable until day-end)
+└─ Rule: Only status changes allowed, never fired_time or entry_price
+```
 
-1. **Reporter reads from wrong source**
-   - Current: Reads SIGNALS_MASTER.jsonl (mutable)
-   - Fix: Read SIGNALS_INDEPENDENT_AUDIT.txt (immutable) for all historical metrics
+---
 
-2. **Reporter template hardcoded/modified**
-   - Current: Template changed multiple times, sections shifted
-   - Fix: Lock template, only dynamic content calculated from immutable source
+### **REBUILD PHASES (Approved to Start)**
 
-3. **Foundation corrupted**
-   - Current: Foundation metrics changed from 25.7% → 32.0% → various
-   - Fix: Foundation locked in AUDIT, calculated once, never changes
+**Phase 1: Establish Clean Sources** (Step 1 of multi-part rebuild)
+- Extract Feb 27 - Mar 14 period from both files (2,224 signals)
+- Create clean FOUNDATION files
+- Verify alignment
 
-4. **Executor not idempotent**
-   - Current: Updates MASTER each run, unclear if duplicate
-   - Fix: Read AUDIT (immutable), update MASTER (idempotent, overwrite allowed)
+**Phase 2: Lock Foundation**
+- Set signal_origin = "FOUNDATION" for all Feb 27 - Mar 14 signals
+- Calculate foundation metrics (WR, P&L) - these lock forever
+- Create SIGNALS_FOUNDATION_LOCKED.txt (immutable reference)
 
-5. **No separation of immutable vs mutable**
-   - Current: Single MASTER file conflates fired-signals with current-state
-   - Fix: AUDIT (immutable) + MASTER (current state) separation
+**Phase 3: Rebuild AUDIT**
+- Rebuild SIGNALS_INDEPENDENT_AUDIT.txt from FOUNDATION
+- Only include clean period (Feb 27 - Mar 14)
+- Discard all Mar 15-20 entries
 
-### **REBUILD PLAN (Conceptual)**
+**Phase 4: Reset MASTER**
+- Keep FOUNDATION section from AUDIT
+- Reset everything after Mar 14 to empty
+- Ready for fresh NEW_LIVE starting Mar 21
 
-Phase 1: Verify/Create Sources of Truth
-- Restore SIGNALS_INDEPENDENT_AUDIT.txt (append-only, complete)
-- Reset SIGNALS_MASTER.jsonl (status tracking only)
-- Lock FOUNDATION in AUDIT (never changes)
+**Phase 5: Lock Reporter**
+- Reporter template frozen (never modify)
+- Read from AUDIT (immutable facts)
+- Read from MASTER (current status)
+- All metrics dynamic from AUDIT, status from MASTER
 
-Phase 2: Lock Reporter Template
-- Template frozen (never modify structure)
-- All content dynamic (calculated from immutable AUDIT)
-- No hardcoded numbers
+---
 
-Phase 3: Update Components
-- Executor: Read AUDIT, update MASTER (status only)
-- Reporter: Read AUDIT (metrics) + MASTER (status), merge output
-- Daemon: Write to both AUDIT (backup) + MASTER (working)
+### **USER CONFIRMATION OBTAINED ✅**
 
-Phase 4: Enforce Immutability
-- FOUNDATION + NEW_IMMUTABLE read from AUDIT only
-- NEW_LIVE accumulated from AUDIT, status from MASTER
-- Metrics locked (based on immutable source)
-
-### **CONFIRMATION NEEDED**
-
-Before architectural rebuild, confirm:
 1. ✅ Understand concept (three-period temporal segmentation)
-2. ✅ Identify root issue (reading mutable source instead of immutable)
-3. ✅ Agree on fix (AUDIT = immutable source, MASTER = status only)
-4. **AWAIT CONFIRMATION:** Proceed with full rebuild?
+2. ✅ Identify root issue (daemon stopped writing to AUDIT after Mar 14)
+3. ✅ Identify broken period (Mar 15-20, discard entirely)
+4. ✅ Establish NEW FOUNDATION (Feb 27 - Mar 14, 2,224 signals)
+5. ✅ Agree on architecture (AUDIT = immutable, MASTER = status-only)
+6. ✅ **REBUILD APPROVED** - Ready to proceed with Phase 1
 
 ---
 
