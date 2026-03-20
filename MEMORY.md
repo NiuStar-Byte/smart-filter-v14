@@ -359,19 +359,48 @@ COMPARISON
 
 ---
 
-### **OPERATIONAL MODEL (Next Topic)**
+### **OPERATIONAL MODEL (HYBRID - LOCKED)**
 
-**Question:** How to keep Executor & Reporter always ON?
+**Decision:** Option 4 - Hybrid (Cron + Event-Driven)  
+**Approved:** 2026-03-21 01:18 GMT+7
 
-**Current:** Cron jobs trigger hourly (executor at :00, reporter at :00)
+**How it works:**
+1. **Primary (Event-Triggered):** When daemon fires signal
+   - Executor triggered immediately (in background, non-blocking)
+   - Backtests signal (seconds latency)
+   - Appends CLOSURE remarks to AUDIT
+   - Updates SIGNALS_MASTER.jsonl
 
-**Options being considered:**
-1. Keep cron (hourly trigger - simple, predictable)
-2. Event-driven (trigger on signal fire - responsive)
-3. Long-running daemon (dedicated executor/reporter processes - always monitoring)
-4. Hybrid (cron + event-triggered)
+2. **Fallback (Hourly Cron):** Every hour at :00 GMT+7
+   - Executor runs backtest catch-up
+   - Processes any OPEN signals missed by event-trigger
+   - Guarantees all signals processed within 1 hour
+   - Safety net if event-trigger fails
 
-**Status:** Awaiting user clarification on "always ON" requirement
+**Integration with main.py:**
+```python
+# In daemon (main.py):
+def fire_signal(signal):
+    append_to_audit(signal)
+    append_to_master(signal)
+    send_telegram(signal)
+    
+    # NEW: Trigger executor immediately (non-blocking)
+    import subprocess
+    subprocess.Popen(['python3', 'pec_executor.py', '--signal-uuid', signal['signal_uuid']])
+```
+
+**Cron setup (fallback):**
+```
+0 * * * * cd /workspace && python3 pec_executor.py
+```
+
+**Benefits:**
+- ✅ Real-time backtest (seconds, not 1 hour)
+- ✅ Integrated with daemon (calls from main.py)
+- ✅ Guaranteed catch-up (hourly cron fallback)
+- ✅ Non-blocking (daemon continues firing)
+- ✅ Reliable (event-trigger + cron belt-and-suspenders)
 
 ---
 
