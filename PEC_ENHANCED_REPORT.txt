@@ -41,30 +41,30 @@ Average P&L per Count:
   Avg P&L SL per Count SL: $-20.45
 
 ========================================================================================================================================================================================================
-📊 SECTION 2: TOTAL SIGNALS (NEW ONLY - Mar 16+ onwards)
+📊 SECTION 2: TOTAL SIGNALS (NEW ONLY - Mar 21+ onwards)
 ========================================================================================================================================================================================================
-Total Signals (New ONLY): 1687
-Count Win (TP_HIT): 153
-Count Loss (SL_HIT): 301
-Count TimeOut: 610
+Total Signals (New ONLY): 0
+Count Win (TP_HIT): 0
+Count Loss (SL_HIT): 0
+Count TimeOut: 0
 Count Open: 0
-Closed Trades (Clean Data): 1064
-  TP_HIT: 153
-  SL_HIT: 301
-  TimeOut Win: 33 (approximate)
-  TimeOut Loss: 577 (approximate)
+Closed Trades (Clean Data): 0
+  TP_HIT: 0
+  SL_HIT: 0
+  TimeOut Win: 0 (approximate)
+  TimeOut Loss: 0 (approximate)
 
-Overall Win Rate: 17.48%
-Calculation: (153 TP + 33 TIMEOUT_WIN) / 1064 Closed = 186 / 1064 = 17.48%
+Overall Win Rate: 0.00%
+Note: Insufficient closed trades for reliable WR
 
-Total P&L (Clean Data): $-442.64
-Avg P&L per Signal: $-0.26
-Avg P&L per Closed Trade: $-0.42
+Total P&L (Clean Data): $+0.00
+Avg P&L per Signal: $+0.00
+Avg P&L per Closed Trade: $+0.00
 
 P&L Breakdown by Exit Type:
-  Total P&L TP_HIT: $+6,439.33
-  Total P&L SL_HIT: $-6,030.66
-  Total P&L TIMEOUT: $-913.09
+  Total P&L TP_HIT: $+0.00
+  Total P&L SL_HIT: $+0.00
+  Total P&L TIMEOUT: $+0.00
 
 
 ========================================================================================================================================================================================================
@@ -420,7 +420,7 @@ TF       | Route                | Regime   | Total  | TP   | SL   | TIMEOUT  | C
 
 ==================================================================================================================================================================================================================================================================================================
 📋 DETAILED SIGNAL LIST: FIXED POSITION SIZE $100, LEVERAGE 10x, NOTIONAL $1000
-Report Generated: 2026-03-21 01:31:23 GMT+7
+Report Generated: 2026-03-21 01:40:09 GMT+7
 Total Signals Loaded: 2540
 
 ⚠️  NOTE: Signals marked 'STALE_TIMEOUT' in Data Quality column are EXCLUDED from Aggregates/Summary/Hierarchy
@@ -3007,7 +3007,7 @@ Max TIMEOUT Actual (Clean Data): 15min=4h 4m | 30min=5h 26m | 1h=5h 13m
 
 ⏰ TODAY'S BREAKDOWN BY HOUR (2026-03-21):
   00:00-01:00: Total=0 | Unique=0 | TeleSent=0 | ✓ IMMUTABLE
-  01:00-02:00: Total=29 | Unique=29 | TeleSent=29 | 🔄 still accumulating
+  01:00-02:00: Total=61 | Unique=61 | TeleSent=61 | 🔄 still accumulating
 
 ========================================================================================================================================================================================================
 🎯 HIERARCHY RANKING - 5D / 4D / 3D / 2D PERFORMANCE TRACKING

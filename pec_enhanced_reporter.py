@@ -453,7 +453,23 @@ class PECEnhancedReporter:
         
         # SECTION 2: New Only (Show NEW_LIVE signals - all signals after initial foundation)
         # "NEW" = signals fired on Mar 21+ onwards (not FOUNDATION, and after rebuild cutoff)
-        new_signals_by_origin = [s for s in self.signals if s.get('signal_origin') != 'FOUNDATION' and s.get('fired_time_utc', '')[:10] >= '2026-03-21']
+        # NOTE: Must convert UTC fired_time to GMT+7 for proper date comparison
+        new_signals_by_origin = []
+        for s in self.signals:
+            if s.get('signal_origin') != 'FOUNDATION':
+                try:
+                    # Parse UTC time and convert to GMT+7
+                    fired_utc_str = s.get('fired_time_utc', '')
+                    if fired_utc_str:
+                        from datetime import datetime, timezone, timedelta
+                        fired_utc = datetime.fromisoformat(fired_utc_str.replace('Z', '+00:00'))
+                        fired_gmt7 = fired_utc + timedelta(hours=7)
+                        fired_gmt7_date = fired_gmt7.strftime('%Y-%m-%d')
+                        # Include if fired on or after 2026-03-21 GMT+7
+                        if fired_gmt7_date >= '2026-03-21':
+                            new_signals_by_origin.append(s)
+                except:
+                    pass
         new_stats = self._analyze_signal_group(new_signals_by_origin)
         
         report.append("=" * 200)
