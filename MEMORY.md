@@ -4,15 +4,20 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
-## 🚀 **PROJECT-5: PEC (Position Entry Closure & Backtest) - ARCHITECTURAL REBUILD LOCKED**
+## 🚀 **PROJECT-5: PEC (Position Entry Closure & Backtest) - COMPLETE ARCHITECTURE LOCKED**
 
-**Status:** 🔒 **LOCKED - All decisions finalized, awaiting build approval**
-**Decision Date:** 2026-03-21 00:57 GMT+7
+**Status:** 🔒 **LOCKED - All architectural decisions finalized, awaiting build approval**
+**Decision Date:** 2026-03-21 01:14 GMT+7 (Last update: CLOSURE REMARKS + operational model)
 **Root Issue Identified:** Daemon stopped writing to SIGNALS_INDEPENDENT_AUDIT.txt after Mar 14
 **Final Decision:** 
-- Use Feb 27 - Mar 14 as NEW FOUNDATION (clean period), locked forever
-- Discard Mar 15-20 completely (contaminated, both files out of sync)
+- Use Feb 27 - Mar 14 as NEW FOUNDATION (2,224 signals, clean period), locked forever
+- Discard Mar 15-20 completely (contaminated, files out of sync, 345+516+707 mismatches)
 - Start completely fresh from Mar 21 onwards (Option A)
+
+**Latest architectural additions (2026-03-21 01:08-01:14 GMT+7):**
+- CLOSURE REMARKS: Executor appends closure info to AUDIT (append-only)
+- No MASTER-only fields: Everything reconstructible from AUDIT
+- Operational model: How to keep Executor & Reporter always running
 
 ---
 
@@ -332,6 +337,41 @@ COMPARISON
 ├─ Foundation WR vs NEW WR (shows performance change)
 └─ Foundation P&L vs NEW P&L (shows cumulative impact)
 ```
+
+---
+
+### **CLOSURE REMARKS (Architectural Correction - Locked)**
+
+**Decision:** AUDIT contains TWO entry types:
+- **FIRED lines:** Daemon appends when signal fires (all daemon-created fields)
+- **CLOSURE remarks:** Executor appends when signal closes (status, exit_price, pnl, closed_at)
+
+**Why this works:**
+- ✅ Append-only (never modify existing lines)
+- ✅ Complete (has fire + closure info)
+- ✅ Immutable (can't change past events)
+- ✅ Recoverable (rebuild MASTER from FIRED + CLOSURE)
+
+**No MASTER-only fields:**
+- Every field in MASTER must be reconstructible from AUDIT
+- If a field is ONLY in MASTER, it's an architectural error
+- MASTER is expendable (can be rebuilt anytime)
+
+---
+
+### **OPERATIONAL MODEL (Next Topic)**
+
+**Question:** How to keep Executor & Reporter always ON?
+
+**Current:** Cron jobs trigger hourly (executor at :00, reporter at :00)
+
+**Options being considered:**
+1. Keep cron (hourly trigger - simple, predictable)
+2. Event-driven (trigger on signal fire - responsive)
+3. Long-running daemon (dedicated executor/reporter processes - always monitoring)
+4. Hybrid (cron + event-triggered)
+
+**Status:** Awaiting user clarification on "always ON" requirement
 
 ---
 
