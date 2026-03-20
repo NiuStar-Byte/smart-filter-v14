@@ -1271,9 +1271,9 @@ class PECEnhancedReporter:
         stale_timeout_count = sum(1 for s in self.signals if s.get('data_quality_flag') and 'STALE_TIMEOUT' in s.get('data_quality_flag'))
         
         report.append("")
-        report.append("🔒 FOUNDATION BASELINE (IMMUTABLE - Locked at commit c535c34)")
-        report.append("Total Signals: 853 | Closed: 830 | WR: 25.7%")
-        report.append("LONG WR: 29.6% | SHORT WR: 46.2% | P&L: $-5498.59")
+        report.append("🔒 FOUNDATION BASELINE (IMMUTABLE - Locked at commit 8f58cec)")
+        report.append(f"Total Signals: {foundation_stats['total']} | Closed: {foundation_stats['closed']} | WR: {foundation_stats['wr']:.1f}%")
+        report.append(f"LONG WR: {self._calculate_wr_by_direction(foundation_signals, 'LONG'):.1f}% | SHORT WR: {self._calculate_wr_by_direction(foundation_signals, 'SHORT'):.1f}% | P&L: ${foundation_stats['total_pnl']:+,.2f}")
         report.append("")
         # Total stale timeouts = flagged TIMEOUT signals + STALE_TIMEOUT status
         total_stale_all = stale_timeout_count + total_stale_status  # 151 + 1 = 152
