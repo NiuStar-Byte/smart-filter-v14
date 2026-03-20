@@ -451,8 +451,10 @@ class PECEnhancedReporter:
         report.append(f"  Avg P&L SL per Count SL: ${combined_stats['avg_sl_pnl']:+.2f}" if combined_stats['sl'] > 0 else f"  Avg P&L SL per Count SL: N/A (0 SL trades)")
         report.append("")
         
-        # SECTION 2: New Only (Mar 16+)
-        new_stats = self._analyze_signal_group(new_signals)
+        # SECTION 2: New Only (Show NEW_LIVE signals - all signals after initial foundation)
+        # "NEW" = any signal marked as NEW_LIVE or NEW_IMMUTABLE (i.e., not FOUNDATION)
+        new_signals_by_origin = [s for s in self.signals if s.get('signal_origin') != 'FOUNDATION']
+        new_stats = self._analyze_signal_group(new_signals_by_origin)
         
         report.append("=" * 200)
         report.append("📊 SECTION 2: TOTAL SIGNALS (NEW ONLY - Mar 16+ onwards)")

@@ -43,28 +43,28 @@ Average P&L per Count:
 ========================================================================================================================================================================================================
 📊 SECTION 2: TOTAL SIGNALS (NEW ONLY - Mar 16+ onwards)
 ========================================================================================================================================================================================================
-Total Signals (New ONLY): 0
-Count Win (TP_HIT): 0
-Count Loss (SL_HIT): 0
-Count TimeOut: 0
+Total Signals (New ONLY): 1687
+Count Win (TP_HIT): 153
+Count Loss (SL_HIT): 301
+Count TimeOut: 610
 Count Open: 0
-Closed Trades (Clean Data): 0
-  TP_HIT: 0
-  SL_HIT: 0
-  TimeOut Win: 0 (approximate)
-  TimeOut Loss: 0 (approximate)
+Closed Trades (Clean Data): 1064
+  TP_HIT: 153
+  SL_HIT: 301
+  TimeOut Win: 33 (approximate)
+  TimeOut Loss: 577 (approximate)
 
-Overall Win Rate: 0.00%
-Note: Insufficient closed trades for reliable WR
+Overall Win Rate: 17.48%
+Calculation: (153 TP + 33 TIMEOUT_WIN) / 1064 Closed = 186 / 1064 = 17.48%
 
-Total P&L (Clean Data): $+0.00
-Avg P&L per Signal: $+0.00
-Avg P&L per Closed Trade: $+0.00
+Total P&L (Clean Data): $-442.64
+Avg P&L per Signal: $-0.26
+Avg P&L per Closed Trade: $-0.42
 
 P&L Breakdown by Exit Type:
-  Total P&L TP_HIT: $+0.00
-  Total P&L SL_HIT: $+0.00
-  Total P&L TIMEOUT: $+0.00
+  Total P&L TP_HIT: $+6,439.33
+  Total P&L SL_HIT: $-6,030.66
+  Total P&L TIMEOUT: $-913.09
 
 
 ========================================================================================================================================================================================================
@@ -420,7 +420,7 @@ TF       | Route                | Regime   | Total  | TP   | SL   | TIMEOUT  | C
 
 ==================================================================================================================================================================================================================================================================================================
 📋 DETAILED SIGNAL LIST: FIXED POSITION SIZE $100, LEVERAGE 10x, NOTIONAL $1000
-Report Generated: 2026-03-20 23:59:42 GMT+7
+Report Generated: 2026-03-21 00:11:46 GMT+7
 Total Signals Loaded: 2540
 
 ⚠️  NOTE: Signals marked 'STALE_TIMEOUT' in Data Quality column are EXCLUDED from Aggregates/Summary/Hierarchy
@@ -3003,33 +3003,10 @@ Max TIMEOUT Actual (Clean Data): 15min=4h 4m | 30min=5h 26m | 1h=5h 13m
   2026-03-09: Total Fired=58 | Unique Fired=58 | Tele Sent=58 | 00:50:25-17:39:24 | ✓ IMMUTABLE
   2026-03-10: Total Fired=14 | Unique Fired=14 | Tele Sent=14 | 15:05:01-17:31:40 | ✓ IMMUTABLE
   2026-03-19: Total Fired=147 | Unique Fired=147 | Tele Sent=147 | 22:54:51-23:29:04 | ✓ IMMUTABLE
-  2026-03-20: Total Fired=31 | Unique Fired=123 | Tele Sent=123 | 00:37:11-01:03:17 | 🔄 still accumulating
+  2026-03-20: Total Fired=31 | Unique Fired=31 | Tele Sent=31 | 00:37:11-01:03:17 | ✓ IMMUTABLE
 
-⏰ TODAY'S BREAKDOWN BY HOUR (2026-03-20):
-  00:00-01:00: Total=8 | Unique=8 | TeleSent=8 | ✓ IMMUTABLE
-  01:00-02:00: Total=10 | Unique=10 | TeleSent=10 | ✓ IMMUTABLE
-  02:00-03:00: Total=5 | Unique=5 | TeleSent=5 | ✓ IMMUTABLE
-  03:00-04:00: Total=5 | Unique=5 | TeleSent=5 | ✓ IMMUTABLE
-  04:00-05:00: Total=4 | Unique=4 | TeleSent=4 | ✓ IMMUTABLE
-  05:00-06:00: Total=8 | Unique=8 | TeleSent=8 | ✓ IMMUTABLE
-  06:00-07:00: Total=5 | Unique=5 | TeleSent=5 | ✓ IMMUTABLE
-  07:00-08:00: Total=2 | Unique=2 | TeleSent=2 | ✓ IMMUTABLE
-  08:00-09:00: Total=22 | Unique=22 | TeleSent=22 | ✓ IMMUTABLE
-  09:00-10:00: Total=13 | Unique=13 | TeleSent=13 | ✓ IMMUTABLE
-  10:00-11:00: Total=25 | Unique=25 | TeleSent=25 | ✓ IMMUTABLE
-  11:00-12:00: Total=19 | Unique=19 | TeleSent=19 | ✓ IMMUTABLE
-  12:00-13:00: Total=1 | Unique=1 | TeleSent=1 | ✓ IMMUTABLE
-  13:00-14:00: Total=0 | Unique=0 | TeleSent=0 | ✓ IMMUTABLE
-  14:00-15:00: Total=0 | Unique=0 | TeleSent=0 | ✓ IMMUTABLE
-  15:00-16:00: Total=0 | Unique=0 | TeleSent=0 | ✓ IMMUTABLE
-  16:00-17:00: Total=0 | Unique=0 | TeleSent=0 | ✓ IMMUTABLE
-  17:00-18:00: Total=0 | Unique=0 | TeleSent=0 | ✓ IMMUTABLE
-  18:00-19:00: Total=0 | Unique=0 | TeleSent=0 | ✓ IMMUTABLE
-  19:00-20:00: Total=0 | Unique=0 | TeleSent=0 | ✓ IMMUTABLE
-  20:00-21:00: Total=0 | Unique=0 | TeleSent=0 | ✓ IMMUTABLE
-  21:00-22:00: Total=0 | Unique=0 | TeleSent=0 | ✓ IMMUTABLE
-  22:00-23:00: Total=0 | Unique=0 | TeleSent=0 | ✓ IMMUTABLE
-  23:00-24:00: Total=41 | Unique=41 | TeleSent=41 | 🔄 still accumulating
+⏰ TODAY'S BREAKDOWN BY HOUR (2026-03-21):
+  00:00-01:00: Total=7 | Unique=7 | TeleSent=7 | 🔄 still accumulating
 
 ========================================================================================================================================================================================================
 🎯 HIERARCHY RANKING - 5D / 4D / 3D / 2D PERFORMANCE TRACKING
