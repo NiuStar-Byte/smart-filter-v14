@@ -4,7 +4,161 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
-## ⚡ **PEC BACKTEST PROGRESS TRACKER (2026-03-20 02:30 GMT+7)**
+## 🚀 **PROJECT-5: PEC (Position Entry Closure & Backtest) - ARCHITECTURAL REBUILD**
+
+**Status:** ❌ **BROKEN - Needs fundamental architectural fix (Month-long patch cycle)**
+**Decision Date:** 2026-03-21 00:37 GMT+7
+**Root Issue:** Reading mutable data from SIGNALS_MASTER.jsonl instead of immutable SIGNALS_INDEPENDENT_AUDIT.txt
+
+### **CONCEPT UNDERSTOOD ✅**
+
+PEC Architecture has THREE TEMPORAL SEGMENTS:
+1. **FOUNDATION** (locked immutable baseline)
+2. **NEW_IMMUTABLE** (locked completed periods)
+3. **NEW_LIVE** (accumulating current period)
+
+Each signal has `signal_origin` field tagging which period.
+
+Rolling daily immutability: NEW_LIVE locks at day-end, becomes NEW_IMMUTABLE tomorrow.
+
+### **IMPLEMENTATION FAILED ❌**
+
+For 1 month, system suffered from:
+- Foundation metrics kept changing (corrupted)
+- NEW metrics unreliable (reporter modified)
+- Reporter template hardcoded (not dynamic)
+- Executor and Reporter read from SIGNALS_MASTER.jsonl (mutable, corruption-prone)
+- Only SIGNALS_INDEPENDENT_AUDIT.txt is append-only immutable source
+
+### **ROOT ARCHITECTURAL FLAW**
+
+Current (Broken):
+```
+Executor reads SIGNALS_MASTER.jsonl (mutable)
+Reporter reads SIGNALS_MASTER.jsonl (mutable)
+Both update SIGNALS_MASTER.jsonl
+Result: Metrics shift, foundation corrupts, reporter changes
+```
+
+Correct (Immutable):
+```
+SIGNALS_INDEPENDENT_AUDIT.txt = Immutable Source of Truth
+├─ Role: Complete historical record (append-only)
+├─ What: Every fired signal, complete metadata
+└─ Never modified (recovery source if MASTER corrupts)
+
+SIGNALS_MASTER.jsonl = Current Status Tracker
+├─ Role: Working copy of current signal state
+├─ What: status (OPEN/TP_HIT/SL_HIT/TIMEOUT), actual_exit_price, pnl
+└─ Updated by executor only for status/exit
+
+REPORTER:
+├─ Read SIGNALS_INDEPENDENT_AUDIT.txt (immutable facts)
+│  └─ Extract: signal_origin, fired_time, entry_price, tp/sl (locked)
+├─ Read SIGNALS_MASTER.jsonl (current state)
+│  └─ Get: status, actual_exit_price, pnl (dynamic)
+├─ Merge: Combine both sources
+└─ Output: Metrics from AUDIT (stable) + Status from MASTER (current)
+```
+
+### **ARCHITECTURAL REQUIREMENTS FOR REBUILD**
+
+**Immutability Contract:**
+- All historical metrics derived from SIGNALS_INDEPENDENT_AUDIT.txt (append-only)
+- All current status from SIGNALS_MASTER.jsonl (status-only updates)
+- Reporter template never changes (locked, dynamic content only)
+- No hardcoded numbers (all calculated from immutable source)
+
+**File Responsibilities:**
+- **SIGNALS_INDEPENDENT_AUDIT.txt:** Source of truth for signal_origin grouping + metrics
+- **SIGNALS_MASTER.jsonl:** Current state tracker (executor updates only)
+- **Daemon:** Appends to both AUDIT + MASTER
+- **Executor:** Updates MASTER status/exit ONLY (never modifies AUDIT)
+- **Reporter:** Reads AUDIT (metrics) + MASTER (status) → merged output
+
+**Enforcement Rules:**
+- FOUNDATION + NEW_IMMUTABLE: Locked forever (read from AUDIT only)
+- NEW_LIVE: Accumulating, status mutable (update in MASTER, read from AUDIT)
+- signal_origin: Immutable proof of which period signal belongs
+
+### **ISSUES TO FIX ARCHITECTURALLY**
+
+1. **Reporter reads from wrong source**
+   - Current: Reads SIGNALS_MASTER.jsonl (mutable)
+   - Fix: Read SIGNALS_INDEPENDENT_AUDIT.txt (immutable) for all historical metrics
+
+2. **Reporter template hardcoded/modified**
+   - Current: Template changed multiple times, sections shifted
+   - Fix: Lock template, only dynamic content calculated from immutable source
+
+3. **Foundation corrupted**
+   - Current: Foundation metrics changed from 25.7% → 32.0% → various
+   - Fix: Foundation locked in AUDIT, calculated once, never changes
+
+4. **Executor not idempotent**
+   - Current: Updates MASTER each run, unclear if duplicate
+   - Fix: Read AUDIT (immutable), update MASTER (idempotent, overwrite allowed)
+
+5. **No separation of immutable vs mutable**
+   - Current: Single MASTER file conflates fired-signals with current-state
+   - Fix: AUDIT (immutable) + MASTER (current state) separation
+
+### **REBUILD PLAN (Conceptual)**
+
+Phase 1: Verify/Create Sources of Truth
+- Restore SIGNALS_INDEPENDENT_AUDIT.txt (append-only, complete)
+- Reset SIGNALS_MASTER.jsonl (status tracking only)
+- Lock FOUNDATION in AUDIT (never changes)
+
+Phase 2: Lock Reporter Template
+- Template frozen (never modify structure)
+- All content dynamic (calculated from immutable AUDIT)
+- No hardcoded numbers
+
+Phase 3: Update Components
+- Executor: Read AUDIT, update MASTER (status only)
+- Reporter: Read AUDIT (metrics) + MASTER (status), merge output
+- Daemon: Write to both AUDIT (backup) + MASTER (working)
+
+Phase 4: Enforce Immutability
+- FOUNDATION + NEW_IMMUTABLE read from AUDIT only
+- NEW_LIVE accumulated from AUDIT, status from MASTER
+- Metrics locked (based on immutable source)
+
+### **CONFIRMATION NEEDED**
+
+Before architectural rebuild, confirm:
+1. ✅ Understand concept (three-period temporal segmentation)
+2. ✅ Identify root issue (reading mutable source instead of immutable)
+3. ✅ Agree on fix (AUDIT = immutable source, MASTER = status only)
+4. **AWAIT CONFIRMATION:** Proceed with full rebuild?
+
+---
+
+## ⚡ **PEC ARCHITECTURE RESTORED (2026-03-21 00:15 GMT+7)**
+
+**Status:** ✅ **WORKING - Original March 6 architecture was correct, executor running, reporter fixed**
+
+### **Key Realization**
+The March 6 architecture **WAS crystal clear and is still intact**:
+- SIGNALS_MASTER.jsonl has 3,355 signals with signal_origin field
+- FOUNDATION: 853 (locked baseline, 25.4%)
+- NEW_IMMUTABLE: 234 (locked historical, 7.0%)
+- NEW_LIVE: 2,094 (accumulating, 62.4%)
+- Executor IS running and processing signals (1,270 closed out of 2,094)
+
+**What went wrong:** The original Feb 27 - Mar 3 foundation cutoff got replaced with Mar 19 cutoff, causing "NEW" definition to shift. Reporter was using time-based filtering instead of signal_origin field.
+
+**What I fixed:** Reporter now uses signal_origin to show actual NEW_LIVE progress instead of time cutoffs.
+
+### **Current Status (After Fix)**
+- **NEW signals (non-FOUNDATION):** 1,687
+- **Closed:** 1,064 (63.1%) via proper backtest
+- **Open:** 0
+- **WR:** 17.48%
+- **P&L:** -$442.64
+
+## ⚡ **ORIGINAL PEC BACKTEST PROGRESS TRACKER (2026-03-20 02:30 GMT+7)**
 
 **Status:** 🟡 **IN PROGRESS - Hourly cron running, 75.5% signals closed via proper OHLCV walking**
 
