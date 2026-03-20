@@ -4,12 +4,15 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
-## 🚀 **PROJECT-5: PEC (Position Entry Closure & Backtest) - ARCHITECTURAL REBUILD APPROVED**
+## 🚀 **PROJECT-5: PEC (Position Entry Closure & Backtest) - ARCHITECTURAL REBUILD LOCKED**
 
-**Status:** 🟡 **REBUILD IN PROGRESS - Clean foundation established**
-**Decision Date:** 2026-03-21 00:49 GMT+7
+**Status:** 🔒 **LOCKED - All decisions finalized, awaiting build approval**
+**Decision Date:** 2026-03-21 00:57 GMT+7
 **Root Issue Identified:** Daemon stopped writing to SIGNALS_INDEPENDENT_AUDIT.txt after Mar 14
-**Decision Made:** Use Feb 27 - Mar 14 as NEW FOUNDATION (clean period), discard Mar 15-20 (broken)
+**Final Decision:** 
+- Use Feb 27 - Mar 14 as NEW FOUNDATION (clean period), locked forever
+- Discard Mar 15-20 completely (contaminated, both files out of sync)
+- Start completely fresh from Mar 21 onwards (Option A)
 
 ---
 
@@ -157,14 +160,201 @@ NEW_LIVE (Current day accumulating):
 
 ---
 
-### **USER CONFIRMATION OBTAINED ✅**
+### **ALL DECISIONS LOCKED ✅ (2026-03-21 00:57 GMT+7)**
 
-1. ✅ Understand concept (three-period temporal segmentation)
+1. ✅ Understand concept (three-period temporal segmentation: FOUNDATION, NEW_IMMUTABLE, NEW_LIVE)
 2. ✅ Identify root issue (daemon stopped writing to AUDIT after Mar 14)
-3. ✅ Identify broken period (Mar 15-20, discard entirely)
-4. ✅ Establish NEW FOUNDATION (Feb 27 - Mar 14, 2,224 signals)
+3. ✅ Identify broken period (Mar 15-20, discard entirely - cannot be salvaged)
+4. ✅ Establish NEW FOUNDATION (Feb 27 - Mar 14, 2,224 signals, both files in sync)
 5. ✅ Agree on architecture (AUDIT = immutable, MASTER = status-only)
-6. ✅ **REBUILD APPROVED** - Ready to proceed with Phase 1
+6. ✅ Choose Option A (Start completely fresh from Mar 21 - don't salvage Mar 15-20)
+7. ✅ **BUILD APPROVED** - Awaiting final confirmation to execute Phase 1
+
+---
+
+### **COMPLETE AGREEMENT SUMMARY (Locked)**
+
+#### **NEW FOUNDATION (Feb 27 - Mar 14)**
+- Period: Feb 27, 2026 - Mar 14, 2026
+- Total signals: 2,224 (verified in both AUDIT and MASTER)
+- Status: LOCKED FOREVER
+- signal_origin: "FOUNDATION"
+- Metrics: Calculated once, never recalculated
+- Rule: Any modification = system reset to zero baseline
+- Recovery: Read from SIGNALS_INDEPENDENT_AUDIT.txt only
+
+#### **DISCARDED PERIOD (Mar 15 - Mar 20)**
+- Reason: Daemon stopped writing to AUDIT around Mar 15
+- Evidence: 
+  - 345 signals ONLY in MASTER (Mar 15-18)
+  - 516 signals ONLY in AUDIT (Mar 19-20)
+  - 707 status mismatches in common signals
+- Decision: Remove entirely, don't count toward foundation or new signals
+- No recovery attempt: Data too contaminated to salvage
+
+#### **FRESH START (Mar 21 onwards)**
+- Period: Starting Mar 21, 2026
+- NEW_LIVE: Accumulates daily from daemon
+- Rolling immutability: Each day at midnight, NEW_LIVE → NEW_IMMUTABLE (locked)
+- signal_origin: "NEW_LIVE" during accumulation, "NEW_IMMUTABLE" when locked
+- Reporter: Shows FOUNDATION (locked) vs NEW (accumulating daily)
+
+---
+
+### **ARCHITECTURE AGREEMENT (Locked)**
+
+#### **SIGNALS_INDEPENDENT_AUDIT.txt**
+- Role: Immutable Source of Truth for all metrics
+- Content: Every fired signal (complete record)
+- Format: Newline-delimited JSON
+- Mutability: APPEND-ONLY, never modified
+- Written by: Daemon (mandatory)
+- Read by: Reporter (extract immutable metrics), Executor (get signal facts)
+- Recovery use: Can rebuild MASTER from this file anytime
+- Guarantee: If this file is clean, system can recover
+
+#### **SIGNALS_MASTER.jsonl**
+- Role: Current Status Tracker
+- Content: Latest state of each signal (status, exit price, P&L)
+- Format: Newline-delimited JSON (same schema as AUDIT)
+- Mutability: Status-only updates (OPEN → TP_HIT/SL_HIT/TIMEOUT)
+- Written by: Daemon (append new), Executor (update status only)
+- Read by: Reporter (get current state), Executor (find OPEN signals)
+- Rebuild use: Can be completely rebuilt from AUDIT anytime
+- Guarantee: Expendable - can be deleted and recreated from AUDIT
+
+#### **DAEMON (SmartFilter → PEC)**
+- Responsibility: Write every fired signal to BOTH files immediately
+- Mandatory writes:
+  - SIGNALS_INDEPENDENT_AUDIT.txt (append)
+  - SIGNALS_MASTER.jsonl (append)
+- Format: Same signal object to both files
+- Signal fields: uuid, symbol, timeframe, entry_price, tp_price, sl_price, fired_time_utc, signal_origin="NEW_LIVE", status="OPEN"
+- Rule: If write to either file fails, do not send Telegram (transaction-like behavior)
+
+#### **EXECUTOR**
+- Responsibility: Backtest signals and update status only
+- Input: Read SIGNALS_INDEPENDENT_AUDIT.txt (get signal facts)
+- Process: OHLCV walking from fired_time → detect TP_HIT/SL_HIT/TIMEOUT
+- Output: Update SIGNALS_MASTER.jsonl (status + actual_exit_price + pnl)
+- Rule: NEVER modify SIGNALS_INDEPENDENT_AUDIT.txt
+- Rule: Only update existing signals in MASTER, never delete or reorder
+- Idempotency: Running twice gives same result (safe to retry)
+
+#### **REPORTER**
+- Template: LOCKED, never modify structure again
+- Input sources:
+  - SIGNALS_INDEPENDENT_AUDIT.txt (read immutable facts)
+  - SIGNALS_MASTER.jsonl (read current status)
+- Process: Merge both sources
+- Output:
+  - FOUNDATION metrics (from AUDIT, locked forever)
+  - NEW_LIVE progress (from AUDIT + MASTER, accumulating daily)
+  - Rolling daily immutability visualization
+- Metrics: All dynamically calculated from sources, no hardcoded numbers
+- Rule: Template frozen, content dynamic
+
+---
+
+### **IMMUTABILITY CONTRACT (Locked)**
+
+#### **FOUNDATION (Feb 27 - Mar 14)**
+```
+Status: LOCKED FOREVER
+├─ Location: SIGNALS_INDEPENDENT_AUDIT.txt
+├─ Can READ: Yes (for metrics, comparisons, baseline)
+├─ Can MODIFY: No (ever)
+├─ Metrics: WR, P&L, avg duration all calculated once and locked
+├─ Rule: Violation = System reset to zero baseline
+└─ Proof: signal_origin = "FOUNDATION" for all 2,224 signals
+```
+
+#### **NEW_IMMUTABLE (Completed days after Mar 21)**
+```
+Status: LOCKED after day 23:59:59 GMT+7
+├─ Created daily: Day's NEW_LIVE becomes immutable at midnight
+├─ Can READ: Yes (for historical analysis)
+├─ Can MODIFY before locked: status only (OPEN → closed)
+├─ CANNOT MODIFY ever: fired_time_utc, entry_price, signal_origin
+├─ Rule: Violation = System reset to zero baseline
+└─ Proof: signal_origin = "NEW_IMMUTABLE" after day ends
+```
+
+#### **NEW_LIVE (Current day accumulating)**
+```
+Status: OPEN, GROWING
+├─ Created at: 00:00:00 GMT+7 each day
+├─ Can UPDATE: status, actual_exit_price, pnl, closed_at
+├─ CANNOT MODIFY: fired_time_utc, entry_price, signal_origin
+├─ Locks at: 23:59:59 GMT+7 (becomes immutable)
+└─ Proof: signal_origin = "NEW_LIVE" until day ends
+```
+
+---
+
+### **ROLLING DAILY IMMUTABILITY (Locked)**
+
+```
+Day N:
+├─ 00:00:00 GMT+7: Fresh NEW_LIVE segment opens
+├─ During day: Daemon appends signals, Executor updates status
+├─ 23:59:59 GMT+7: All signals finalized
+└─ At midnight: NEW_LIVE → NEW_IMMUTABLE (LOCKED)
+
+Day N+1:
+├─ 00:00:00 GMT+7: Yesterday's NEW_IMMUTABLE now locked (immutable)
+├─ New fresh NEW_LIVE segment opens
+├─ Report shows: FOUNDATION (locked) + all previous NEW_IMMUTABLE (locked) + NEW_LIVE (accumulating)
+└─ Repeat forever
+```
+
+---
+
+### **REPORTER OUTPUT STRUCTURE (Locked)**
+
+```
+FOUNDATION BASELINE (Feb 27 - Mar 14)
+├─ Total signals: 2,224 (IMMUTABLE)
+├─ Closed: X (IMMUTABLE)
+├─ Win Rate: Y% (IMMUTABLE)
+├─ P&L: $Z (IMMUTABLE)
+├─ Avg TP duration: (IMMUTABLE)
+├─ Avg SL duration: (IMMUTABLE)
+└─ Note: This baseline is locked forever, comparison reference
+
+NEW SIGNALS (Mar 21 onwards, rolling daily accumulation)
+├─ Mar 21: N signals, M closed, WR X%, P&L $Y
+├─ Mar 22: N signals, M closed, WR X%, P&L $Y (previous day locked)
+├─ Mar 23: N signals, M closed, WR X%, P&L $Y (previous day locked)
+└─ ... (continues daily)
+
+COMPARISON
+├─ Foundation WR vs NEW WR (shows performance change)
+└─ Foundation P&L vs NEW P&L (shows cumulative impact)
+```
+
+---
+
+### **PHASE 1: EXTRACT CLEAN FOUNDATION (Next Step, Awaiting Approval)**
+
+When approved, will:
+1. Extract Feb 27 - Mar 14 signals from current SIGNALS_MASTER.jsonl
+2. Verify exact same signals exist in SIGNALS_INDEPENDENT_AUDIT.txt
+3. Verify count = 2,224 unique signals
+4. Create SIGNALS_FOUNDATION_CLEAN.jsonl (backup reference)
+5. Proceed to Phase 2
+
+---
+
+## 🔐 **SEPARATE CONTEXT: DO NOT MIX PROJECT-5 WITH PROJECTS 1,2,3,4**
+
+**PROJECT-5 (PEC)** is now treated as completely separate:
+- Different architecture (three-period immutable model)
+- Different files (AUDIT + MASTER + Reporter)
+- Different decision logic (Feb 27 - Mar 14 is NEW FOUNDATION, discard Mar 15-20)
+- Don't confuse with signal flow from PROJECT-3 (SmartFilter)
+
+**Boundary:** PEC is INPUT to PROJECT-4 (bot), OUTPUT from PROJECT-3 (signals), but INDEPENDENT ARCHITECTURE.
 
 ---
 
