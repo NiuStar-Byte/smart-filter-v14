@@ -122,6 +122,56 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
+## 🚨 **CRITICAL ISSUES RESOLVED: NEW Signals Not Showing (2026-03-21 01:43 GMT+7)**
+
+**Problem Statement:** User reported seeing 61 signals "fired" in the FIRED BY DATE section but 0 signals in the NEW section - appearing as a broken system.
+
+**Root Causes (3 nested bugs):**
+
+### **Bug #1: Reporter loading wrong file**
+- **What:** Reporter hardcoded to load SIGNALS_MASTER_CLEAN_2538.jsonl (foundation-only backup)
+- **Result:** Live signals from Mar 20/21 never loaded
+- **Fix:** Changed primary source to SIGNALS_MASTER.jsonl (live data)
+- **Commit:** `1ab14c6`
+
+### **Bug #2: UTC→GMT+7 timezone not converted in date filter**
+- **What:** Filter checked `fired_time_utc >= '2026-03-21'` but times stored as UTC ('2026-03-20T18:xx')
+- **Result:** Signals fired on 2026-03-20T18:00+ UTC (= 2026-03-21T01:00+ GMT+7) were filtered out
+- **Fix:** Convert fired_time from UTC to GMT+7 before comparing dates
+- **Commit:** `caf3059`
+
+### **Bug #3: Reporter date label still wrong**
+- **What:** Header said "Mar 16+" instead of "Mar 21+"
+- **Result:** Cosmetic but confusing
+- **Fix:** Changed label to "Mar 21+"
+- **Commit:** `71a3e02`
+
+**Verification (Before vs After):**
+```
+BEFORE:
+- Section 2: Total=0 NEW signals
+- Fired by Date: 61 shown as fired (01:00-02:00 GMT+7)
+- Status: BROKEN - signals counted as fired but not shown in new
+
+AFTER:
+- Section 2: Total=65 NEW signals (59 OPEN, 6 SL_HIT)
+- Fired by Date: 61 shown as fired
+- Status: ✅ CORRECT - signals now visible in NEW section
+```
+
+**Root Lesson:** Multiple small bugs compounded:
+1. Wrong file source (foundation-only)
+2. Timezone mismatch (UTC ≠ GMT+7)
+3. Labeling confusion (Mar 16 vs Mar 21)
+Each independently looked like different issues, but all three needed fixing.
+
+**Commits:**
+- `71a3e02`: Fix label "Mar 16+" → "Mar 21+"
+- `caf3059`: Add UTC→GMT+7 conversion to date filter
+- `1ab14c6`: Use live SIGNALS_MASTER.jsonl instead of clean baseline
+
+---
+
 ### **✅ CONCEPT CONFIRMED**
 
 PEC Architecture has THREE TEMPORAL SEGMENTS:
