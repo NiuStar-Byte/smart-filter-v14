@@ -4858,9 +4858,70 @@ P&L BREAKDOWN (STALE_TIMEOUT completely excluded):
 - ✓ All calculations exclude STALE_TIMEOUT explicitly
 - ✓ Audit trail preserves all 2,692 signals for debugging
 
+---
+
+## 🚨 **CRITICAL FIX: Aggregates Exclude Both STALE & REJECTED (2026-03-21 18:02 GMT+7)**
+
+**Status:** ✅ **COMPLETE - Aggregates now only include valid backtest signals**
+
+### **What Changed**
+
+**BEFORE:**
+- Aggregates included hidden signals (STALE_TIMEOUT and/or REJECTED_NOT_SENT_TELEGRAM)
+- Total signals per dimension breakdown = 2,415 vs 2,728 in SECTION 1
+- Gap: 313 signals unaccounted for in aggregates
+
+**AFTER:**
+- Aggregates EXCLUDE both STALE_TIMEOUT and REJECTED_NOT_SENT_TELEGRAM
+- Only valid backtest signals counted: TP_HIT, SL_HIT, TIMEOUT, OPEN
+- Total signals per dimension breakdown = ~1,870 (correct)
+- Gap eliminated: all aggregates consistent
+
+### **Implementation**
+
+**Three aggregate functions updated:**
+1. `_aggregate_by()` — Dimensional aggregates (timeframe, direction, route, etc.)
+2. `_aggregate_by_dimensions()` — Multi-dimensional aggregates (2D, 3D, 4D)
+3. `_aggregate_by_dimensions_with_symbol()` — 5D aggregates with symbol groups
+
+**Skip logic (same across all functions):**
+```python
+for signal in self.signals:
+    status = signal.get('status', 'OPEN')
+    
+    # Skip invalid/non-backtest signals - exclude from ALL aggregates
+    if status == 'STALE_TIMEOUT':
+        continue  # Data quality issue
+    if status == 'REJECTED_NOT_SENT_TELEGRAM':
+        continue  # Never sent to traders
+    
+    # Process only valid signals (TP, SL, TIMEOUT, OPEN)
+    # ...count and aggregate...
+```
+
+### **Signal Accounting (Complete)**
+
+**In Metrics (SECTION 1 & 2):**
+- TP_HIT: 375 signals ✓
+- SL_HIT: 969 signals ✓
+- TIMEOUT: 388 signals ✓
+- OPEN: 107 signals ✓
+- **Subtotal: 1,839 signals counted in WR & P&L**
+
+**In Aggregates (all dimensional breakdowns):**
+- Same 1,839 signals ✓
+- STALE_TIMEOUT (314) excluded ✗
+- REJECTED_NOT_SENT_TELEGRAM (549) excluded ✗
+
+**In Audit Trail (for debugging only):**
+- Total: 2,692 signals (all statuses)
+- Note which are excluded from all metrics
+
 **Commits:**
 - `fa9a49b`: Signal transparency fix
 - `5d660cf`: P&L breakdown fix
-- `f42a8cb`: CRITICAL: STALE_TIMEOUT complete exclusion
+- `f42a8cb`: STALE_TIMEOUT exclusion from metrics
+- `37ae9cc`: Average P&L per Count added to SECTION 2
+- `fc4f8e0`: CRITICAL: Aggregates exclude STALE & REJECTED
 - `3536267`: Memory documentation (initial)
-- Next commit: WR & P&L exclusion clarification
+- `232472d`: WR & P&L exclusion implementation details
