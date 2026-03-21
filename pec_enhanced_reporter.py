@@ -568,6 +568,10 @@ class PECEnhancedReporter:
         report.append(f"    Total P&L Reported:    {new_stats['total_pnl']:+12,.2f}")
         report.append(f"    ✓ Verified: P&L matches Total P&L" if abs(new_included_sum - new_stats['total_pnl']) < 0.01 else f"    ✗ MISMATCH: Included {new_included_sum:+.2f} ≠ Total {new_stats['total_pnl']:+.2f}")
         report.append(f"")
+        report.append(f"Average P&L per Count:")
+        report.append(f"  Avg P&L TP per Count TP: ${new_stats['avg_tp_pnl']:+.2f}" if new_stats['tp'] > 0 else f"  Avg P&L TP per Count TP: N/A (0 TP trades)")
+        report.append(f"  Avg P&L SL per Count SL: ${new_stats['avg_sl_pnl']:+.2f}" if new_stats['sl'] > 0 else f"  Avg P&L SL per Count SL: N/A (0 SL trades)")
+        report.append(f"")
         report.append("")
         
         # Aggregates Section
