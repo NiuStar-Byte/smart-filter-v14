@@ -4657,20 +4657,22 @@ VALIDATION:
 
 ---
 
-## 🚨 **CRITICAL FIX: STALE_TIMEOUT Complete Exclusion (2026-03-21 17:20 GMT+7)**
+## 🚨 **CRITICAL FIX: STALE_TIMEOUT Complete Exclusion (2026-03-21 17:20-17:27 GMT+7)**
 
-**Status:** ✅ **COMPLETE - STALE_TIMEOUT fully excluded from all calculations**
+**Status:** ✅ **COMPLETE - STALE_TIMEOUT fully excluded from WR & P&L calculations**
 
 ### **What Changed**
 
 **BEFORE:**
 - Total P&L included STALE_TIMEOUT P&L: -$10,546.12
+- WR calculation unclear if STALE was included
 - STALE signals counted in totals but marked as "excluded from metrics" (confusing)
 - P&L breakdown incomplete: TP + SL + TIMEOUT ≠ Total P&L
 
 **AFTER:**
 - Total P&L EXCLUDES STALE_TIMEOUT completely: -$6,776.68
-- STALE signals listed in audit trail but NOT in any calculation
+- WR calculation explicitly excludes STALE_TIMEOUT from closed trades
+- STALE signals listed in audit trail but NOT in any WR or P&L calculation
 - P&L breakdown complete: TP + SL + TIMEOUT + OPEN = Total P&L ✓
 
 ### **Architecture (Corrected)**
@@ -4689,32 +4691,113 @@ VALIDATION:
 
 **Total in audit trail: 2,692 signals**
 
-### **P&L Accounting (Corrected)**
+### **P&L Accounting (Corrected - STALE_TIMEOUT Excluded)**
 
 **INCLUDED IN TOTAL P&L:**
-- TP_HIT:    +$12,755.95
-- SL_HIT:    -$16,994.03
-- TIMEOUT:    -$2,538.59
-- OPEN:            +$0.00
-- **Subtotal:  -$6,776.68** ← This is Total P&L
+```
+TP_HIT:     +$12,755.95
+SL_HIT:     -$16,994.03
+TIMEOUT:     -$2,538.59
+OPEN:            +$0.00
+───────────────────────
+Subtotal:    -$6,776.68  ← This is Total P&L (STALE excluded)
+```
 
 **EXCLUDED FROM TOTAL P&L:**
-- REJECTED: +$0.00 (not sent, no calculation)
-- STALE: NOT CALCULATED (data quality - completely excluded)
-- **Subtotal:  +$0.00**
+```
+REJECTED:        +$0.00 (not sent to traders, no P&L)
+STALE:      NOT CALCULATED (data quality - completely excluded)
+───────────────────────
+Subtotal:        +$0.00
+```
 
-**Validation:**
-- Included (-$6,776.68) + Excluded (+$0.00) = Total (-$6,776.68) ✓
+**P&L Validation:**
+```
+Included (-$6,776.68) + Excluded (+$0.00) = Total (-$6,776.68) ✓
+```
+
+**Implementation:**
+```python
+# P&L loop skips STALE_TIMEOUT completely
+for s in signals:
+    if s.get('status') == 'STALE_TIMEOUT':
+        continue  # ← Do not accumulate P&L
+
+    pnl = calc_pnl(entry, exit, direction)
+    total_pnl += pnl  # Only accumulates for non-STALE signals
+
+# P&L breakdown by status (STALE never reaches this)
+if status == 'TP_HIT':
+    tp_pnl += pnl
+elif status == 'SL_HIT':
+    sl_pnl += pnl
+elif status == 'TIMEOUT':
+    timeout_pnl += pnl
+# Note: STALE_TIMEOUT already skipped above
+```
+
+**Result:**
+- Total P&L only includes: TP + SL + TIMEOUT + OPEN + REJECTED
+- STALE_TIMEOUT P&L never accumulated
+- All calculations mathematically valid and auditable
 
 ### **Key Rules**
 
 **STALE_TIMEOUT signals:**
-- ❌ NOT included in Total P&L
-- ❌ NOT included in Win Rate calculation
+- ❌ NOT included in Total P&L (completely excluded from P&L loop)
+- ❌ NOT included in Win Rate calculation (separate status, not in closed count)
 - ❌ NOT included in any metric or statistic
 - ✅ Kept in audit trail for debugging only
 - ✅ Marked with ⚠️ warning in reporter
 - ✅ Reason: Data quality issues (timestamps conflicting, prices invalid)
+
+### **Win Rate Calculation (STALE_TIMEOUT Excluded)**
+
+**Signal Status Counts:**
+```
+INCLUDED IN WR:
+  • TP_HIT:   376 signals
+  • SL_HIT:   969 signals
+  • TIMEOUT:  388 signals (NOT including STALE_TIMEOUT)
+  
+EXCLUDED FROM WR:
+  • STALE_TIMEOUT: 314 signals (separate status, not counted)
+```
+
+**WR Formula:**
+```
+Closed Trades = TP_HIT + SL_HIT + TIMEOUT
+              = 376 + 969 + 388
+              = 1,733 trades
+
+Wins = TP_HIT + TIMEOUT_WIN
+     = 376 + 82
+     = 458
+
+Win Rate = 458 / 1,733 = 26.43%
+
+STALE_TIMEOUT (314) is NOT in any denominator or numerator ✓
+```
+
+**Implementation:**
+```python
+# Count only non-STALE statuses
+timeout = sum(1 for s in signals if s.get('status') == 'TIMEOUT')  # 388
+
+# Calculate timeout_win (skip STALE in loop)
+for s in signals:
+    if s.get('status') == 'STALE_TIMEOUT':
+        continue  # ← SKIP completely
+    if s.get('status') == 'TIMEOUT':
+        pnl = calc_pnl(...)
+        if pnl > 0:
+            timeout_win += 1  # Only count non-STALE timeouts
+
+# WR uses only these counts (STALE excluded)
+closed = tp + sl + timeout
+wins = tp + timeout_win
+wr = (wins / closed) * 100
+```
 
 **Reporter Output:**
 ```
@@ -4738,10 +4821,46 @@ P&L BREAKDOWN (STALE_TIMEOUT completely excluded):
     ✓ Verified: P&L matches Total P&L
 ```
 
-**Commit:** `f42a8cb` — CRITICAL FIX: STALE_TIMEOUT completely excluded
+### **Complete Signal Accounting Architecture**
+
+**Audit Trail (ALL signals):**
+- 2,692 total signals in SIGNALS_MASTER.jsonl
+
+**Metrics Calculation (EXCLUDING STALE_TIMEOUT):**
+- TP_HIT: 376 signals ✓ Counted
+- SL_HIT: 969 signals ✓ Counted
+- TIMEOUT: 388 signals ✓ Counted
+- OPEN: 107 signals ✓ Counted
+- REJECTED_NOT_SENT_TELEGRAM: 549 signals (in audit, no metrics)
+- STALE_TIMEOUT: 314 signals ❌ EXCLUDED completely
+
+**Where STALE_TIMEOUT is Excluded:**
+```
+1. Win Rate Calculation:
+   ✗ Not in closed count (closed = TP + SL + TIMEOUT only)
+   ✗ Not in wins count (wins = TP + TIMEOUT_WIN only)
+   ✗ Not in denominator or numerator
+
+2. P&L Calculation:
+   ✗ Skipped in loop: if status == 'STALE_TIMEOUT': continue
+   ✗ Never accumulated to total_pnl
+   ✗ Never broken down by status
+
+3. All Other Metrics:
+   ✗ Not counted in signal breakdowns
+   ✗ Not included in any aggregation
+   ✗ Only shown in audit trail with warning
+```
+
+**Verification:**
+- ✓ WR denominator: 1,733 (TP+SL+TIMEOUT, no STALE)
+- ✓ P&L total: -$6,776.68 (no STALE P&L)
+- ✓ All calculations exclude STALE_TIMEOUT explicitly
+- ✓ Audit trail preserves all 2,692 signals for debugging
 
 **Commits:**
 - `fa9a49b`: Signal transparency fix
 - `5d660cf`: P&L breakdown fix
 - `f42a8cb`: CRITICAL: STALE_TIMEOUT complete exclusion
-- `1e97f60`: PEC deployment status update
+- `3536267`: Memory documentation (initial)
+- Next commit: WR & P&L exclusion clarification
