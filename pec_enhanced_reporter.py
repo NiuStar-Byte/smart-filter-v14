@@ -273,13 +273,17 @@ class PECEnhancedReporter:
         """Calculate Risk:Reward (RR) metrics: Highest, Average, Lowest
         
         RR = (TP - Entry) / (Entry - SL)
+        
+        CRITICAL: Handles BOTH old schema (tp_price/sl_price from FOUNDATION)
+        and new schema (tp_target/sl_target from NEW_LIVE daemon)
         """
         try:
             rr_values = []
             for s in signals_list:
                 entry = s.get('entry_price')
-                tp = s.get('tp_price')
-                sl = s.get('sl_price')
+                # Support BOTH schemas: old (tp_price/sl_price) + new (tp_target/sl_target)
+                tp = s.get('tp_price') or s.get('tp_target')
+                sl = s.get('sl_price') or s.get('sl_target')
                 
                 if entry and tp and sl:
                     try:
