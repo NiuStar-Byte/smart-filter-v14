@@ -5242,3 +5242,94 @@ STALE_TIMEOUT (314) and REJECTED (549) = NOT included in any row
 - `3536267`: Memory documentation (initial)
 - `232472d`: WR & P&L exclusion implementation details
 - `0c2830a`: Aggregates exclusion documentation
+
+---
+
+## 📊 **NEW METRICS ADDED TO PEC REPORTER (2026-03-21 20:17 GMT+7)**
+
+**Status:** ✅ **ADDED - Risk:Reward & Timeout Duration metrics**
+
+### **What Was Added**
+
+**Location:** Bottom of SECTION 1 & SECTION 2
+
+**Two New Metric Groups:**
+
+#### **1. Risk:Reward (RR) Metrics**
+```
+Risk:Reward (RR) Metrics:
+  Highest RR: X.XX
+  Avg RR: X.XX
+  Lowest RR: X.XX
+
+Formula: RR = (TP_Price - Entry_Price) / (Entry_Price - SL_Price)
+  - Numerator: Reward (how much we make if TP hits)
+  - Denominator: Risk (how much we lose if SL hits)
+  - RR ratio: How many dollars we make per dollar of risk
+```
+
+#### **2. Actual Max Timeout Duration by Timeframe**
+```
+Actual Max Timeout Duration by Timeframe:
+  15min: Xh Ym
+  30min: Xh Ym
+  1h: Xh Ym
+
+Meaning: The longest actual timeout duration observed for each timeframe
+  - Based on actual fired_time to closed_at duration
+  - Only for signals with status='TIMEOUT'
+  - Shows how long timeouts actually last (not theoretical TF duration)
+```
+
+### **Example Output**
+```
+SECTION 1 (Foundation + New):
+Risk:Reward (RR) Metrics:
+  Highest RR: 3.08
+  Avg RR: 1.85
+  Lowest RR: 1.32
+
+Actual Max Timeout Duration by Timeframe:
+  15min: 3h 45m
+  30min: 5h 0m
+  1h: 5h 0m
+
+SECTION 2 (NEW only):
+Risk:Reward (RR) Metrics:
+  Highest RR: N/A
+  Avg RR: N/A
+  Lowest RR: N/A
+
+Actual Max Timeout Duration by Timeframe:
+  15min: 2h 0m
+  30min: 3h 0m
+  1h: 4h 0m
+```
+
+### **Implementation**
+
+**Two new methods added to pec_enhanced_reporter.py:**
+
+1. `_calculate_rr_metrics(signals_list)` — Returns (highest_rr, avg_rr, lowest_rr)
+2. `_calculate_max_timeout_by_timeframe(signals_list)` — Returns dict with max duration per TF
+
+**Integration:**
+- Added to SECTION 1 after "Average P&L per Count"
+- Added to SECTION 2 after "Average P&L per Count"
+- Both sections include both metrics
+
+### **Use Cases**
+
+**RR Analysis:**
+- Identify best/worst setup odds
+- Average RR shows typical reward-to-risk profile
+- RR > 2.0 is favorable; RR < 1.0 is unfavorable
+
+**Timeout Analysis:**
+- Understand actual hold times before timeout
+- 15min TF max=3h 45m (16.6x longer than theoretical)
+- Plan position sizing knowing worst-case scenarios
+
+### **Commit**
+
+- `0113712` — ADD: Risk:Reward (RR) metrics & Max Timeout Duration by Timeframe to SECTION 1 & 2
