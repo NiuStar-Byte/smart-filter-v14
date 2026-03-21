@@ -429,16 +429,32 @@ class PECEnhancedReporter:
         report.append("=" * 200)
         report.append("📊 SECTION 1: TOTAL SIGNALS (Foundation + New)")
         report.append("=" * 200)
-        report.append(f"Total Signals (Foundation + New): {combined_stats['total']}")
-        report.append(f"Count Win (TP_HIT): {combined_stats['tp']}")
-        report.append(f"Count Loss (SL_HIT): {combined_stats['sl']}")
-        report.append(f"Count TimeOut: {combined_stats['timeout']}")
-        report.append(f"Count Open: {combined_stats['open']}")
-        report.append(f"Closed Trades (Clean Data): {combined_stats['closed']}")
-        report.append(f"  TP_HIT: {combined_stats['tp']}")
-        report.append(f"  SL_HIT: {combined_stats['sl']}")
-        report.append(f"  TimeOut Win: {combined_stats['timeout_win']} (approximate)")
-        report.append(f"  TimeOut Loss: {combined_stats['timeout_loss']} (approximate)")
+        report.append(f"Total Signals Loaded: {combined_stats['total']}")
+        report.append("")
+        report.append("SIGNAL BREAKDOWN (All signals accounted for):")
+        report.append(f"  Backtest Signals (sent to traders, included in metrics):")
+        report.append(f"    • TP_HIT: {combined_stats['tp']}")
+        report.append(f"    • SL_HIT: {combined_stats['sl']}")
+        report.append(f"    • TIMEOUT: {combined_stats['timeout']}")
+        report.append(f"    • OPEN: {combined_stats['open']}")
+        report.append(f"    Subtotal (Backtest Signals): {combined_stats['tp'] + combined_stats['sl'] + combined_stats['timeout'] + combined_stats['open']}")
+        report.append(f"")
+        report.append(f"  Non-Backtest Signals (NOT included in metrics):")
+        report.append(f"    • REJECTED_NOT_SENT_TELEGRAM: {combined_stats['rejected']} (never reached traders)")
+        report.append(f"    • STALE_TIMEOUT: {combined_stats['stale']} (stale, data quality issues)")
+        report.append(f"    Subtotal (Non-Backtest): {combined_stats['rejected'] + combined_stats['stale']}")
+        report.append(f"")
+        report.append(f"VALIDATION CHECK:")
+        report.append(f"  Backtest ({combined_stats['tp'] + combined_stats['sl'] + combined_stats['timeout'] + combined_stats['open']}) + Non-Backtest ({combined_stats['rejected'] + combined_stats['stale']}) = Total ({combined_stats['total_accounted']})")
+        report.append(f"  ✓ Verified: All {combined_stats['total']} signals accounted for" if combined_stats['total'] == combined_stats['total_accounted'] else f"  ✗ MISMATCH: {combined_stats['total']} loaded but {combined_stats['total_accounted']} accounted")
+        report.append("")
+        report.append("CLOSED TRADES ANALYSIS (Backtest Signals Only):")
+        report.append(f"  Closed Trades (Clean Data): {combined_stats['closed']}")
+        report.append(f"    • TP_HIT: {combined_stats['tp']}")
+        report.append(f"    • SL_HIT: {combined_stats['sl']}")
+        report.append(f"    • TimeOut: {combined_stats['timeout']}")
+        report.append(f"      - TimeOut Win: {combined_stats['timeout_win']} (approximate)")
+        report.append(f"      - TimeOut Loss: {combined_stats['timeout_loss']} (approximate)")
         report.append(f"")
         report.append(f"Overall Win Rate: {combined_stats['wr']:.2f}%")
         report.append(f"Calculation: ({combined_stats['tp']} TP + {combined_stats['timeout_win']} TIMEOUT_WIN) / {combined_stats['closed']} Closed = {combined_stats['wins']} / {combined_stats['closed']} = {combined_stats['wr']:.2f}%")
@@ -480,16 +496,32 @@ class PECEnhancedReporter:
         report.append("=" * 200)
         report.append("📊 SECTION 2: TOTAL SIGNALS (NEW ONLY - Mar 21+ onwards)")
         report.append("=" * 200)
-        report.append(f"Total Signals (New ONLY): {new_stats['total']}")
-        report.append(f"Count Win (TP_HIT): {new_stats['tp']}")
-        report.append(f"Count Loss (SL_HIT): {new_stats['sl']}")
-        report.append(f"Count TimeOut: {new_stats['timeout']}")
-        report.append(f"Count Open: {new_stats['open']}")
-        report.append(f"Closed Trades (Clean Data): {new_stats['closed']}")
-        report.append(f"  TP_HIT: {new_stats['tp']}")
-        report.append(f"  SL_HIT: {new_stats['sl']}")
-        report.append(f"  TimeOut Win: {new_stats['timeout_win']} (approximate)")
-        report.append(f"  TimeOut Loss: {new_stats['timeout_loss']} (approximate)")
+        report.append(f"Total Signals Loaded (NEW ONLY): {new_stats['total']}")
+        report.append("")
+        report.append("SIGNAL BREAKDOWN (All signals accounted for):")
+        report.append(f"  Backtest Signals (sent to traders, included in metrics):")
+        report.append(f"    • TP_HIT: {new_stats['tp']}")
+        report.append(f"    • SL_HIT: {new_stats['sl']}")
+        report.append(f"    • TIMEOUT: {new_stats['timeout']}")
+        report.append(f"    • OPEN: {new_stats['open']}")
+        report.append(f"    Subtotal (Backtest Signals): {new_stats['tp'] + new_stats['sl'] + new_stats['timeout'] + new_stats['open']}")
+        report.append(f"")
+        report.append(f"  Non-Backtest Signals (NOT included in metrics):")
+        report.append(f"    • REJECTED_NOT_SENT_TELEGRAM: {new_stats['rejected']} (never reached traders)")
+        report.append(f"    • STALE_TIMEOUT: {new_stats['stale']} (stale, data quality issues)")
+        report.append(f"    Subtotal (Non-Backtest): {new_stats['rejected'] + new_stats['stale']}")
+        report.append(f"")
+        report.append(f"VALIDATION CHECK:")
+        report.append(f"  Backtest ({new_stats['tp'] + new_stats['sl'] + new_stats['timeout'] + new_stats['open']}) + Non-Backtest ({new_stats['rejected'] + new_stats['stale']}) = Total ({new_stats['total_accounted']})")
+        report.append(f"  ✓ Verified: All {new_stats['total']} signals accounted for" if new_stats['total'] == new_stats['total_accounted'] else f"  ✗ MISMATCH: {new_stats['total']} loaded but {new_stats['total_accounted']} accounted")
+        report.append("")
+        report.append("CLOSED TRADES ANALYSIS (Backtest Signals Only):")
+        report.append(f"  Closed Trades (Clean Data): {new_stats['closed']}")
+        report.append(f"    • TP_HIT: {new_stats['tp']}")
+        report.append(f"    • SL_HIT: {new_stats['sl']}")
+        report.append(f"    • TimeOut: {new_stats['timeout']}")
+        report.append(f"      - TimeOut Win: {new_stats['timeout_win']} (approximate)")
+        report.append(f"      - TimeOut Loss: {new_stats['timeout_loss']} (approximate)")
         report.append(f"")
         report.append(f"Overall Win Rate: {new_stats['wr']:.2f}%")
         if new_stats['closed'] > 0:
@@ -1441,11 +1473,24 @@ class PECEnhancedReporter:
         return (wins / closed * 100) if closed > 0 else 0.0
     
     def _analyze_signal_group(self, signals):
-        """Analyze a group of signals (for SECTION 1 & 2)"""
+        """Analyze a group of signals (for SECTION 1 & 2) with FULL TRANSPARENCY
+        
+        Every signal is accounted for in the breakdown:
+        - TP_HIT, SL_HIT, TIMEOUT, OPEN (backtest signals)
+        - REJECTED_NOT_SENT_TELEGRAM (never sent to traders)
+        - STALE_TIMEOUT (stale, excluded from backtest)
+        
+        Sum of all categories = Total loaded signals
+        """
         tp = sum(1 for s in signals if s.get('status') == 'TP_HIT')
         sl = sum(1 for s in signals if s.get('status') == 'SL_HIT')
         timeout = sum(1 for s in signals if s.get('status') == 'TIMEOUT')
         open_trades = sum(1 for s in signals if s.get('status') == 'OPEN')
+        rejected = sum(1 for s in signals if s.get('status') == 'REJECTED_NOT_SENT_TELEGRAM')
+        stale = sum(1 for s in signals if s.get('status') == 'STALE_TIMEOUT')
+        
+        # Verify: sum of all categories = total signals (no hidden signals)
+        total_accounted = tp + sl + timeout + open_trades + rejected + stale
         
         # RECALCULATE all P&L with Phase 1-3 logic (ignore daemon's stored pnl_usd)
         timeout_win = 0
@@ -1486,10 +1531,13 @@ class PECEnhancedReporter:
         
         return {
             'total': len(signals),
+            'total_accounted': total_accounted,  # Must equal total
             'tp': tp,
             'sl': sl,
             'timeout': timeout,
             'open': open_trades,
+            'rejected': rejected,  # Not sent to traders
+            'stale': stale,  # Excluded from backtest
             'closed': closed,
             'timeout_win': timeout_win,
             'timeout_loss': timeout_loss,
