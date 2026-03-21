@@ -4655,7 +4655,93 @@ VALIDATION:
 - **If mismatched:** Reporter alerts with ✗ MISMATCH
 - **Prevents:** Silent P&L discrepancies from being hidden
 
+---
+
+## 🚨 **CRITICAL FIX: STALE_TIMEOUT Complete Exclusion (2026-03-21 17:20 GMT+7)**
+
+**Status:** ✅ **COMPLETE - STALE_TIMEOUT fully excluded from all calculations**
+
+### **What Changed**
+
+**BEFORE:**
+- Total P&L included STALE_TIMEOUT P&L: -$10,546.12
+- STALE signals counted in totals but marked as "excluded from metrics" (confusing)
+- P&L breakdown incomplete: TP + SL + TIMEOUT ≠ Total P&L
+
+**AFTER:**
+- Total P&L EXCLUDES STALE_TIMEOUT completely: -$6,776.68
+- STALE signals listed in audit trail but NOT in any calculation
+- P&L breakdown complete: TP + SL + TIMEOUT + OPEN = Total P&L ✓
+
+### **Architecture (Corrected)**
+
+**INCLUDED IN METRICS (WR, P&L, all calculations):**
+- TP_HIT: 375 signals
+- SL_HIT: 969 signals
+- TIMEOUT: 385 signals
+- OPEN: 100 signals
+- **Subtotal: 1,829 signals**
+
+**EXCLUDED FROM METRICS (In audit trail only, not counted):**
+- REJECTED_NOT_SENT_TELEGRAM: 549 (never sent to traders)
+- STALE_TIMEOUT: 314 ⚠️ **Data quality issues - COMPLETELY EXCLUDED**
+- **Subtotal: 863 signals**
+
+**Total in audit trail: 2,692 signals**
+
+### **P&L Accounting (Corrected)**
+
+**INCLUDED IN TOTAL P&L:**
+- TP_HIT:    +$12,755.95
+- SL_HIT:    -$16,994.03
+- TIMEOUT:    -$2,538.59
+- OPEN:            +$0.00
+- **Subtotal:  -$6,776.68** ← This is Total P&L
+
+**EXCLUDED FROM TOTAL P&L:**
+- REJECTED: +$0.00 (not sent, no calculation)
+- STALE: NOT CALCULATED (data quality - completely excluded)
+- **Subtotal:  +$0.00**
+
+**Validation:**
+- Included (-$6,776.68) + Excluded (+$0.00) = Total (-$6,776.68) ✓
+
+### **Key Rules**
+
+**STALE_TIMEOUT signals:**
+- ❌ NOT included in Total P&L
+- ❌ NOT included in Win Rate calculation
+- ❌ NOT included in any metric or statistic
+- ✅ Kept in audit trail for debugging only
+- ✅ Marked with ⚠️ warning in reporter
+- ✅ Reason: Data quality issues (timestamps conflicting, prices invalid)
+
+**Reporter Output:**
+```
+P&L BREAKDOWN (STALE_TIMEOUT completely excluded):
+
+  INCLUDED IN TOTAL P&L (Counted in metrics):
+    • TP_HIT:      +$12,755.95
+    • SL_HIT:      -$16,994.03
+    • TIMEOUT:      -$2,538.59
+    • OPEN:             +$0.00
+    ─────────────────────────
+    Subtotal:       -$6,776.68
+
+  EXCLUDED FROM TOTAL P&L (Not counted in any metric):
+    • REJECTED:         +$0.00
+    • STALE:     ⚠️  NOT CALCULATED (data quality - completely excluded)
+
+  VALIDATION:
+    Included in Total P&L: -$6,776.68
+    Total P&L Reported:    -$6,776.68
+    ✓ Verified: P&L matches Total P&L
+```
+
+**Commit:** `f42a8cb` — CRITICAL FIX: STALE_TIMEOUT completely excluded
+
 **Commits:**
 - `fa9a49b`: Signal transparency fix
 - `5d660cf`: P&L breakdown fix
+- `f42a8cb`: CRITICAL: STALE_TIMEOUT complete exclusion
 - `1e97f60`: PEC deployment status update
