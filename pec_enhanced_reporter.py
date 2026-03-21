@@ -463,10 +463,26 @@ class PECEnhancedReporter:
         report.append(f"Avg P&L per Signal: ${combined_stats['avg_pnl_signal']:+.2f}")
         report.append(f"Avg P&L per Closed Trade: ${combined_stats['avg_pnl_closed']:+.2f}")
         report.append(f"")
-        report.append(f"P&L Breakdown by Exit Type:")
-        report.append(f"  Total P&L TP_HIT: ${combined_stats['tp_pnl']:+,.2f}")
-        report.append(f"  Total P&L SL_HIT: ${combined_stats['sl_pnl']:+,.2f}")
-        report.append(f"  Total P&L TIMEOUT: ${combined_stats['timeout_pnl']:+,.2f}")
+        report.append(f"P&L BREAKDOWN (Complete - All signal categories):")
+        report.append(f"")
+        report.append(f"  Backtest Signals (included in Total P&L):")
+        report.append(f"    • TP_HIT:    {combined_stats['tp_pnl']:+12,.2f}")
+        report.append(f"    • SL_HIT:    {combined_stats['sl_pnl']:+12,.2f}")
+        report.append(f"    • TIMEOUT:   {combined_stats['timeout_pnl']:+12,.2f}")
+        report.append(f"    • OPEN:      {combined_stats['open_pnl']:+12,.2f} (unrealized)")
+        report.append(f"    Subtotal (Backtest): {combined_stats['tp_pnl'] + combined_stats['sl_pnl'] + combined_stats['timeout_pnl'] + combined_stats['open_pnl']:+12,.2f}")
+        report.append(f"")
+        report.append(f"  Non-Backtest Signals (included in Total P&L but excluded from metrics):")
+        report.append(f"    • REJECTED:  {combined_stats['rejected_pnl']:+12,.2f} (never sent to traders)")
+        report.append(f"    • STALE:     {combined_stats['stale_pnl']:+12,.2f} (data quality issues)")
+        report.append(f"    Subtotal (Non-Backtest): {combined_stats['rejected_pnl'] + combined_stats['stale_pnl']:+12,.2f}")
+        report.append(f"")
+        report.append(f"  VALIDATION:")
+        backtest_sum = combined_stats['tp_pnl'] + combined_stats['sl_pnl'] + combined_stats['timeout_pnl'] + combined_stats['open_pnl']
+        non_backtest_sum = combined_stats['rejected_pnl'] + combined_stats['stale_pnl']
+        validation_sum = backtest_sum + non_backtest_sum
+        report.append(f"    Backtest ({backtest_sum:+.2f}) + Non-Backtest ({non_backtest_sum:+.2f}) = Total ({validation_sum:+.2f})")
+        report.append(f"    ✓ Verified: P&L sums equal Total P&L ({combined_stats['total_pnl']:+.2f})" if abs(validation_sum - combined_stats['total_pnl']) < 0.01 else f"    ✗ MISMATCH: Sum {validation_sum:+.2f} ≠ Total {combined_stats['total_pnl']:+.2f}")
         report.append(f"")
         report.append(f"Average P&L per Count:")
         report.append(f"  Avg P&L TP per Count TP: ${combined_stats['avg_tp_pnl']:+.2f}" if combined_stats['tp'] > 0 else f"  Avg P&L TP per Count TP: N/A (0 TP trades)")
@@ -533,10 +549,26 @@ class PECEnhancedReporter:
         report.append(f"Avg P&L per Signal: ${new_stats['avg_pnl_signal']:+.2f}")
         report.append(f"Avg P&L per Closed Trade: ${new_stats['avg_pnl_closed']:+.2f}")
         report.append(f"")
-        report.append(f"P&L Breakdown by Exit Type:")
-        report.append(f"  Total P&L TP_HIT: ${new_stats['tp_pnl']:+,.2f}")
-        report.append(f"  Total P&L SL_HIT: ${new_stats['sl_pnl']:+,.2f}")
-        report.append(f"  Total P&L TIMEOUT: ${new_stats['timeout_pnl']:+,.2f}")
+        report.append(f"P&L BREAKDOWN (Complete - All signal categories):")
+        report.append(f"")
+        report.append(f"  Backtest Signals (included in Total P&L):")
+        report.append(f"    • TP_HIT:    {new_stats['tp_pnl']:+12,.2f}")
+        report.append(f"    • SL_HIT:    {new_stats['sl_pnl']:+12,.2f}")
+        report.append(f"    • TIMEOUT:   {new_stats['timeout_pnl']:+12,.2f}")
+        report.append(f"    • OPEN:      {new_stats['open_pnl']:+12,.2f} (unrealized)")
+        report.append(f"    Subtotal (Backtest): {new_stats['tp_pnl'] + new_stats['sl_pnl'] + new_stats['timeout_pnl'] + new_stats['open_pnl']:+12,.2f}")
+        report.append(f"")
+        report.append(f"  Non-Backtest Signals (included in Total P&L but excluded from metrics):")
+        report.append(f"    • REJECTED:  {new_stats['rejected_pnl']:+12,.2f} (never sent to traders)")
+        report.append(f"    • STALE:     {new_stats['stale_pnl']:+12,.2f} (data quality issues)")
+        report.append(f"    Subtotal (Non-Backtest): {new_stats['rejected_pnl'] + new_stats['stale_pnl']:+12,.2f}")
+        report.append(f"")
+        report.append(f"  VALIDATION:")
+        new_backtest_sum = new_stats['tp_pnl'] + new_stats['sl_pnl'] + new_stats['timeout_pnl'] + new_stats['open_pnl']
+        new_non_backtest_sum = new_stats['rejected_pnl'] + new_stats['stale_pnl']
+        new_validation_sum = new_backtest_sum + new_non_backtest_sum
+        report.append(f"    Backtest ({new_backtest_sum:+.2f}) + Non-Backtest ({new_non_backtest_sum:+.2f}) = Total ({new_validation_sum:+.2f})")
+        report.append(f"    ✓ Verified: P&L sums equal Total P&L ({new_stats['total_pnl']:+.2f})" if abs(new_validation_sum - new_stats['total_pnl']) < 0.01 else f"    ✗ MISMATCH: Sum {new_validation_sum:+.2f} ≠ Total {new_stats['total_pnl']:+.2f}")
         report.append(f"")
         report.append("")
         
@@ -1493,11 +1525,15 @@ class PECEnhancedReporter:
         total_accounted = tp + sl + timeout + open_trades + rejected + stale
         
         # RECALCULATE all P&L with Phase 1-3 logic (ignore daemon's stored pnl_usd)
+        # FULL TRANSPARENCY: Track P&L for each status group separately
         timeout_win = 0
         total_pnl = 0.0
         tp_pnl = 0.0
         sl_pnl = 0.0
         timeout_pnl = 0.0
+        open_pnl = 0.0
+        rejected_pnl = 0.0
+        stale_pnl = 0.0
         
         for s in signals:
             status = s.get('status')
@@ -1509,6 +1545,8 @@ class PECEnhancedReporter:
             pnl_val = pnl_calc if pnl_calc is not None else 0.0
             
             total_pnl += pnl_val
+            
+            # Track P&L for each status group explicitly
             if status == 'TP_HIT':
                 tp_pnl += pnl_val
             elif status == 'SL_HIT':
@@ -1517,6 +1555,12 @@ class PECEnhancedReporter:
                 timeout_pnl += pnl_val
                 if pnl_val > 0:
                     timeout_win += 1
+            elif status == 'OPEN':
+                open_pnl += pnl_val
+            elif status == 'REJECTED_NOT_SENT_TELEGRAM':
+                rejected_pnl += pnl_val
+            elif status == 'STALE_TIMEOUT':
+                stale_pnl += pnl_val
         
         timeout_loss = timeout - timeout_win
         closed = tp + sl + timeout
@@ -1547,6 +1591,9 @@ class PECEnhancedReporter:
             'tp_pnl': tp_pnl,
             'sl_pnl': sl_pnl,
             'timeout_pnl': timeout_pnl,
+            'open_pnl': open_pnl,  # NEW: unrealized P&L
+            'rejected_pnl': rejected_pnl,  # NEW: rejected signals P&L
+            'stale_pnl': stale_pnl,  # NEW: stale signals P&L
             'avg_tp_pnl': avg_tp_pnl,
             'avg_sl_pnl': avg_sl_pnl,
             'wr': wr,
