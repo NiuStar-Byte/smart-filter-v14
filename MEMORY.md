@@ -4917,6 +4917,322 @@ for signal in self.signals:
 - Total: 2,692 signals (all statuses)
 - Note which are excluded from all metrics
 
+---
+
+## 📋 **PROJECT-5 PEC REPORTER - COMPLETE VALIDATION & RULES (2026-03-21 18:13 GMT+7)**
+
+**Status:** ✅ **ALL RULES AGREED & DOCUMENTED - ZERO AMBIGUITY**
+
+### **CRITICAL RULES (LOCKED)**
+
+#### **Rule 1: Signal Status Categories**
+```
+VALID BACKTEST SIGNALS (included in all metrics):
+  ✓ TP_HIT: 375 signals
+  ✓ SL_HIT: 969 signals
+  ✓ TIMEOUT: 388 signals
+  ✓ OPEN: 107 signals
+  ───────────────────
+  Subtotal: 1,839 signals
+
+INVALID/NON-BACKTEST SIGNALS (excluded from all metrics):
+  ✗ REJECTED_NOT_SENT_TELEGRAM: 549 signals (never sent to traders)
+  ✗ STALE_TIMEOUT: 314 signals (data quality issues)
+  ───────────────────
+  Subtotal: 863 signals
+
+AUDIT TRAIL TOTAL: 2,692 signals
+```
+
+#### **Rule 2: Win Rate (WR) Calculation**
+```
+Formula: (TP_HIT + TIMEOUT_WIN) / (TP_HIT + SL_HIT + TIMEOUT)
+
+Components:
+  ✓ Numerator: TP_HIT count + TIMEOUT signals with positive P&L
+  ✓ Denominator: All closed trades (TP + SL + TIMEOUT)
+  ✗ Excluded from denominator: OPEN, REJECTED, STALE
+
+TIMEOUT_WIN: Count TIMEOUT signals where P&L > 0
+TIMEOUT_LOSS: Count TIMEOUT signals where P&L ≤ 0
+
+IMPLEMENTATION:
+  for s in signals:
+      if s.status == 'STALE_TIMEOUT': continue  # Skip completely
+      if s.status == 'REJECTED_NOT_SENT_TELEGRAM': continue  # Skip completely
+      if s.status == 'TIMEOUT':
+          if calc_pnl(s) > 0: timeout_win += 1
+          else: timeout_loss += 1
+
+  closed = TP_HIT + SL_HIT + TIMEOUT  (excludes OPEN, STALE, REJECTED)
+  wins = TP_HIT + TIMEOUT_WIN
+  WR = (wins / closed) * 100
+```
+
+#### **Rule 3: P&L Calculation (Total P&L)**
+```
+Formula: SUM of all P&L from valid backtest signals only
+
+Components:
+  ✓ TP_HIT P&L: Sum of all TP signal P&L
+  ✓ SL_HIT P&L: Sum of all SL signal P&L
+  ✓ TIMEOUT P&L: Sum of all TIMEOUT signal P&L
+  ✓ OPEN P&L: 0 (unrealized, not calculated)
+  ✗ REJECTED P&L: 0 (never sent to traders, no P&L)
+  ✗ STALE P&L: NOT CALCULATED (data quality - completely excluded)
+
+IMPLEMENTATION:
+  total_pnl = 0
+  for s in signals:
+      if s.status == 'STALE_TIMEOUT': continue  # Skip completely
+      if s.status == 'REJECTED_NOT_SENT_TELEGRAM': continue  # Skip completely
+      
+      pnl = calc_pnl(entry, exit, direction)
+      total_pnl += pnl
+
+  Breakdown:
+    tp_pnl = SUM(P&L where status='TP_HIT')
+    sl_pnl = SUM(P&L where status='SL_HIT')
+    timeout_pnl = SUM(P&L where status='TIMEOUT')
+    open_pnl = 0
+    rejected_pnl = 0
+    stale_pnl = NOT CALCULATED
+
+  Total P&L = tp_pnl + sl_pnl + timeout_pnl + open_pnl + rejected_pnl
+```
+
+#### **Rule 4: Aggregates (Dimensional Breakdowns)**
+```
+What to aggregate:
+  ✓ ONLY valid backtest signals (TP, SL, TIMEOUT, OPEN)
+  ✗ EXCLUDE STALE_TIMEOUT completely
+  ✗ EXCLUDE REJECTED_NOT_SENT_TELEGRAM completely
+
+Aggregate functions: _aggregate_by(), _aggregate_by_dimensions(), _aggregate_by_dimensions_with_symbol()
+
+IMPLEMENTATION (all three functions):
+  for signal in self.signals:
+      status = signal.get('status', 'OPEN')
+      
+      # Skip invalid signals from ALL aggregates
+      if status == 'STALE_TIMEOUT':
+          continue  # Data quality - completely excluded
+      if status == 'REJECTED_NOT_SENT_TELEGRAM':
+          continue  # Never sent to traders - completely excluded
+      
+      # Process only valid signals
+      # count, tp, sl, timeout, pnl aggregation...
+
+By Timeframe: 15min, 1h, 30min (only valid signals)
+By Direction: LONG, SHORT (only valid signals)
+By Route: AMBIGUOUS, NONE, REVERSAL, TREND CONTINUATION, TREND_CONTINUATION (only valid)
+By Regime: BEAR, BULL, RANGE (only valid signals)
+By Symbol Group: LOW_ALTS, MAIN_BLOCKCHAIN, MID_ALTS, TOP_ALTS (only valid)
+By Confidence: HIGH (≥76%), MID (51-75%), LOW (≤50%) (only valid signals)
+
+Multi-dimensional: All combinations exclude STALE and REJECTED
+```
+
+#### **Rule 5: Report Sections Structure**
+
+**SECTION 1: TOTAL SIGNALS (Foundation + New)**
+```
+Displays:
+  1. Total Signals Loaded: 2,692 (all signals for audit)
+  2. SIGNAL BREAKDOWN (all signals shown):
+     - INCLUDED IN METRICS: TP, SL, TIMEOUT, OPEN count
+     - EXCLUDED FROM METRICS: REJECTED count, STALE count
+     - VERIFICATION: Included + Excluded = Total
+  3. CLOSED TRADES ANALYSIS (only valid signals):
+     - Closed = TP + SL + TIMEOUT
+     - Win Rate = (TP + TIMEOUT_WIN) / Closed
+  4. P&L BREAKDOWN (only valid signals):
+     - INCLUDED: TP P&L, SL P&L, TIMEOUT P&L, OPEN P&L (0)
+     - EXCLUDED: REJECTED P&L (0), STALE (NOT CALCULATED)
+     - VALIDATION: Included P&L = Total P&L
+  5. Average P&L per Count:
+     - Avg TP per TP trade
+     - Avg SL per SL trade
+```
+
+**SECTION 2: NEW ONLY (Mar 21+ onwards)**
+```
+Same structure as SECTION 1 but only for NEW_LIVE signals
+  - All same rules apply
+  - Include Average P&L per Count
+  - Same exclusions (STALE, REJECTED)
+```
+
+**AGGREGATES (Dimensional Breakdowns)**
+```
+All aggregates:
+  - EXCLUDE STALE_TIMEOUT completely
+  - EXCLUDE REJECTED_NOT_SENT_TELEGRAM completely
+  - Only aggregate valid signals (TP, SL, TIMEOUT, OPEN)
+  - Show: Count, TP, SL, TIMEOUT, Closed, Open, WR%, P&L, Durations
+```
+
+#### **Rule 6: Validation Checks (Non-Negotiable)**
+```
+After every calculation, verify:
+
+SECTION 1:
+  ✓ Included + Excluded = Total Signals (2,692)
+  ✓ TP + SL + TIMEOUT + OPEN + REJECTED + STALE = 2,692
+  ✓ TP P&L + SL P&L + TIMEOUT P&L + OPEN P&L + REJECTED P&L = Total P&L
+  ✓ WR denominator = TP + SL + TIMEOUT (no OPEN, no STALE, no REJECTED)
+
+SECTION 2:
+  ✓ Same rules apply for NEW signals
+  ✓ All sums must balance
+
+AGGREGATES:
+  ✓ Each dimensional breakdown total ≈ 1,839 (valid signals only)
+  ✓ No STALE or REJECTED in any aggregate
+  ✓ All WR calculations exclude STALE and REJECTED
+```
+
+#### **Rule 7: P&L Calculation Formula (Notional Position)**
+```
+Position: $1000 notional ($100 margin × 10x leverage)
+
+For LONG:
+  P&L = ((exit_price - entry_price) / entry_price) × $1000
+
+For SHORT:
+  P&L = ((entry_price - exit_price) / exit_price) × $1000
+
+Applied to: TP_HIT, SL_HIT, TIMEOUT, OPEN (0), REJECTED (0)
+NOT applied to: STALE_TIMEOUT (completely excluded)
+```
+
+#### **Rule 8: Data Quality (STALE_TIMEOUT) Treatment**
+```
+STALE_TIMEOUT signals:
+  ✗ NOT included in Total Signals count in metrics
+  ✗ NOT included in Win Rate denominator
+  ✗ NOT included in P&L calculations
+  ✗ NOT included in any aggregate
+  ✓ Kept in audit trail for debugging
+  ✓ Marked with ⚠️ warning in reporter
+  ✓ Reason: Timestamps conflicting, prices invalid, data quality issues
+
+These signals are COMPLETELY EXCLUDED from all calculations.
+No partial inclusion. No "separate P&L tracking". Zero calculation.
+```
+
+#### **Rule 9: REJECTED_NOT_SENT_TELEGRAM Treatment**
+```
+REJECTED signals:
+  ✗ NOT included in Total Signals count in metrics
+  ✗ NOT included in Win Rate denominator
+  ✗ NOT included in any aggregate
+  ✓ Counted in Audit Trail (2,692 total)
+  ✓ Marked as "never sent to traders"
+  ✓ P&L = 0 (never executed, no trades)
+
+Why: These signals were generated but rejected before reaching Telegram.
+Traders never saw them, so they don't count toward backtest metrics.
+```
+
+#### **Rule 10: Audit Trail (Complete Transparency)**
+```
+All 2,692 signals are preserved in audit trail for debugging:
+  - INCLUDED in metrics: 1,839 valid signals
+  - EXCLUDED from metrics: 863 invalid signals
+  
+This ensures:
+  ✓ No data loss
+  ✓ Complete traceability
+  ✓ Ability to reconstruct from SIGNALS_INDEPENDENT_AUDIT.txt
+  ✓ Full transparency on what was excluded and why
+```
+
+### **AGREED CALCULATIONS (Final & Locked)**
+
+**Win Rate (Example):**
+```
+Foundation period (Feb 27 - Mar 14):
+  TP_HIT: 348
+  SL_HIT: 746
+  TIMEOUT: 245 (with 89 wins, 156 losses)
+  
+  Closed = 348 + 746 + 245 = 1,339
+  Wins = 348 + 89 = 437
+  WR = 437 / 1,339 = 32.7%
+  
+  STALE_TIMEOUT (314): NOT IN ANY CALCULATION
+  REJECTED (549): NOT IN ANY CALCULATION
+```
+
+**Total P&L (Example):**
+```
+Valid signals P&L:
+  TP_HIT: +$12,755.95
+  SL_HIT: -$16,994.03
+  TIMEOUT: -$2,538.59
+  OPEN: +$0.00
+  ─────────────────
+  Total: -$6,776.68
+  
+  STALE_TIMEOUT: NOT CALCULATED (excluded)
+  REJECTED: +$0.00 (no P&L, never traded)
+```
+
+**Aggregates (Example: By Timeframe)**
+```
+15min:  825 signals  (valid only, no STALE/REJECTED)
+1h:     296 signals  (valid only, no STALE/REJECTED)
+30min:  749 signals  (valid only, no STALE/REJECTED)
+─────
+Total:  1,870 signals
+
+STALE_TIMEOUT (314) and REJECTED (549) = NOT included in any row
+```
+
+### **Code Implementation Checklist**
+
+✅ _analyze_signal_group():
+  - Counts: tp, sl, timeout, open, rejected, stale (all 6 statuses)
+  - Skips STALE in P&L loop: `if status == 'STALE_TIMEOUT': continue`
+  - Skips REJECTED in P&L loop: `if status == 'REJECTED_NOT_SENT_TELEGRAM': continue`
+  - Calculates: total_pnl, tp_pnl, sl_pnl, timeout_pnl, open_pnl, rejected_pnl (0)
+  - WR uses only: TP + SL + TIMEOUT (no OPEN, no STALE, no REJECTED)
+  - Returns: tp_pnl, sl_pnl, timeout_pnl, open_pnl, rejected_pnl, stale (for transparency)
+
+✅ _aggregate_by():
+  - Skips STALE: `if status == 'STALE_TIMEOUT': continue`
+  - Skips REJECTED: `if status == 'REJECTED_NOT_SENT_TELEGRAM': continue`
+  - Only processes: TP, SL, TIMEOUT, OPEN
+  - P&L only calculated for: TP, SL, TIMEOUT
+
+✅ _aggregate_by_dimensions():
+  - Same skip logic as _aggregate_by()
+  - All dimensions use same rules
+
+✅ _aggregate_by_dimensions_with_symbol():
+  - Same skip logic as _aggregate_by()
+  - All 5D aggregates exclude STALE and REJECTED
+
+✅ SECTION 1 & 2 display:
+  - Shows all signals in audit trail
+  - Separates INCLUDED vs EXCLUDED explicitly
+  - Validates: Included + Excluded = Total
+  - P&L breakdown: Only valid signals sum
+  - Includes Average P&L per Count (Section 2)
+
+### **Commits (Complete Chain)**
+
+1. `fa9a49b` — Signal transparency fix (show all signals, separate categories)
+2. `5d660cf` — P&L breakdown fix (track open_pnl, rejected_pnl separately)
+3. `f42a8cb` — STALE_TIMEOUT complete exclusion from WR & P&L
+4. `37ae9cc` — Average P&L per Count added to SECTION 2
+5. `fc4f8e0` — CRITICAL: Aggregates exclude both STALE & REJECTED
+6. `3536267` — Memory documentation (WR & P&L exclusion details)
+7. `232472d` — Memory documentation (implementation details)
+8. `0c2830a` — Memory documentation (aggregates exclusion)
+9. Next: `[commit pending]` — Final rules documentation (THIS COMMIT)
+
 **Commits:**
 - `fa9a49b`: Signal transparency fix
 - `5d660cf`: P&L breakdown fix
@@ -4925,3 +5241,4 @@ for signal in self.signals:
 - `fc4f8e0`: CRITICAL: Aggregates exclude STALE & REJECTED
 - `3536267`: Memory documentation (initial)
 - `232472d`: WR & P&L exclusion implementation details
+- `0c2830a`: Aggregates exclusion documentation
