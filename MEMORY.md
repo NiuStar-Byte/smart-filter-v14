@@ -4578,3 +4578,84 @@ Running successfully with NO ISSUES:
 2. Monitor P&L trend (currently -$10,270.54, comparing against foundation baseline)
 3. Continue hourly cycles through Mar 22+ (rolling immutability pattern working)
 4. Archive hourly reports weekly to keep `/pec_hourly_reports/` organized
+
+---
+
+## ✅ **REPORTER VALIDATION & TRANSPARENCY FIX (2026-03-21 17:16 GMT+7)**
+
+**Status:** ✅ **COMPLETE - All signals accounted for, all P&L transparent**
+
+### **Issues Found & Fixed**
+
+**Issue #1: Silent Signal Filtering** 
+- **Problem:** Reporter loaded 2,682 signals but counted only 1,819 (TP+SL+TIMEOUT+OPEN)
+- **Missing:** 863 signals (549 REJECTED + 314 STALE) silently dropped from display
+- **Caused Gap:** 2,682 - 1,819 = 863 signals not shown in breakdown
+- **Fix:** Added explicit REJECTED and STALE counters to signal breakdown
+- **Commit:** `fa9a49b`
+
+**Issue #2: Incomplete P&L Breakdown**
+- **Problem:** TP ($+12,727.15) + SL ($-16,975.64) + TIMEOUT ($-2,527.36) = -$6,775.85
+- **But Reported:** Total P&L = -$10,556.52
+- **Gap:** -$3,780.67 missing from breakdown
+- **Root Cause:** Reporter calculated total_pnl from ALL signals, but only showed TP/SL/TIMEOUT breakdown
+- **Missing Source:** -$3,780.68 came from STALE signals being included in total but not shown
+- **Fix:** Added explicit P&L tracking for OPEN, REJECTED, STALE signals
+- **Validation:** Backtest P&L + Non-Backtest P&L = Total P&L ✓
+- **Commit:** `5d660cf`
+
+### **Complete Signal Accounting (SECTION 1)**
+```
+Total Loaded: 2,682
+
+BACKTEST SIGNALS (1,819):
+  • TP_HIT:   375 signals
+  • SL_HIT:   969 signals
+  • TIMEOUT:  385 signals
+  • OPEN:     100 signals (unrealized)
+  Subtotal:   1,819
+
+NON-BACKTEST SIGNALS (863):
+  • REJECTED_NOT_SENT_TELEGRAM: 549 (never reached traders)
+  • STALE_TIMEOUT: 314 (data quality issues)
+  Subtotal:   863
+
+VERIFICATION: 1,819 + 863 = 2,682 ✓ ALL SIGNALS ACCOUNTED FOR
+```
+
+### **Complete P&L Breakdown (SECTION 1)**
+```
+BACKTEST P&L:
+  • TP_HIT:    +$12,755.95
+  • SL_HIT:    -$16,994.03
+  • TIMEOUT:    -$2,527.36
+  • OPEN:            +$0.00 (unrealized)
+  ─────────────────────────
+  Subtotal:     -$6,765.44
+
+NON-BACKTEST P&L:
+  • REJECTED:       +$0.00 (never calculated - not sent)
+  • STALE:      -$3,780.68 (calculated but excluded from metrics)
+  ─────────────────────────
+  Subtotal:     -$3,780.68
+
+VALIDATION:
+  -$6,765.44 + (-$3,780.68) = -$10,546.12
+  Equals Total P&L: -$10,546.12 ✓ VERIFIED
+```
+
+### **Key Changes to Reporter**
+1. **_analyze_signal_group():** Now tracks separate P&L for all 6 status groups
+2. **Return dict:** Added `open_pnl`, `rejected_pnl`, `stale_pnl` fields
+3. **SECTION 1 & 2 display:** Full P&L breakdown with subtotals and validation
+4. **Every signal contributes:** No hidden P&L, every signal visible in breakdown
+
+### **Validation Principle**
+- **RULE:** Sum of all category P&Ls = Total P&L
+- **If mismatched:** Reporter alerts with ✗ MISMATCH
+- **Prevents:** Silent P&L discrepancies from being hidden
+
+**Commits:**
+- `fa9a49b`: Signal transparency fix
+- `5d660cf`: P&L breakdown fix
+- `1e97f60`: PEC deployment status update
