@@ -5333,3 +5333,47 @@ Actual Max Timeout Duration by Timeframe:
 ### **Commit**
 
 - `0113712` — ADD: Risk:Reward (RR) metrics & Max Timeout Duration by Timeframe to SECTION 1 & 2
+
+---
+
+## 🔧 **CRITICAL FIX: RR Metrics N/A on NEW Signals - Schema Mismatch (2026-03-21 20:42 GMT+7)**
+
+**Issue Found:** SECTION 2 showed "Risk:Reward (RR) Metrics: N/A" for NEW signals, while SECTION 1 (FOUNDATION) showed real values.
+
+**Root Cause:** Schema mismatch between daemon and reporter
+- **FOUNDATION signals** (old archive): Field names = `tp_price`, `sl_price`
+- **NEW_LIVE signals** (from daemon): Field names = `tp_target`, `sl_target`
+- **Reporter code** was only looking for `tp_price`/`sl_price` → couldn't find values in NEW signals
+
+**Data Integrity Verified:**
+```
+NEW_LIVE Signal Counts:
+- 49 TP_HIT → have entry_price ✓ + actual_exit_price ✓, but tp_price/sl_price missing (has tp_target/sl_target)
+- 284 SL_HIT → have entry_price ✓ + actual_exit_price ✓, but tp_price/sl_price missing (has tp_target/sl_target)  
+- 194 TIMEOUT → have entry_price ✓ + actual_exit_price ✓, but tp_price/sl_price missing (has tp_target/sl_target)
+- 78 OPEN → have entry_price ✓ only (not yet closed)
+Total: 605 NEW signals, all with correct field data just under different names
+```
+
+**P&L Calculation:** NOT affected (uses `actual_exit_price` which is always present)
+**RR Calculation:** AFFECTED (needs planned TP/SL, which exist but under wrong field name)
+
+**Fix Applied:**
+```python
+# Before: Only checked old schema
+tp = s.get('tp_price')
+sl = s.get('sl_price')
+
+# After: Check BOTH schemas (backward compatible)
+tp = s.get('tp_price') or s.get('tp_target')
+sl = s.get('sl_price') or s.get('sl_target')
+```
+
+**Result After Fix:**
+- SECTION 1 (FOUNDATION): Highest RR: 3.08, Avg RR: 1.78, Lowest RR: 0.19 ✓
+- SECTION 2 (NEW): Highest RR: 3.03, Avg RR: 1.53, Lowest RR: 0.19 ✓ (was N/A before)
+
+**Commit:** `45cc9d9` — FIX: RR metrics now show for NEW signals - support both schema names
+
+**Key Insight (GIGO Principle):**
+Data quality isn't just "does it exist" — it's also "can I find it?" Same TP/SL values existed in MASTER but under different field names, making them invisible to the reporter. Cross-validation of schema assumptions is critical. ✅
