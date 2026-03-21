@@ -269,6 +269,78 @@ class PECEnhancedReporter:
         except:
             return "N/A"
     
+    def _calculate_rr_metrics(self, signals_list):
+        """Calculate Risk:Reward (RR) metrics: Highest, Average, Lowest
+        
+        RR = (TP - Entry) / (Entry - SL)
+        """
+        try:
+            rr_values = []
+            for s in signals_list:
+                entry = s.get('entry_price')
+                tp = s.get('tp_price')
+                sl = s.get('sl_price')
+                
+                if entry and tp and sl:
+                    try:
+                        entry_f = float(entry)
+                        tp_f = float(tp)
+                        sl_f = float(sl)
+                        
+                        # Calculate RR
+                        reward = tp_f - entry_f
+                        risk = entry_f - sl_f
+                        
+                        if risk > 0:  # Avoid division by zero
+                            rr = reward / risk
+                            rr_values.append(rr)
+                    except:
+                        pass
+            
+            if not rr_values:
+                return None, None, None
+            
+            highest_rr = max(rr_values)
+            avg_rr = sum(rr_values) / len(rr_values)
+            lowest_rr = min(rr_values)
+            
+            return round(highest_rr, 2), round(avg_rr, 2), round(lowest_rr, 2)
+        except:
+            return None, None, None
+    
+    def _calculate_max_timeout_by_timeframe(self, signals_list):
+        """Calculate actual max timeout duration for each timeframe
+        
+        Returns dict: {'15min': 'Xh Ym', '30min': '...', '1h': '...'}
+        """
+        try:
+            max_durations = {}
+            
+            for tf in ['15min', '30min', '1h']:
+                max_seconds = 0
+                tf_timeouts = [s for s in signals_list if s.get('status') == 'TIMEOUT' and s.get('timeframe') == tf]
+                
+                for s in tf_timeouts:
+                    if s.get('fired_time_utc') and s.get('closed_at'):
+                        try:
+                            fired = datetime.fromisoformat(s.get('fired_time_utc').replace('Z', '+00:00'))
+                            closed = datetime.fromisoformat(s.get('closed_at').replace('Z', '+00:00'))
+                            delta = closed - fired
+                            total_seconds = int(delta.total_seconds())
+                            if total_seconds > max_seconds:
+                                max_seconds = total_seconds
+                        except:
+                            pass
+                
+                if max_seconds > 0:
+                    max_durations[tf] = self._format_duration_hm(max_seconds)
+                else:
+                    max_durations[tf] = "N/A"
+            
+            return max_durations
+        except:
+            return {'15min': 'N/A', '30min': 'N/A', '1h': 'N/A'}
+    
     def _generate_detailed_signal_list(self):
         """Generate detailed signal list section"""
         detail_lines = []
@@ -488,6 +560,22 @@ class PECEnhancedReporter:
         report.append(f"  Avg P&L SL per Count SL: ${combined_stats['avg_sl_pnl']:+.2f}" if combined_stats['sl'] > 0 else f"  Avg P&L SL per Count SL: N/A (0 SL trades)")
         report.append("")
         
+        # Risk:Reward Metrics
+        highest_rr, avg_rr, lowest_rr = self._calculate_rr_metrics(combined)
+        report.append(f"Risk:Reward (RR) Metrics:")
+        report.append(f"  Highest RR: {highest_rr if highest_rr is not None else 'N/A'}")
+        report.append(f"  Avg RR: {avg_rr if avg_rr is not None else 'N/A'}")
+        report.append(f"  Lowest RR: {lowest_rr if lowest_rr is not None else 'N/A'}")
+        report.append("")
+        
+        # Max Timeout Duration by Timeframe
+        max_timeout_durations = self._calculate_max_timeout_by_timeframe(combined)
+        report.append(f"Actual Max Timeout Duration by Timeframe:")
+        report.append(f"  15min: {max_timeout_durations['15min']}")
+        report.append(f"  30min: {max_timeout_durations['30min']}")
+        report.append(f"  1h: {max_timeout_durations['1h']}")
+        report.append("")
+        
         # SECTION 2: New Only (Show NEW_LIVE signals - all signals after initial foundation)
         # "NEW" = signals fired on Mar 21+ onwards (not FOUNDATION, and after rebuild cutoff)
         # NOTE: Must convert UTC fired_time to GMT+7 for proper date comparison
@@ -572,6 +660,22 @@ class PECEnhancedReporter:
         report.append(f"  Avg P&L TP per Count TP: ${new_stats['avg_tp_pnl']:+.2f}" if new_stats['tp'] > 0 else f"  Avg P&L TP per Count TP: N/A (0 TP trades)")
         report.append(f"  Avg P&L SL per Count SL: ${new_stats['avg_sl_pnl']:+.2f}" if new_stats['sl'] > 0 else f"  Avg P&L SL per Count SL: N/A (0 SL trades)")
         report.append(f"")
+        
+        # Risk:Reward Metrics for NEW signals
+        highest_rr_new, avg_rr_new, lowest_rr_new = self._calculate_rr_metrics(new_signals_by_origin)
+        report.append(f"Risk:Reward (RR) Metrics:")
+        report.append(f"  Highest RR: {highest_rr_new if highest_rr_new is not None else 'N/A'}")
+        report.append(f"  Avg RR: {avg_rr_new if avg_rr_new is not None else 'N/A'}")
+        report.append(f"  Lowest RR: {lowest_rr_new if lowest_rr_new is not None else 'N/A'}")
+        report.append("")
+        
+        # Max Timeout Duration by Timeframe for NEW signals
+        max_timeout_durations_new = self._calculate_max_timeout_by_timeframe(new_signals_by_origin)
+        report.append(f"Actual Max Timeout Duration by Timeframe:")
+        report.append(f"  15min: {max_timeout_durations_new['15min']}")
+        report.append(f"  30min: {max_timeout_durations_new['30min']}")
+        report.append(f"  1h: {max_timeout_durations_new['1h']}")
+        report.append("")
         report.append("")
         
         # Aggregates Section
