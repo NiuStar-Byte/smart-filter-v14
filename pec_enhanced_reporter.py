@@ -1607,20 +1607,28 @@ class PECEnhancedReporter:
         }
     
     def _aggregate_by(self, dimension):
-        """Aggregate statistics by dimension (all lowercase field names)"""
+        """Aggregate statistics by dimension (all lowercase field names)
+        
+        CRITICAL: Exclude both STALE_TIMEOUT and REJECTED_NOT_SENT_TELEGRAM from all aggregates
+        Only valid backtest signals (TP_HIT, SL_HIT, TIMEOUT, OPEN) are aggregated
+        """
         stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout_win': 0, 'timeout_loss': 0, 'pnl': 0.0})
         
         for signal in self.signals:
-            # SKIP stale timeouts (data quality issue) - exclude from backtest P&L
-            if signal.get('data_quality_flag') and 'STALE_TIMEOUT' in signal.get('data_quality_flag'):
-                continue
+            status = signal.get('status', 'OPEN')
+            
+            # SKIP invalid/non-backtest signals - exclude from all aggregates
+            if status == 'STALE_TIMEOUT':
+                continue  # Data quality issue - completely excluded
+            if status == 'REJECTED_NOT_SENT_TELEGRAM':
+                continue  # Never sent to traders - excluded from all aggregates
             
             # Get the key value for this dimension
             key = signal.get(dimension, 'N/A')
             
             stats[key]['count'] += 1
             
-            status = signal.get('status', 'OPEN')
+            # Status already extracted above for skip checks - reuse it
             if status == 'TP_HIT':
                 stats[key]['tp'] += 1
             elif status == 'SL_HIT':
@@ -1652,13 +1660,21 @@ class PECEnhancedReporter:
         return stats
     
     def _aggregate_by_dimensions(self, dimensions):
-        """Aggregate statistics by multiple dimensions (tuple of field names)"""
+        """Aggregate statistics by multiple dimensions (tuple of field names)
+        
+        CRITICAL: Exclude both STALE_TIMEOUT and REJECTED_NOT_SENT_TELEGRAM from all aggregates
+        Only valid backtest signals (TP_HIT, SL_HIT, TIMEOUT, OPEN) are aggregated
+        """
         stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout_win': 0, 'timeout_loss': 0, 'pnl': 0.0})
         
         for signal in self.signals:
-            # SKIP stale timeouts (data quality issue) - exclude from backtest P&L
-            if signal.get('data_quality_flag') and 'STALE_TIMEOUT' in signal.get('data_quality_flag'):
-                continue
+            status = signal.get('status', 'OPEN')
+            
+            # SKIP invalid/non-backtest signals - exclude from all aggregates
+            if status == 'STALE_TIMEOUT':
+                continue  # Data quality issue - completely excluded
+            if status == 'REJECTED_NOT_SENT_TELEGRAM':
+                continue  # Never sent to traders - excluded from all aggregates
             
             # Build tuple key from multiple dimensions
             key_parts = []
@@ -1679,7 +1695,7 @@ class PECEnhancedReporter:
             
             stats[key]['count'] += 1
             
-            status = signal.get('status', 'OPEN')
+            # Status already extracted above for skip checks - reuse it
             if status == 'TP_HIT':
                 stats[key]['tp'] += 1
             elif status == 'SL_HIT':
@@ -1711,13 +1727,21 @@ class PECEnhancedReporter:
         return stats
     
     def _aggregate_by_dimensions_with_symbol(self, dimensions):
-        """Aggregate by 4D dimensions PLUS symbol_group (5D)"""
+        """Aggregate by 4D dimensions PLUS symbol_group (5D)
+        
+        CRITICAL: Exclude both STALE_TIMEOUT and REJECTED_NOT_SENT_TELEGRAM from all aggregates
+        Only valid backtest signals (TP_HIT, SL_HIT, TIMEOUT, OPEN) are aggregated
+        """
         stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout_win': 0, 'timeout_loss': 0, 'pnl': 0.0})
         
         for signal in self.signals:
-            # SKIP stale timeouts (data quality issue) - exclude from backtest P&L
-            if signal.get('data_quality_flag') and 'STALE_TIMEOUT' in signal.get('data_quality_flag'):
-                continue
+            status = signal.get('status', 'OPEN')
+            
+            # SKIP invalid/non-backtest signals - exclude from all aggregates
+            if status == 'STALE_TIMEOUT':
+                continue  # Data quality issue - completely excluded
+            if status == 'REJECTED_NOT_SENT_TELEGRAM':
+                continue  # Never sent to traders - excluded from all aggregates
             
             # Build tuple key from dimensions + symbol_group
             key_parts = []
@@ -1742,7 +1766,7 @@ class PECEnhancedReporter:
             
             stats[key]['count'] += 1
             
-            status = signal.get('status', 'OPEN')
+            # Status already extracted above for skip checks - reuse it
             if status == 'TP_HIT':
                 stats[key]['tp'] += 1
             elif status == 'SL_HIT':
