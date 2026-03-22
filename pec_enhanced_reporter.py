@@ -845,14 +845,15 @@ class PECEnhancedReporter:
         report.append("─" * 175)
         
         # Bin confidence levels - EXCLUDE STALE and REJECTED signals
+        # NEW RANGES: HIGH (≥71%), MID (66-70%), LOW (<66 to catch fractional values)
         high_conf = [s for s in self.signals if s.get('status') not in ['STALE_TIMEOUT', 'REJECTED_NOT_SENT_TELEGRAM'] and s.get('confidence', 0) >= 71]
-        mid_conf = [s for s in self.signals if s.get('status') not in ['STALE_TIMEOUT', 'REJECTED_NOT_SENT_TELEGRAM'] and 61 <= s.get('confidence', 0) < 71]
-        low_conf = [s for s in self.signals if s.get('status') not in ['STALE_TIMEOUT', 'REJECTED_NOT_SENT_TELEGRAM'] and s.get('confidence', 0) <= 60]
+        mid_conf = [s for s in self.signals if s.get('status') not in ['STALE_TIMEOUT', 'REJECTED_NOT_SENT_TELEGRAM'] and 66 <= s.get('confidence', 0) < 71]
+        low_conf = [s for s in self.signals if s.get('status') not in ['STALE_TIMEOUT', 'REJECTED_NOT_SENT_TELEGRAM'] and s.get('confidence', 0) < 66]
         
         for conf_level, signals_list, label in [
             ('HIGH', high_conf, 'HIGH (≥71%)'),
-            ('MID', mid_conf, 'MID (61-70%)'),
-            ('LOW', low_conf, 'LOW (≤60%)')
+            ('MID', mid_conf, 'MID (66-70%)'),
+            ('LOW', low_conf, 'LOW (≤65%)')
         ]:
             tp = sum(1 for s in signals_list if s.get('status') == 'TP_HIT')
             sl = sum(1 for s in signals_list if s.get('status') == 'SL_HIT')
