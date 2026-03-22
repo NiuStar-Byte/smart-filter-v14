@@ -217,7 +217,7 @@ def send_telegram_alert(
 
     weighted_str = f"{weighted_val:.1f}/{total_weight_val:.1f}" if total_weight_val else f"{weighted_val:.1f}/0.0"
 
-    confidence_icon = "🟢" if confidence_val >= 76 else ("🟡" if confidence_val >= 51 else "🔴")
+    confidence_icon = "🟢" if confidence_val >= 73 else ("🟡" if confidence_val >= 66 else "🔴")
 
     stype = str(signal_type).upper() if signal_type is not None else "UNKNOWN"
     if stype == "LONG":
