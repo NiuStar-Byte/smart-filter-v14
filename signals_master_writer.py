@@ -35,7 +35,7 @@ class SignalsMasterWriter:
     
     def write_signal(self, signal_dict: Dict[str, Any]) -> bool:
         """
-        Append signal to SIGNALS_MASTER.jsonl with canonical 29-field schema
+        Append signal to SIGNALS_MASTER.jsonl with canonical schema including instrumentation
         
         Args:
             signal_dict: Complete signal data with all fields
@@ -43,10 +43,12 @@ class SignalsMasterWriter:
         Returns: True if written successfully, False otherwise
         """
         try:
-            # Normalize to 29-field canonical schema
+            # Normalize to canonical schema (includes instrumentation fields for filter analysis)
+            # CRITICAL: main.py creates signals with 'uuid' field, so check both
+            uuid_value = signal_dict.get('uuid') or signal_dict.get('signal_uuid', '')
             master_record = {
                 # Core Identity (3)
-                "signal_uuid": signal_dict.get('signal_uuid', ''),
+                "signal_uuid": uuid_value,
                 "symbol": signal_dict.get('symbol', ''),
                 "timeframe": signal_dict.get('timeframe', ''),
                 
@@ -74,6 +76,12 @@ class SignalsMasterWriter:
                 # Timing (2)
                 "fired_time_utc": signal_dict.get('fired_time_utc', ''),
                 "fired_time_jakarta": signal_dict.get('fired_time_jakarta', ''),
+                
+                # Instrumentation - Filter Analysis (4)
+                "passed_filters": signal_dict.get('passed_filters', []),
+                "failed_filters": signal_dict.get('failed_filters', []),
+                "passed_filter_count": int(signal_dict.get('passed_filter_count', 0)),
+                "failed_filter_count": int(signal_dict.get('failed_filter_count', 0)),
                 
                 # Trade Status (5)
                 "status": signal_dict.get('status', 'OPEN'),

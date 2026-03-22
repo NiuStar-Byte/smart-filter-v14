@@ -91,20 +91,57 @@ class SmartFilter:
         self.liquidity_threshold = liquidity_threshold
 
         # Weights for filters (ENHANCED 2026-03-05: Fractal Zone 4.5→4.8, improved TREND)
+        # WEIGHTS UPDATED: 2026-03-22 16:15 GMT+7
+        # Based on effectiveness analysis from 73 closed instrumented signals
+        # See MEMORY.md PROJECT-3 for detailed findings
+        # High performers (60%+ WR, +40pp+ effectiveness): INCREASE
+        # Lower performers (<45% WR): DECREASE
+        # Gatekeepers (Candle Confirmation, Support/Resistance): MAINTAIN
+        
         self.filter_weights_long = {
-            "MACD": 5.0, "Volume Spike": 5.0, "Fractal Zone": 4.8, "TREND": 4.7, "Momentum": 4.9, "ATR Momentum Burst": 4.3,
-            "MTF Volume Agreement": 5.0, "HH/LL Trend": 4.1, "Volatility Model": 3.9,
-            "Liquidity Awareness": 5.0, "Volatility Squeeze": 3.7, "Candle Confirmation": 5.0,
-            "VWAP Divergence": 3.5, "Spread Filter": 5.0, "Chop Zone": 3.3, "Liquidity Pool": 3.1, "Support/Resistance": 5.0,
-            "Smart Money Bias": 2.9, "Absorption": 2.7, "Wick Dominance": 2.5
+            "MACD": 5.0, 
+            "Volume Spike": 5.3,  # ↑ WAS 5.0 | 68.1% WR | +48.8pp
+            "Fractal Zone": 4.2,  # ↓ WAS 4.8 | 66.7% WR | Reduced - similar to lower performers
+            "TREND": 4.3,  # ↓ WAS 4.7 | 66.7% WR | Reduced - below 45% baseline
+            "Momentum": 5.5,  # ↑ WAS 4.9 | 79.3% WR | +59.8pp - HIGHEST PERFORMER
+            "ATR Momentum Burst": 4.3,  # ← MAINTAINED | Regime-dependent, needs investigation
+            "MTF Volume Agreement": 4.6,  # ↓ WAS 5.0 | 66.7% WR | Reduced - consistent with TREND group
+            "HH/LL Trend": 4.8,  # ↑ WAS 4.1 | 70.6% WR | +50.7pp
+            "Volatility Model": 3.9,  # ← MAINTAINED | Regime-dependent, needs investigation
+            "Liquidity Awareness": 5.3,  # ↑ WAS 5.0 | 72.7% WR | +53.5pp
+            "Volatility Squeeze": 3.2,  # ↓ WAS 3.7 | 66.7% WR | Reduced - lower tier
+            "Candle Confirmation": 5.0,  # ← MAINTAINED | Gatekeeper (intentionally strict)
+            "VWAP Divergence": 3.5,  # ← MAINTAINED | Insufficient data (only 2 samples)
+            "Spread Filter": 5.0,  # ← MAINTAINED | Technical requirement
+            "Chop Zone": 3.3,  # ← MAINTAINED | Moderate tier
+            "Liquidity Pool": 3.1,  # ← MAINTAINED | Moderate tier
+            "Support/Resistance": 5.0,  # ← MAINTAINED | Gatekeeper (intentionally strict)
+            "Smart Money Bias": 4.5,  # ↑ WAS 2.9 | 68.1% WR | +48.8pp - HIGH PERFORMER
+            "Absorption": 2.7,  # ← MAINTAINED | Rare pattern, needs more data
+            "Wick Dominance": 4.0  # ↑ WAS 2.5 | 67.4% WR | +48.1pp - HIGH PERFORMER
         }
         
         self.filter_weights_short = {
-            "MACD": 5.0, "Volume Spike": 5.0, "Fractal Zone": 4.8, "TREND": 4.7, "Momentum": 4.9, "ATR Momentum Burst": 4.3,
-            "MTF Volume Agreement": 5.0, "HH/LL Trend": 4.1, "Volatility Model": 3.9,
-            "Liquidity Awareness": 5.0, "Volatility Squeeze": 3.7, "Candle Confirmation": 5.0,
-            "VWAP Divergence": 3.5, "Spread Filter": 5.0, "Chop Zone": 3.3, "Liquidity Pool": 3.1, "Support/Resistance": 5.0,
-            "Smart Money Bias": 2.9, "Absorption": 2.7, "Wick Dominance": 2.5
+            "MACD": 5.0, 
+            "Volume Spike": 5.3,  # ↑ WAS 5.0 | 68.1% WR | +48.8pp
+            "Fractal Zone": 4.2,  # ↓ WAS 4.8 | 66.7% WR
+            "TREND": 4.3,  # ↓ WAS 4.7 | 66.7% WR
+            "Momentum": 5.5,  # ↑ WAS 4.9 | 79.3% WR | +59.8pp - HIGHEST PERFORMER
+            "ATR Momentum Burst": 4.3,  # ← MAINTAINED | Regime-dependent
+            "MTF Volume Agreement": 4.6,  # ↓ WAS 5.0 | 66.7% WR
+            "HH/LL Trend": 4.8,  # ↑ WAS 4.1 | 70.6% WR | +50.7pp
+            "Volatility Model": 3.9,  # ← MAINTAINED | Regime-dependent
+            "Liquidity Awareness": 5.3,  # ↑ WAS 5.0 | 72.7% WR | +53.5pp
+            "Volatility Squeeze": 3.2,  # ↓ WAS 3.7 | 66.7% WR
+            "Candle Confirmation": 5.0,  # ← MAINTAINED | Gatekeeper
+            "VWAP Divergence": 3.5,  # ← MAINTAINED | Insufficient data
+            "Spread Filter": 5.0,  # ← MAINTAINED | Technical requirement
+            "Chop Zone": 3.3,  # ← MAINTAINED | Moderate tier
+            "Liquidity Pool": 3.1,  # ← MAINTAINED | Moderate tier
+            "Support/Resistance": 5.0,  # ← MAINTAINED | Gatekeeper
+            "Smart Money Bias": 4.5,  # ↑ WAS 2.9 | 68.1% WR | +48.8pp
+            "Absorption": 2.7,  # ← MAINTAINED | Rare pattern
+            "Wick Dominance": 4.0  # ↑ WAS 2.5 | 67.4% WR | +48.1pp
         }
 
         self.filter_names = list(set(self.filter_weights_long.keys()) | set(self.filter_weights_short.keys()))
@@ -954,6 +991,23 @@ class SmartFilter:
         # export_signal_debug_txt(...)
 
         regime = self._market_regime()
+
+        # === PROJECT-5B INSTRUMENTATION: Extract passed/failed filters for both LONG and SHORT ===
+        # This data is used by main.py to track which filters are actually improving signal quality
+        failed_non_gk_long = [f for f in non_gk_filters if not results_long.get(f, False)]
+        failed_non_gk_short = [f for f in non_gk_filters if not results_short.get(f, False)]
+        
+        # Add instrumentation to results dicts
+        results_long['passed_filters'] = passed_non_gk_long
+        results_long['failed_filters'] = failed_non_gk_long
+        results_long['passed_filter_count'] = len(passed_non_gk_long)
+        results_long['failed_filter_count'] = len(failed_non_gk_long)
+        
+        results_short['passed_filters'] = passed_non_gk_short
+        results_short['failed_filters'] = failed_non_gk_short
+        results_short['passed_filter_count'] = len(passed_non_gk_short)
+        results_short['failed_filter_count'] = len(failed_non_gk_short)
+        # === END PROJECT-5B INSTRUMENTATION ===
 
         # --- Add explicit results keys so main.py can use filters_ok and then do SuperGK check ---
         return {
