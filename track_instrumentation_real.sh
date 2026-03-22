@@ -136,14 +136,15 @@ for filter_name in all_filters:
 effectiveness.sort(key=lambda x: (x['effectiveness'] is None, x['effectiveness'] if x['effectiveness'] is not None else -999), reverse=True)
 
 # Print header
-print(f"{'Rank':<5} {'Filter Name':<30} {'Passed':<8} {'Wins':<8} {'WR':<10} {'Effectiveness':<16} {'Weight':<8} {'Status':<8}")
-print(f"{'-'*130}")
+print(f"{'Rank':<5} {'Filter Name':<30} {'Passed':<8} {'Wins':<8} {'WR':<10} {'FA':<8} {'Effectiveness':<16} {'Weight':<8} {'Status':<8}")
+print(f"{'-'*145}")
 
 for idx, item in enumerate(effectiveness, 1):
     if item['passed'] == 0:
         status = "○ (0 pass)"
         wr_str = "N/A"
         eff_str = "N/A"
+        fa_str = "0.00%"
     else:
         if item['wr'] >= 0.70:
             status = "⭐ High"
@@ -153,9 +154,11 @@ for idx, item in enumerate(effectiveness, 1):
             status = "· Low"
         wr_str = f"{item['wr']*100:5.1f}%"
         eff_str = f"{item['effectiveness']:+6.1f}pp"
+        fa_pct = (item['passed'] / max(1, closed_signals)) * 100
+        fa_str = f"{fa_pct:5.2f}%"
     
     weight = weights.get(item['name'], 'N/A')
     weight_str = f"{weight}" if isinstance(weight, (int, float)) else str(weight)
-    print(f"{idx:<5} {item['name']:<30} {item['passed']:<8} {item['won']:<8} {wr_str:<10} {eff_str:<16} {weight_str:<8} {status:<8}")
+    print(f"{idx:<5} {item['name']:<30} {item['passed']:<8} {item['won']:<8} {wr_str:<10} {fa_str:<8} {eff_str:<16} {weight_str:<8} {status:<8}")
 
 EOF

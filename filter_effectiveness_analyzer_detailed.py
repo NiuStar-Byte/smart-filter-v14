@@ -183,8 +183,8 @@ def main():
     print("=" * 125)
     print("")
     
-    print(f"{'Rank':<5} {'Filter Name':<30} {'Passed':<8} {'Wins':<8} {'WR':<10} {'Effectiveness':<16} {'Weight':<8} {'Status':<10}")
-    print("-" * 125)
+    print(f"{'Rank':<5} {'Filter Name':<30} {'Passed':<8} {'Wins':<8} {'WR':<10} {'FA':<8} {'Effectiveness':<16} {'Weight':<8} {'Status':<10}")
+    print("-" * 145)
     sys.stdout.flush()
     
     for idx, item in enumerate(effectiveness, 1):
@@ -192,9 +192,12 @@ def main():
             wr_str = "N/A"
             eff_str = "N/A"
             status = "○ (0 pass)"
+            fa_str = "0.00%"
         else:
             wr_str = f"{item['wr']*100:5.1f}%"
             eff_str = f"{item['effectiveness']:+6.1f}pp"
+            fa_pct = (item['passed'] / max(1, closed)) * 100
+            fa_str = f"{fa_pct:5.2f}%"
             if item['wr'] >= 0.70:
                 status = "⭐ High"
             elif item['wr'] >= 0.50:
@@ -202,7 +205,7 @@ def main():
             else:
                 status = "· Low"
         weight_str = f"{item['weight']}" if isinstance(item['weight'], (int, float)) else str(item['weight'])
-        print(f"{idx:<5} {item['name']:<30} {item['passed']:<8} {item['won']:<8} {wr_str:<10} {eff_str:<16} {weight_str:<8} {status:<10}")
+        print(f"{idx:<5} {item['name']:<30} {item['passed']:<8} {item['won']:<8} {wr_str:<10} {fa_str:<8} {eff_str:<16} {weight_str:<8} {status:<10}")
     
     sys.stdout.flush()
     
@@ -216,7 +219,8 @@ def main():
     if high_performers:
         print(f"\n⭐ HIGH PERFORMERS (70%+ WR): {len(high_performers)} filter(s)")
         for item in high_performers:
-            print(f"   • {item['name']:30s} | {item['passed']:3d} passed | {item['wr']*100:5.1f}% WR | {item['effectiveness']:+6.1f}pp | Weight: {item['weight']}")
+            fa_pct = (item['passed'] / max(1, closed)) * 100
+            print(f"   • {item['name']:30s} | {item['passed']:3d} passed | {fa_pct:5.2f}% FA | {item['wr']*100:5.1f}% WR | {item['effectiveness']:+6.1f}pp | Weight: {item['weight']}")
     else:
         print(f"\n⭐ HIGH PERFORMERS (70%+ WR): None yet")
     
@@ -225,7 +229,8 @@ def main():
     if mid_performers:
         print(f"\n✓ MID PERFORMERS (50-70% WR): {len(mid_performers)} filter(s)")
         for item in mid_performers:
-            print(f"   • {item['name']:30s} | {item['passed']:3d} passed | {item['wr']*100:5.1f}% WR | {item['effectiveness']:+6.1f}pp | Weight: {item['weight']}")
+            fa_pct = (item['passed'] / max(1, closed)) * 100
+            print(f"   • {item['name']:30s} | {item['passed']:3d} passed | {fa_pct:5.2f}% FA | {item['wr']*100:5.1f}% WR | {item['effectiveness']:+6.1f}pp | Weight: {item['weight']}")
     else:
         print(f"\n✓ MID PERFORMERS (50-70% WR): None yet")
     
@@ -234,21 +239,29 @@ def main():
     if low_performers:
         print(f"\n· LOW PERFORMERS (<50% WR): {len(low_performers)} filter(s)")
         for item in low_performers:
-            print(f"   • {item['name']:30s} | {item['passed']:3d} passed | {item['wr']*100:5.1f}% WR | {item['effectiveness']:+6.1f}pp | Weight: {item['weight']}")
+            fa_pct = (item['passed'] / max(1, closed)) * 100
+            print(f"   • {item['name']:30s} | {item['passed']:3d} passed | {fa_pct:5.2f}% FA | {item['wr']*100:5.1f}% WR | {item['effectiveness']:+6.1f}pp | Weight: {item['weight']}")
     
     # Not yet triggered (0 passes)
     never_passed = [e for e in effectiveness if e['passed'] == 0]
     if never_passed:
         print(f"\n○ NOT YET TRIGGERED (0 passes): {len(never_passed)} filter(s)")
         for item in never_passed:
-            print(f"   • {item['name']:30s} | 0 passed | Waiting for market conditions | Weight: {item['weight']}")
+            print(f"   • {item['name']:30s} | 0 passed | 0.00% FA | Waiting for market conditions | Weight: {item['weight']}")
         print(f"   Note: These filters may activate as market conditions change. Monitor over time.")
     
     print("")
     print("=" * 100)
-    print("NOTES")
+    print("METRIC DEFINITIONS")
     print("=" * 100)
-    print("• Effectiveness = Filter WR - Baseline WR (shows correlation advantage)")
+    print("• WR (Win Rate) = Wins / Passed - Of signals where filter passed, how many won")
+    print("• FA (Filter Availability) = Passed / Total Closed - In what % of signals does filter appear")
+    print("• Effectiveness = Filter WR - Baseline WR - Shows correlation advantage vs baseline")
+    print("• Example: VWAP Divergence | 1 passed | 2.22% FA | 100.0% WR | +64.6pp")
+    print("   → Out of 45 closed signals, only 1 had VWAP pass (2.22% availability)")
+    print("   → But that 1 signal won (100% WR)")
+    print("   → +64.6pp = 100% WR vs 35.4% baseline")
+    print("")
     print("• Sample size matters: <10 samples = high variance, unreliable")
     print("• Mixed-filter problem: Each signal has ~12 passed + ~8 failed filters")
     print("• Cannot isolate individual filter causation (correlation ≠ causation)")
