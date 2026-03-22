@@ -2083,11 +2083,90 @@ class PECEnhancedReporter:
         return tiers
     
     def _generate_hierarchy_ranking(self):
-        """Generate 5D, 4D, 3D, 2D hierarchy ranking for decision-making (top to bottom)"""
+        """Generate 6D, 5D, 4D, 3D, 2D hierarchy ranking for decision-making (top to bottom)"""
         output = []
         min_trades = TIER_THRESHOLDS.get("min_trades", 25)
         
-        # ===== 5D COMBOS (MOST GRANULAR) =====
+        # ===== 6D COMBOS (MOST GRANULAR) =====
+        output.append("📊 HIERARCHY RANKING - 6D PERFORMANCE TRACKING")
+        output.append("📊 6-DIMENSIONAL COMBOS (TimeFrame × Direction × Route × Regime × Symbol_Group × Confidence Level)")
+        output.append("─" * 180)
+        
+        # Manually aggregate 6D: TF × DIR × ROUTE × REGIME × SYMBOL_GROUP × CONFIDENCE
+        stats_6d = {}
+        for signal in self.signals:
+            status = signal.get('status', 'OPEN')
+            
+            # SKIP invalid signals
+            if status == 'STALE_TIMEOUT':
+                continue
+            if status == 'REJECTED_NOT_SENT_TELEGRAM':
+                continue
+            
+            # Build 6D key
+            tf = signal.get('timeframe', 'N/A')
+            direction = signal.get('signal_type', 'N/A')
+            route = signal.get('route', 'N/A')
+            regime = signal.get('regime', 'N/A')
+            symbol = signal.get('symbol', 'UNKNOWN')
+            symbol_group = self.get_symbol_group(symbol)
+            confidence = signal.get('confidence', 0)
+            
+            key = (tf, direction, route, regime, symbol_group, confidence)
+            
+            if key not in stats_6d:
+                stats_6d[key] = {'count': 0, 'tp': 0, 'sl': 0, 'timeout_win': 0, 'timeout_loss': 0, 'pnl': 0.0}
+            
+            stats_6d[key]['count'] += 1
+            
+            if status == 'TP_HIT':
+                stats_6d[key]['tp'] += 1
+            elif status == 'SL_HIT':
+                stats_6d[key]['sl'] += 1
+            elif status == 'TIMEOUT':
+                if signal.get('actual_exit_price'):
+                    pnl_calc = self._calculate_pnl_usd(signal.get('entry_price'), signal.get('actual_exit_price'), direction)
+                    if pnl_calc is not None:
+                        if pnl_calc > 0:
+                            stats_6d[key]['timeout_win'] += 1
+                        elif pnl_calc < 0:
+                            stats_6d[key]['timeout_loss'] += 1
+            
+            # P&L calculation
+            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                pnl_calc = self._calculate_pnl_usd(signal.get('entry_price'), signal.get('actual_exit_price'), direction)
+                if pnl_calc is not None:
+                    stats_6d[key]['pnl'] += pnl_calc
+        
+        all_6d = []
+        for key, stat in stats_6d.items():
+            closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
+            if closed >= min_trades:
+                win_count = stat['tp'] + stat['timeout_win']
+                wr = (win_count / closed) if closed > 0 else 0
+                avg_pnl = stat['pnl'] / closed if closed > 0 else 0
+                all_6d.append({
+                    'name': f"{key[0]}|{key[1]}|{key[2]}|{key[3]}|{key[4]}|{key[5]:.0f}",
+                    'wr': wr,
+                    'pnl': stat['pnl'],
+                    'avg_pnl': avg_pnl,
+                    'closed': closed,
+                    'tp': stat['tp'],
+                    'sl': stat['sl']
+                })
+        
+        all_6d.sort(key=lambda x: (x['wr'], x['pnl']), reverse=True)
+        
+        if all_6d:
+            output.append("\n  Top 10 6D Combos by WR:")
+            for combo in all_6d[:10]:
+                output.append(f"    ✓ {combo['name']:60} | WR: {combo['wr']*100:5.1f}% | P&L: ${combo['pnl']:+8.2f} | Avg: ${combo['avg_pnl']:+.2f} | Closed: {combo['closed']}")
+        else:
+            output.append("\n  No 6D combos meet minimum trade threshold yet.")
+        
+        output.append("")
+        
+        # ===== 5D COMBOS =====
         output.append("📊 5-DIMENSIONAL COMBOS (TimeFrame × Direction × Route × Regime × Symbol_Group)")
         output.append("─" * 160)
         
