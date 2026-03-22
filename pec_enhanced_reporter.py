@@ -2,11 +2,21 @@
 """
 PEC Enhanced Reporter - Multi-Dimensional Signal Tracking
 Breaks down PEC results by: TimeFrame, Direction, Confidence, Regime, Route
+
+CRITICAL ARCHITECTURE (Option B - Correct Separation of Concerns):
+- Daemon writes raw signals to SIGNALS_MASTER.jsonl (NO P&L calculation)
+- Reporter READS signals and RECALCULATES P&L with Phase 1-3 logic
+- Single source of truth: Reporter's _calculate_pnl_usd() function
+- All P&L values use consistent, verified calculation logic
+
+This prevents daemon from pre-calculating P&L with old/broken logic.
+
 Enhanced Features:
 - Position size & leverage header
 - Extended columns: Route, Exit Price, Exit Time, Duration
 - 5D aggregates: TF, Direction, Route, Regime, Confidence
 - Dynamic tier configuration from tier_config.py
+- Phase 1-3 P&L fixes applied at report-time (not fire-time)
 """
 
 import json
@@ -32,27 +42,33 @@ SYMBOL_GROUPS = {
 
 class PECEnhancedReporter:
     def __init__(self, sent_signals_file=None):
-        # Use SIGNALS_MASTER.jsonl as single source of truth
-        # Falls back to CUMULATIVE for historical data if MASTER not available
+        # Use SIGNALS_MASTER.jsonl (REAL-TIME source - includes foundation + new signals)
+        # Falls back to CLEAN for foundation-only baseline if needed
         if sent_signals_file is None:
             workspace = "/Users/geniustarigan/.openclaw/workspace"
             
-            # Primary: SIGNALS_MASTER (single source of truth)
+            # Primary: SIGNALS_MASTER.jsonl (live, includes both FOUNDATION + NEW_LIVE)
             signals_master = os.path.join(workspace, "SIGNALS_MASTER.jsonl")
             if os.path.exists(signals_master) and os.path.getsize(signals_master) > 1000:
                 sent_signals_file = signals_master
-                print(f"[INFO] Using SIGNALS_MASTER.jsonl: {signals_master}", flush=True)
+                print(f"[INFO] Using SIGNALS_MASTER.jsonl (live data): {signals_master}", flush=True)
             else:
-                # Fallback: CUMULATIVE (immutable hourly snapshots for historical data)
-                import glob
-                cumulative_files = sorted(glob.glob(os.path.join(workspace, "SENT_SIGNALS_CUMULATIVE_*.jsonl")))
-                if cumulative_files:
-                    sent_signals_file = cumulative_files[-1]
-                    print(f"[INFO] SIGNALS_MASTER not available, using CUMULATIVE: {os.path.basename(sent_signals_file)}", flush=True)
+                # Fallback: SIGNALS_MASTER_CLEAN_2538 (foundation-only if live unavailable)
+                signals_clean = os.path.join(workspace, "SIGNALS_MASTER_CLEAN_2538.jsonl")
+                if os.path.exists(signals_clean) and os.path.getsize(signals_clean) > 1000:
+                    sent_signals_file = signals_clean
+                    print(f"[INFO] Using SIGNALS_MASTER_CLEAN_2538.jsonl (foundation baseline): {signals_clean}", flush=True)
                 else:
-                    # Last resort: ARCHIVE (Foundation baseline)
-                    sent_signals_file = os.path.join(workspace, "SENT_SIGNALS_ARCHIVE_2026-03-05.jsonl")
-                    print(f"[INFO] Using ARCHIVE file (Foundation): SENT_SIGNALS_ARCHIVE_2026-03-05.jsonl", flush=True)
+                    # Fallback: CUMULATIVE (immutable hourly snapshots for historical data)
+                    import glob
+                    cumulative_files = sorted(glob.glob(os.path.join(workspace, "SENT_SIGNALS_CUMULATIVE_*.jsonl")))
+                    if cumulative_files:
+                        sent_signals_file = cumulative_files[-1]
+                        print(f"[INFO] Using CUMULATIVE: {os.path.basename(sent_signals_file)}", flush=True)
+                    else:
+                        # Last resort: ARCHIVE (Foundation baseline)
+                        sent_signals_file = os.path.join(workspace, "SENT_SIGNALS_ARCHIVE_2026-03-05.jsonl")
+                        print(f"[INFO] Using ARCHIVE file: SENT_SIGNALS_ARCHIVE_2026-03-05.jsonl", flush=True)
         
         self.sent_signals_file = sent_signals_file
         self.signals = []
@@ -253,6 +269,82 @@ class PECEnhancedReporter:
         except:
             return "N/A"
     
+    def _calculate_rr_metrics(self, signals_list):
+        """Calculate Risk:Reward (RR) metrics: Highest, Average, Lowest
+        
+        RR = (TP - Entry) / (Entry - SL)
+        
+        CRITICAL: Handles BOTH old schema (tp_price/sl_price from FOUNDATION)
+        and new schema (tp_target/sl_target from NEW_LIVE daemon)
+        """
+        try:
+            rr_values = []
+            for s in signals_list:
+                entry = s.get('entry_price')
+                # Support BOTH schemas: old (tp_price/sl_price) + new (tp_target/sl_target)
+                tp = s.get('tp_price') or s.get('tp_target')
+                sl = s.get('sl_price') or s.get('sl_target')
+                
+                if entry and tp and sl:
+                    try:
+                        entry_f = float(entry)
+                        tp_f = float(tp)
+                        sl_f = float(sl)
+                        
+                        # Calculate RR
+                        reward = tp_f - entry_f
+                        risk = entry_f - sl_f
+                        
+                        if risk > 0:  # Avoid division by zero
+                            rr = reward / risk
+                            rr_values.append(rr)
+                    except:
+                        pass
+            
+            if not rr_values:
+                return None, None, None
+            
+            highest_rr = max(rr_values)
+            avg_rr = sum(rr_values) / len(rr_values)
+            lowest_rr = min(rr_values)
+            
+            return round(highest_rr, 2), round(avg_rr, 2), round(lowest_rr, 2)
+        except:
+            return None, None, None
+    
+    def _calculate_max_timeout_by_timeframe(self, signals_list):
+        """Calculate actual max timeout duration for each timeframe
+        
+        Returns dict: {'15min': 'Xh Ym', '30min': '...', '1h': '...'}
+        """
+        try:
+            max_durations = {}
+            
+            for tf in ['15min', '30min', '1h']:
+                max_seconds = 0
+                tf_timeouts = [s for s in signals_list if s.get('status') == 'TIMEOUT' and s.get('timeframe') == tf]
+                
+                for s in tf_timeouts:
+                    if s.get('fired_time_utc') and s.get('closed_at'):
+                        try:
+                            fired = datetime.fromisoformat(s.get('fired_time_utc').replace('Z', '+00:00'))
+                            closed = datetime.fromisoformat(s.get('closed_at').replace('Z', '+00:00'))
+                            delta = closed - fired
+                            total_seconds = int(delta.total_seconds())
+                            if total_seconds > max_seconds:
+                                max_seconds = total_seconds
+                        except:
+                            pass
+                
+                if max_seconds > 0:
+                    max_durations[tf] = self._format_duration_hm(max_seconds)
+                else:
+                    max_durations[tf] = "N/A"
+            
+            return max_durations
+        except:
+            return {'15min': 'N/A', '30min': 'N/A', '1h': 'N/A'}
+    
     def _generate_detailed_signal_list(self):
         """Generate detailed signal list section"""
         detail_lines = []
@@ -365,21 +457,46 @@ class PECEnhancedReporter:
         report.append("")
         
         # === SECTION 1 & 2 (Summary Statistics) ===
-        # Foundation: Through Mar 10 | NEW: Mar 16+ onwards (Mac restarted Mar 16)
-        foundation_cutoff = datetime(2026, 3, 16, tzinfo=timezone.utc)
+        # FOUNDATION_CUTOFF_TIME: LOCKED to 2026-03-19T18:03:17.605610 (last signal in clean baseline)
+        # Foundation: All signals fired <= this time (IMMUTABLE snapshot)
+        # New: All signals fired > this time (dynamic, calculated as Total - Foundation)
+        # Parse cutoff as naive datetime (signals are stored as naive UTC times)
+        cutoff_naive = datetime.fromisoformat('2026-03-19T18:03:17.605610')
+        
         foundation_signals = []
         new_signals = []
         for s in self.signals:
             try:
-                fired = datetime.fromisoformat(s.get('fired_time_utc', '').replace('Z', '+00:00'))
-                if fired.tzinfo is None:
-                    fired = fired.replace(tzinfo=timezone.utc)
-                if fired < foundation_cutoff:
+                # Parse fired_time_utc - comes as naive datetime string (assumed UTC)
+                fired_str = s.get('fired_time_utc', '')
+                if not fired_str:
+                    foundation_signals.append(s)
+                    continue
+                
+                # Remove Z or timezone info to get naive datetime
+                fired_str = fired_str.replace('Z', '').replace('+00:00', '')
+                fired = datetime.fromisoformat(fired_str)
+                
+                # Compare naive datetimes (both assumed UTC)
+                if fired <= cutoff_naive:
                     foundation_signals.append(s)
                 else:
                     new_signals.append(s)
-            except:
-                foundation_signals.append(s)  # Default to foundation if parse fails
+            except Exception as e:
+                # If parse fails, default to foundation (safe fallback)
+                foundation_signals.append(s)
+        
+        # Calculate foundation stats DYNAMICALLY (not hardcoded)
+        foundation_stats = self._analyze_signal_group(foundation_signals)
+        
+        # === DISPLAY FOUNDATION BASELINE (LOCKED - immutable snapshot) ===
+        report.append("=" * 200)
+        report.append("🔒 FOUNDATION BASELINE (LOCKED - All signals fired <= 2026-03-19T18:03:17.605610)")
+        report.append("=" * 200)
+        report.append(f"Total Signals: {foundation_stats['total']} | Closed: {foundation_stats['closed']} | WR: {foundation_stats['wr']:.1f}%")
+        report.append(f"LONG WR: {self._calculate_wr_by_direction(foundation_signals, 'LONG'):.1f}% | SHORT WR: {self._calculate_wr_by_direction(foundation_signals, 'SHORT'):.1f}% | P&L: ${foundation_stats['total_pnl']:+,.2f}")
+        report.append("(This baseline is immutable - NEW signals are calculated as TOTAL - FOUNDATION)")
+        report.append("")
         
         # SECTION 1: Foundation + New
         combined = foundation_signals + new_signals
@@ -388,16 +505,32 @@ class PECEnhancedReporter:
         report.append("=" * 200)
         report.append("📊 SECTION 1: TOTAL SIGNALS (Foundation + New)")
         report.append("=" * 200)
-        report.append(f"Total Signals (Foundation + New): {combined_stats['total']}")
-        report.append(f"Count Win (TP_HIT): {combined_stats['tp']}")
-        report.append(f"Count Loss (SL_HIT): {combined_stats['sl']}")
-        report.append(f"Count TimeOut: {combined_stats['timeout']}")
-        report.append(f"Count Open: {combined_stats['open']}")
-        report.append(f"Closed Trades (Clean Data): {combined_stats['closed']}")
-        report.append(f"  TP_HIT: {combined_stats['tp']}")
-        report.append(f"  SL_HIT: {combined_stats['sl']}")
-        report.append(f"  TimeOut Win: {combined_stats['timeout_win']} (approximate)")
-        report.append(f"  TimeOut Loss: {combined_stats['timeout_loss']} (approximate)")
+        report.append(f"Total Signals Loaded: {combined_stats['total']}")
+        report.append("")
+        report.append("SIGNAL BREAKDOWN (All signals shown for audit trail):")
+        report.append(f"  INCLUDED IN METRICS (TP/SL/TIMEOUT/OPEN):")
+        report.append(f"    • TP_HIT: {combined_stats['tp']}")
+        report.append(f"    • SL_HIT: {combined_stats['sl']}")
+        report.append(f"    • TIMEOUT: {combined_stats['timeout']}")
+        report.append(f"    • OPEN: {combined_stats['open']}")
+        report.append(f"    Subtotal (Counted in WR & P&L): {combined_stats['tp'] + combined_stats['sl'] + combined_stats['timeout'] + combined_stats['open']}")
+        report.append(f"")
+        report.append(f"  EXCLUDED FROM METRICS (Not counted in WR or P&L):")
+        report.append(f"    • REJECTED_NOT_SENT_TELEGRAM: {combined_stats['rejected']} (never sent to traders)")
+        report.append(f"    • STALE_TIMEOUT: {combined_stats['stale']} ⚠️  DATA QUALITY ISSUE - COMPLETELY EXCLUDED")
+        report.append(f"    Subtotal (Excluded from all calculations): {combined_stats['rejected'] + combined_stats['stale']}")
+        report.append(f"")
+        report.append(f"BREAKDOWN VERIFICATION:")
+        report.append(f"  Included ({combined_stats['tp'] + combined_stats['sl'] + combined_stats['timeout'] + combined_stats['open']}) + Excluded ({combined_stats['rejected'] + combined_stats['stale']}) = Total ({combined_stats['total_accounted']})")
+        report.append(f"  ✓ Verified: All {combined_stats['total']} signals in audit trail" if combined_stats['total'] == combined_stats['total_accounted'] else f"  ✗ MISMATCH: {combined_stats['total']} loaded but {combined_stats['total_accounted']} accounted")
+        report.append("")
+        report.append("CLOSED TRADES ANALYSIS (Backtest Signals Only):")
+        report.append(f"  Closed Trades (Clean Data): {combined_stats['closed']}")
+        report.append(f"    • TP_HIT: {combined_stats['tp']}")
+        report.append(f"    • SL_HIT: {combined_stats['sl']}")
+        report.append(f"    • TimeOut: {combined_stats['timeout']}")
+        report.append(f"      - TimeOut Win: {combined_stats['timeout_win']} (approximate)")
+        report.append(f"      - TimeOut Loss: {combined_stats['timeout_loss']} (approximate)")
         report.append(f"")
         report.append(f"Overall Win Rate: {combined_stats['wr']:.2f}%")
         report.append(f"Calculation: ({combined_stats['tp']} TP + {combined_stats['timeout_win']} TIMEOUT_WIN) / {combined_stats['closed']} Closed = {combined_stats['wins']} / {combined_stats['closed']} = {combined_stats['wr']:.2f}%")
@@ -406,32 +539,96 @@ class PECEnhancedReporter:
         report.append(f"Avg P&L per Signal: ${combined_stats['avg_pnl_signal']:+.2f}")
         report.append(f"Avg P&L per Closed Trade: ${combined_stats['avg_pnl_closed']:+.2f}")
         report.append(f"")
-        report.append(f"P&L Breakdown by Exit Type:")
-        report.append(f"  Total P&L TP_HIT: ${combined_stats['tp_pnl']:+,.2f}")
-        report.append(f"  Total P&L SL_HIT: ${combined_stats['sl_pnl']:+,.2f}")
-        report.append(f"  Total P&L TIMEOUT: ${combined_stats['timeout_pnl']:+,.2f}")
+        report.append(f"P&L BREAKDOWN (STALE_TIMEOUT completely excluded):")
+        report.append(f"")
+        report.append(f"  INCLUDED IN TOTAL P&L (Counted in metrics):")
+        report.append(f"    • TP_HIT:    {combined_stats['tp_pnl']:+12,.2f}")
+        report.append(f"    • SL_HIT:    {combined_stats['sl_pnl']:+12,.2f}")
+        report.append(f"    • TIMEOUT:   {combined_stats['timeout_pnl']:+12,.2f}")
+        report.append(f"    • OPEN:      {combined_stats['open_pnl']:+12,.2f} (unrealized)")
+        report.append(f"    Subtotal (Backtest P&L): {combined_stats['tp_pnl'] + combined_stats['sl_pnl'] + combined_stats['timeout_pnl'] + combined_stats['open_pnl']:+12,.2f}")
+        report.append(f"")
+        report.append(f"  EXCLUDED FROM TOTAL P&L (Not counted in any metric):")
+        report.append(f"    • REJECTED:  {combined_stats['rejected_pnl']:+12,.2f} (never sent to traders, excluded from WR)")
+        report.append(f"    • STALE:     ⚠️  NOT CALCULATED (data quality - completely excluded)")
+        report.append(f"    Subtotal (Excluded P&L): {combined_stats['rejected_pnl']:+12,.2f}")
+        report.append(f"")
+        report.append(f"  VALIDATION:")
+        included_sum = combined_stats['tp_pnl'] + combined_stats['sl_pnl'] + combined_stats['timeout_pnl'] + combined_stats['open_pnl']
+        report.append(f"    Included in Total P&L: {included_sum:+12,.2f}")
+        report.append(f"    Total P&L Reported:    {combined_stats['total_pnl']:+12,.2f}")
+        report.append(f"    ✓ Verified: P&L matches Total P&L" if abs(included_sum - combined_stats['total_pnl']) < 0.01 else f"    ✗ MISMATCH: Included {included_sum:+.2f} ≠ Total {combined_stats['total_pnl']:+.2f}")
         report.append(f"")
         report.append(f"Average P&L per Count:")
         report.append(f"  Avg P&L TP per Count TP: ${combined_stats['avg_tp_pnl']:+.2f}" if combined_stats['tp'] > 0 else f"  Avg P&L TP per Count TP: N/A (0 TP trades)")
         report.append(f"  Avg P&L SL per Count SL: ${combined_stats['avg_sl_pnl']:+.2f}" if combined_stats['sl'] > 0 else f"  Avg P&L SL per Count SL: N/A (0 SL trades)")
         report.append("")
         
-        # SECTION 2: New Only (Mar 16+)
-        new_stats = self._analyze_signal_group(new_signals)
+        # Risk:Reward Metrics
+        highest_rr, avg_rr, lowest_rr = self._calculate_rr_metrics(combined)
+        report.append(f"Risk:Reward (RR) Metrics:")
+        report.append(f"  Highest RR: {highest_rr if highest_rr is not None else 'N/A'}")
+        report.append(f"  Avg RR: {avg_rr if avg_rr is not None else 'N/A'}")
+        report.append(f"  Lowest RR: {lowest_rr if lowest_rr is not None else 'N/A'}")
+        report.append("")
+        
+        # Max Timeout Duration by Timeframe
+        max_timeout_durations = self._calculate_max_timeout_by_timeframe(combined)
+        report.append(f"Actual Max Timeout Duration by Timeframe:")
+        report.append(f"  15min: {max_timeout_durations['15min']}")
+        report.append(f"  30min: {max_timeout_durations['30min']}")
+        report.append(f"  1h: {max_timeout_durations['1h']}")
+        report.append("")
+        
+        # SECTION 2: New Only (Show NEW_LIVE signals - all signals after initial foundation)
+        # "NEW" = signals fired on Mar 21+ onwards (not FOUNDATION, and after rebuild cutoff)
+        # NOTE: Must convert UTC fired_time to GMT+7 for proper date comparison
+        new_signals_by_origin = []
+        for s in self.signals:
+            if s.get('signal_origin') != 'FOUNDATION':
+                try:
+                    # Parse UTC time and convert to GMT+7
+                    fired_utc_str = s.get('fired_time_utc', '')
+                    if fired_utc_str:
+                        fired_utc = datetime.fromisoformat(fired_utc_str.replace('Z', '+00:00'))
+                        fired_gmt7 = fired_utc + timedelta(hours=7)
+                        fired_gmt7_date = fired_gmt7.strftime('%Y-%m-%d')
+                        # Include if fired on or after 2026-03-21 GMT+7
+                        if fired_gmt7_date >= '2026-03-21':
+                            new_signals_by_origin.append(s)
+                except:
+                    pass
+        new_stats = self._analyze_signal_group(new_signals_by_origin)
         
         report.append("=" * 200)
-        report.append("📊 SECTION 2: TOTAL SIGNALS (NEW ONLY - Mar 16+ onwards)")
+        report.append("📊 SECTION 2: TOTAL SIGNALS (NEW ONLY - Mar 21+ onwards)")
         report.append("=" * 200)
-        report.append(f"Total Signals (New ONLY): {new_stats['total']}")
-        report.append(f"Count Win (TP_HIT): {new_stats['tp']}")
-        report.append(f"Count Loss (SL_HIT): {new_stats['sl']}")
-        report.append(f"Count TimeOut: {new_stats['timeout']}")
-        report.append(f"Count Open: {new_stats['open']}")
-        report.append(f"Closed Trades (Clean Data): {new_stats['closed']}")
-        report.append(f"  TP_HIT: {new_stats['tp']}")
-        report.append(f"  SL_HIT: {new_stats['sl']}")
-        report.append(f"  TimeOut Win: {new_stats['timeout_win']} (approximate)")
-        report.append(f"  TimeOut Loss: {new_stats['timeout_loss']} (approximate)")
+        report.append(f"Total Signals Loaded (NEW ONLY): {new_stats['total']}")
+        report.append("")
+        report.append("SIGNAL BREAKDOWN (All signals shown for audit trail):")
+        report.append(f"  INCLUDED IN METRICS (TP/SL/TIMEOUT/OPEN):")
+        report.append(f"    • TP_HIT: {new_stats['tp']}")
+        report.append(f"    • SL_HIT: {new_stats['sl']}")
+        report.append(f"    • TIMEOUT: {new_stats['timeout']}")
+        report.append(f"    • OPEN: {new_stats['open']}")
+        report.append(f"    Subtotal (Counted in WR & P&L): {new_stats['tp'] + new_stats['sl'] + new_stats['timeout'] + new_stats['open']}")
+        report.append(f"")
+        report.append(f"  EXCLUDED FROM METRICS (Not counted in WR or P&L):")
+        report.append(f"    • REJECTED_NOT_SENT_TELEGRAM: {new_stats['rejected']} (never sent to traders)")
+        report.append(f"    • STALE_TIMEOUT: {new_stats['stale']} ⚠️  DATA QUALITY ISSUE - COMPLETELY EXCLUDED")
+        report.append(f"    Subtotal (Excluded from all calculations): {new_stats['rejected'] + new_stats['stale']}")
+        report.append(f"")
+        report.append(f"BREAKDOWN VERIFICATION:")
+        report.append(f"  Included ({new_stats['tp'] + new_stats['sl'] + new_stats['timeout'] + new_stats['open']}) + Excluded ({new_stats['rejected'] + new_stats['stale']}) = Total ({new_stats['total_accounted']})")
+        report.append(f"  ✓ Verified: All {new_stats['total']} signals in audit trail" if new_stats['total'] == new_stats['total_accounted'] else f"  ✗ MISMATCH: {new_stats['total']} loaded but {new_stats['total_accounted']} accounted")
+        report.append("")
+        report.append("CLOSED TRADES ANALYSIS (Backtest Signals Only):")
+        report.append(f"  Closed Trades (Clean Data): {new_stats['closed']}")
+        report.append(f"    • TP_HIT: {new_stats['tp']}")
+        report.append(f"    • SL_HIT: {new_stats['sl']}")
+        report.append(f"    • TimeOut: {new_stats['timeout']}")
+        report.append(f"      - TimeOut Win: {new_stats['timeout_win']} (approximate)")
+        report.append(f"      - TimeOut Loss: {new_stats['timeout_loss']} (approximate)")
         report.append(f"")
         report.append(f"Overall Win Rate: {new_stats['wr']:.2f}%")
         if new_stats['closed'] > 0:
@@ -443,11 +640,46 @@ class PECEnhancedReporter:
         report.append(f"Avg P&L per Signal: ${new_stats['avg_pnl_signal']:+.2f}")
         report.append(f"Avg P&L per Closed Trade: ${new_stats['avg_pnl_closed']:+.2f}")
         report.append(f"")
-        report.append(f"P&L Breakdown by Exit Type:")
-        report.append(f"  Total P&L TP_HIT: ${new_stats['tp_pnl']:+,.2f}")
-        report.append(f"  Total P&L SL_HIT: ${new_stats['sl_pnl']:+,.2f}")
-        report.append(f"  Total P&L TIMEOUT: ${new_stats['timeout_pnl']:+,.2f}")
+        report.append(f"P&L BREAKDOWN (STALE_TIMEOUT completely excluded):")
         report.append(f"")
+        report.append(f"  INCLUDED IN TOTAL P&L (Counted in metrics):")
+        report.append(f"    • TP_HIT:    {new_stats['tp_pnl']:+12,.2f}")
+        report.append(f"    • SL_HIT:    {new_stats['sl_pnl']:+12,.2f}")
+        report.append(f"    • TIMEOUT:   {new_stats['timeout_pnl']:+12,.2f}")
+        report.append(f"    • OPEN:      {new_stats['open_pnl']:+12,.2f} (unrealized)")
+        report.append(f"    Subtotal (Backtest P&L): {new_stats['tp_pnl'] + new_stats['sl_pnl'] + new_stats['timeout_pnl'] + new_stats['open_pnl']:+12,.2f}")
+        report.append(f"")
+        report.append(f"  EXCLUDED FROM TOTAL P&L (Not counted in any metric):")
+        report.append(f"    • REJECTED:  {new_stats['rejected_pnl']:+12,.2f} (never sent to traders, excluded from WR)")
+        report.append(f"    • STALE:     ⚠️  NOT CALCULATED (data quality - completely excluded)")
+        report.append(f"    Subtotal (Excluded P&L): {new_stats['rejected_pnl']:+12,.2f}")
+        report.append(f"")
+        report.append(f"  VALIDATION:")
+        new_included_sum = new_stats['tp_pnl'] + new_stats['sl_pnl'] + new_stats['timeout_pnl'] + new_stats['open_pnl']
+        report.append(f"    Included in Total P&L: {new_included_sum:+12,.2f}")
+        report.append(f"    Total P&L Reported:    {new_stats['total_pnl']:+12,.2f}")
+        report.append(f"    ✓ Verified: P&L matches Total P&L" if abs(new_included_sum - new_stats['total_pnl']) < 0.01 else f"    ✗ MISMATCH: Included {new_included_sum:+.2f} ≠ Total {new_stats['total_pnl']:+.2f}")
+        report.append(f"")
+        report.append(f"Average P&L per Count:")
+        report.append(f"  Avg P&L TP per Count TP: ${new_stats['avg_tp_pnl']:+.2f}" if new_stats['tp'] > 0 else f"  Avg P&L TP per Count TP: N/A (0 TP trades)")
+        report.append(f"  Avg P&L SL per Count SL: ${new_stats['avg_sl_pnl']:+.2f}" if new_stats['sl'] > 0 else f"  Avg P&L SL per Count SL: N/A (0 SL trades)")
+        report.append(f"")
+        
+        # Risk:Reward Metrics for NEW signals
+        highest_rr_new, avg_rr_new, lowest_rr_new = self._calculate_rr_metrics(new_signals_by_origin)
+        report.append(f"Risk:Reward (RR) Metrics:")
+        report.append(f"  Highest RR: {highest_rr_new if highest_rr_new is not None else 'N/A'}")
+        report.append(f"  Avg RR: {avg_rr_new if avg_rr_new is not None else 'N/A'}")
+        report.append(f"  Lowest RR: {lowest_rr_new if lowest_rr_new is not None else 'N/A'}")
+        report.append("")
+        
+        # Max Timeout Duration by Timeframe for NEW signals
+        max_timeout_durations_new = self._calculate_max_timeout_by_timeframe(new_signals_by_origin)
+        report.append(f"Actual Max Timeout Duration by Timeframe:")
+        report.append(f"  15min: {max_timeout_durations_new['15min']}")
+        report.append(f"  30min: {max_timeout_durations_new['30min']}")
+        report.append(f"  1h: {max_timeout_durations_new['1h']}")
+        report.append("")
         report.append("")
         
         # Aggregates Section
@@ -1019,20 +1251,15 @@ class PECEnhancedReporter:
                 continue
             
             if s.get('status') in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
-                # PREFER stored pnl_usd (may use max_bar price for timeouts)
-                # Fall back to recalculation if not available
-                stored_pnl = s.get('pnl_usd')
-                if stored_pnl is not None:
-                    total_pnl += float(stored_pnl)
-                else:
-                    # Fallback calculation
-                    pnl_calc = self._calculate_pnl_usd(
-                        s.get('entry_price'),
-                        s.get('actual_exit_price'),
-                        s.get('signal_type')
-                    )
-                    if pnl_calc is not None:
-                        total_pnl += pnl_calc
+                # RECALCULATE P&L with Phase 1-3 logic (ignore daemon's stored pnl_usd)
+                # This ensures all P&L uses consistent, correct calculation logic
+                pnl_calc = self._calculate_pnl_usd(
+                    s.get('entry_price'),
+                    s.get('actual_exit_price'),
+                    s.get('signal_type')
+                )
+                if pnl_calc is not None:
+                    total_pnl += pnl_calc
         
         # Calculate P&L breakdown by outcome type (EXCLUDING stale timeouts)
         pnl_tp = 0.0
@@ -1049,17 +1276,13 @@ class PECEnhancedReporter:
             
             status = s.get('status', 'OPEN')
             if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
-                # Get P&L for this signal
-                stored_pnl = s.get('pnl_usd')
-                if stored_pnl is not None:
-                    pnl_val = float(stored_pnl)
-                else:
-                    pnl_val_calc = self._calculate_pnl_usd(
-                        s.get('entry_price'),
-                        s.get('actual_exit_price'),
-                        s.get('signal_type')
-                    )
-                    pnl_val = pnl_val_calc if pnl_val_calc is not None else 0.0
+                # RECALCULATE P&L with Phase 1-3 logic (ignore daemon's stored pnl_usd)
+                pnl_val_calc = self._calculate_pnl_usd(
+                    s.get('entry_price'),
+                    s.get('actual_exit_price'),
+                    s.get('signal_type')
+                )
+                pnl_val = pnl_val_calc if pnl_val_calc is not None else 0.0
                 
                 # Categorize by outcome type
                 if status == 'TP_HIT':
@@ -1256,9 +1479,9 @@ class PECEnhancedReporter:
         stale_timeout_count = sum(1 for s in self.signals if s.get('data_quality_flag') and 'STALE_TIMEOUT' in s.get('data_quality_flag'))
         
         report.append("")
-        report.append("🔒 FOUNDATION BASELINE (IMMUTABLE - Locked at commit c535c34)")
-        report.append("Total Signals: 853 | Closed: 830 | WR: 25.7%")
-        report.append("LONG WR: 29.6% | SHORT WR: 46.2% | P&L: $-5498.59")
+        report.append("🔒 FOUNDATION BASELINE (IMMUTABLE - Locked at commit 8f58cec)")
+        report.append(f"Total Signals: {foundation_stats['total']} | Closed: {foundation_stats['closed']} | WR: {foundation_stats['wr']:.1f}%")
+        report.append(f"LONG WR: {self._calculate_wr_by_direction(foundation_signals, 'LONG'):.1f}% | SHORT WR: {self._calculate_wr_by_direction(foundation_signals, 'SHORT'):.1f}% | P&L: ${foundation_stats['total_pnl']:+,.2f}")
         report.append("")
         # Total stale timeouts = flagged TIMEOUT signals + STALE_TIMEOUT status
         total_stale_all = stale_timeout_count + total_stale_status  # 151 + 1 = 152
@@ -1369,22 +1592,92 @@ class PECEnhancedReporter:
         
         return "\n".join(report)
     
+    def _calculate_wr_by_direction(self, signals, direction):
+        """Calculate win rate for a specific direction (LONG or SHORT)"""
+        dir_signals = [s for s in signals if s.get('signal_type') == direction]
+        if not dir_signals:
+            return 0.0
+        
+        wins = 0
+        closed = 0
+        
+        for s in dir_signals:
+            status = s.get('status')
+            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                closed += 1
+                if status == 'TP_HIT':
+                    wins += 1
+                elif status == 'TIMEOUT':
+                    pnl = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                    if pnl and pnl > 0:
+                        wins += 1
+        
+        return (wins / closed * 100) if closed > 0 else 0.0
+    
     def _analyze_signal_group(self, signals):
-        """Analyze a group of signals (for SECTION 1 & 2)"""
+        """Analyze a group of signals (for SECTION 1 & 2) with FULL TRANSPARENCY
+        
+        Every signal is accounted for in the breakdown:
+        - TP_HIT, SL_HIT, TIMEOUT, OPEN (backtest signals)
+        - REJECTED_NOT_SENT_TELEGRAM (never sent to traders)
+        - STALE_TIMEOUT (stale, excluded from backtest)
+        
+        Sum of all categories = Total loaded signals
+        """
         tp = sum(1 for s in signals if s.get('status') == 'TP_HIT')
         sl = sum(1 for s in signals if s.get('status') == 'SL_HIT')
         timeout = sum(1 for s in signals if s.get('status') == 'TIMEOUT')
         open_trades = sum(1 for s in signals if s.get('status') == 'OPEN')
+        rejected = sum(1 for s in signals if s.get('status') == 'REJECTED_NOT_SENT_TELEGRAM')
+        stale = sum(1 for s in signals if s.get('status') == 'STALE_TIMEOUT')
         
-        timeout_win = sum(1 for s in signals if s.get('status') == 'TIMEOUT' and float(s.get('pnl_usd') or 0) > 0)
+        # Verify: sum of all categories = total signals (no hidden signals)
+        total_accounted = tp + sl + timeout + open_trades + rejected + stale
+        
+        # RECALCULATE all P&L with Phase 1-3 logic (ignore daemon's stored pnl_usd)
+        # CRITICAL: EXCLUDE STALE_TIMEOUT signals completely from all calculations
+        # STALE_TIMEOUT = data quality issues, not valid for backtest metrics
+        timeout_win = 0
+        total_pnl = 0.0
+        tp_pnl = 0.0
+        sl_pnl = 0.0
+        timeout_pnl = 0.0
+        open_pnl = 0.0
+        rejected_pnl = 0.0
+        # NOTE: stale_pnl is NOT tracked - STALE_TIMEOUT excluded from all calculations
+        
+        for s in signals:
+            status = s.get('status')
+            
+            # SKIP STALE_TIMEOUT completely - do not include in any calculation
+            if status == 'STALE_TIMEOUT':
+                continue
+            
+            pnl_calc = self._calculate_pnl_usd(
+                s.get('entry_price'),
+                s.get('actual_exit_price'),
+                s.get('signal_type')
+            )
+            pnl_val = pnl_calc if pnl_calc is not None else 0.0
+            
+            total_pnl += pnl_val
+            
+            # Track P&L for each status group explicitly (STALE excluded)
+            if status == 'TP_HIT':
+                tp_pnl += pnl_val
+            elif status == 'SL_HIT':
+                sl_pnl += pnl_val
+            elif status == 'TIMEOUT':
+                timeout_pnl += pnl_val
+                if pnl_val > 0:
+                    timeout_win += 1
+            elif status == 'OPEN':
+                open_pnl += pnl_val
+            elif status == 'REJECTED_NOT_SENT_TELEGRAM':
+                rejected_pnl += pnl_val
+        
         timeout_loss = timeout - timeout_win
-        
         closed = tp + sl + timeout
-        total_pnl = sum(float(s.get('pnl_usd') or 0) for s in signals)
-        
-        tp_pnl = sum(float(s.get('pnl_usd') or 0) for s in signals if s.get('status') == 'TP_HIT')
-        sl_pnl = sum(float(s.get('pnl_usd') or 0) for s in signals if s.get('status') == 'SL_HIT')
-        timeout_pnl = sum(float(s.get('pnl_usd') or 0) for s in signals if s.get('status') == 'TIMEOUT')
         
         avg_pnl_signal = total_pnl / len(signals) if signals else 0
         avg_pnl_closed = total_pnl / closed if closed > 0 else 0
@@ -1396,19 +1689,25 @@ class PECEnhancedReporter:
         
         return {
             'total': len(signals),
+            'total_accounted': total_accounted,  # Must equal total
             'tp': tp,
             'sl': sl,
             'timeout': timeout,
             'open': open_trades,
+            'rejected': rejected,  # Not sent to traders (excluded from metrics)
+            'stale': stale,  # Data quality issues (EXCLUDED from all calculations)
             'closed': closed,
             'timeout_win': timeout_win,
             'timeout_loss': timeout_loss,
-            'total_pnl': total_pnl,
+            'total_pnl': total_pnl,  # EXCLUDES STALE_TIMEOUT
             'avg_pnl_signal': avg_pnl_signal,
             'avg_pnl_closed': avg_pnl_closed,
             'tp_pnl': tp_pnl,
             'sl_pnl': sl_pnl,
             'timeout_pnl': timeout_pnl,
+            'open_pnl': open_pnl,
+            'rejected_pnl': rejected_pnl,  # Included in total_pnl (never sent to traders)
+            # NOTE: stale_pnl NOT tracked - STALE_TIMEOUT completely excluded from calculations
             'avg_tp_pnl': avg_tp_pnl,
             'avg_sl_pnl': avg_sl_pnl,
             'wr': wr,
@@ -1416,20 +1715,28 @@ class PECEnhancedReporter:
         }
     
     def _aggregate_by(self, dimension):
-        """Aggregate statistics by dimension (all lowercase field names)"""
+        """Aggregate statistics by dimension (all lowercase field names)
+        
+        CRITICAL: Exclude both STALE_TIMEOUT and REJECTED_NOT_SENT_TELEGRAM from all aggregates
+        Only valid backtest signals (TP_HIT, SL_HIT, TIMEOUT, OPEN) are aggregated
+        """
         stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout_win': 0, 'timeout_loss': 0, 'pnl': 0.0})
         
         for signal in self.signals:
-            # SKIP stale timeouts (data quality issue) - exclude from backtest P&L
-            if signal.get('data_quality_flag') and 'STALE_TIMEOUT' in signal.get('data_quality_flag'):
-                continue
+            status = signal.get('status', 'OPEN')
+            
+            # SKIP invalid/non-backtest signals - exclude from all aggregates
+            if status == 'STALE_TIMEOUT':
+                continue  # Data quality issue - completely excluded
+            if status == 'REJECTED_NOT_SENT_TELEGRAM':
+                continue  # Never sent to traders - excluded from all aggregates
             
             # Get the key value for this dimension
             key = signal.get(dimension, 'N/A')
             
             stats[key]['count'] += 1
             
-            status = signal.get('status', 'OPEN')
+            # Status already extracted above for skip checks - reuse it
             if status == 'TP_HIT':
                 stats[key]['tp'] += 1
             elif status == 'SL_HIT':
@@ -1461,13 +1768,21 @@ class PECEnhancedReporter:
         return stats
     
     def _aggregate_by_dimensions(self, dimensions):
-        """Aggregate statistics by multiple dimensions (tuple of field names)"""
+        """Aggregate statistics by multiple dimensions (tuple of field names)
+        
+        CRITICAL: Exclude both STALE_TIMEOUT and REJECTED_NOT_SENT_TELEGRAM from all aggregates
+        Only valid backtest signals (TP_HIT, SL_HIT, TIMEOUT, OPEN) are aggregated
+        """
         stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout_win': 0, 'timeout_loss': 0, 'pnl': 0.0})
         
         for signal in self.signals:
-            # SKIP stale timeouts (data quality issue) - exclude from backtest P&L
-            if signal.get('data_quality_flag') and 'STALE_TIMEOUT' in signal.get('data_quality_flag'):
-                continue
+            status = signal.get('status', 'OPEN')
+            
+            # SKIP invalid/non-backtest signals - exclude from all aggregates
+            if status == 'STALE_TIMEOUT':
+                continue  # Data quality issue - completely excluded
+            if status == 'REJECTED_NOT_SENT_TELEGRAM':
+                continue  # Never sent to traders - excluded from all aggregates
             
             # Build tuple key from multiple dimensions
             key_parts = []
@@ -1488,7 +1803,7 @@ class PECEnhancedReporter:
             
             stats[key]['count'] += 1
             
-            status = signal.get('status', 'OPEN')
+            # Status already extracted above for skip checks - reuse it
             if status == 'TP_HIT':
                 stats[key]['tp'] += 1
             elif status == 'SL_HIT':
@@ -1520,13 +1835,21 @@ class PECEnhancedReporter:
         return stats
     
     def _aggregate_by_dimensions_with_symbol(self, dimensions):
-        """Aggregate by 4D dimensions PLUS symbol_group (5D)"""
+        """Aggregate by 4D dimensions PLUS symbol_group (5D)
+        
+        CRITICAL: Exclude both STALE_TIMEOUT and REJECTED_NOT_SENT_TELEGRAM from all aggregates
+        Only valid backtest signals (TP_HIT, SL_HIT, TIMEOUT, OPEN) are aggregated
+        """
         stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout_win': 0, 'timeout_loss': 0, 'pnl': 0.0})
         
         for signal in self.signals:
-            # SKIP stale timeouts (data quality issue) - exclude from backtest P&L
-            if signal.get('data_quality_flag') and 'STALE_TIMEOUT' in signal.get('data_quality_flag'):
-                continue
+            status = signal.get('status', 'OPEN')
+            
+            # SKIP invalid/non-backtest signals - exclude from all aggregates
+            if status == 'STALE_TIMEOUT':
+                continue  # Data quality issue - completely excluded
+            if status == 'REJECTED_NOT_SENT_TELEGRAM':
+                continue  # Never sent to traders - excluded from all aggregates
             
             # Build tuple key from dimensions + symbol_group
             key_parts = []
@@ -1551,7 +1874,7 @@ class PECEnhancedReporter:
             
             stats[key]['count'] += 1
             
-            status = signal.get('status', 'OPEN')
+            # Status already extracted above for skip checks - reuse it
             if status == 'TP_HIT':
                 stats[key]['tp'] += 1
             elif status == 'SL_HIT':

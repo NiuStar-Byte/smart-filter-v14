@@ -1,0 +1,151 @@
+================================================================================
+🔒 PEC ENHANCED REPORTER - TEMPLATE LOCKED
+================================================================================
+
+Status: PRODUCTION READY
+Lock Date: 2026-03-20 00:00 GMT+7
+File: /Users/geniustarigan/.openclaw/workspace/pec_enhanced_reporter.py (104 KB)
+Output: PEC_ENHANCED_REPORT.txt (2,958 lines per run)
+
+================================================================================
+✅ VERIFIED & LOCKED FEATURES
+================================================================================
+
+[✓] SECTION 1: TOTAL SIGNALS (Foundation + New)
+    - Shows: 2,420 signals, 348 TP, 753 SL, 245 Timeout, 83 Open
+    - Closed: 1,346 trades (89 timeout wins, 156 timeout losses)
+    - Win Rate: 32.47%
+    - P&L: -$4,648.31
+
+[✓] SECTION 2: NEW ONLY (Mar 16+ onwards)
+    - Shows: 68 signals, separate metrics
+    - Closed: 7 trades (0 wins, 7 losses)
+    - Win Rate: 0.00%
+    - P&L: -$11.19
+
+[✓] AGGREGATES - DIMENSIONAL BREAKDOWN
+    - 🕐 BY TIMEFRAME: 15min, 30min, 1h
+    - 📈 BY DIRECTION: LONG, SHORT
+    - 🛣️  BY ROUTE: AMBIGUOUS, NONE, REVERSAL, TREND CONTINUATION, TREND_CONTINUATION
+    - 🌊 BY REGIME: BEAR, BULL, RANGE
+    - 💰 BY SYMBOL GROUP: MAIN_BLOCKCHAIN, TOP_ALTS, MID_ALTS, LOW_ALTS
+    - 💡 BY CONFIDENCE: HIGH (≥76%), MID (51-75%), LOW (≤50%)
+
+[✓] MULTI-DIMENSIONAL AGGREGATES
+    - 🕐💰 BY TIMEFRAME x SYMBOL_GROUP
+    - 📈💰 BY DIRECTION x SYMBOL_GROUP
+    - 🕐📈 BY TIMEFRAME x DIRECTION
+    - 🕐🌊 BY TIMEFRAME x REGIME
+    - 📈🌊 BY DIRECTION x REGIME
+    - 🛣️🌊 BY ROUTE x REGIME
+    - 🛣️💰 BY ROUTE x SYMBOL_GROUP
+    - 🌊💰 BY REGIME x SYMBOL_GROUP
+    - 🕐📈🛣️ BY TIMEFRAME x DIRECTION x ROUTE
+    - 🕐📈🌊 BY TIMEFRAME x DIRECTION x REGIME
+    - 📈🛣️🌊 BY DIRECTION x ROUTE x REGIME
+    - 🕐🛣️🌊 BY TIMEFRAME x ROUTE x REGIME
+    - 🕐📈💡 BY TIMEFRAME x DIRECTION x CONFIDENCE
+
+[✓] DETAILED SIGNAL LIST
+    - All 2,420 signals with entry/exit/duration/status
+    - Formatted table with clean data quality indicators
+    - Sorted by fired time (newest first)
+
+[✓] SUMMARY
+    - Identical to SECTION 1 (no drift)
+    - Total signals, win rate, P&L all synced
+    - Average durations calculated correctly
+
+[✓] FIRED BY DATE
+    - Daily breakdown: 2026-02-27 to 2026-03-19
+    - Status: IMMUTABLE for past dates
+    - Status: 🔄 still accumulating for current date (2026-03-19)
+    - Previous hour locked: 2026-03-19_23 (23:00-00:00 GMT+7) with 553 signals
+
+[✓] TODAY'S BREAKDOWN BY HOUR
+    - Hourly distribution for 2026-03-20
+    - Current hour: 00:00-01:00 GMT+7 (5 signals so far)
+    - Status: 🔄 still accumulating (more may arrive)
+    - Previous hours: ✓ IMMUTABLE (locked in ledger)
+
+[✓] HIERARCHY RANKING
+    - 5D Combos (TF x DIR x ROUTE x REGIME x SYMBOL_GROUP)
+    - 4D Combos (TF x DIR x ROUTE x REGIME)
+    - 3D Sample Combos (TF_DIR_REGIME, DIR_ROUTE_REGIME, etc.)
+    - 2D Combos (TF_DIR, TF_REGIME, DIR_REGIME, DIR_ROUTE, ROUTE_REGIME)
+    - Ranked by Win Rate, shows P&L and Avg per combo
+
+================================================================================
+📊 CURRENT METRICS (2026-03-20 00:00 GMT+7)
+================================================================================
+
+Total Signals Loaded: 2,420
+Data Source: SIGNALS_MASTER.jsonl
+Date Range: 2026-02-27 to 2026-03-19
+
+Closed Trades: 1,346
+├─ TP_HIT: 348
+├─ SL_HIT: 753
+├─ Timeout Win: 89
+└─ Timeout Loss: 156
+
+Open Trades: 83
+
+Win Rate: 32.47%
+= (348 TP + 89 TIMEOUT_WIN) / 1,346 Closed
+= 437 / 1,346 = 32.47%
+
+Total P&L: -$4,648.31
+├─ TP P&L: +$12,380.83
+├─ SL P&L: -$14,724.33
+└─ Timeout P&L: -$2,304.81
+
+Avg P&L per Signal: -$1.92
+Avg P&L per Closed Trade: -$3.45
+
+Avg TP Duration: 1h 50m
+Avg SL Duration: 1h 35m
+
+================================================================================
+🚀 HOW TO USE
+================================================================================
+
+COMMAND:
+  cd /Users/geniustarigan/.openclaw/workspace && python3 pec_enhanced_reporter.py
+
+OUTPUT:
+  /Users/geniustarigan/.openclaw/workspace/PEC_ENHANCED_REPORT.txt
+
+FREQUENCY:
+  - Manual: Run anytime for latest report
+  - Daily: Recommended for tracking trends
+  - Cron: Can be scheduled via cron tool if needed
+
+NEXT STEPS:
+  1. Monitor daily for signal accumulation
+  2. Track cumulative P&L trends
+  3. Identify best/worst performing combos
+  4. Use hourly breakdown for real-time analysis
+  5. Reference hierarchy ranking for tier-qualified strategies
+
+================================================================================
+🔒 LOCK STATEMENT
+================================================================================
+
+This template is LOCKED and production-ready as of 2026-03-20 00:00 GMT+7.
+
+NO FURTHER TEMPLATE CHANGES ARE REQUIRED.
+
+All sections are verified, tested, and synced with actual data.
+
+Future updates will be data-driven only (new signals in SIGNALS_MASTER.jsonl).
+
+================================================================================
+✅ UPDATED: MEMORY.md
+  - Added "PEC ENHANCED REPORTER - TEMPLATE LOCKED" section
+  - Documented current data status
+  - Confirmed all features production-ready
+  - Cron job status tracked
+
+✅ STATUS: Ready for continuous operation
+================================================================================

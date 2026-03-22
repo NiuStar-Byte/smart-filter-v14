@@ -1,0 +1,16 @@
+{
+  "locked_at": "2026-03-20T18:24:16.226329",
+  "file": "pec_enhanced_reporter.py",
+  "sha256": "7218e06dd2b0c219d4c35d91597dda3b5b891a32231621e8632e4755ba68efee",
+  "rule": "Template structure FROZEN, metrics content DYNAMIC",
+  "frozen_sections": [
+    "Section layout (FOUNDATION vs NEW_LIVE)",
+    "Column headers",
+    "Report structure"
+  ],
+  "dynamic_sections": [
+    "Metrics (WR, P&L, duration - calculated from AUDIT)",
+    "Status (current state from MASTER)",
+    "Counts (OPEN, TP, SL, TIMEOUT - from current signals)"
+  ]
+}

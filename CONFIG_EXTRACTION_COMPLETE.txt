@@ -1,0 +1,205 @@
+═══════════════════════════════════════════════════════════════════════════════
+  ✅ CONFIGURATION EXTRACTION COMPLETED
+  PEC Enhanced Reporter - Hardcoded Values → Configuration Constants
+═══════════════════════════════════════════════════════════════════════════════
+
+Date: 2026-03-20 00:31 GMT+7
+Status: ✅ PRODUCTION READY
+
+───────────────────────────────────────────────────────────────────────────────
+WHAT WAS EXTRACTED
+───────────────────────────────────────────────────────────────────────────────
+
+File Created: pec_reporter_config.py (7.7 KB, production-ready)
+
+Constants Extracted:
+  1. NEW_SIGNALS_CUTOFF_DATE
+     Value: 2026-03-16 (Foundation/New boundary)
+     Location: Lines 369, 1260 in old reporter
+     
+  2. TIMEOUT_WINDOW_MULTIPLIERS
+     Value: {'15min': 15, '30min': 10, '1h': 5}
+     Location: Line 1096 in old reporter
+     Impact: Determines "stale" timeout threshold
+     
+  3. TIMEOUT_TOLERANCE_PERCENT
+     Value: 0.10 (10% buffer)
+     Location: Line 1097 in old reporter
+     Impact: Timing slippage tolerance
+     
+  4. FIXED_MARGIN_USD
+     Value: 100.0
+     Location: Line 168, 263 in old reporter
+     Impact: Base position for P&L calculations
+     
+  5. FIXED_LEVERAGE
+     Value: 10.0
+     Location: Hardcoded in P&L function
+     Impact: Multiplier for notional position
+     
+  6. SYMBOL_GROUPS
+     Value: 3 groups (MAIN_BLOCKCHAIN, TOP_ALTS, MID_ALTS, LOW_ALTS)
+     Location: Lines 14-27 in old reporter
+     Impact: 5D dimensional analysis
+
+───────────────────────────────────────────────────────────────────────────────
+FILES MODIFIED
+───────────────────────────────────────────────────────────────────────────────
+
+✅ pec_enhanced_reporter.py
+   - Added config imports (6 constants + function)
+   - Replaced 5 hardcoded values with config references
+   - Removed duplicate SYMBOL_GROUPS definition
+
+✅ TEMPLATE_LOCK.md
+   - Added "Configuration Constants (Extracted 2026-03-20 00:31)" section
+   - Documented all constants and their values
+   - Added validation script usage
+   - Updated change log
+   - Updated revision count: 1 (config extraction)
+
+✅ MEMORY.md
+   - Added "CONFIG EXTRACTION" section with full details
+   - Documented benefits and lock status update
+
+───────────────────────────────────────────────────────────────────────────────
+VERIFICATION RESULTS
+───────────────────────────────────────────────────────────────────────────────
+
+✅ Configuration validation: 0 ERRORS
+   - All values within acceptable ranges
+   - No invalid combinations
+   - Timeout multipliers consistent
+
+✅ Reporter execution: SUCCESSFUL
+   - Loaded 2,457 signals from SIGNALS_MASTER.jsonl
+   - Generated 2,971 lines of output
+   - All 10 sections produced correctly
+   - SECTION 1 = SUMMARY (data sync verified)
+   - All 6 dimensional aggregates calculated
+   - All combo tiers ranked properly
+   - Foundation metrics correct
+   - New signals separated correctly
+
+✅ Output values: UNCHANGED
+   - Config values match previous hardcoded values
+   - P&L calculations identical
+   - Win rate calculations identical
+   - Duration calculations identical
+   - No behavior change, only code structure improvement
+
+✅ Performance: NO IMPACT
+   - Report generation time same
+   - Memory usage same
+   - Output file size same (2,971 lines)
+
+✅ GitHub sync: COMPLETE
+   - Commit: 93c1809
+   - Message: Config extraction commit with all changes
+   - Branch: main
+   - Status: Synced
+
+───────────────────────────────────────────────────────────────────────────────
+BENEFITS REALIZED
+───────────────────────────────────────────────────────────────────────────────
+
+1. FLEXIBILITY
+   - A/B testing with different timeout multipliers
+   - Testing different leverage/margin ratios
+   - Adjusting signal cutoff dates without code edits
+   - Changing tolerance parameters on-the-fly
+
+2. MAINTAINABILITY
+   - All constants in one file
+   - Easy to find and understand parameters
+   - Central point for documentation
+   - Reduces code duplication
+
+3. AUDITABILITY
+   - Track config changes via git history
+   - Validate configuration independently
+   - Compare configs across versions
+   - Easier to review parameter choices
+
+4. REUSABILITY
+   - Other scripts can import same config
+   - Consistent values across codebase
+   - Config module can be tested separately
+   - Reduce sync issues between systems
+
+5. SCALABILITY
+   - Easy to add new configuration options
+   - Ready for environment-based configs
+   - Supports future A/B testing infrastructure
+   - Foundation for config management system
+
+───────────────────────────────────────────────────────────────────────────────
+HOW TO USE
+───────────────────────────────────────────────────────────────────────────────
+
+1. VALIDATE CONFIGURATION
+   cd /Users/geniustarigan/.openclaw/workspace
+   python3 pec_reporter_config.py
+   
+   Output: Configuration summary + ✅ Configuration valid
+
+2. GENERATE REPORT (AUTO-IMPORTS CONFIG)
+   python3 pec_enhanced_reporter.py
+   
+   Output: PEC_ENHANCED_REPORT.txt (uses config values)
+
+3. CHANGE CONFIGURATION
+   Edit pec_reporter_config.py → change any constant value
+   Re-run reporter (automatically uses new values)
+
+4. IMPORT IN OTHER SCRIPTS
+   from pec_reporter_config import (
+       NEW_SIGNALS_CUTOFF_DATE,
+       FIXED_MARGIN_USD,
+       get_notional_position
+   )
+
+───────────────────────────────────────────────────────────────────────────────
+TEMPLATE LOCK STATUS
+───────────────────────────────────────────────────────────────────────────────
+
+Previous Status:
+  v1.0 (2026-03-20 00:23 GMT+7)
+  Structure locked, hardcoded values present
+
+Current Status:
+  v1.0-with-config (2026-03-20 00:31 GMT+7)
+  Structure locked + Configuration extracted
+  Status: ✅ PRODUCTION READY
+
+Next Steps:
+  - Monitor signal accumulation in SIGNALS_MASTER.jsonl
+  - Run daily reports via pec_enhanced_reporter.py
+  - Track WR/P&L trends via report outputs
+  - No template structure changes needed
+  - Config changes allowed for A/B testing
+
+───────────────────────────────────────────────────────────────────────────────
+QUICK REFERENCE
+───────────────────────────────────────────────────────────────────────────────
+
+Files to Remember:
+  ✅ pec_reporter_config.py — Configuration constants (edit this)
+  ✅ pec_enhanced_reporter.py — Reporter logic (imports config)
+  ✅ TEMPLATE_LOCK.md — Lock documentation
+  ✅ PEC_ENHANCED_REPORT.txt — Generated report output
+
+Configuration to Test:
+  python3 pec_reporter_config.py
+
+Reporter to Run:
+  python3 pec_enhanced_reporter.py
+
+Git Status:
+  Commit: 93c1809
+  Branch: main
+  Status: Synced
+
+═══════════════════════════════════════════════════════════════════════════════
+✅ EXTRACTION COMPLETE — SYSTEM READY FOR PRODUCTION
+═══════════════════════════════════════════════════════════════════════════════

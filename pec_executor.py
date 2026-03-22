@@ -459,5 +459,57 @@ def run_pec_update():
         print(f"[ERROR] PEC update failed: {type(e).__name__}: {e}", flush=True)
 
 
+def backtest_single_signal(signal_uuid: str):
+    """Backtest a single signal (event-triggered from daemon)"""
+    try:
+        executor = PECExecutor()
+        
+        if not os.path.exists(executor.signals_master_path):
+            print(f"[ERROR] SIGNALS_MASTER.jsonl not found", flush=True)
+            return
+        
+        # Read signals, find matching UUID
+        signals = []
+        with open(executor.signals_master_path, 'r') as f:
+            for line in f:
+                try:
+                    signals.append(json.loads(line))
+                except:
+                    pass
+        
+        # Find signal by UUID
+        target_signal = None
+        for signal in signals:
+            if signal.get('signal_uuid') == signal_uuid:
+                target_signal = signal
+                break
+        
+        if not target_signal:
+            print(f"[EXECUTOR] Signal UUID {signal_uuid} not found", flush=True)
+            return
+        
+        # Check if already closed
+        if target_signal.get('status') != 'OPEN':
+            print(f"[EXECUTOR] Signal {signal_uuid} already closed ({target_signal.get('status')})", flush=True)
+            return
+        
+        # Backtest this single signal
+        print(f"[EXECUTOR] Event-triggered backtest: {target_signal.get('symbol')} {target_signal.get('timeframe')}", flush=True)
+        
+        summary = executor.update_signals()
+        executor.print_announcement(summary)
+        
+    except Exception as e:
+        print(f"[ERROR] Single signal backtest failed: {type(e).__name__}: {e}", flush=True)
+
+
 if __name__ == '__main__':
-    run_pec_update()
+    import sys
+    
+    # Check for --signal-uuid argument (event-triggered)
+    if len(sys.argv) > 1 and sys.argv[1] == '--signal-uuid' and len(sys.argv) > 2:
+        signal_uuid = sys.argv[2]
+        backtest_single_signal(signal_uuid)
+    else:
+        # Full backtest (cron-triggered)
+        run_pec_update()

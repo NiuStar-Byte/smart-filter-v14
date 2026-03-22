@@ -1,0 +1,101 @@
+═══════════════════════════════════════════════════════════════════════════════
+  ⚠️  CRITICAL: SIGNALS_MASTER.jsonl IS LIVE AND ACCUMULATING
+═══════════════════════════════════════════════════════════════════════════════
+
+PROBLEM IDENTIFIED:
+──────────────────────────────────────────────────────────────────────────────
+
+The reporter shows DIFFERENT NUMBERS every run because:
+
+1. SIGNALS_MASTER.jsonl is a LIVE file (daemon writes to it continuously)
+2. Reporter reads whatever is currently in the file
+3. Each new signal changes the totals → numbers drift
+
+Timeline:
+  00:26 GMT+7: Ran reporter → 2,457 signals → -$4,653.68 P&L ✅ (expected)
+  00:44 GMT+7: Ran reporter → 3,183 signals → -$31,464.38 P&L ❌ (broken)
+  
+  Difference: +726 signals in 18 minutes (daemon adding new signals)
+
+Current File State:
+  SIGNALS_MASTER.jsonl: 3,184 lines (LIVE, constantly growing)
+  Last signal: 2026-03-19T17:44:05.816631 UTC (just now)
+
+───────────────────────────────────────────────────────────────────────────────
+WHY THIS IS A PROBLEM
+───────────────────────────────────────────────────────────────────────────────
+
+✗ "Correct" numbers disappear in new runs
+✗ Can't compare performance day-to-day
+✗ Template locked, but data is live and unstable
+✗ Baseline metrics change unpredictably
+✗ A/B testing comparisons become invalid
+
+───────────────────────────────────────────────────────────────────────────────
+THE SOLUTION: IMMUTABLE BASELINE ARCHITECTURE
+───────────────────────────────────────────────────────────────────────────────
+
+Strategy: Three-Tier Signal Storage
+
+1. SIGNALS_MASTER_LOCKED.jsonl (IMMUTABLE)
+   → Snapshot of signals at a known good point
+   → Used for stable reporting (should NOT change)
+   → Example: Foundation baseline (2,457 signals as of 2026-03-20 00:26)
+
+2. SIGNALS_LIVE_ACCUMULATING.jsonl (GROWING)
+   → Current SIGNALS_MASTER.jsonl renamed
+   → Daemon writes new signals here
+   → This DOES change, continuously
+
+3. SIGNALS_MASTER.jsonl (SMART READER)
+   → Reporter reads this
+   → If LOCKED exists: use it for stable reports
+   → If doing live analysis: read from ACCUMULATING
+
+───────────────────────────────────────────────────────────────────────────────
+IMMEDIATE ACTION NEEDED
+───────────────────────────────────────────────────────────────────────────────
+
+Choice 1: RESTORE KNOWN GOOD STATE
+  - Archive current SIGNALS_MASTER.jsonl (3,183 signals, broken)
+  - Create SIGNALS_MASTER_LOCKED from backup with 2,457 signals
+  - Reporter uses locked version → stable output
+  - Risk: Lose recent 726 signals
+
+Choice 2: ACCEPT LIVE DATA
+  - Keep SIGNALS_MASTER.jsonl as live
+  - Change reporter to show "as of [timestamp]"
+  - Accept that numbers change with new signals
+  - Update expected baseline to current state
+
+Choice 3: PARALLEL ARCHITECTURE (RECOMMENDED)
+  - Keep both: LOCKED (stable) + LIVE (growing)
+  - Reporter can switch: --locked vs --live mode
+  - Immutability for foundation, flexibility for new signals
+  - No data loss, full traceability
+
+───────────────────────────────────────────────────────────────────────────────
+DECISION REQUIRED FROM USER
+───────────────────────────────────────────────────────────────────────────────
+
+What should happen?
+
+A) Lock to 2,457 signals (stable, historical baseline)
+   - Archive current 3,183 to backup
+   - Use 2,457-signal LOCKED version for all reports
+   - New signals accumulate separately in live file
+
+B) Accept 3,183 as new baseline
+   - Update expected metrics to current state
+   - Understand numbers will change as daemon adds signals
+   - Report is correct, expectations were outdated
+
+C) Implement parallel architecture
+   - Create SIGNALS_MASTER_LOCKED.jsonl (2,457 → stable)
+   - Rename current SIGNALS_MASTER.jsonl → SIGNALS_MASTER_LIVE.jsonl (3,183 → growing)
+   - Reporter uses LOCKED by default, can access LIVE on demand
+   - Best practice for immutable + live data
+
+═══════════════════════════════════════════════════════════════════════════════
+  SIGNALS INTEGRITY WARNING - ACTION REQUIRED
+═══════════════════════════════════════════════════════════════════════════════
