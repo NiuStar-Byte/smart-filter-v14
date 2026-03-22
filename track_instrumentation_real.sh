@@ -61,6 +61,7 @@ filter_stats = defaultdict(lambda: {"passed": 0, "won": 0, "lost": 0})
 total_signals = 0
 instrumented_signals = 0
 closed_signals = 0
+tp_wins = 0
 
 try:
     with open(master_file, 'r') as f:
@@ -80,6 +81,8 @@ try:
                 if status in ['TP_HIT', 'SL_HIT']:
                     closed_signals += 1
                     is_win = (status == 'TP_HIT')
+                    if is_win:
+                        tp_wins += 1
                     
                     # Count each passed filter
                     for filt in signal.get('passed_filters', []):
@@ -100,12 +103,12 @@ print(f"\n{'='*110}")
 print(f"FILTER EFFECTIVENESS ANALYSIS - ALL 20 FILTERS")
 print(f"{'='*110}")
 print(f"Total signals: {total_signals} | Instrumented: {instrumented_signals} | Closed (TP/SL): {closed_signals}")
-print(f"Baseline WR: {(closed_signals / max(1, instrumented_signals))*100:.1f}%")
+print(f"Baseline WR: {(tp_wins / max(1, closed_signals))*100:.1f}%")
 print(f"{'='*110}\n")
 
 # Calculate and sort by effectiveness
 effectiveness = []
-baseline_wr = closed_signals / max(1, instrumented_signals)
+baseline_wr = tp_wins / max(1, closed_signals)
 
 for filter_name in all_filters:
     stats = filter_stats[filter_name]
