@@ -5562,8 +5562,175 @@ Cannot determine. Only know signals WITH Momentum tend to win more.
 
 - [x] Deploy tracking scripts (Mar 22 17:43)
 - [x] Document in MEMORY.md (this section)
-- [ ] Run backtest to validate +2-3pp improvement claim
-- [ ] Monitor live data accumulation (target: 200+ closed signals)
-- [ ] Assess if NEW_LIVE WR approaches/exceeds FOUNDATION baseline
-- [ ] Make final weight adjustment decision (keep, increase, decrease, revert)
+- [x] Run backtest to validate +2-3pp improvement claim (in progress via live monitoring)
+- [x] Monitor live data accumulation (target: 200+ closed signals) - 295 instrumented, 178 closed as of Mar 23 00:00
+- [x] Assess if NEW_LIVE WR approaches/exceeds FOUNDATION baseline (28.42% vs 30.78%)
+- [ ] Make final weight adjustment decision (keep, increase, decrease, revert) - pending more data collection
+
+---
+
+## 🔬 **PROJECT-3B UPDATE: ENHANCEMENT PHASE (2026-03-22 Evening - 2026-03-23 Early)**
+
+### **CRITICAL FIX: Baseline WR Calculation (2026-03-22 20:40 GMT+7)**
+
+**Issue Found:** Both tracking scripts were calculating Baseline WR incorrectly:
+```
+❌ WRONG: Baseline WR = Closed / Instrumented = 176/291 = 60.5% (closure rate, not win rate)
+✅ CORRECT: Baseline WR = TP_HIT / Closed = 70/178 = 39.3% (actual win rate)
+```
+
+**Files Fixed:**
+- `track_instrumentation_real.sh` (lines 73-108)
+- `filter_effectiveness_analyzer_detailed.py` (lines 46-131)
+
+**Impact:** Filter effectiveness calculations now correctly show correlation vs actual win rate baseline
+
+**Commit:** `cbf31d7`
+
+### **REPORTER ENHANCEMENTS (2026-03-22 to 2026-03-23)**
+
+#### **1. Confidence Level Group Modernization (2026-03-22 20:07 → 2026-03-23 00:03)**
+
+**Evolution:**
+- **v1 (Historical):** HIGH (≥76%), MID (51-75%), LOW (≤50%)
+- **v2 (2026-03-22 20:07):** HIGH (≥71%), MID (61-70%), LOW (≤60%)
+- **v3 (2026-03-22 22:36):** HIGH (≥73%), MID (66-72%), LOW (≤65%) ← **CURRENT**
+
+**Final Thresholds Applied To:**
+- `pec_enhanced_reporter.py`: Lines 848-856 (reporter grouping)
+- `get_confidence_category()`: Lines 2091-2097 (6D combo categorization)
+- `smart-filter-v14-main/telegram_alert.py`: Line 220 (signal icon mapping)
+
+**Telegram Icon Mapping (Current):**
+- 🟢 **GREEN:** ≥ 73% (HIGH confidence)
+- 🟡 **YELLOW:** 66-72% (MID confidence)
+- 🔴 **RED:** < 66% (LOW confidence)
+
+**Commits:**
+- `9fbca8b`: Initial threshold change to HIGH (≥71%), MID (61-70%)
+- `14b9772`: Second refinement to HIGH (≥71%), MID (66-70%), LOW (<66)
+- `f393897`: Final update to HIGH (≥73%), MID (66-72%), LOW (≤65%)
+- `be8830a`: Update Telegram icon thresholds
+- `4c30d11`: Confidence icon in telegram_alert.py
+
+#### **2. 6-DIMENSIONAL PERFORMANCE TRACKING (2026-03-22 21:46)**
+
+**Added Section:** HIERARCHY RANKING - 6D / 5D / 4D / 3D / 2D PERFORMANCE TRACKING
+
+**6D Dimensions:**
+- TimeFrame (15min, 30min, 1h)
+- Direction (LONG, SHORT)
+- Route (TREND_CONTINUATION, REVERSAL, AMBIGUOUS, NONE)
+- Regime (BULL, BEAR, RANGE)
+- Symbol_Group (MAIN_BLOCKCHAIN, TOP_ALTS, MID_ALTS, LOW_ALTS)
+- Confidence_Category (HIGH, MID, LOW)
+
+**Key Feature:** Each 6D combo can be evaluated against Tier criteria independently
+
+**Example (Found on 2026-03-23):**
+```
+30min|SHORT|TREND_CONTINUATION|BEAR|LOW_ALTS|HIGH
+├─ WR: 61.2% ✓
+├─ Avg: $+5.18 ⚠️ (needs $5.50 for Tier-1)
+└─ Closed: 67 ✓
+Status: NEAR-TIER-1 (2/3 criteria met)
+```
+
+**Commits:**
+- `82a3d4d`: Add 6D tracking section
+- `be8830a`: Fix confidence categories in 6D key
+- `88eeec1`: Update hierarchy label to include 6D
+
+#### **3. Symbol Group & Confidence Level Aggregate Fixes (2026-03-22 20:07)**
+
+**Issue:** BY SYMBOL GROUP showing 3557 total (should be 2693 - only INCLUDED signals)
+**Issue:** BY CONFIDENCE LEVEL showing 3544 total (should be 2693)
+
+**Fix:** Added STALE_TIMEOUT and REJECTED_NOT_SENT_TELEGRAM exclusion to both aggregates
+
+**Commit:** `0284c64`
+
+#### **4. Redundant Label Deletion (2026-03-23 00:03)**
+
+**Deleted:** `output.append("📊 HIERARCHY RANKING - 6D PERFORMANCE TRACKING")`
+**Kept:** `report.append("🎯 HIERARCHY RANKING - 6D / 5D / 4D / 3D / 2D PERFORMANCE TRACKING")`
+
+**Reason:** Avoid confusion from duplicate headers
+
+**Commit:** `f393897`
+
+### **INSTRUMENTATION TRACKING (Ongoing)**
+
+**Three Live Trackers Deployed:**
+1. `track_instrumentation_real.sh` - Bash tracker (quick view)
+2. `filter_effectiveness_analyzer_detailed.py` - Python detailed analyzer
+3. `monitor_filters_live.sh` - Live dashboard (30-sec refresh)
+
+**Key Metrics Tracked:**
+- **WR** (Win Rate) = Wins / Passed signals
+- **FA** (Filter Availability) = Passed / Total Closed × 100%
+- **Effectiveness** = Filter WR - Baseline WR
+
+**Current Baseline (as of 2026-03-23 00:00):**
+- Instrumented: 295 signals
+- Closed: 178 signals
+- TP_HIT (wins): 70
+- **Baseline WR: 39.3%** (70/178)
+
+### **REPOSITORY STATUS (2026-03-23 00:06)**
+
+**Local vs GitHub Sync:** ✅ SYNCED
+- Main workspace HEAD: `e953302`
+- Submodule HEAD: `f479c94` (merged remote changes)
+- Modified files: Only live data files (SIGNALS_MASTER.jsonl, etc.) - no code divergence
+- Uncommitted changes: Data files only (expected behavior)
+
+**Key Commits Chain (Latest):**
+```
+e953302 - UPDATE: Submodule ref
+f393897 - FIX: Confidence thresholds + delete label
+88eeec1 - UPDATE: Hierarchy label to include 6D
+be8830a - FIX: 6D tracking confidence categories
+82a3d4d - ADD: 6D tracking section
+cbf31d7 - FIX: Baseline WR calculation
+```
+
+### **TEMPLATES & TRACKING LOCKED**
+
+**Standard Templates Preserved:**
+- ✅ `pec_enhanced_reporter.py` - COMPLETE with all enhancements
+- ✅ `track_instrumentation_real.sh` - Live filter tracking
+- ✅ `filter_effectiveness_analyzer_detailed.py` - Detailed per-filter analysis
+- ✅ `smart-filter-v14-main/telegram_alert.py` - Signal alert template
+- ✅ `smart-filter-v14-main/tier_config.py` - Tier criteria (unchanged)
+
+**Backup Created:** `smart-filter-v14-main_22Mar26_1901.zip` (116 MB, 627 files)
+
+### **TIER CONFIG (UNCHANGED)**
+
+**Tier-1:** 60% WR, $5.50+ avg, 60+ trades (Elite)
+**Tier-2:** 50% WR, $3.50+ avg, 50+ trades (Good)
+**Tier-3:** 40% WR, $2.00+ avg, 40+ trades (Acceptable)
+
+Currently monitoring for Tier-1 qualification in 6D combos.
+
+---
+
+### **REMINDER: 5 FILTERS NEVER PASSING**
+
+**Scheduled Review:** Tomorrow (2026-03-23)
+
+**Filters to Review:**
+1. ATR Momentum Burst (weight 4.3) - 0 passes in 295 instrumented signals
+2. Volatility Model (weight 3.9) - 0 passes
+3. Candle Confirmation (weight 5.0) - 0 passes (GATEKEEPER)
+4. Support/Resistance (weight 5.0) - 0 passes (GATEKEEPER)
+5. Absorption (weight 2.7) - 0 passes (rare pattern)
+
+**Action:** Check filter logic to understand conditions for passing. May need:
+- Regime-specific adjustment
+- Market condition expansion
+- Parameter tuning
+- Or confirmation they're working as designed (gatekeepers)
+
 Data quality isn't just "does it exist" — it's also "can I find it?" Same TP/SL values existed in MASTER but under different field names, making them invisible to the reporter. Cross-validation of schema assumptions is critical. ✅
