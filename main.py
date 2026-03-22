@@ -125,6 +125,27 @@ except Exception as e:
     _signal_tracker_ready = False
     print(f"[ERROR] Signal tracker init failed: {e}. Tracking disabled.", flush=True)
 
+# === EXECUTOR TRIGGER (EVENT-DRIVEN PEC HYBRID MODEL) ===
+def trigger_executor_on_signal(signal_uuid: str, symbol: str, timeframe: str):
+    """
+    Trigger PEC executor immediately when signal fires (event-driven, non-blocking)
+    This is part of the HYBRID operational model (cron + event-triggered)
+    """
+    try:
+        import subprocess
+        executor_path = "/Users/geniustarigan/.openclaw/workspace/pec_executor.py"
+        # Non-blocking subprocess call
+        subprocess.Popen(
+            ['python3', executor_path, '--signal-uuid', signal_uuid],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True  # Detach from parent process
+        )
+        print(f"[EXECUTOR] Event-triggered backtest for {symbol} {timeframe} (UUID: {signal_uuid[:12]})", flush=True)
+    except Exception as e:
+        print(f"[WARN] Failed to trigger executor: {e}", flush=True)
+        # Continue anyway - cron will catch it as fallback
+
 # --- Configuration ---
 # Full liquid pairs from kucoin_orderbook.py - 90+ symbols
 TOKENS = [
@@ -294,7 +315,9 @@ def candle_color(open, close):
 def create_and_store_signal(symbol, timeframe, signal_type, fired_time_utc, entry_price,
                            tp_target, sl_target, tp_pct, sl_pct, achieved_rr, fib_ratio,
                            atr_value, score, max_score, confidence, route, regime,
-                           passed_gatekeepers, max_gatekeepers):
+                           passed_gatekeepers, max_gatekeepers, passed_filters=None, 
+                           failed_filters=None, passed_filter_count=0, failed_filter_count=0,
+                           telegram_msg_id=''):
     """
     Create signal dict and store to JSONL.
     Uses global _signal_store initialized at module load time.
@@ -332,6 +355,11 @@ def create_and_store_signal(symbol, timeframe, signal_type, fired_time_utc, entr
             "regime": str(regime) if regime else "UNKNOWN",
             "passed_gatekeepers": int(passed_gatekeepers),
             "max_gatekeepers": int(max_gatekeepers),
+            "passed_filters": passed_filters if passed_filters else [],
+            "failed_filters": failed_filters if failed_filters else [],
+            "passed_filter_count": int(passed_filter_count),
+            "failed_filter_count": int(failed_filter_count),
+            "telegram_msg_id": str(telegram_msg_id) if telegram_msg_id else '',
         }
         
         # Use global store (pre-initialized)
@@ -894,6 +922,25 @@ def run_cycle():
                         tp_pct_val = ((tp - entry_price) / entry_price * 100) if tp and entry_price else 0
                         sl_pct_val = ((sl - entry_price) / entry_price * 100) if sl and entry_price else 0
                         
+                        # Extract passed/failed filters from SmartFilter results (PROJECT-5B instrumentation)
+                        passed_filters = []
+                        failed_filters = []
+                        passed_filter_count = 0
+                        failed_filter_count = 0
+                        
+                        if signal_type == 'LONG':
+                            results = res15.get('results_long', {})
+                        else:  # SHORT
+                            results = res15.get('results_short', {})
+                        
+                        passed_filters = results.get('passed_filters', [])
+                        failed_filters = results.get('failed_filters', [])
+                        passed_filter_count = results.get('passed_filter_count', 0)
+                        failed_filter_count = results.get('failed_filter_count', 0)
+                        
+                        # Generate telegram_msg_id upfront (will be used for Telegram + stored in signal)
+                        telegram_msg_id = str(uuid_lib.uuid4())[:12]
+                        
                         signal_uuid = create_and_store_signal(
                             symbol=symbol_val,
                             timeframe=tf_val,
@@ -913,7 +960,12 @@ def run_cycle():
                             route=Route,
                             regime=regime,
                             passed_gatekeepers=passes,
-                            max_gatekeepers=gatekeepers_total
+                            max_gatekeepers=gatekeepers_total,
+                            passed_filters=passed_filters,
+                            failed_filters=failed_filters,
+                            passed_filter_count=passed_filter_count,
+                            failed_filter_count=failed_filter_count,
+                            telegram_msg_id=telegram_msg_id  # ← NEW: Pass telegram_msg_id upfront
                         )
                         
                         if not signal_uuid:
@@ -997,7 +1049,11 @@ def run_cycle():
                                             route=Route,
                                             regime=regime,
                                             telegram_msg_id=signal_uuid[:12],
-                                            fired_time_utc=fired_time_utc.isoformat()
+                                            fired_time_utc=fired_time_utc.isoformat(),
+                                            passed_filters=passed_filters,
+                                            failed_filters=failed_filters,
+                                            passed_filter_count=passed_filter_count,
+                                            failed_filter_count=failed_filter_count
                                         )
                                         # Also write to SIGNALS_MASTER.jsonl (single source of truth)
                                         if _master_writer_ready:
@@ -1020,10 +1076,17 @@ def run_cycle():
                                                 'telegram_msg_id': signal_uuid[:12],
                                                 'fired_time_utc': fired_time_utc.isoformat(),
                                                 'sent_time_utc': datetime.utcnow().isoformat(),
+                                                'passed_filters': passed_filters,
+                                                'failed_filters': failed_filters,
+                                                'passed_filter_count': passed_filter_count,
+                                                'failed_filter_count': failed_filter_count,
                                                 'status': 'OPEN',
                                                 'signal_origin': 'NEW_LIVE',
                                                 'weighted_score': confidence * score / 100 if score_max else 0
                                             })
+                                            
+                                            # NEW: Trigger executor on signal fire (hybrid model - event-driven)
+                                            trigger_executor_on_signal(signal_uuid, symbol_val, '15min')
                                     except Exception as e:
                                         print(f"[ERROR] Failed to log PEC signal for {symbol_val}: {e}", flush=True)
                                 else:
@@ -1296,6 +1359,25 @@ def run_cycle():
                         tp_pct_val = ((tp - entry_price) / entry_price * 100) if tp and entry_price else 0
                         sl_pct_val = ((sl - entry_price) / entry_price * 100) if sl and entry_price else 0
                         
+                        # Extract passed/failed filters from SmartFilter results (PROJECT-5B instrumentation)
+                        passed_filters = []
+                        failed_filters = []
+                        passed_filter_count = 0
+                        failed_filter_count = 0
+                        
+                        if signal_type == 'LONG':
+                            results = res30.get('results_long', {})
+                        else:  # SHORT
+                            results = res30.get('results_short', {})
+                        
+                        passed_filters = results.get('passed_filters', [])
+                        failed_filters = results.get('failed_filters', [])
+                        passed_filter_count = results.get('passed_filter_count', 0)
+                        failed_filter_count = results.get('failed_filter_count', 0)
+                        
+                        # Generate telegram_msg_id upfront (will be used for Telegram + stored in signal)
+                        telegram_msg_id = str(uuid_lib.uuid4())[:12]
+                        
                         signal_uuid = create_and_store_signal(
                             symbol=symbol_val,
                             timeframe=tf_val,
@@ -1315,7 +1397,12 @@ def run_cycle():
                             route=Route,
                             regime=regime,
                             passed_gatekeepers=passes,
-                            max_gatekeepers=gatekeepers_total
+                            max_gatekeepers=gatekeepers_total,
+                            passed_filters=passed_filters,
+                            failed_filters=failed_filters,
+                            passed_filter_count=passed_filter_count,
+                            failed_filter_count=failed_filter_count,
+                            telegram_msg_id=telegram_msg_id  # ← NEW: Pass telegram_msg_id upfront
                         )
                         
                         if not signal_uuid:
@@ -1432,7 +1519,11 @@ def run_cycle():
                                             route=Route,
                                             regime=regime,
                                             telegram_msg_id=signal_uuid[:12],
-                                            fired_time_utc=fired_time_utc.isoformat()
+                                            fired_time_utc=fired_time_utc.isoformat(),
+                                            passed_filters=passed_filters,
+                                            failed_filters=failed_filters,
+                                            passed_filter_count=passed_filter_count,
+                                            failed_filter_count=failed_filter_count
                                         )
                                         # Also write to SIGNALS_MASTER.jsonl (single source of truth)
                                         if _master_writer_ready:
@@ -1455,10 +1546,17 @@ def run_cycle():
                                                 'telegram_msg_id': signal_uuid[:12],
                                                 'fired_time_utc': fired_time_utc.isoformat(),
                                                 'sent_time_utc': datetime.utcnow().isoformat(),
+                                                'passed_filters': passed_filters,
+                                                'failed_filters': failed_filters,
+                                                'passed_filter_count': passed_filter_count,
+                                                'failed_filter_count': failed_filter_count,
                                                 'status': 'OPEN',
                                                 'signal_origin': 'NEW_LIVE',
                                                 'weighted_score': confidence * score / 100 if score_max else 0
                                             })
+                                            
+                                            # NEW: Trigger executor on signal fire (hybrid model - event-driven)
+                                            trigger_executor_on_signal(signal_uuid, symbol_val, '30min')
                                     except Exception as e:
                                         print(f"[ERROR] Failed to log PEC signal for {symbol_val}: {e}", flush=True)
                                 else:
@@ -1730,6 +1828,25 @@ def run_cycle():
                         tp_pct_val = ((tp - entry_price) / entry_price * 100) if tp and entry_price else 0
                         sl_pct_val = ((sl - entry_price) / entry_price * 100) if sl and entry_price else 0
                         
+                        # Extract passed/failed filters from SmartFilter results (PROJECT-5B instrumentation)
+                        passed_filters = []
+                        failed_filters = []
+                        passed_filter_count = 0
+                        failed_filter_count = 0
+                        
+                        if signal_type == 'LONG':
+                            results = res1h.get('results_long', {})
+                        else:  # SHORT
+                            results = res1h.get('results_short', {})
+                        
+                        passed_filters = results.get('passed_filters', [])
+                        failed_filters = results.get('failed_filters', [])
+                        passed_filter_count = results.get('passed_filter_count', 0)
+                        failed_filter_count = results.get('failed_filter_count', 0)
+                        
+                        # Generate telegram_msg_id upfront (will be used for Telegram + stored in signal)
+                        telegram_msg_id = str(uuid_lib.uuid4())[:12]
+                        
                         signal_uuid = create_and_store_signal(
                             symbol=symbol_val,
                             timeframe=tf_val,
@@ -1749,7 +1866,12 @@ def run_cycle():
                             route=Route,
                             regime=regime,
                             passed_gatekeepers=passes,
-                            max_gatekeepers=gatekeepers_total
+                            max_gatekeepers=gatekeepers_total,
+                            passed_filters=passed_filters,
+                            failed_filters=failed_filters,
+                            passed_filter_count=passed_filter_count,
+                            failed_filter_count=failed_filter_count,
+                            telegram_msg_id=telegram_msg_id  # ← NEW: Pass telegram_msg_id upfront
                         )
                         
                         if not signal_uuid:
@@ -1835,7 +1957,11 @@ def run_cycle():
                                             route=Route,
                                             regime=regime,
                                             telegram_msg_id=signal_uuid[:12],
-                                            fired_time_utc=fired_time_utc.isoformat()
+                                            fired_time_utc=fired_time_utc.isoformat(),
+                                            passed_filters=passed_filters,
+                                            failed_filters=failed_filters,
+                                            passed_filter_count=passed_filter_count,
+                                            failed_filter_count=failed_filter_count
                                         )
                                         # Also write to SIGNALS_MASTER.jsonl (single source of truth)
                                         if _master_writer_ready:
@@ -1858,10 +1984,17 @@ def run_cycle():
                                                 'telegram_msg_id': signal_uuid[:12],
                                                 'fired_time_utc': fired_time_utc.isoformat(),
                                                 'sent_time_utc': datetime.utcnow().isoformat(),
+                                                'passed_filters': passed_filters,
+                                                'failed_filters': failed_filters,
+                                                'passed_filter_count': passed_filter_count,
+                                                'failed_filter_count': failed_filter_count,
                                                 'status': 'OPEN',
                                                 'signal_origin': 'NEW_LIVE',
                                                 'weighted_score': confidence * score / 100 if score_max else 0
                                             })
+                                            
+                                            # NEW: Trigger executor on signal fire (hybrid model - event-driven)
+                                            trigger_executor_on_signal(signal_uuid, symbol_val, '1h')
                                     except Exception as e:
                                         print(f"[ERROR] Failed to log PEC signal for {symbol_val}: {e}", flush=True)
                                 else:

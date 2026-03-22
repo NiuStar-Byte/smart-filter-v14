@@ -55,7 +55,11 @@ class SignalSentTracker:
                        route: str,
                        regime: str,
                        telegram_msg_id: str,
-                       fired_time_utc: str) -> bool:
+                       fired_time_utc: str,
+                       passed_filters: list = None,
+                       failed_filters: list = None,
+                       passed_filter_count: int = 0,
+                       failed_filter_count: int = 0) -> bool:
         """
         Log a signal that was SENT to Telegram
         
@@ -82,6 +86,10 @@ class SignalSentTracker:
                 "telegram_msg_id": str(telegram_msg_id),
                 "fired_time_utc": str(fired_time_utc),
                 "sent_time_utc": datetime.utcnow().isoformat(),
+                "passed_filters": passed_filters or [],
+                "failed_filters": failed_filters or [],
+                "passed_filter_count": int(passed_filter_count),
+                "failed_filter_count": int(failed_filter_count),
                 "status": "OPEN",  # OPEN, TP_HIT, SL_HIT, TIMEOUT
                 "closed_at": None,
                 "actual_exit_price": None,
