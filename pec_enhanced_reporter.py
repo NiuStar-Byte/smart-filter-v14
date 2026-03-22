@@ -1591,7 +1591,7 @@ class PECEnhancedReporter:
         
         # === NEW: HIERARCHY RANKING SECTION ===
         report.append("=" * 200)
-        report.append("🎯 HIERARCHY RANKING - 5D / 4D / 3D / 2D PERFORMANCE TRACKING")
+        report.append("🎯 HIERARCHY RANKING - 6D / 5D / 4D / 3D / 2D PERFORMANCE TRACKING")
         report.append("=" * 200)
         report.append("")
         
