@@ -2087,12 +2087,21 @@ class PECEnhancedReporter:
         output = []
         min_trades = TIER_THRESHOLDS.get("min_trades", 25)
         
+        # Helper function to convert numeric confidence to category
+        def get_confidence_category(conf_value):
+            if conf_value >= 71:
+                return 'HIGH'
+            elif 66 <= conf_value < 71:
+                return 'MID'
+            else:
+                return 'LOW'
+        
         # ===== 6D COMBOS (MOST GRANULAR) =====
         output.append("📊 HIERARCHY RANKING - 6D PERFORMANCE TRACKING")
         output.append("📊 6-DIMENSIONAL COMBOS (TimeFrame × Direction × Route × Regime × Symbol_Group × Confidence Level)")
         output.append("─" * 180)
         
-        # Manually aggregate 6D: TF × DIR × ROUTE × REGIME × SYMBOL_GROUP × CONFIDENCE
+        # Manually aggregate 6D: TF × DIR × ROUTE × REGIME × SYMBOL_GROUP × CONFIDENCE_CATEGORY
         stats_6d = {}
         for signal in self.signals:
             status = signal.get('status', 'OPEN')
@@ -2111,8 +2120,9 @@ class PECEnhancedReporter:
             symbol = signal.get('symbol', 'UNKNOWN')
             symbol_group = self.get_symbol_group(symbol)
             confidence = signal.get('confidence', 0)
+            confidence_cat = get_confidence_category(confidence)
             
-            key = (tf, direction, route, regime, symbol_group, confidence)
+            key = (tf, direction, route, regime, symbol_group, confidence_cat)
             
             if key not in stats_6d:
                 stats_6d[key] = {'count': 0, 'tp': 0, 'sl': 0, 'timeout_win': 0, 'timeout_loss': 0, 'pnl': 0.0}
@@ -2146,7 +2156,7 @@ class PECEnhancedReporter:
                 wr = (win_count / closed) if closed > 0 else 0
                 avg_pnl = stat['pnl'] / closed if closed > 0 else 0
                 all_6d.append({
-                    'name': f"{key[0]}|{key[1]}|{key[2]}|{key[3]}|{key[4]}|{key[5]:.0f}",
+                    'name': f"{key[0]}|{key[1]}|{key[2]}|{key[3]}|{key[4]}|{key[5]}",
                     'wr': wr,
                     'pnl': stat['pnl'],
                     'avg_pnl': avg_pnl,
