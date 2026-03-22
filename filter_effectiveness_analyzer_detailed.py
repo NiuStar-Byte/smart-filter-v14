@@ -45,6 +45,7 @@ def calculate_effectiveness(signals):
     total = 0
     instrumented = 0
     closed = 0
+    tp_wins = 0
     
     for signal in signals:
         total += 1
@@ -62,6 +63,8 @@ def calculate_effectiveness(signals):
         
         closed += 1
         is_win = (status == 'TP_HIT')
+        if is_win:
+            tp_wins += 1
         
         # Track each passed filter
         for filt in signal.get('passed_filters', []):
@@ -71,7 +74,7 @@ def calculate_effectiveness(signals):
             else:
                 filter_stats[filt]['lost'] += 1
     
-    return filter_stats, total, instrumented, closed
+    return filter_stats, total, instrumented, closed, tp_wins
 
 def get_current_weights():
     """Load current filter weights from smart_filter.py"""
@@ -112,7 +115,7 @@ def main():
     
     # Load signals and analyze
     signals = load_signals()
-    filter_stats, total, instrumented, closed = calculate_effectiveness(signals)
+    filter_stats, total, instrumented, closed, tp_wins = calculate_effectiveness(signals)
     
     print(f"Dataset Summary:")
     print(f"  Total signals in MASTER: {total}")
@@ -127,8 +130,8 @@ def main():
     # Get current weights
     weights = get_current_weights()
     
-    # Calculate baseline WR
-    baseline_wr = closed / max(1, instrumented)
+    # Calculate baseline WR - CORRECT: wins / closed signals
+    baseline_wr = tp_wins / max(1, closed)
     
     print(f"Baseline WR (all closed signals): {baseline_wr * 100:.1f}%")
     print("")

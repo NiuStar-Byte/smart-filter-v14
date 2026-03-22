@@ -781,6 +781,14 @@ class PECEnhancedReporter:
         # Aggregate by symbol group
         symbol_group_stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout_win': 0, 'timeout_loss': 0, 'pnl': 0.0})
         for signal in self.signals:
+            status = signal.get('status', 'OPEN')
+            
+            # SKIP invalid/non-backtest signals - exclude from all aggregates
+            if status == 'STALE_TIMEOUT':
+                continue  # Data quality issue - completely excluded
+            if status == 'REJECTED_NOT_SENT_TELEGRAM':
+                continue  # Never sent to traders - excluded from all aggregates
+            
             symbol = signal.get('symbol', 'UNKNOWN')
             group = self.get_symbol_group(symbol)
             
@@ -836,15 +844,16 @@ class PECEnhancedReporter:
         report.append(f"{'Confidence':<20} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<8} | {'Closed':<7} | {'Open':<6} | {'WR':<8} | {'P&L':<10} | {'Avg TP Duration':<17} | {'Avg SL Duration':<17}")
         report.append("─" * 175)
         
-        # Bin confidence levels
-        high_conf = [s for s in self.signals if s.get('confidence', 0) >= 76]
-        mid_conf = [s for s in self.signals if 51 <= s.get('confidence', 0) < 76]
-        low_conf = [s for s in self.signals if s.get('confidence', 0) <= 50]
+        # Bin confidence levels - EXCLUDE STALE and REJECTED signals
+        # NEW RANGES: HIGH (≥73%), MID (66-72%), LOW (≤65%)
+        high_conf = [s for s in self.signals if s.get('status') not in ['STALE_TIMEOUT', 'REJECTED_NOT_SENT_TELEGRAM'] and s.get('confidence', 0) >= 73]
+        mid_conf = [s for s in self.signals if s.get('status') not in ['STALE_TIMEOUT', 'REJECTED_NOT_SENT_TELEGRAM'] and 66 <= s.get('confidence', 0) < 73]
+        low_conf = [s for s in self.signals if s.get('status') not in ['STALE_TIMEOUT', 'REJECTED_NOT_SENT_TELEGRAM'] and s.get('confidence', 0) < 66]
         
         for conf_level, signals_list, label in [
-            ('HIGH', high_conf, 'HIGH (≥76%)'),
-            ('MID', mid_conf, 'MID (51-75%)'),
-            ('LOW', low_conf, 'LOW (≤50%)')
+            ('HIGH', high_conf, 'HIGH (≥73%)'),
+            ('MID', mid_conf, 'MID (66-72%)'),
+            ('LOW', low_conf, 'LOW (≤65%)')
         ]:
             tp = sum(1 for s in signals_list if s.get('status') == 'TP_HIT')
             sl = sum(1 for s in signals_list if s.get('status') == 'SL_HIT')
@@ -1582,7 +1591,7 @@ class PECEnhancedReporter:
         
         # === NEW: HIERARCHY RANKING SECTION ===
         report.append("=" * 200)
-        report.append("🎯 HIERARCHY RANKING - 5D / 4D / 3D / 2D PERFORMANCE TRACKING")
+        report.append("🎯 HIERARCHY RANKING - 6D / 5D / 4D / 3D / 2D PERFORMANCE TRACKING")
         report.append("=" * 200)
         report.append("")
         
@@ -2074,11 +2083,99 @@ class PECEnhancedReporter:
         return tiers
     
     def _generate_hierarchy_ranking(self):
-        """Generate 5D, 4D, 3D, 2D hierarchy ranking for decision-making (top to bottom)"""
+        """Generate 6D, 5D, 4D, 3D, 2D hierarchy ranking for decision-making (top to bottom)"""
         output = []
         min_trades = TIER_THRESHOLDS.get("min_trades", 25)
         
-        # ===== 5D COMBOS (MOST GRANULAR) =====
+        # Helper function to convert numeric confidence to category
+        def get_confidence_category(conf_value):
+            if conf_value >= 73:
+                return 'HIGH'
+            elif 66 <= conf_value < 73:
+                return 'MID'
+            else:
+                return 'LOW'
+        
+        # ===== 6D COMBOS (MOST GRANULAR) =====
+        output.append("📊 6-DIMENSIONAL COMBOS (TimeFrame × Direction × Route × Regime × Symbol_Group × Confidence Level)")
+        output.append("─" * 180)
+        
+        # Manually aggregate 6D: TF × DIR × ROUTE × REGIME × SYMBOL_GROUP × CONFIDENCE_CATEGORY
+        stats_6d = {}
+        for signal in self.signals:
+            status = signal.get('status', 'OPEN')
+            
+            # SKIP invalid signals
+            if status == 'STALE_TIMEOUT':
+                continue
+            if status == 'REJECTED_NOT_SENT_TELEGRAM':
+                continue
+            
+            # Build 6D key
+            tf = signal.get('timeframe', 'N/A')
+            direction = signal.get('signal_type', 'N/A')
+            route = signal.get('route', 'N/A')
+            regime = signal.get('regime', 'N/A')
+            symbol = signal.get('symbol', 'UNKNOWN')
+            symbol_group = self.get_symbol_group(symbol)
+            confidence = signal.get('confidence', 0)
+            confidence_cat = get_confidence_category(confidence)
+            
+            key = (tf, direction, route, regime, symbol_group, confidence_cat)
+            
+            if key not in stats_6d:
+                stats_6d[key] = {'count': 0, 'tp': 0, 'sl': 0, 'timeout_win': 0, 'timeout_loss': 0, 'pnl': 0.0}
+            
+            stats_6d[key]['count'] += 1
+            
+            if status == 'TP_HIT':
+                stats_6d[key]['tp'] += 1
+            elif status == 'SL_HIT':
+                stats_6d[key]['sl'] += 1
+            elif status == 'TIMEOUT':
+                if signal.get('actual_exit_price'):
+                    pnl_calc = self._calculate_pnl_usd(signal.get('entry_price'), signal.get('actual_exit_price'), direction)
+                    if pnl_calc is not None:
+                        if pnl_calc > 0:
+                            stats_6d[key]['timeout_win'] += 1
+                        elif pnl_calc < 0:
+                            stats_6d[key]['timeout_loss'] += 1
+            
+            # P&L calculation
+            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                pnl_calc = self._calculate_pnl_usd(signal.get('entry_price'), signal.get('actual_exit_price'), direction)
+                if pnl_calc is not None:
+                    stats_6d[key]['pnl'] += pnl_calc
+        
+        all_6d = []
+        for key, stat in stats_6d.items():
+            closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
+            if closed >= min_trades:
+                win_count = stat['tp'] + stat['timeout_win']
+                wr = (win_count / closed) if closed > 0 else 0
+                avg_pnl = stat['pnl'] / closed if closed > 0 else 0
+                all_6d.append({
+                    'name': f"{key[0]}|{key[1]}|{key[2]}|{key[3]}|{key[4]}|{key[5]}",
+                    'wr': wr,
+                    'pnl': stat['pnl'],
+                    'avg_pnl': avg_pnl,
+                    'closed': closed,
+                    'tp': stat['tp'],
+                    'sl': stat['sl']
+                })
+        
+        all_6d.sort(key=lambda x: (x['wr'], x['pnl']), reverse=True)
+        
+        if all_6d:
+            output.append("\n  Top 10 6D Combos by WR:")
+            for combo in all_6d[:10]:
+                output.append(f"    ✓ {combo['name']:60} | WR: {combo['wr']*100:5.1f}% | P&L: ${combo['pnl']:+8.2f} | Avg: ${combo['avg_pnl']:+.2f} | Closed: {combo['closed']}")
+        else:
+            output.append("\n  No 6D combos meet minimum trade threshold yet.")
+        
+        output.append("")
+        
+        # ===== 5D COMBOS =====
         output.append("📊 5-DIMENSIONAL COMBOS (TimeFrame × Direction × Route × Regime × Symbol_Group)")
         output.append("─" * 160)
         
