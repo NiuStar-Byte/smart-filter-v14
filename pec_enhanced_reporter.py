@@ -781,6 +781,14 @@ class PECEnhancedReporter:
         # Aggregate by symbol group
         symbol_group_stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout_win': 0, 'timeout_loss': 0, 'pnl': 0.0})
         for signal in self.signals:
+            status = signal.get('status', 'OPEN')
+            
+            # SKIP invalid/non-backtest signals - exclude from all aggregates
+            if status == 'STALE_TIMEOUT':
+                continue  # Data quality issue - completely excluded
+            if status == 'REJECTED_NOT_SENT_TELEGRAM':
+                continue  # Never sent to traders - excluded from all aggregates
+            
             symbol = signal.get('symbol', 'UNKNOWN')
             group = self.get_symbol_group(symbol)
             
@@ -836,10 +844,10 @@ class PECEnhancedReporter:
         report.append(f"{'Confidence':<20} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<8} | {'Closed':<7} | {'Open':<6} | {'WR':<8} | {'P&L':<10} | {'Avg TP Duration':<17} | {'Avg SL Duration':<17}")
         report.append("─" * 175)
         
-        # Bin confidence levels
-        high_conf = [s for s in self.signals if s.get('confidence', 0) >= 71]
-        mid_conf = [s for s in self.signals if 61 <= s.get('confidence', 0) < 71]
-        low_conf = [s for s in self.signals if s.get('confidence', 0) <= 60]
+        # Bin confidence levels - EXCLUDE STALE and REJECTED signals
+        high_conf = [s for s in self.signals if s.get('status') not in ['STALE_TIMEOUT', 'REJECTED_NOT_SENT_TELEGRAM'] and s.get('confidence', 0) >= 71]
+        mid_conf = [s for s in self.signals if s.get('status') not in ['STALE_TIMEOUT', 'REJECTED_NOT_SENT_TELEGRAM'] and 61 <= s.get('confidence', 0) < 71]
+        low_conf = [s for s in self.signals if s.get('status') not in ['STALE_TIMEOUT', 'REJECTED_NOT_SENT_TELEGRAM'] and s.get('confidence', 0) <= 60]
         
         for conf_level, signals_list, label in [
             ('HIGH', high_conf, 'HIGH (≥71%)'),
