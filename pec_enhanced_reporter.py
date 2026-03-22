@@ -837,14 +837,14 @@ class PECEnhancedReporter:
         report.append("─" * 175)
         
         # Bin confidence levels
-        high_conf = [s for s in self.signals if s.get('confidence', 0) >= 76]
-        mid_conf = [s for s in self.signals if 51 <= s.get('confidence', 0) < 76]
-        low_conf = [s for s in self.signals if s.get('confidence', 0) <= 50]
+        high_conf = [s for s in self.signals if s.get('confidence', 0) >= 71]
+        mid_conf = [s for s in self.signals if 61 <= s.get('confidence', 0) < 71]
+        low_conf = [s for s in self.signals if s.get('confidence', 0) <= 60]
         
         for conf_level, signals_list, label in [
-            ('HIGH', high_conf, 'HIGH (≥76%)'),
-            ('MID', mid_conf, 'MID (51-75%)'),
-            ('LOW', low_conf, 'LOW (≤50%)')
+            ('HIGH', high_conf, 'HIGH (≥71%)'),
+            ('MID', mid_conf, 'MID (61-70%)'),
+            ('LOW', low_conf, 'LOW (≤60%)')
         ]:
             tp = sum(1 for s in signals_list if s.get('status') == 'TP_HIT')
             sl = sum(1 for s in signals_list if s.get('status') == 'SL_HIT')
