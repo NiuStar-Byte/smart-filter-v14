@@ -845,14 +845,14 @@ class PECEnhancedReporter:
         report.append("─" * 175)
         
         # Bin confidence levels - EXCLUDE STALE and REJECTED signals
-        # NEW RANGES: HIGH (≥71%), MID (66-70%), LOW (<66 to catch fractional values)
-        high_conf = [s for s in self.signals if s.get('status') not in ['STALE_TIMEOUT', 'REJECTED_NOT_SENT_TELEGRAM'] and s.get('confidence', 0) >= 71]
-        mid_conf = [s for s in self.signals if s.get('status') not in ['STALE_TIMEOUT', 'REJECTED_NOT_SENT_TELEGRAM'] and 66 <= s.get('confidence', 0) < 71]
+        # NEW RANGES: HIGH (≥73%), MID (66-72%), LOW (≤65%)
+        high_conf = [s for s in self.signals if s.get('status') not in ['STALE_TIMEOUT', 'REJECTED_NOT_SENT_TELEGRAM'] and s.get('confidence', 0) >= 73]
+        mid_conf = [s for s in self.signals if s.get('status') not in ['STALE_TIMEOUT', 'REJECTED_NOT_SENT_TELEGRAM'] and 66 <= s.get('confidence', 0) < 73]
         low_conf = [s for s in self.signals if s.get('status') not in ['STALE_TIMEOUT', 'REJECTED_NOT_SENT_TELEGRAM'] and s.get('confidence', 0) < 66]
         
         for conf_level, signals_list, label in [
-            ('HIGH', high_conf, 'HIGH (≥71%)'),
-            ('MID', mid_conf, 'MID (66-70%)'),
+            ('HIGH', high_conf, 'HIGH (≥73%)'),
+            ('MID', mid_conf, 'MID (66-72%)'),
             ('LOW', low_conf, 'LOW (≤65%)')
         ]:
             tp = sum(1 for s in signals_list if s.get('status') == 'TP_HIT')
@@ -2089,15 +2089,14 @@ class PECEnhancedReporter:
         
         # Helper function to convert numeric confidence to category
         def get_confidence_category(conf_value):
-            if conf_value >= 71:
+            if conf_value >= 73:
                 return 'HIGH'
-            elif 66 <= conf_value < 71:
+            elif 66 <= conf_value < 73:
                 return 'MID'
             else:
                 return 'LOW'
         
         # ===== 6D COMBOS (MOST GRANULAR) =====
-        output.append("📊 HIERARCHY RANKING - 6D PERFORMANCE TRACKING")
         output.append("📊 6-DIMENSIONAL COMBOS (TimeFrame × Direction × Route × Regime × Symbol_Group × Confidence Level)")
         output.append("─" * 180)
         
