@@ -3,6 +3,7 @@
 **Status:** Ready for integration into main.py
 **Timeline:** 2026-03-24 to 2026-03-26
 **Priority:** HIGH - Prevents future signal divergence
+**Strategy:** Alert + Continue (NO HALT) - Signals never stop, failures auto-fixed
 
 ---
 
@@ -12,7 +13,8 @@ Phase 1 adds dual-write verification to the daemon. When a signal fires, the sys
 1. Writes to SIGNALS_MASTER.jsonl ✓
 2. Writes to SIGNALS_INDEPENDENT_AUDIT.txt ✓
 3. **NEW:** Verifies both writes succeeded ✓
-4. **NEW:** Fails safely if either write fails (don't hide errors) ✓
+4. **NEW:** Alerts on failure but CONTINUES firing signals ✓
+5. **NEW:** Auto-recovery fixes issues in background ✓
 
 ---
 
@@ -94,37 +96,58 @@ if signal_score >= MIN_SCORE:
     print(f"[FIRE] {symbol} {direction} score={signal_score}")
 ```
 
-**AFTER:**
+**AFTER (Alert + Continue Strategy):**
 ```python
-# Fire signal with dual-write verification
+# Fire signal with dual-write verification (Alert + Continue)
 if signal_score >= MIN_SCORE:
-    try:
-        # Write to files
-        _signals_master_writer.write(signal_obj)
-        
-        # PHASE 1: Verify dual-write
-        if _dual_write_verifier:
-            try:
-                verify_signal_dual_write(
-                    signal_uuid=signal_uuid,
-                    signal_data=signal_obj,
-                    raise_on_failure=True
-                )
-                print(f"[DUAL-WRITE] ✅ Verified {signal_uuid[:12]} to both files", flush=True)
-            except RuntimeError as e:
-                print(f"[DUAL-WRITE] ❌ CRITICAL: {e}", flush=True)
-                print(f"[DUAL-WRITE] HALTING DAEMON - signal not in both files", flush=True)
-                raise  # Stop daemon
-        
-        # Continue with normal processing
-        send_telegram_alert(symbol, direction, entry_price, ...)
-        trigger_executor_on_signal(signal_uuid, symbol, timeframe)
-        print(f"[FIRE] {symbol} {direction} score={signal_score}")
+    # Write to files
+    _signals_master_writer.write(signal_obj)
     
-    except Exception as e:
-        print(f"[ERROR] Signal firing failed: {e}", flush=True)
-        print(f"[ERROR] DAEMON HALTING - dual-write verification failed", flush=True)
-        raise RuntimeError(f"Dual-write failure: {e}")
+    # PHASE 1: Verify dual-write (non-halting)
+    dual_write_ok = True
+    if _dual_write_verifier:
+        try:
+            result = verify_signal_dual_write(
+                signal_uuid=signal_uuid,
+                signal_data=signal_obj,
+                raise_on_failure=False  # ✅ Don't halt on failure
+            )
+            
+            if result:
+                print(f"[DUAL-WRITE] ✅ Verified {signal_uuid[:12]} to both files", flush=True)
+            else:
+                # ⚠️ Write failed but continue trading
+                dual_write_ok = False
+                _divergence_tracker.record_failure(signal_uuid)
+                
+                alert_msg = f"""
+🚨 DUAL-WRITE FAILED 🚨
+Signal UUID: {signal_uuid}
+Symbol: {symbol}
+Time: {datetime.utcnow()}
+Status: MASTER written, AUDIT write missing
+
+Action: Signal still fired. Monitoring will auto-recover.
+Impact: Minimal - auto-recovery in background
+"""
+                print(f"[DUAL-WRITE] ❌ {alert_msg}", flush=True)
+                
+                # Send ops alert
+                send_ops_alert(alert_msg, severity="CRITICAL")
+        
+        except Exception as e:
+            print(f"[DUAL-WRITE] Warning: Verification error (continuing): {e}", flush=True)
+            dual_write_ok = False
+    
+    # Continue with normal processing (ALWAYS, even if dual-write failed)
+    # ✅ Signals never stop
+    send_telegram_alert(symbol, direction, entry_price, ...)
+    trigger_executor_on_signal(signal_uuid, symbol, timeframe)
+    
+    if dual_write_ok:
+        print(f"[FIRE] ✅ {symbol} {direction} score={signal_score}")
+    else:
+        print(f"[FIRE] ⚠️  {symbol} {direction} score={signal_score} (dual-write alert sent)")
 ```
 
 ---
@@ -262,16 +285,26 @@ watch -n 60 'wc -l SIGNALS_MASTER.jsonl SIGNALS_INDEPENDENT_AUDIT.txt'
 ### Normal (Healthy System)
 ```
 [19:50:23.456] [DEBUG  ] Dual-write verifier initialized
-[19:50:45.123] [DEBUG  ] [DUAL-WRITE] ✅ Verified abc123de to both files
-[19:50:46.234] [DEBUG  ] [DUAL-WRITE] ✅ Verified def456gh to both files
-[19:50:47.345] [DEBUG  ] [DUAL-WRITE] ✅ Verified ghi789ij to both files
+[19:50:45.123] [DUAL-WRITE] ✅ Verified abc123de to both files | [FIRE] ✅ BTC SHORT score=14
+[19:50:46.234] [DUAL-WRITE] ✅ Verified def456gh to both files | [FIRE] ✅ ETH LONG score=15
+[19:50:47.345] [DUAL-WRITE] ✅ Verified ghi789ij to both files | [FIRE] ✅ SOL SHORT score=13
 ```
 
-### Failure (Should Never Happen)
+### Write Failure (Alert + Continue, NOT Halt)
 ```
-[19:50:48.456] [ERROR  ] [DUAL-WRITE] ❌ CRITICAL: Dual-write verification failed for jkl012kl
-[19:50:48.457] [ERROR  ] [DUAL-WRITE] HALTING DAEMON - signal not in both files
-[19:50:48.458] [ERROR  ] Daemon shutting down...
+[19:50:48.456] [DUAL-WRITE] ❌ Verification failed for jkl012kl
+[19:50:48.457] [ALERT    ] 🚨 DUAL-WRITE FAILED: jkl012kl | MASTER:✓ AUDIT:✗
+[19:50:48.458] [FIRE     ] ⚠️  ADA LONG score=12 (dual-write alert sent)
+                            ↑ Signal still fired! Trading continues!
+[19:50:48.459] [MONITOR  ] Failure recorded for auto-recovery
+[19:50:48.460] [EMAIL    ] Ops alerted: Dual-write failure detected
+```
+
+**Key Difference from Original:**
+- ❌ OLD: Failure → HALT daemon → All signals stop
+- ✅ NEW: Failure → ALERT ops → Signals continue → Auto-fix in background
+
+Trading never stops. Ops is notified. System auto-recovers.
 ```
 
 ---

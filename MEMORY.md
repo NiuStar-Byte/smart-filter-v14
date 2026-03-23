@@ -4,6 +4,87 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
+## 🔧 **PROJECT-6: DUAL-WRITE PREVENTION & VERIFICATION - 🔄 IN PROGRESS**
+
+**Status:** 🔄 **PHASE 1 IMPLEMENTATION (2026-03-24 to 2026-03-26)**
+**Initiative Date:** 2026-03-23 18:55 GMT+7
+**Owner:** Nox (you)
+
+### **Problem Statement**
+- **Root Cause:** Daemon writes to SIGNALS_MASTER.jsonl but fails to write to SIGNALS_INDEPENDENT_AUDIT.txt
+- **Duration:** ~48 hours (2026-03-21 to 2026-03-23)
+- **Impact:** 1,710 signals missing from AUDIT, 287 signals missing from MASTER
+- **Status:** RECOVERED (4,672 signals, 100% alignment achieved)
+
+### **Recovery Completed (2026-03-23 18:55 GMT+7)**
+- ✅ Backfilled AUDIT with 1,710 MASTER-only signals
+- ✅ Backfilled MASTER with 287 AUDIT-only signals
+- ✅ Both files now at 4,672 unique signals (perfect alignment)
+- ✅ Verified 100% sync (commits: `aadc029`, `a817e52`, `7a8a6f4`)
+
+### **Prevention Strategy: 4 Phases**
+
+**Phase 1: Dual-Write Verification (2026-03-24 to 2026-03-26) - STARTING NOW**
+- Module: `signal_dual_write_verification.py` (created)
+- Strategy: **Alert + Continue (NO HALT)**
+  - Verify both writes succeed after firing signal
+  - If write fails: Log alert, notify ops, continue firing (trading never stops)
+  - Failure tracking: `DivergenceTracker` class
+  - Auto-recovery: Runs in background (Phases 2-3)
+- Timeline: ~27 hours total
+- Success: Signals never stop, failures detected in seconds, ops alerted immediately
+- Files: `PHASE_1_IMPLEMENTATION_GUIDE.md`, `signal_dual_write_verification.py` (updated)
+
+**Phase 2: Real-Time Monitoring (2026-03-27 to 2026-03-28)**
+- Background thread checks every 5 minutes
+- Detects divergence within 5 minutes
+- Alert ops if gap > threshold
+- No manual intervention
+
+**Phase 3: Automatic Recovery (2026-03-29 to 2026-03-31)**
+- Auto-triggers backfill if gap > 50 signals
+- Hourly checkpoint cron job
+- Fixes divergence in 5-10 minutes without manual action
+
+**Phase 4: Full Hardening (April)**
+- Comprehensive logging of all write operations
+- Live health dashboard
+- Automated tests for failure scenarios
+- Runbooks for operations team
+
+### **Key Design Decision (2026-03-23 19:54 GMT+7)**
+**Original approach:** Halt daemon if dual-write fails
+- ❌ Stops signal generation
+- ❌ Requires manual restart
+- ❌ Not suitable for production trading
+
+**Revised approach:** Alert + Continue + Async Recovery
+- ✅ Signals NEVER stop
+- ✅ Failures detected immediately
+- ✅ Auto-fixed in background within 5-10 min
+- ✅ Ops alerted but no manual action needed
+- ✅ Production ready
+
+### **Commits So Far**
+- `3af2022`: TUNE: 5 filter parameters for non-passing filters
+- `aadc029`: RECOVERY: Backfill MASTER/AUDIT divergence
+- `a817e52`: ADD: Comprehensive dual-write prevention plan (4 phases)
+- `7a8a6f4`: ADD: Recovery summary & status dashboard
+- `db0b04f`: PHASE 1: Add dual-write verification module
+- `53a02ce`: PHASE 1: Add implementation guide
+- `67280c6`: CHECKPOINT: Phase 1 readiness confirmed
+- `079f7d0`: REVISE: Phase 1 strategy - Alert + Continue (no halt)
+
+### **Next Steps (2026-03-23 19:57 GMT+7)**
+- [ ] Update PHASE_1_IMPLEMENTATION_GUIDE.md with Alert+Continue code
+- [ ] Update signal_dual_write_verification.py default to non-halting
+- [ ] Add DivergenceTracker class for failure tracking
+- [ ] Integrate into main.py (3 steps)
+- [ ] Test on live signals for 24+ hours
+- [ ] Complete Phase 1 by 2026-03-26
+
+---
+
 ## 🚀 **PROJECT-5: PEC (Position Entry Closure & Backtest) - ✅ COMPLETE & DEPLOYED**
 
 **Status:** ✅ **FULL BUILD COMPLETE - Both options built, tested, verified, committed**
