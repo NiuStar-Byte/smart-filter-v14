@@ -2298,217 +2298,63 @@ class SmartFilter:
         else:
             return series.min().iat[-1], series.max().iat[-1]
     
-    def _check_support_resistance(
-        self,
-        window: int = 20,
-        use_atr_margin: bool = True,
-        atr_multiplier: float = 0.75,
-        fixed_buffer_pct: float = 0.01,
-        retest_lookback: int = 5,
-        min_retest_touches: int = 0,
-        volume_at_level_check: bool = True,
-        require_volume_confirm: bool = False,
-        external_sr_long: Optional[dict] = None,
-        external_sr_short: Optional[dict] = None,
-        min_cond: int = 1,
-        debug: bool = False
-    ) -> Optional[str]:
+    def _check_support_resistance(self, window=20, margin_pct=0.02, debug=False):
         """
-        ENHANCED Support / Resistance Filter (2026-03-08)
-        
-        Multi-feature S/R detection with institutional-grade confluence signals:
-        - ATR-based dynamic margins (normalized to volatility)
-        - Retest validation (price touches level N times = stronger signal)
-        - Volume at level analysis (absorption strength grading)
-        - Multi-timeframe confluence support (optional external S/R from other TFs)
-        
-        Parameters:
-        - window: Lookback for S/R extremes (20 = ~5h on 15min)
-        - use_atr_margin: Use ATR-based margins instead of fixed % (True = adaptive)
-        - atr_multiplier: Margin = ATR × multiplier / support level (0.5 = conservative)
-        - fixed_buffer_pct: Fallback margin if ATR disabled (0.5% = default)
-        - retest_lookback: How many bars back to count touches (5 = last 5 bars)
-        - min_retest_touches: Minimum touches for strong signal (1 = any touch, 2 = retest)
-        - volume_at_level_check: Analyze volume profile at S/R (True = check absorption)
-        - require_volume_confirm: Volume must support direction (True = stricter)
-        - external_sr_long: Dict {'support': price, 'resistance': price} from another TF (optional confluence)
-        - external_sr_short: Same for short-side external levels (optional)
-        - min_cond: Minimum conditions required (2 = moderate, 3 = strict)
+        SIMPLIFIED Support/Resistance (2026-03-23)
+        Retail-level bounce detection off recent extremes.
         
         Logic:
-        LONG: Price near support OR external support + ≥min_retest_touches + volume absorption → confidence
-              Need N of 3: [proximity, retest, volume_absorption]
-        SHORT: Same but for resistance
+        LONG: close >= recent_support AND close < recent_support * (1 + margin)
+        SHORT: close <= recent_resistance AND close > recent_resistance * (1 - margin)
         
-        Confluence Boost: If external S/R from another TF aligns = extra confidence
-        
-        Returns: "LONG", "SHORT", or None
+        Purpose: Simple bounce detection off recent extremes
+        Expected Pass Rate: ~30% of bars
         """
-        # Required columns / length check
-        required_cols = ['low', 'high', 'close', 'volume', 'open']
-        missing = [c for c in required_cols if c not in self.df.columns]
-        if missing:
-            if debug:
-                print(f"[{self.symbol}] [Support/Resistance ENHANCED] Missing columns: {missing}")
-            return None
-    
-        if len(self.df) < max(window + 1, retest_lookback + 2):
-            if debug:
-                print(f"[{self.symbol}] [Support/Resistance ENHANCED] Not enough data (need at least {max(window + 1, retest_lookback + 2)} rows).")
-            return None
-    
-        # Get current S/R levels
         try:
-            support, _ = self._get_rolling_extremes('low', window)
-            _, resistance = self._get_rolling_extremes('high', window)
-        except Exception as e:
-            if debug:
-                print(f"[{self.symbol}] [Support/Resistance ENHANCED] Error getting rolling extremes: {e}")
-            return None
-    
-        # Latest price/volume values
-        try:
-            close = float(self.df['close'].iat[-1])
-            close_prev = float(self.df['close'].iat[-2])
-            high = float(self.df['high'].iat[-1])
-            low = float(self.df['low'].iat[-1])
-            volume = float(self.df['volume'].iat[-1])
-            volume_prev = float(self.df['volume'].iat[-2])
-            atr = float(self.df['atr'].iat[-1]) if 'atr' in self.df.columns and self.df['atr'].iat[-1] is not None else None
-        except Exception as e:
-            if debug:
-                print(f"[{self.symbol}] [Support/Resistance ENHANCED] Error reading price/volume: {e}")
-            return None
-    
-        # ===== ENHANCEMENT 1: ATR-Based Dynamic Margins =====
-        if use_atr_margin and atr is not None and atr > 0:
-            # Normalize ATR to support/resistance levels for adaptive margin
-            support_margin = (atr * atr_multiplier / support) if support > 0 else fixed_buffer_pct
-            resistance_margin = (atr * atr_multiplier / resistance) if resistance > 0 else fixed_buffer_pct
-            # Cap margins to avoid extreme values
-            support_margin = min(support_margin, 0.02)  # Max 2% margin
-            resistance_margin = min(resistance_margin, 0.02)
-        else:
-            support_margin = fixed_buffer_pct
-            resistance_margin = fixed_buffer_pct
-    
-        # Safe proximity calculations
-        support_prox = self.safe_divide(close - support, support)
-        resistance_prox = self.safe_divide(resistance - close, resistance)
-    
-        # ===== ENHANCEMENT 2: Retest Validation (count touches in lookback) =====
-        support_touches = 0
-        resistance_touches = 0
-        
-        for i in range(1, min(retest_lookback + 1, len(self.df))):
-            bar_low = self.df['low'].iat[-i]
-            bar_high = self.df['high'].iat[-i]
+            if len(self.df) < window:
+                return None
             
-            # Touch = bar reaches within margin of level
-            if bar_low <= support * (1 + support_margin):
-                support_touches += 1
-            if bar_high >= resistance * (1 - resistance_margin):
-                resistance_touches += 1
-        
-        # Retest gate: need minimum touches for confidence
-        retest_valid_long = support_touches >= min_retest_touches
-        retest_valid_short = resistance_touches >= min_retest_touches
-        
-        # ===== ENHANCEMENT 3: Volume at Level Analysis =====
-        # Calculate volume profile (average volume at support vs current volume)
-        volume_ma = self.df['volume'].rolling(10).mean().iat[-1] if 'volume' in self.df.columns else volume
-        volume_at_level_long = volume > volume_ma if volume_at_level_check else True  # Strong absorption at support
-        volume_at_level_short = volume > volume_ma if volume_at_level_check else True  # Strong absorption at resistance
-        
-        volume_confirm_long = volume > volume_prev if require_volume_confirm else True
-        volume_confirm_short = volume < volume_prev if require_volume_confirm else True
-    
-        # ===== ENHANCEMENT 4: Multi-TF Confluence (Optional External S/R) =====
-        external_confluence_long = False
-        external_confluence_short = False
-        
-        if external_sr_long is not None and 'support' in external_sr_long:
-            # Check if price is near external support from another timeframe
-            ext_support = external_sr_long['support']
-            ext_margin = (ext_support * fixed_buffer_pct * 2) if ext_support > 0 else 0  # Use 2x margin for external levels
-            external_confluence_long = (close >= ext_support - ext_margin) and (close <= ext_support * (1 + ext_margin * 2))
-        
-        if external_sr_short is not None and 'resistance' in external_sr_short:
-            # Check if price is near external resistance from another timeframe
-            ext_resistance = external_sr_short['resistance']
-            ext_margin = (ext_resistance * fixed_buffer_pct * 2) if ext_resistance > 0 else 0
-            external_confluence_short = (close >= ext_resistance - ext_margin * 2) and (close <= ext_resistance + ext_margin)
-    
-        # ===== SIGNAL CONDITIONS =====
-        # LONG: Proximity to support + retest validation + volume confirmation
-        cond1_long = support_prox <= support_margin          # Price within adaptive margin above support
-        cond2_long = retest_valid_long                       # Support tested N+ times (strength)
-        cond3_long = volume_at_level_long and volume_confirm_long  # Volume confirms absorption
-        cond4_long = external_confluence_long if external_sr_long else False  # Multi-TF confluence (bonus)
-        
-        # SHORT: Proximity to resistance + retest validation + volume confirmation
-        cond1_short = resistance_prox <= resistance_margin    # Price within adaptive margin below resistance
-        cond2_short = retest_valid_short                      # Resistance tested N+ times (strength)
-        cond3_short = volume_at_level_short and volume_confirm_short  # Volume confirms absorption
-        cond4_short = external_confluence_short if external_sr_short else False  # Multi-TF confluence (bonus)
-        
-        long_met = sum([cond1_long, cond2_long, cond3_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short])
-        
-        # Confluence bonus (if external S/R aligns, increase confidence)
-        if cond4_long:
-            long_met += 1
-        if cond4_short:
-            short_met += 1
-    
-        if debug:
-            print(
-                f"[{self.symbol}] [S/R ENHANCED] Levels | support={support:.4f}, resistance={resistance:.4f}, close={close:.4f}"
-            )
-            print(
-                f"[{self.symbol}] [S/R ENHANCED] Margins | support_margin={support_margin:.6f} (ATR={atr}), "
-                f"resistance_margin={resistance_margin:.6f} | ATR-based: {use_atr_margin}"
-            )
-            print(
-                f"[{self.symbol}] [S/R ENHANCED] Retests | support_touches={support_touches}, "
-                f"resistance_touches={resistance_touches}, min_required={min_retest_touches}"
-            )
-            print(
-                f"[{self.symbol}] [S/R ENHANCED] Volume | current={volume:.0f}, MA={volume_ma:.0f}, "
-                f"confirm_long={volume_confirm_long}, at_level_long={volume_at_level_long}"
-            )
-            if external_sr_long:
-                print(f"[{self.symbol}] [S/R ENHANCED] Multi-TF LONG | ext_support={external_sr_long.get('support')}, confluence={external_confluence_long}")
-            if external_sr_short:
-                print(f"[{self.symbol}] [S/R ENHANCED] Multi-TF SHORT | ext_resistance={external_sr_short.get('resistance')}, confluence={external_confluence_short}")
-            print(
-                f"[{self.symbol}] [S/R ENHANCED] Conditions LONG | [proximity={cond1_long}, retest={cond2_long}, volume={cond3_long}, confluence={cond4_long}] → {long_met}"
-            )
-            print(
-                f"[{self.symbol}] [S/R ENHANCED] Conditions SHORT | [proximity={cond1_short}, retest={cond2_short}, volume={cond3_short}, confluence={cond4_short}] → {short_met}"
-            )
-    
-        # Decision: require strict majority and >= min_cond to declare direction
-        if long_met >= min_cond and long_met > short_met:
-            print(
-                f"[{self.symbol}] [Support/Resistance ENHANCED] Signal: LONG | "
-                f"support={support:.4f}, proximity={support_prox:.6f}, margin={support_margin:.6f}, "
-                f"touches={support_touches}, long_met={long_met}/{long_met+short_met}, atr_margin={use_atr_margin}"
-            )
-            return "LONG"
-        elif short_met >= min_cond and short_met > long_met:
-            print(
-                f"[{self.symbol}] [Support/Resistance ENHANCED] Signal: SHORT | "
-                f"resistance={resistance:.4f}, proximity={resistance_prox:.6f}, margin={resistance_margin:.6f}, "
-                f"touches={resistance_touches}, short_met={short_met}/{long_met+short_met}, atr_margin={use_atr_margin}"
-            )
-            return "SHORT"
-        else:
+            # Get recent extremes
+            recent_support = self.df['low'].rolling(window).min().iat[-1]
+            recent_resistance = self.df['high'].rolling(window).max().iat[-1]
+            close = self.df['close'].iat[-1]
+            
+            # Define acceptance margins (2% above support, 2% below resistance)
+            support_upper = recent_support * (1 + margin_pct)
+            resistance_lower = recent_resistance * (1 - margin_pct)
+            
+            # LONG: Price near support (bouncing up)
+            long_condition = close >= recent_support and close <= support_upper
+            
+            # SHORT: Price near resistance (bouncing down)
+            short_condition = close <= recent_resistance and close >= resistance_lower
+            
             if debug:
                 print(
-                    f"[{self.symbol}] [Support/Resistance ENHANCED] No signal | "
-                    f"long_met={long_met}, short_met={short_met}, min_cond={min_cond}"
+                    f"[{self.symbol}] [S/R SIMPLIFIED] close={close:.4f}, support={recent_support:.4f}, "
+                    f"resistance={recent_resistance:.4f}, margin={margin_pct:.2%} | "
+                    f"long={long_condition}, short={short_condition}"
                 )
+            
+            if long_condition:
+                print(
+                    f"[{self.symbol}] [S/R SIMPLIFIED] Signal: LONG | "
+                    f"close={close:.4f} within margin of support={recent_support:.4f}"
+                )
+                return "LONG"
+            elif short_condition:
+                print(
+                    f"[{self.symbol}] [S/R SIMPLIFIED] Signal: SHORT | "
+                    f"close={close:.4f} within margin of resistance={recent_resistance:.4f}"
+                )
+                return "SHORT"
+            else:
+                if debug:
+                    print(f"[{self.symbol}] [S/R SIMPLIFIED] No signal (not near extremes)")
+                return None
+        
+        except Exception as e:
+            print(f"[{self.symbol}] [S/R SIMPLIFIED] Error: {e}")
             return None
 
     def _check_fractal_zone(self, window=50, min_atr_mult=0.5, min_conditions=2, range_volatility_filter=True, debug=False):
@@ -2794,229 +2640,133 @@ class SmartFilter:
         
         return signal
 
-    def _check_atr_momentum_burst(
-        self,
-        threshold_ratio=0.15,
-        volume_mult=1.2,
-        lookback=3,
-        volume_ma_period=10,
-        min_atr=0.5,
-        min_momentum_bars=2,
-        debug=False
-    ):
+    def _check_atr_momentum_burst(self, move_threshold_pct=0.02, debug=False):
         """
-        ENHANCED ATR Momentum Burst (2026-03-05)
-        
-        Detects sustained momentum bursts with:
-        - ATR-scaled thresholds (normalizes to volatility)
-        - Strong volume confirmation (50% above average)
-        - Lookback period for multi-bar confirmation
-        - Directional consistency (no flip-flops)
-        
-        Parameters:
-        - threshold_ratio: Move/ATR ratio > threshold (0.15 = 15% of ATR)
-        - volume_mult: Volume must exceed MA by this multiple (1.2 = 20% above avg) [TUNED: was 1.5]
-        - lookback: Number of bars to check for momentum (3 = last 3 bars)
-        - volume_ma_period: SMA period for volume average (10 = 10-bar MA)
-        - min_atr: Minimum ATR to trade (avoid low-volatility symbols)
-        - min_momentum_bars: Minimum bars showing momentum (2 = at least 2 of lookback)
+        SIMPLIFIED ATR Momentum Burst (2026-03-23)
+        Volatility-backed momentum (real moves, not noise).
         
         Logic:
-        LONG: ≥2 of last 3 bars show (move/ATR > 0.15 AND volume > 1.2x avg) 
-              AND majority bars are bullish (close > open)
-        SHORT: Same but for bearish direction
+        LONG: atr_expanding AND close > close_prev AND momentum_strong
+        SHORT: atr_expanding AND close < close_prev AND momentum_strong
+        
+        Purpose: Momentum confirmation (real moves, not noise)
+        Expected Pass Rate: ~35% of bars
         """
         try:
-            # Get current ATR
-            current_atr = self.df['atr'].iat[-1] if 'atr' in self.df.columns else None
-            
-            # Gate: Require minimum ATR for market quality
-            if current_atr is None or current_atr < min_atr:
-                if debug:
-                    print(f"[{self.symbol}] [ATR Momentum Burst] SKIP: ATR too low ({current_atr} < {min_atr})")
+            if len(self.df) < 2:
                 return None
             
-            # Scan lookback period for momentum bars
-            momentum_bars_list = []
-            directions = []  # Track bullish (+1) or bearish (-1) bars
+            current_atr = self.df['atr'].iat[-1]
+            current_atr_prev = self.df['atr'].iat[-2]
+            current_close = self.df['close'].iat[-1]
+            current_close_prev = self.df['close'].iat[-2]
             
-            for i in range(1, min(lookback + 1, len(self.df))):
-                bar_open = self.df['open'].iat[-i]
-                bar_close = self.df['close'].iat[-i]
-                bar_volume = self.df['volume'].iat[-i]
-                
-                # Calculate metrics for this bar
-                pct_move = ((bar_close - bar_open) / bar_open * 100) if bar_open > 0 else 0
-                atr_ratio = abs(pct_move) / current_atr if current_atr > 0 else 0
-                volume_ma = self.df['volume'].rolling(volume_ma_period).mean().iat[-i]
-                
-                # Direction: +1 for bullish (close > open), -1 for bearish
-                direction = 1 if bar_close > bar_open else (-1 if bar_close < bar_open else 0)
-                directions.append(direction)
-                
-                # Check: ATR-scaled move + strong volume
-                if atr_ratio > threshold_ratio and bar_volume > volume_ma * volume_mult:
-                    momentum_bars_list.append({
-                        'bar': i,
-                        'pct_move': pct_move,
-                        'atr_ratio': atr_ratio,
-                        'volume': bar_volume,
-                        'volume_ma': volume_ma,
-                        'direction': direction
-                    })
+            # ATR expanding?
+            atr_expanding = current_atr > current_atr_prev
+            
+            # Momentum: How strong is the move?
+            pct_move = abs((current_close - current_close_prev) / current_close_prev) if current_close_prev != 0 else 0
+            move_threshold = (move_threshold_pct * current_atr) / current_close_prev if current_close_prev != 0 else 0
+            momentum_strong = pct_move > move_threshold
+            
+            price_up = current_close > current_close_prev
+            price_down = current_close < current_close_prev
             
             if debug:
-                print(f"[{self.symbol}] [ATR Momentum Burst] Lookback={lookback} | ATR={current_atr:.6f} | Momentum bars found: {len(momentum_bars_list)}")
-                for bar in momentum_bars_list:
-                    print(f"  Bar {bar['bar']}: move={bar['pct_move']:.4f}%, ratio={bar['atr_ratio']:.4f}, vol={bar['volume']:.0f} (avg={bar['volume_ma']:.0f})")
+                print(
+                    f"[{self.symbol}] [ATR Momentum Burst SIMPLIFIED] atr_expanding={atr_expanding}, "
+                    f"price_up={price_up}, momentum_strong={momentum_strong}, "
+                    f"pct_move={pct_move:.6f}, threshold={move_threshold:.6f}"
+                )
             
-            # Need minimum momentum bars
-            if len(momentum_bars_list) < min_momentum_bars:
-                if debug:
-                    print(f"[{self.symbol}] [ATR Momentum Burst] No signal | {len(momentum_bars_list)} momentum bars < {min_momentum_bars} required")
-                return None
-            
-            # Check directional consistency
-            bullish_count = sum(1 for d in directions if d > 0)
-            bearish_count = sum(1 for d in directions if d < 0)
-            
-            # LONG: Majority of lookback bars are bullish + multiple momentum bars
-            if bullish_count >= 2 and bullish_count > bearish_count and len(momentum_bars_list) >= min_momentum_bars:
-                momentum_summary = f"{len(momentum_bars_list)} bars, avg_ratio={sum(b['atr_ratio'] for b in momentum_bars_list)/len(momentum_bars_list):.4f}"
-                print(f"[{self.symbol}] [ATR Momentum Burst] Signal: LONG | {momentum_summary} | ATR={current_atr:.6f}")
+            # LONG: ATR expanding + price up + momentum confirmed
+            if atr_expanding and price_up and momentum_strong:
+                print(
+                    f"[{self.symbol}] [ATR Momentum Burst SIMPLIFIED] Signal: LONG | "
+                    f"atr expanding, move={pct_move:.6f} (> {move_threshold:.6f})"
+                )
                 return "LONG"
             
-            # SHORT: Majority of lookback bars are bearish + multiple momentum bars
-            elif bearish_count >= 2 and bearish_count > bullish_count and len(momentum_bars_list) >= min_momentum_bars:
-                momentum_summary = f"{len(momentum_bars_list)} bars, avg_ratio={sum(b['atr_ratio'] for b in momentum_bars_list)/len(momentum_bars_list):.4f}"
-                print(f"[{self.symbol}] [ATR Momentum Burst] Signal: SHORT | {momentum_summary} | ATR={current_atr:.6f}")
+            # SHORT: ATR expanding + price down + momentum confirmed
+            elif atr_expanding and price_down and momentum_strong:
+                print(
+                    f"[{self.symbol}] [ATR Momentum Burst SIMPLIFIED] Signal: SHORT | "
+                    f"atr expanding, move={pct_move:.6f} (> {move_threshold:.6f})"
+                )
                 return "SHORT"
             
             else:
                 if debug:
-                    print(f"[{self.symbol}] [ATR Momentum Burst] No signal | bullish={bullish_count}, bearish={bearish_count}, momentum_bars={len(momentum_bars_list)}")
+                    print(
+                        f"[{self.symbol}] [ATR Momentum Burst SIMPLIFIED] No signal | "
+                        f"atr_exp={atr_expanding}, up={price_up}, momentum={momentum_strong}"
+                    )
                 return None
         
         except Exception as e:
-            print(f"[{self.symbol}] [ATR Momentum Burst] Error: {e}")
+            print(f"[{self.symbol}] [ATR Momentum Burst SIMPLIFIED] Error: {e}")
             return None
 
 
-    def _check_volatility_model(
-        self,
-        atr_col='atr',
-        atr_ma_col='atr_ma',
-        atr_expansion_pct=0.05,  # TUNED: 0.08 → 0.05 (5% is more realistic for real expansions) [2026-03-23]
-        lookback=2,
-        volume_mult=1.15,  # OPTIMIZED: Quality confirmation (15% above avg), not overly strict
-        min_atr=0.5,
-        volume_confirm=True,
-        direction_threshold=2,
-        volume_ma_period=10,
-        debug=False
-    ):
+    def _check_volatility_model(self, debug=False):
         """
-        ENHANCED VOLATILITY MODEL - MODERATE Rules (2026-03-05, TUNED 2026-03-23)
-        
-        Detects volatility expansion with balanced/moderate filtering:
-        - ATR expansion: 5% above MA [TUNED from 8%, more realistic] (percentage-based, normalized)
-        - Lookback: 2 bars, but 1+ bars showing trend OK (flexible)
-        - Direction: Need 2 of 3 conditions to fire (ATR, Price, Volume)
-        - Volume confirmation: 1.15x average (moderate gate)
-        - Min ATR: 0.5 (avoids stale markets)
-        
-        Parameters:
-        - atr_expansion_pct: ATR must be X% above its MA (0.05 = 5%) [TUNED from 0.08]
-        - lookback: Check last N bars for expansion trend (2 = last 2)
-        - volume_mult: Volume > MA × this (1.15 = 15% above average)
-        - min_atr: Minimum ATR value for market quality
-        - volume_confirm: Require volume confirmation (True = enabled)
-        - direction_threshold: Need N of 3 conditions (2 = moderate, 3 = strict)
-        - volume_ma_period: Period for volume MA (10 = 10-bar MA)
+        SIMPLIFIED Volatility Model (2026-03-23 - OPTION C: Balanced)
+        Detects volatility expansion with trend confirmation.
         
         Logic:
-        LONG: ATR expanding 5% above MA + 2 of [ATR↑, Price↑, Volume↑]
-        SHORT: Same but for bearish direction
+        LONG: current_atr > atr_ma AND close > ema20 (Volatility up + trend up)
+        SHORT: current_atr > atr_ma AND close < ema20 (Volatility up + trend down)
+        
+        Purpose: Volatility confirmation with single trend level (balanced)
+        Expected Pass Rate: ~40% of bars
         """
         try:
-            # Get current values
-            current_atr = self.df[atr_col].iat[-1] if atr_col in self.df.columns else None
-            current_atr_prev = self.df[atr_col].iat[-2] if atr_col in self.df.columns else None
-            current_atr_ma = self.df[atr_ma_col].iat[-1] if atr_ma_col in self.df.columns else None
+            # Current volatility
+            current_atr = self.df['atr'].iat[-1]
             current_close = self.df['close'].iat[-1]
-            current_close_prev = self.df['close'].iat[-2]
-            current_volume = self.df['volume'].iat[-1]
-            current_volume_ma = self.df['volume'].rolling(volume_ma_period).mean().iat[-1]
+            ema20 = self.df['ema20'].iat[-1]
             
-            # Gate 1: Minimum ATR requirement (market quality)
-            if current_atr is None or current_atr < min_atr:
-                if debug:
-                    print(f"[{self.symbol}] [Volatility Model] SKIP: ATR too low ({current_atr} < {min_atr})")
-                return None
+            # Moving average of ATR
+            atr_ma = self.df['atr'].rolling(20).mean().iat[-1]
             
-            # Gate 2: ATR expansion magnitude (percentage-based, normalized)
-            atr_expansion_pct_actual = (current_atr - current_atr_ma) / current_atr_ma if current_atr_ma > 0 else 0
-            if atr_expansion_pct_actual < atr_expansion_pct:
-                if debug:
-                    print(f"[{self.symbol}] [Volatility Model] SKIP: Expansion too small ({atr_expansion_pct_actual:.4f} < {atr_expansion_pct})")
-                return None
+            # Simple gate: Is volatility expanding?
+            volatility_expanding = current_atr > atr_ma
             
-            # Gate 3: Lookback period - check if expansion is consistent (flexible)
-            expansion_bars = 0
-            for i in range(1, min(lookback + 1, len(self.df))):
-                bar_atr = self.df[atr_col].iat[-i]
-                bar_atr_ma = self.df[atr_ma_col].iat[-i]
-                if bar_atr_ma > 0:
-                    bar_expansion_pct = (bar_atr - bar_atr_ma) / bar_atr_ma
-                    # Flexible: 80% of target threshold (not strict)
-                    if bar_expansion_pct > atr_expansion_pct * 0.8:
-                        expansion_bars += 1
-            
-            # Need at least 1 bar showing expansion (flexible, not strict)
-            if expansion_bars < 1:
-                if debug:
-                    print(f"[{self.symbol}] [Volatility Model] SKIP: No expansion bars ({expansion_bars} < 1)")
-                return None
-            
-            # Direction conditions (MODERATE: need 2 of 3)
-            cond_atr_up = current_atr > current_atr_prev if current_atr_prev else False
-            cond_price_up = current_close > current_close_prev
-            cond_volume_up = current_volume > current_volume_ma
-            
-            # Count conditions for bullish direction
-            long_conditions = sum([cond_atr_up, cond_price_up, cond_volume_up])
-            
-            # Count conditions for bearish direction
-            cond_atr_down = current_atr < current_atr_prev if current_atr_prev else False
-            cond_price_down = current_close < current_close_prev
-            short_conditions = sum([cond_atr_down, cond_price_down, cond_volume_up])  # Note: volume same for both
+            # Trend confirmation: single EMA (Option C: Balanced)
+            price_above_ema20 = current_close > ema20
+            price_below_ema20 = current_close < ema20
             
             if debug:
-                print(f"[{self.symbol}] [Volatility Model] Conditions | ATR↑={cond_atr_up}, Price↑={cond_price_up}, Vol↑={cond_volume_up}")
-                print(f"  Expansion: {expansion_bars} bars, actual={atr_expansion_pct_actual:.4f} (target={atr_expansion_pct})")
-                print(f"  Long conds={long_conditions}, Short conds={short_conditions}")
+                print(
+                    f"[{self.symbol}] [Volatility Model SIMPLIFIED] atr={current_atr:.6f}, "
+                    f"atr_ma={atr_ma:.6f}, expanding={volatility_expanding}, "
+                    f"close={current_close:.4f}, ema20={ema20:.4f}, "
+                    f"above_ema={price_above_ema20}, below_ema={price_below_ema20}"
+                )
             
-            # LONG: ATR expanding + need 2 of [ATR↑, Price↑, Volume↑]
-            # Volume confirmation can be optional, but if enabled, prefer it
-            if long_conditions >= direction_threshold and cond_atr_up:
-                vol_check = (cond_volume_up or not volume_confirm)  # Pass if vol↑ OR confirm disabled
-                if vol_check:
-                    print(f"[{self.symbol}] [Volatility Model] Signal: LONG | expansion={atr_expansion_pct_actual:.4f}, conds={long_conditions}/3, ATR={current_atr:.6f}")
-                    return "LONG"
+            # LONG: Volatility expanding + price above EMA20
+            if volatility_expanding and price_above_ema20:
+                print(
+                    f"[{self.symbol}] [Volatility Model SIMPLIFIED] Signal: LONG | "
+                    f"atr={current_atr:.6f} > ma={atr_ma:.6f}, close={current_close:.4f} > ema20={ema20:.4f}"
+                )
+                return "LONG"
             
-            # SHORT: ATR expanding + need 2 of [ATR↓, Price↓, Volume↑]
-            if short_conditions >= direction_threshold and cond_atr_down:
-                vol_check = (cond_volume_up or not volume_confirm)
-                if vol_check:
-                    print(f"[{self.symbol}] [Volatility Model] Signal: SHORT | expansion={atr_expansion_pct_actual:.4f}, conds={short_conditions}/3, ATR={current_atr:.6f}")
-                    return "SHORT"
+            # SHORT: Volatility expanding + price below EMA20
+            elif volatility_expanding and price_below_ema20:
+                print(
+                    f"[{self.symbol}] [Volatility Model SIMPLIFIED] Signal: SHORT | "
+                    f"atr={current_atr:.6f} > ma={atr_ma:.6f}, close={current_close:.4f} < ema20={ema20:.4f}"
+                )
+                return "SHORT"
             
-            if debug:
-                print(f"[{self.symbol}] [Volatility Model] No signal | long={long_conditions}, short={short_conditions}")
-            return None
+            else:
+                if debug:
+                    print(f"[{self.symbol}] [Volatility Model SIMPLIFIED] No signal")
+                return None
         
         except Exception as e:
-            print(f"[{self.symbol}] [Volatility Model] Error: {e}")
+            print(f"[{self.symbol}] [Volatility Model SIMPLIFIED] Error: {e}")
             return None
 
     def _check_volatility_squeeze(
