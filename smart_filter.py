@@ -2021,8 +2021,8 @@ class SmartFilter:
     def _check_absorption(
         self, 
         window: int = 25,        # Loosened from 30
-        price_proximity_pct: float = 0.02,  # Loosened from 0.01 (2% acceptance)
-        volume_threshold: float = 1.1,   # Loosened from 1.3 (10% above avg, not 30%)
+        price_proximity_pct: float = 0.03,  # TUNED: 0.02 → 0.03 (3% acceptance, more lenient) [2026-03-23]
+        volume_threshold: float = 1.05,   # TUNED: 1.1 → 1.05 (5% above avg for real absorption) [2026-03-23]
         momentum_threshold: float = 0.0,  # Loosened from 0.005 (any positive)
         min_cond: int = 1,              # OPTIMIZATION: 2→1 (fire with 1+ conditions)
         debug: bool = False
@@ -2057,16 +2057,16 @@ class SmartFilter:
            - Thin liquidity = rejected
            - Dense orders = institutional setup confirmed
         
-        Parameters (User Override: min_cond = 3):
-        - window: Rolling window for high/low (30, was 20)
-        - price_proximity_pct: Acceptance buffer (1.0%, was 0.5%)
+        Parameters (TUNED 2026-03-23):
+        - window: Rolling window for high/low (25)
+        - price_proximity_pct: Acceptance buffer (3%, TUNED from 2%) [2026-03-23]
         - atr_multiplier: Volatility scaling (0.75)
-        - volume_threshold: Required volume ratio (1.3x, was 1.5x)
+        - volume_threshold: Required volume ratio (1.05x, TUNED from 1.1x) [2026-03-23]
         - volume_buildup_bars: Accumulation bars (3)
         - directional_pressure: Check momentum (True)
         - false_breakout_gate: Reject thin touches (True)
         - liquidity_depth_check: Order concentration (True)
-        - min_cond: Gate conditions (3 of 6 required)
+        - min_cond: Gate conditions (1+ required, loosened for sensitivity)
         """
         import math
         
@@ -2797,7 +2797,7 @@ class SmartFilter:
     def _check_atr_momentum_burst(
         self,
         threshold_ratio=0.15,
-        volume_mult=1.5,
+        volume_mult=1.2,
         lookback=3,
         volume_ma_period=10,
         min_atr=0.5,
@@ -2815,14 +2815,14 @@ class SmartFilter:
         
         Parameters:
         - threshold_ratio: Move/ATR ratio > threshold (0.15 = 15% of ATR)
-        - volume_mult: Volume must exceed MA by this multiple (1.5 = 50% above avg)
+        - volume_mult: Volume must exceed MA by this multiple (1.2 = 20% above avg) [TUNED: was 1.5]
         - lookback: Number of bars to check for momentum (3 = last 3 bars)
         - volume_ma_period: SMA period for volume average (10 = 10-bar MA)
         - min_atr: Minimum ATR to trade (avoid low-volatility symbols)
         - min_momentum_bars: Minimum bars showing momentum (2 = at least 2 of lookback)
         
         Logic:
-        LONG: ≥2 of last 3 bars show (move/ATR > 0.15 AND volume > 1.5x avg) 
+        LONG: ≥2 of last 3 bars show (move/ATR > 0.15 AND volume > 1.2x avg) 
               AND majority bars are bullish (close > open)
         SHORT: Same but for bearish direction
         """
@@ -2906,7 +2906,7 @@ class SmartFilter:
         self,
         atr_col='atr',
         atr_ma_col='atr_ma',
-        atr_expansion_pct=0.08,  # OPTIMIZED: Real ATR expansions in markets are 8-12%, not theoretical 15%
+        atr_expansion_pct=0.05,  # TUNED: 0.08 → 0.05 (5% is more realistic for real expansions) [2026-03-23]
         lookback=2,
         volume_mult=1.15,  # OPTIMIZED: Quality confirmation (15% above avg), not overly strict
         min_atr=0.5,
@@ -2916,26 +2916,26 @@ class SmartFilter:
         debug=False
     ):
         """
-        ENHANCED VOLATILITY MODEL - MODERATE Rules (2026-03-05)
+        ENHANCED VOLATILITY MODEL - MODERATE Rules (2026-03-05, TUNED 2026-03-23)
         
         Detects volatility expansion with balanced/moderate filtering:
-        - ATR expansion: 15% above MA (percentage-based, normalized)
+        - ATR expansion: 5% above MA [TUNED from 8%, more realistic] (percentage-based, normalized)
         - Lookback: 2 bars, but 1+ bars showing trend OK (flexible)
         - Direction: Need 2 of 3 conditions to fire (ATR, Price, Volume)
-        - Volume confirmation: 1.3x average (moderate gate)
+        - Volume confirmation: 1.15x average (moderate gate)
         - Min ATR: 0.5 (avoids stale markets)
         
         Parameters:
-        - atr_expansion_pct: ATR must be X% above its MA (0.15 = 15%)
+        - atr_expansion_pct: ATR must be X% above its MA (0.05 = 5%) [TUNED from 0.08]
         - lookback: Check last N bars for expansion trend (2 = last 2)
-        - volume_mult: Volume > MA × this (1.3 = 30% above average)
+        - volume_mult: Volume > MA × this (1.15 = 15% above average)
         - min_atr: Minimum ATR value for market quality
         - volume_confirm: Require volume confirmation (True = enabled)
         - direction_threshold: Need N of 3 conditions (2 = moderate, 3 = strict)
         - volume_ma_period: Period for volume MA (10 = 10-bar MA)
         
         Logic:
-        LONG: ATR expanding 15% above MA + 2 of [ATR↑, Price↑, Volume↑]
+        LONG: ATR expanding 5% above MA + 2 of [ATR↑, Price↑, Volume↑]
         SHORT: Same but for bearish direction
         """
         try:
@@ -3244,15 +3244,16 @@ class SmartFilter:
 
     def _check_candle_confirmation(
         self,
-        min_pin_wick_ratio=1.5,  # OPTIMIZED: Real pin bars in markets are 1.3-1.5x ratio, not theoretical 2.0x
+        min_pin_wick_ratio=1.3,  # TUNED: 1.5 → 1.3 (real pin bars are 1.3-1.5x, allow more) [2026-03-23]
         require_volume_confirm=False,
         debug=False
     ):
         """
-        Enhanced Candle Confirmation (revised to avoid bias toward LONG):
+        Enhanced Candle Confirmation (revised to avoid bias toward LONG) [TUNED 2026-03-23]:
         - Proper engulfing detection requires that the previous candle was of the opposite direction.
         - Engulfing also requires current body to be meaningfully larger than previous body (to avoid micro-engulfs).
         - Pin bar logic uses correct wick/body measurements and includes optional volume confirmation.
+        - Pin bar threshold lowered from 1.5x to 1.3x for more sensitivity.
         - Returns "LONG", "SHORT", or None.
         """
         # Defensive checks
