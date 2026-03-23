@@ -99,49 +99,49 @@ class SmartFilter:
         # Gatekeepers (Candle Confirmation, Support/Resistance): MAINTAIN
         
         self.filter_weights_long = {
-            "MACD": 5.0, 
-            "Volume Spike": 5.3,  # ↑ WAS 5.0 | 68.1% WR | +48.8pp
-            "Fractal Zone": 4.2,  # ↓ WAS 4.8 | 66.7% WR | Reduced - similar to lower performers
-            "TREND": 4.3,  # ↓ WAS 4.7 | 66.7% WR | Reduced - below 45% baseline
-            "Momentum": 5.5,  # ↑ WAS 4.9 | 79.3% WR | +59.8pp - HIGHEST PERFORMER
-            "ATR Momentum Burst": 4.3,  # ← MAINTAINED | Regime-dependent, needs investigation
-            "MTF Volume Agreement": 4.6,  # ↓ WAS 5.0 | 66.7% WR | Reduced - consistent with TREND group
-            "HH/LL Trend": 4.8,  # ↑ WAS 4.1 | 70.6% WR | +50.7pp
-            "Volatility Model": 3.9,  # ← MAINTAINED | Regime-dependent, needs investigation
-            "Liquidity Awareness": 5.3,  # ↑ WAS 5.0 | 72.7% WR | +53.5pp
-            "Volatility Squeeze": 3.2,  # ↓ WAS 3.7 | 66.7% WR | Reduced - lower tier
-            "Candle Confirmation": 5.0,  # ← MAINTAINED | Gatekeeper (intentionally strict)
-            "VWAP Divergence": 3.5,  # ← MAINTAINED | Insufficient data (only 2 samples)
-            "Spread Filter": 5.0,  # ← MAINTAINED | Technical requirement
-            "Chop Zone": 3.3,  # ← MAINTAINED | Moderate tier
-            "Liquidity Pool": 3.1,  # ← MAINTAINED | Moderate tier
-            "Support/Resistance": 5.0,  # ← MAINTAINED | Gatekeeper (intentionally strict)
-            "Smart Money Bias": 4.5,  # ↑ WAS 2.9 | 68.1% WR | +48.8pp - HIGH PERFORMER
-            "Absorption": 2.7,  # ← MAINTAINED | Rare pattern, needs more data
-            "Wick Dominance": 4.0  # ↑ WAS 2.5 | 67.4% WR | +48.1pp - HIGH PERFORMER
+            "MACD": 4.9,                       # CUT: 5.0 → 4.9 | WR 26.8% vs baseline 27.3%
+            "Volume Spike": 5.2,               # CUT: 5.3 → 5.2 | WR 26.5% vs baseline 27.3%
+            "Fractal Zone": 4.2,               # KEEP: 4.2 → 4.2 | WR 27.4% ≈ baseline
+            "TREND": 4.2,                      # CUT: 4.3 → 4.2 | WR 26.6% vs baseline 27.3%
+            "Momentum": 6.1,                   # BOOST: 5.5 → 6.1 | WR 30.3% ⭐ HIGHEST (+3.0pp)
+            "ATR Momentum Burst": 3.2,         # CUT: 4.3 → 3.2 | WR 20.4% far below baseline (-7.0pp)
+            "MTF Volume Agreement": 4.6,       # KEEP: 4.6 → 4.6 | WR 27.2% ≈ baseline
+            "HH/LL Trend": 4.9,                # BOOST: 4.8 → 4.9 | WR 27.9% above baseline (+0.6pp)
+            "Volatility Model": 2.1,           # CUT: 3.9 → 2.1 | WR 14.8% far below baseline (-12.6pp)
+            "Liquidity Awareness": 5.3,        # KEEP: 5.3 → 5.3 | WR 27.4% ≈ baseline
+            "Volatility Squeeze": 3.2,         # KEEP: 3.2 → 3.2 | WR 27.3% = baseline
+            "Candle Confirmation": 5.0,        # KEEP: 5.0 → 5.0 | Gatekeeper (not instrumented)
+            "VWAP Divergence": 3.3,            # CUT: 3.5 → 3.3 | WR 25.8% below baseline (-1.5pp)
+            "Spread Filter": 5.5,              # BOOST: 5.0 → 5.5 | WR 29.9% second best (+2.6pp)
+            "Chop Zone": 3.2,                  # CUT: 3.3 → 3.2 | WR 26.2% below baseline (-1.2pp)
+            "Liquidity Pool": 3.1,             # KEEP: 3.1 → 3.1 | WR 27.3% = baseline
+            "Support/Resistance": 0.5,         # CUT: 5.0 → 0.5 | WR 0.0% toxic (floor, no zero) | 2026-03-24 deployed
+            "Smart Money Bias": 4.5,           # KEEP: 4.5 → 4.5 | WR 27.3% = baseline
+            "Absorption": 0.5,                 # CUT: 2.7 → 0.5 | WR 0.0% dead (floor, no zero) | 2026-03-24 deployed
+            "Wick Dominance": 4.0              # KEEP: 4.0 → 4.0 | WR 27.2% ≈ baseline
         }
         
         self.filter_weights_short = {
-            "MACD": 5.0, 
-            "Volume Spike": 5.3,  # ↑ WAS 5.0 | 68.1% WR | +48.8pp
-            "Fractal Zone": 4.2,  # ↓ WAS 4.8 | 66.7% WR
-            "TREND": 4.3,  # ↓ WAS 4.7 | 66.7% WR
-            "Momentum": 5.5,  # ↑ WAS 4.9 | 79.3% WR | +59.8pp - HIGHEST PERFORMER
-            "ATR Momentum Burst": 4.3,  # ← MAINTAINED | Regime-dependent
-            "MTF Volume Agreement": 4.6,  # ↓ WAS 5.0 | 66.7% WR
-            "HH/LL Trend": 4.8,  # ↑ WAS 4.1 | 70.6% WR | +50.7pp
-            "Volatility Model": 3.9,  # ← MAINTAINED | Regime-dependent
-            "Liquidity Awareness": 5.3,  # ↑ WAS 5.0 | 72.7% WR | +53.5pp
-            "Volatility Squeeze": 3.2,  # ↓ WAS 3.7 | 66.7% WR
-            "Candle Confirmation": 5.0,  # ← MAINTAINED | Gatekeeper
-            "VWAP Divergence": 3.5,  # ← MAINTAINED | Insufficient data
-            "Spread Filter": 5.0,  # ← MAINTAINED | Technical requirement
-            "Chop Zone": 3.3,  # ← MAINTAINED | Moderate tier
-            "Liquidity Pool": 3.1,  # ← MAINTAINED | Moderate tier
-            "Support/Resistance": 5.0,  # ← MAINTAINED | Gatekeeper
-            "Smart Money Bias": 4.5,  # ↑ WAS 2.9 | 68.1% WR | +48.8pp
-            "Absorption": 2.7,  # ← MAINTAINED | Rare pattern
-            "Wick Dominance": 4.0  # ↑ WAS 2.5 | 67.4% WR | +48.1pp
+            "MACD": 4.9,                       # CUT: 5.0 → 4.9 | WR 26.8%
+            "Volume Spike": 5.2,               # CUT: 5.3 → 5.2 | WR 26.5%
+            "Fractal Zone": 4.2,               # KEEP: 4.2 → 4.2 | WR 27.4%
+            "TREND": 4.2,                      # CUT: 4.3 → 4.2 | WR 26.6%
+            "Momentum": 6.1,                   # BOOST: 5.5 → 6.1 | WR 30.3% ⭐
+            "ATR Momentum Burst": 3.2,         # CUT: 4.3 → 3.2 | WR 20.4%
+            "MTF Volume Agreement": 4.6,       # KEEP: 4.6 → 4.6 | WR 27.2%
+            "HH/LL Trend": 4.9,                # BOOST: 4.8 → 4.9 | WR 27.9%
+            "Volatility Model": 2.1,           # CUT: 3.9 → 2.1 | WR 14.8%
+            "Liquidity Awareness": 5.3,        # KEEP: 5.3 → 5.3 | WR 27.4%
+            "Volatility Squeeze": 3.2,         # KEEP: 3.2 → 3.2 | WR 27.3%
+            "Candle Confirmation": 5.0,        # KEEP: 5.0 → 5.0 | Gatekeeper
+            "VWAP Divergence": 3.3,            # CUT: 3.5 → 3.3 | WR 25.8%
+            "Spread Filter": 5.5,              # BOOST: 5.0 → 5.5 | WR 29.9%
+            "Chop Zone": 3.2,                  # CUT: 3.3 → 3.2 | WR 26.2%
+            "Liquidity Pool": 3.1,             # KEEP: 3.1 → 3.1 | WR 27.3%
+            "Support/Resistance": 0.5,         # CUT: 5.0 → 0.5 | WR 0.0% | 2026-03-24 deployed
+            "Smart Money Bias": 4.5,           # KEEP: 4.5 → 4.5 | WR 27.3%
+            "Absorption": 0.5,                 # CUT: 2.7 → 0.5 | WR 0.0% | 2026-03-24 deployed
+            "Wick Dominance": 4.0              # KEEP: 4.0 → 4.0 | WR 27.2%
         }
 
         self.filter_names = list(set(self.filter_weights_long.keys()) | set(self.filter_weights_short.keys()))
