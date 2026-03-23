@@ -48,6 +48,15 @@ from reversal_quality_gate import check_reversal_quality
 from direction_aware_route_optimizer import calculate_route_score, get_route_recommendation
 # ===== END PHASE 3B IMPORTS =====
 
+# ===== PHASE 1 IMPORTS (Dual-Write Verification - Alert + Continue Strategy) =====
+from signal_dual_write_verification import (
+    initialize_dual_write_verifier,
+    verify_signal_dual_write,
+    get_divergence_tracker,
+    send_ops_alert
+)
+# ===== END PHASE 1 IMPORTS =====
+
 # ===== PHASE 4A FUNCTION: Multi-TF Alignment (Scenario 4: 30min + 1h) =====
 def check_multitf_alignment_30_1h(symbol, ohlcv_data):
     """
@@ -115,6 +124,21 @@ try:
 except Exception as e:
     _master_writer_ready = False
     print(f"[ERROR] Signals Master writer init failed: {e}. SIGNALS_MASTER.jsonl will not be updated.", flush=True)
+
+# === PHASE 1: INITIALIZE DUAL-WRITE VERIFIER (Alert + Continue Strategy) ===
+try:
+    _dual_write_verifier = initialize_dual_write_verifier(
+        master_path=os.path.abspath(signals_master_path),
+        audit_path=os.path.abspath("/Users/geniustarigan/.openclaw/workspace/SIGNALS_INDEPENDENT_AUDIT.txt"),
+        debug=VERBOSE_LOGGING
+    )
+    _divergence_tracker = get_divergence_tracker()
+    _dual_write_ready = True
+    print(f"[INIT] Dual-write verifier initialized (Alert+Continue strategy)", flush=True)
+except Exception as e:
+    _dual_write_ready = False
+    _divergence_tracker = None
+    print(f"[WARN] Dual-write verifier init failed: {e}. Verification disabled.", flush=True)
 
 # === INITIALIZE SIGNAL TRACKING (EARLY & ROBUST) - NEW PROJECT-3 FIX ===
 try:
@@ -1085,6 +1109,27 @@ def run_cycle():
                                                 'weighted_score': confidence * score / 100 if score_max else 0
                                             })
                                             
+                                            # PHASE 1: Dual-Write Verification (Alert + Continue strategy)
+                                            dual_write_ok = True
+                                            if _dual_write_ready:
+                                                try:
+                                                    verify_result = verify_signal_dual_write(
+                                                        signal_uuid=signal_uuid,
+                                                        signal_data={'symbol': symbol_val, 'timeframe': '15min', 'entry_price': entry_price},
+                                                        raise_on_failure=False  # Alert+Continue (don't halt)
+                                                    )
+                                                    if verify_result:
+                                                        print(f"[DUAL-WRITE] ✅ Verified {signal_uuid[:12]} to both files | FIRE: {symbol_val} 15min", flush=True)
+                                                    else:
+                                                        dual_write_ok = False
+                                                        _divergence_tracker.record_failure(signal_uuid)
+                                                        alert_msg = f"Dual-write failed: {signal_uuid[:12]} {symbol_val} 15min | MASTER:✓ AUDIT:✗"
+                                                        print(f"[DUAL-WRITE] ❌ {alert_msg}", flush=True)
+                                                        send_ops_alert(alert_msg, "CRITICAL")
+                                                except Exception as e:
+                                                    print(f"[DUAL-WRITE] Warning: Verification error (continuing): {e}", flush=True)
+                                                    dual_write_ok = False
+                                            
                                             # NEW: Trigger executor on signal fire (hybrid model - event-driven)
                                             trigger_executor_on_signal(signal_uuid, symbol_val, '15min')
                                     except Exception as e:
@@ -1555,6 +1600,27 @@ def run_cycle():
                                                 'weighted_score': confidence * score / 100 if score_max else 0
                                             })
                                             
+                                            # PHASE 1: Dual-Write Verification (Alert + Continue strategy)
+                                            dual_write_ok = True
+                                            if _dual_write_ready:
+                                                try:
+                                                    verify_result = verify_signal_dual_write(
+                                                        signal_uuid=signal_uuid,
+                                                        signal_data={'symbol': symbol_val, 'timeframe': '30min', 'entry_price': entry_price},
+                                                        raise_on_failure=False  # Alert+Continue (don't halt)
+                                                    )
+                                                    if verify_result:
+                                                        print(f"[DUAL-WRITE] ✅ Verified {signal_uuid[:12]} to both files | FIRE: {symbol_val} 30min", flush=True)
+                                                    else:
+                                                        dual_write_ok = False
+                                                        _divergence_tracker.record_failure(signal_uuid)
+                                                        alert_msg = f"Dual-write failed: {signal_uuid[:12]} {symbol_val} 30min | MASTER:✓ AUDIT:✗"
+                                                        print(f"[DUAL-WRITE] ❌ {alert_msg}", flush=True)
+                                                        send_ops_alert(alert_msg, "CRITICAL")
+                                                except Exception as e:
+                                                    print(f"[DUAL-WRITE] Warning: Verification error (continuing): {e}", flush=True)
+                                                    dual_write_ok = False
+                                            
                                             # NEW: Trigger executor on signal fire (hybrid model - event-driven)
                                             trigger_executor_on_signal(signal_uuid, symbol_val, '30min')
                                     except Exception as e:
@@ -1992,6 +2058,27 @@ def run_cycle():
                                                 'signal_origin': 'NEW_LIVE',
                                                 'weighted_score': confidence * score / 100 if score_max else 0
                                             })
+                                            
+                                            # PHASE 1: Dual-Write Verification (Alert + Continue strategy)
+                                            dual_write_ok = True
+                                            if _dual_write_ready:
+                                                try:
+                                                    verify_result = verify_signal_dual_write(
+                                                        signal_uuid=signal_uuid,
+                                                        signal_data={'symbol': symbol_val, 'timeframe': '1h', 'entry_price': entry_price},
+                                                        raise_on_failure=False  # Alert+Continue (don't halt)
+                                                    )
+                                                    if verify_result:
+                                                        print(f"[DUAL-WRITE] ✅ Verified {signal_uuid[:12]} to both files | FIRE: {symbol_val} 1h", flush=True)
+                                                    else:
+                                                        dual_write_ok = False
+                                                        _divergence_tracker.record_failure(signal_uuid)
+                                                        alert_msg = f"Dual-write failed: {signal_uuid[:12]} {symbol_val} 1h | MASTER:✓ AUDIT:✗"
+                                                        print(f"[DUAL-WRITE] ❌ {alert_msg}", flush=True)
+                                                        send_ops_alert(alert_msg, "CRITICAL")
+                                                except Exception as e:
+                                                    print(f"[DUAL-WRITE] Warning: Verification error (continuing): {e}", flush=True)
+                                                    dual_write_ok = False
                                             
                                             # NEW: Trigger executor on signal fire (hybrid model - event-driven)
                                             trigger_executor_on_signal(signal_uuid, symbol_val, '1h')
