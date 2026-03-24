@@ -2368,9 +2368,8 @@ def run_cycle():
                                                             logger.signal_rejected(symbol_val, "4h", "Telegram send failed")
                                                     except Exception as e:
                                                         print(f"[ERROR] Exception during Telegram send for {symbol_val} (4h): {e}", flush=True)
-                        else:
-                            pass  # Cooldown not elapsed
-                        
+                                else:
+                                    pass  # Cooldown not elapsed
                         except Exception as e:
                             print(f"[ERROR] Exception in DirectionAwareGatekeeper check for 4h {symbol}: {e}", flush=True)
             except Exception as e:
