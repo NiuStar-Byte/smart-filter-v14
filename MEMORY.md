@@ -4,6 +4,98 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
+## 🎯 **PROJECT-8: AGGRESSIVE WR-BASED FILTER REWEIGHTING - ✅ DEPLOYED (2026-03-24)**
+
+**Status:** 🚀 **LIVE - All 20 filters reweighted based on actual performance data**  
+**Deployment Date:** 2026-03-24 00:45 GMT+7  
+**Data Source:** 1,576 instrumented signals with measured win rates  
+**Timeline:** 24-48 hour validation in progress
+
+### **The Problem (Discovered 2026-03-23 23:59)**
+Three simplified filters from day-before deployment were TOXIC:
+- **Support/Resistance:** 0% WR (0 wins from 3 passes) - LOSING signals
+- **Volatility Model:** 14.8% WR vs 27.3% baseline (-12.6pp) - BAD
+- **ATR Momentum Burst:** 20.4% WR vs 27.3% baseline (-7.0pp) - NEGATIVE
+
+**Root Cause:** Over-simplified filters + wrong thresholds (0.02 too loose for ATR, 2% proximity too loose for S/R)
+
+### **The Insight (User Input 00:13)**
+User: "Don't you think it's best time to assign weights based on filter's WR?"  
+**Correction:** Instead of fixed weights, derive from actual WR performance data. This is more accurate than manual tuning.
+
+### **The Solution: WR-Based Reweighting Formula**
+```
+New Weight = Current Weight × (Filter WR / Baseline WR)
+Baseline WR = 27.3% (1,094 closed TP/SL from 1,576 signals)
+Floor = 0.5 (no zero weights)
+```
+
+### **Reweighting Applied (All 20 Filters)**
+
+**BOOSTS (High Performers):**
+- Momentum: 5.5 → 6.1 (+0.6) | 30.3% WR ⭐ BEST
+- Spread Filter: 5.0 → 5.5 (+0.5) | 29.9% WR ⭐ SECOND
+- HH/LL Trend: 4.8 → 4.9 (+0.1) | 27.9% WR
+
+**HARD CUTS (Poor Performers):**
+- Volatility Model: 3.9 → 2.1 (-1.8) | 14.8% WR
+- ATR Momentum Burst: 4.3 → 3.2 (-1.1) | 20.4% WR
+- VWAP Divergence: 3.5 → 3.3 (-0.2) | 25.8% WR
+
+**FLOOR CUTS (Toxic 0% WR - kept above zero):**
+- Support/Resistance: 5.0 → 0.5 (-4.5) | 0% WR
+- Absorption: 2.7 → 0.5 (-2.2) | 0% WR
+
+**KEEPS (Baseline Performers ~27.3%):**
+- 11 filters unchanged (Fractal, Liquidity Awareness, Volatility Squeeze, etc.)
+- Candle Confirmation: 5.0 (gatekeeper, unchanged)
+
+### **Total Weight Change**
+- Before: 86.5 total weight
+- After: 77.5 total weight (-9.0, -10.4%)
+- High performer weight: 10.5 → 16.5 (+6.0 concentrated in winners)
+- Toxic weight: 9.2 → 1.0 (-8.2 removed from trash)
+
+### **Expected Outcomes**
+```
+Current WR (measured): 27.3%
+Expected after reweight: 29-30% (+2-3pp improvement)
+Signal Count: No change (gatekeeper unchanged)
+Quality: Better (toxic signals minimized)
+```
+
+### **Deployment Details**
+- **Code:** smart_filter.py (both filter_weights_long and filter_weights_short)
+- **Commits:** 6a3faba (submodule), 3333ed4 (main)
+- **Daemon:** Reloaded with new weights at 00:45 GMT+7
+- **Status:** ✅ LIVE and active
+
+### **Monitoring Plan**
+- 1h: Signal count check, error scan
+- 6h: Quality review of first signals
+- 24h: WR comparison vs baseline (target 29-30%)
+- 48h: Final validation & decision point
+
+### **Key Decision Points**
+1. ✅ User approved aggressive reweighting (00:43 GMT+7)
+2. ✅ Deploy immediately without zero weights (user preference)
+3. ✅ Use data-driven formula (1,576 signals analyzed)
+4. ✅ No manual guessing - let WR drive weights
+
+### **Files for Reference**
+- `AGGRESSIVE_REWEIGHTING_DEPLOYED_2026_03_24.md` - Full deployment summary
+- `AGGRESSIVE_WR_BASED_REWEIGHTING_2026_03_24.md` - Calculation details
+- `TOTAL_WEIGHT_BEFORE_AFTER.md` - Weight comparison
+- `CORRECTED_WEIGHT_PROPOSAL_2026_03_24.md` - Why correction needed (81.5 vs 86.5)
+
+### **Next Steps**
+- Monitor for 24-48 hours
+- If WR improves +2-3pp: Lock in as permanent, proceed to PROJECT-9 (fine-tune remaining 17 filters)
+- If WR doesn't improve: Review individual filter decisions, possible rollback
+- Success metric: Stable signal count + improved WR
+
+---
+
 ## 🔧 **PROJECT-6: DUAL-WRITE PREVENTION & VERIFICATION - 🔄 IN PROGRESS**
 
 **Status:** 🔄 **PHASE 1 IMPLEMENTATION (2026-03-24 to 2026-03-26)**
