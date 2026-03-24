@@ -77,8 +77,9 @@ def analyze_signals(signals):
         closed = tp + sl + timeout
         wr = 100 * tp / closed if closed > 0 else 0
         
-        long_sigs = [s for s in sig_list if s.get('direction') == 'LONG']
-        short_sigs = [s for s in sig_list if s.get('direction') == 'SHORT']
+        # Read from signal_type (actual field in data), not direction
+        long_sigs = [s for s in sig_list if s.get('signal_type') == 'LONG']
+        short_sigs = [s for s in sig_list if s.get('signal_type') == 'SHORT']
         
         return {
             'total': total,
@@ -98,16 +99,18 @@ def analyze_signals(signals):
         tf = s.get('timeframe', 'UNKNOWN')
         timeframes[tf].append(s)
     
-    # Calculate by route
+    # Calculate by route (normalize underscore/space inconsistency)
     routes = defaultdict(list)
     for s in new_phase1_2:
         route = s.get('route', 'UNKNOWN')
+        # Normalize: TREND_CONTINUATION → TREND CONTINUATION (standardize to space format)
+        route = route.replace('_', ' ') if route else 'UNKNOWN'
         routes[route].append(s)
     
-    # Calculate by direction
+    # Calculate by direction (use signal_type, not direction field)
     directions = defaultdict(list)
     for s in new_phase1_2:
-        direction = s.get('direction', 'UNKNOWN')
+        direction = s.get('signal_type', 'UNKNOWN')  # READ FROM signal_type, not direction
         directions[direction].append(s)
     
     # Calculate by regime
