@@ -954,23 +954,33 @@ class SmartFilter:
             print(f"[{self.symbol}] [ERROR] required_for_signal is None in final signal logic!")
             required_for_signal = 0
 
-        # --- NEW: compute filters_ok (filters & gatekeepers only) ---
+        # === PHASE 1: ROUTE CALCULATION (must come before filters_ok) ===
+        route, reversal_side = self.explicit_route_gate()
+        display_route = route if route not in ["?", "NONE", None] else "NO ROUTE"
+        
+        # --- NEW: compute filters_ok (filters & gatekeepers + PHASE 1 route veto) ---
         # Keep SuperGK out of this decision so main.py performs the canonical SuperGK check.
         score_check = score >= (self.min_score if isinstance(self.min_score, (int, float)) else 0)
+        
+        # === PHASE 1: ROUTE-BASED GATEKEEPER - Integrated into filters_ok ===
+        route_veto_pass = route not in ["NONE", "AMBIGUOUS"]  # Veto toxic routes
+        
         filters_ok = (
             direction in ["LONG", "SHORT"]
             and score_check
             and (passes >= required_for_signal)
             and soft_passed  # Soft gatekeepers MUST pass too (e.g., Candle Confirmation)
+            and route_veto_pass  # PHASE 1: Block NONE/AMBIGUOUS routes
         )
-        print(f"[CRITICAL-FILTERS_OK] {self.symbol}: direction={direction} | score={score} >= min_score={self.min_score}? {score_check} | passes={passes}>={required_for_signal}? {passes >= required_for_signal} | soft_passed={soft_passed} → filters_ok={filters_ok}", flush=True)
+        
+        veto_status = "✓" if route_veto_pass else f"❌ VETO({route})"
+        print(f"[CRITICAL-FILTERS_OK] {self.symbol}: direction={direction} | score={score}>={self.min_score}? {score_check} | passes={passes}>={required_for_signal}? {passes >= required_for_signal} | soft_passed={soft_passed} | route_veto={veto_status} → filters_ok={filters_ok}", flush=True)
         
         # DEBUG: Log why filters_ok might be False
         if not filters_ok:
-            print(f"[{self.symbol}] [FILTERS_OK_DEBUG] direction={direction} ({direction in ['LONG', 'SHORT']}) | "
-                  f"score={score}>={self.min_score}? ({score >= (self.min_score if isinstance(self.min_score, (int, float)) else 0)}) | "
-                  f"passes={passes}>={required_for_signal}? ({passes >= required_for_signal}) | "
-                  f"soft_passed={soft_passed}", flush=True)
+            print(f"[{self.symbol}] [FILTERS_OK_DEBUG] direction={direction in ['LONG', 'SHORT']} | "
+                  f"score_ok={score_check} | passes_ok={passes >= required_for_signal} | "
+                  f"soft_gk_ok={soft_passed} | route_veto_ok={route_veto_pass}({route})", flush=True)
 
         # Keep valid_signal for backwards compatibility but do NOT include super_gk_ok here.
         # main.py will compute the final valid_signal by combining filters_ok + super_gk_aligned(...)
@@ -982,16 +992,6 @@ class SmartFilter:
         except Exception:
             price = None
         price_str = f"{price:.6f}" if price is not None else "N/A"
-
-        route, reversal_side = self.explicit_route_gate()
-        display_route = route if route not in ["?", "NONE", None] else "NO ROUTE"
-
-        # === PHASE 1: ROUTE-BASED GATEKEEPER (2026-03-24) ===
-        # Veto signals with toxic routes: NONE (13.3% WR) and AMBIGUOUS (20.8% WR)
-        if valid_signal and route in ["NONE", "AMBIGUOUS"]:
-            valid_signal = False
-            if DEBUG_FILTERS:
-                print(f"[{self.symbol}] 🚫 ROUTE VETO: route='{route}' (13.3-20.8% WR, below baseline 30.51%)")
 
         signal_type = direction if valid_signal else None
         score_max = len(non_gk_filters)

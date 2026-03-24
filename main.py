@@ -672,6 +672,12 @@ def run_cycle():
             df1h = ohlcv_data.get("1h")
             df4h = ohlcv_data.get("4h")  # PHASE 2 ADD
             
+            # DEBUG: Log TF4h fetch status (PHASE 2 - FIX TF4h not firing)
+            if df4h is None:
+                print(f"[DEBUG-TF4h] {symbol}: df4h is NONE - data not available from API", flush=True)
+            else:
+                print(f"[DEBUG-TF4h] {symbol}: df4h loaded - {len(df4h)} candles", flush=True)
+            
             # Calculate early breakout only for TFs with data
             early_breakout_15m = early_breakout(df15, lookback=3) if df15 is not None else None
             early_breakout_30m = early_breakout(df30, lookback=3) if df30 is not None else None
@@ -2104,12 +2110,19 @@ def run_cycle():
                 key4h = f"{symbol}_4h"
                 if df4h is None or df4h.empty:
                     res4h = None
+                    if df4h is None:
+                        print(f"[4h-SKIP] {symbol}: df4h=None (no data)", flush=True)
+                    else:
+                        print(f"[4h-SKIP] {symbol}: df4h empty", flush=True)
                 else:
+                    print(f"[4h-ANALYZE] {symbol}: Initializing SmartFilter for 4h ({len(df4h)} candles)", flush=True)
                     sf4h = SmartFilter(symbol, df4h, tf="4h")
                     regime4h = sf4h._market_regime()
                     res4h = sf4h.analyze()
+                    print(f"[4h-RESULT] {symbol}: filters_ok={res4h.get('filters_ok')}, score={res4h.get('score')}, route={res4h.get('Route')}", flush=True)
 
                 if isinstance(res4h, dict) and res4h.get("filters_ok") is True:
+                    print(f"[4h-FIRE] {symbol}: Passed filters_ok, proceeding to gate checks", flush=True)
                     score_4h = res4h.get("score")
                     
                     if score_4h is None or score_4h < MIN_SCORE:
