@@ -37,18 +37,17 @@ def load_signals():
     return signals
 
 def separate_foundation_and_new(signals):
-    """Split signals into FOUNDATION (locked) and NEW_LIVE (post Phase 1&2 deployment)"""
+    """Split signals into FOUNDATION (locked) and NEW_LIVE"""
     foundation = []
     new = []
     
     for sig in signals:
         origin = sig.get('signal_origin', 'UNKNOWN')
-        fired_time = sig.get('fired_time_utc', '')
         
         if origin == 'FOUNDATION':
             foundation.append(sig)
-        elif origin == 'NEW_LIVE' and fired_time >= PHASE1_2_START_TIME:
-            # Only count NEW_LIVE signals after Phase 1&2 deployment
+        elif origin == 'NEW_LIVE':
+            # Count all NEW_LIVE signals (fired during Phase 1&2 deployment window onwards)
             new.append(sig)
     
     return foundation, new
