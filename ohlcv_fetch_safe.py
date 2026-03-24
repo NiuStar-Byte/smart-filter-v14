@@ -44,10 +44,12 @@ def safe_fetch_ohlcv_by_tf(symbol: str, get_ohlcv_func) -> Dict[str, Optional[pd
         "15min": None,
         "30min": None,
         "1h": None,
+        "4h": None,  # PHASE 2 ADD
         "fetch_errors": {
             "15min": None,
             "30min": None,
-            "1h": None
+            "1h": None,
+            "4h": None  # PHASE 2 ADD
         }
     }
     
@@ -83,6 +85,17 @@ def safe_fetch_ohlcv_by_tf(symbol: str, get_ohlcv_func) -> Dict[str, Optional[pd
     except Exception as e:
         result["fetch_errors"]["1h"] = f"{type(e).__name__}: {str(e)[:50]}"
         print(f"[OHLCV] 1h fetch failed for {symbol}: {result['fetch_errors']['1h']}", flush=True)
+    
+    # Fetch 4h (PHASE 2 ADD)
+    try:
+        df4h = get_ohlcv_func(symbol, interval="4h", limit=OHLCV_LIMIT)
+        if df4h is not None and not df4h.empty:
+            result["4h"] = df4h
+        else:
+            result["fetch_errors"]["4h"] = "Empty or None"
+    except Exception as e:
+        result["fetch_errors"]["4h"] = f"{type(e).__name__}: {str(e)[:50]}"
+        print(f"[OHLCV] 4h fetch failed for {symbol}: {result['fetch_errors']['4h']}", flush=True)
     
     return result
 
@@ -122,8 +135,9 @@ def should_skip_symbol(ohlcv_result: Dict) -> Tuple[bool, str]:
     has_15m = ohlcv_result.get("15min") is not None
     has_30m = ohlcv_result.get("30min") is not None
     has_1h = ohlcv_result.get("1h") is not None
+    has_4h = ohlcv_result.get("4h") is not None  # PHASE 2 ADD
     
-    if not (has_15m or has_30m or has_1h):
+    if not (has_15m or has_30m or has_1h or has_4h):
         return (True, "ALL timeframes missing data")
     
     return (False, "")
