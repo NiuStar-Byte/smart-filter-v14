@@ -13,6 +13,7 @@ from pathlib import Path
 # Hardcoded paths
 SIGNALS_MASTER = Path("/Users/geniustarigan/.openclaw/workspace/SIGNALS_MASTER.jsonl")
 FOUNDATION_CUTOFF = "2026-03-19T23:59:59"  # Last FOUNDATION signal
+PHASE1_2_START_TIME = "2026-03-24T18:52:00"  # When Phase 1 & 2 were deployed (fixes applied)
 
 def load_signals():
     """Load all signals from SIGNALS_MASTER.jsonl"""
@@ -36,15 +37,18 @@ def load_signals():
     return signals
 
 def separate_foundation_and_new(signals):
-    """Split signals into FOUNDATION (locked) and NEW_LIVE"""
+    """Split signals into FOUNDATION (locked) and NEW_LIVE (post Phase 1&2 deployment)"""
     foundation = []
     new = []
     
     for sig in signals:
         origin = sig.get('signal_origin', 'UNKNOWN')
+        fired_time = sig.get('fired_time_utc', '')
+        
         if origin == 'FOUNDATION':
             foundation.append(sig)
-        elif origin == 'NEW_LIVE':
+        elif origin == 'NEW_LIVE' and fired_time >= PHASE1_2_START_TIME:
+            # Only count NEW_LIVE signals after Phase 1&2 deployment
             new.append(sig)
     
     return foundation, new
@@ -116,7 +120,15 @@ def main():
     print("=" * 80)
     print(f"Timestamp: {datetime.now().isoformat()} (local)")
     print(f"Data source: {SIGNALS_MASTER}")
+    print(f"Phase 1&2 Deployment: {PHASE1_2_START_TIME} GMT+7")
     print()
+    print("📋 CONFIGURATION NOTES:")
+    print("  • RR Strategy: Market-driven S&R with 2.5:1 cap (fallback 1.25:1 ATR)")
+    print("  • TF4h RR: Same as 15min/30min/1h (market-driven)")
+    print("  • TF4h Timeout: 20 hours (5 bars × 4h = 1200 min) - Updated 2026-03-25")
+    print("  • Tier-based Timeout: 4h has 12h-24h windows (longer than 1h's 4h-6h)")
+    print()
+    
     
     # SECTION 1
     print("📊 SECTION 1: FOUNDATION BASELINE (LOCKED - Feb 27 to Mar 19)")
@@ -126,7 +138,7 @@ def main():
     print()
     
     # SECTION 2
-    print("✅ SECTION 2: NEW SIGNALS (Phase 1 & 2 Live)")
+    print(f"✅ SECTION 2: NEW SIGNALS (Phase 1 & 2 Live - {PHASE1_2_START_TIME} onwards)")
     print("-" * 80)
     print(f"Total Signals: {len(new)} | Closed: {n_closed} | WR: {n_wr:.1f}%")
     print(f"TP: {n_tp} | SL: {n_sl} | Timeout: {n_timeout} | Open: {len(new) - n_closed}")
