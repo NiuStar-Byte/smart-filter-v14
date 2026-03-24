@@ -197,7 +197,7 @@ TOKENS = [
     "BLUR-USDT", "LDO-USDT", "CRV-USDT", "CVX-USDT", "YFI-USDT", "ENS-USDT", "BONK-USDT"
 ]
 
-COOLDOWN = {"15min": 120, "30min": 240, "1h": 600}
+COOLDOWN = {"15min": 120, "30min": 240, "1h": 600, "4h": 1200}  # 4h: 20 min cooldown
 last_sent = {}
 
 # === LOGGING CONTROL ===
@@ -284,7 +284,8 @@ OHLCV_LIMIT = 250  # Optimized: covers EMA200 + safety buffer, reduces API calls
 EMA_CONFIG = {
     "15min": 50,   # 50 × 15min = 750min = 12.5h (responsive, short-term)
     "30min": 100,  # 100 × 30min = 3000min = 50h = 2d (balanced, medium-term)
-    "1h": 200      # 200 × 60min = 12000min = 8d (standard, long-term)
+    "1h": 200,     # 200 × 60min = 12000min = 8d (standard, long-term)
+    "4h": 200      # 200 × 4h = 800h = 33d (macro, long-term) - PHASE 2 ADD
 }
 
 # cycle sleep can be controlled via environment variable (seconds)
@@ -558,7 +559,8 @@ import json
 DEDUP_WINDOWS = {
     "15min": 1200,   # 20 minutes in seconds
     "30min": 2400,   # 40 minutes in seconds
-    "1h": 4800       # 80 minutes in seconds
+    "1h": 4800,      # 80 minutes in seconds
+    "4h": 14400      # 240 minutes = 4 hours in seconds (PHASE 2 ADD)
 }
 
 # === DEDUP CACHE (loaded once per cycle, not 603 times!) ===
@@ -668,11 +670,13 @@ def run_cycle():
             df15 = ohlcv_data.get("15min")
             df30 = ohlcv_data.get("30min")
             df1h = ohlcv_data.get("1h")
+            df4h = ohlcv_data.get("4h")  # PHASE 2 ADD
             
             # Calculate early breakout only for TFs with data
             early_breakout_15m = early_breakout(df15, lookback=3) if df15 is not None else None
             early_breakout_30m = early_breakout(df30, lookback=3) if df30 is not None else None
             early_breakout_1h = early_breakout(df1h, lookback=3) if df1h is not None else None
+            early_breakout_4h = early_breakout(df4h, lookback=3) if df4h is not None else None  # PHASE 2 ADD
 
             # --- 15min TF block ---
             try:
@@ -2093,6 +2097,284 @@ def run_cycle():
                     pass  # Silent - not a signal
             except Exception as e:
                 print(f"[ERROR] Exception in processing 1h for {symbol}: {e}", flush=True)
+                traceback.print_exc()
+
+            # --- 4h TF block (PHASE 2 ADD - mirror of 15min/30min/1h with identical safe flow) ---
+            try:
+                key4h = f"{symbol}_4h"
+                if df4h is None or df4h.empty:
+                    res4h = None
+                else:
+                    sf4h = SmartFilter(symbol, df4h, tf="4h")
+                    regime4h = sf4h._market_regime()
+                    res4h = sf4h.analyze()
+
+                if isinstance(res4h, dict) and res4h.get("filters_ok") is True:
+                    score_4h = res4h.get("score")
+                    
+                    if score_4h is None or score_4h < MIN_SCORE:
+                        print(f"[SCORE_GATE] 4h {symbol} REJECTED: score={score_4h} < MIN_SCORE={MIN_SCORE}", flush=True)
+                        pass  # Continue to next TF
+                    else:
+                        signal_type = res4h.get("bias", "UNKNOWN")
+                        try:
+                            gates_passed, gate_results = DirectionAwareGatekeeper.check_all_gates(
+                                df4h,
+                                direction=signal_type,
+                                regime=regime4h,
+                                debug=False
+                            )
+                            
+                            if not gates_passed:
+                                failed_gates = [k for k, v in gate_results.items() if not v]
+                                print(f"[PHASE2-FIXED] 4h {symbol} {signal_type} REJECTED - failed: {failed_gates}", flush=True)
+                                pass  # Continue
+                            else:
+                                print(f"[PHASE2-FIXED] 4h {symbol} {signal_type} ✓ ALL GATES PASS ({regime4h})", flush=True)
+                                
+                                last4h = last_sent.get(key4h, 0)
+                                if now - last4h >= COOLDOWN["4h"]:
+                                    numbered_signal = f"{idx}.D"
+                                    
+                                    log_orderbook_and_density(symbol)
+                                    try:
+                                        orderbook_result = get_order_wall_delta(symbol) or {}
+                                    except Exception as e:
+                                        print(f"[ERROR] get_order_wall_delta failed for {symbol}: {e}", flush=True)
+                                        orderbook_result = {"buy_wall": 0, "sell_wall": 0, "wall_delta": 0, "midprice": None}
+                                    try:
+                                        density_result = get_resting_order_density(symbol) or {}
+                                    except Exception as e:
+                                        print(f"[ERROR] get_resting_order_density failed for {symbol}: {e}", flush=True)
+                                        density_result = {"bid_density": 0.0, "ask_density": 0.0, "bid_levels": 0, "ask_levels": 0, "midprice": None}
+                                    
+                                    super_gk_ok = True  # Bypass SuperGK
+                                    
+                                    if not super_gk_ok:
+                                        print(f"[BLOCKED] SuperGK not aligned for 4h {symbol}", flush=True)
+                                        continue
+                                    
+                                    print(f"[LOG] Sending 4h alert for {res4h.get('symbol')}", flush=True)
+                                    fired_time_utc = datetime.utcnow()
+                                    
+                                    try:
+                                        entry_price_raw = get_live_entry_price(
+                                            res4h.get("symbol"),
+                                            signal_type,
+                                            tf=res4h.get("tf"),
+                                            slippage=DEFAULT_SLIPPAGE
+                                        ) or res4h.get("price", 0.0)
+                                    except Exception as e:
+                                        print(f"[WARN] get_live_entry_price raised: {e} -- falling back to analyzer price", flush=True)
+                                        entry_price_raw = res4h.get("price", 0.0)
+                                    
+                                    try:
+                                        entry_price = float(entry_price_raw)
+                                    except Exception:
+                                        entry_price = 0.0
+                                    
+                                    # Check 30min+1h alignment for 4h (require 1h+4h consensus)
+                                    alignment_allowed, trend_1h, trend_4h, alignment_reason = check_multitf_alignment_30_1h(symbol, ohlcv_data)
+                                    print(f"[PHASE4A-S4] 4h {symbol}: {alignment_reason}", flush=True)
+                                    
+                                    if not alignment_allowed:
+                                        print(f"[PHASE4A-S4-FILTERED] 4h {symbol} {signal_type}: Rejected by alignment filter", flush=True)
+                                        pass
+                                    else:
+                                        cycle_key = f"{symbol}|4h|{signal_type}"
+                                        if cycle_key in signals_sent_this_cycle:
+                                            print(f"[DEDUP-CYCLE] 4h {symbol} {signal_type}: Already sent in THIS CYCLE. SKIPPING.", flush=True)
+                                            pass
+                                        elif is_duplicate_signal(symbol, "4h", signal_type):
+                                            pass
+                                        else:
+                                            signals_sent_this_cycle.add(cycle_key)
+                                            
+                                            # Extract signal properties
+                                            score = res4h.get("score", 0)
+                                            score_max = res4h.get("score_max", 20)
+                                            confidence = res4h.get("confidence", 0)
+                                            passed_weight = res4h.get("passed_weight", 0)
+                                            total_weight = res4h.get("total_weight", 1)
+                                            Route = res4h.get("route", "UNKNOWN")
+                                            regime = regime4h
+                                            passes = res4h.get("passes", 0)
+                                            gatekeepers_total = res4h.get("gatekeepers_total", 0)
+                                            
+                                            # Calculate TP/SL
+                                            tp_sl = calculate_tp_sl(entry_price, signal_type, "4h")
+                                            tp = tp_sl.get("tp") if isinstance(tp_sl, dict) else 0
+                                            sl = tp_sl.get("sl") if isinstance(tp_sl, dict) else 0
+                                            tp_pct_val = tp_sl.get("tp_pct") if isinstance(tp_sl, dict) else 0
+                                            sl_pct_val = tp_sl.get("sl_pct") if isinstance(tp_sl, dict) else 0
+                                            achieved_rr_value = tp_sl.get("achieved_rr") if isinstance(tp_sl, dict) else 0
+                                            
+                                            symbol_val = res4h.get("symbol", symbol)
+                                            tf_val = "4h"
+                                            
+                                            # Extract filters
+                                            if signal_type == 'LONG':
+                                                results = res4h.get('results_long', {})
+                                            else:
+                                                results = res4h.get('results_short', {})
+                                            
+                                            passed_filters = results.get('passed_filters', [])
+                                            failed_filters = results.get('failed_filters', [])
+                                            passed_filter_count = results.get('passed_filter_count', 0)
+                                            failed_filter_count = results.get('failed_filter_count', 0)
+                                            
+                                            telegram_msg_id = str(uuid_lib.uuid4())[:12]
+                                            
+                                            signal_uuid = create_and_store_signal(
+                                                symbol=symbol_val,
+                                                timeframe=tf_val,
+                                                signal_type=signal_type,
+                                                fired_time_utc=fired_time_utc,
+                                                entry_price=entry_price,
+                                                tp_target=tp,
+                                                sl_target=sl,
+                                                tp_pct=tp_pct_val,
+                                                sl_pct=sl_pct_val,
+                                                achieved_rr=achieved_rr_value,
+                                                fib_ratio=None,
+                                                atr_value=tp_sl.get('atr_value') if isinstance(tp_sl, dict) else None,
+                                                score=score,
+                                                max_score=score_max,
+                                                confidence=confidence,
+                                                route=Route,
+                                                regime=regime,
+                                                passed_gatekeepers=passes,
+                                                max_gatekeepers=gatekeepers_total,
+                                                passed_filters=passed_filters,
+                                                failed_filters=failed_filters,
+                                                passed_filter_count=passed_filter_count,
+                                                failed_filter_count=failed_filter_count,
+                                                telegram_msg_id=telegram_msg_id
+                                            )
+                                            
+                                            if not signal_uuid:
+                                                print(f"[WARN] Signal {symbol_val} (4h) REJECTED - duplicate within cooldown. NOT sending Telegram alert.", flush=True)
+                                                pass
+                                            else:
+                                                if os.getenv("DRY_RUN", "false").lower() != "true":
+                                                    try:
+                                                        signal_tier = get_signal_tier(tf_val, signal_type, Route, regime)
+                                                        print(f"[TIER] 4h {symbol_val}: {signal_tier}", flush=True)
+                                                        
+                                                        print(f"[DEBUG] 4h: Calling send_telegram_alert for {symbol_val}", flush=True)
+                                                        sent_ok = send_telegram_alert(
+                                                            numbered_signal=numbered_signal,
+                                                            symbol=symbol_val,
+                                                            signal_type=signal_type,
+                                                            Route=Route,
+                                                            price=entry_price,
+                                                            tf=tf_val,
+                                                            score=score,
+                                                            passed=passes,
+                                                            confidence=confidence,
+                                                            weighted=passed_weight,
+                                                            score_max=score_max,
+                                                            gatekeepers_total=gatekeepers_total,
+                                                            total_weight=total_weight,
+                                                            reversal_side=res4h.get("reversal_side"),
+                                                            regime=regime,
+                                                            early_breakout_15m=early_breakout_4h,
+                                                            tp=tp,
+                                                            sl=sl,
+                                                            tp_sl=tp_sl,
+                                                            chosen_ratio=None,
+                                                            achieved_rr=achieved_rr_value,
+                                                            tier=signal_tier
+                                                        )
+                                                        print(f"[DEBUG] 4h: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
+                                                        if sent_ok:
+                                                            last_sent[key4h] = now
+                                                            logger.signal_sent(symbol_val, "4h", signal_uuid[:12])
+                                                            
+                                                            try:
+                                                                _sent_signal_tracker.log_sent_signal(
+                                                                    signal_uuid=signal_uuid,
+                                                                    symbol=symbol_val,
+                                                                    timeframe="4h",
+                                                                    signal_type=signal_type,
+                                                                    entry_price=entry_price,
+                                                                    tp_target=tp,
+                                                                    sl_target=sl,
+                                                                    tp_pct=tp_pct_val,
+                                                                    sl_pct=sl_pct_val,
+                                                                    achieved_rr=achieved_rr_value,
+                                                                    score=score,
+                                                                    max_score=score_max,
+                                                                    confidence=confidence,
+                                                                    route=Route,
+                                                                    regime=regime,
+                                                                    telegram_msg_id=signal_uuid[:12],
+                                                                    fired_time_utc=fired_time_utc.isoformat(),
+                                                                    passed_filters=passed_filters,
+                                                                    failed_filters=failed_filters,
+                                                                    passed_filter_count=passed_filter_count,
+                                                                    failed_filter_count=failed_filter_count
+                                                                )
+                                                                if _master_writer_ready:
+                                                                    _signals_master_writer.write_signal({
+                                                                        'signal_uuid': signal_uuid,
+                                                                        'symbol': symbol_val,
+                                                                        'timeframe': '4h',
+                                                                        'signal_type': signal_type,
+                                                                        'entry_price': entry_price,
+                                                                        'tp_target': tp,
+                                                                        'sl_target': sl,
+                                                                        'tp_pct': tp_pct_val,
+                                                                        'sl_pct': sl_pct_val,
+                                                                        'achieved_rr': achieved_rr_value,
+                                                                        'score': score,
+                                                                        'max_score': score_max,
+                                                                        'confidence': confidence,
+                                                                        'route': Route,
+                                                                        'regime': regime,
+                                                                        'telegram_msg_id': signal_uuid[:12],
+                                                                        'fired_time_utc': fired_time_utc.isoformat(),
+                                                                        'sent_time_utc': datetime.utcnow().isoformat(),
+                                                                        'passed_filters': passed_filters,
+                                                                        'failed_filters': failed_filters,
+                                                                        'passed_filter_count': passed_filter_count,
+                                                                        'failed_filter_count': failed_filter_count,
+                                                                        'status': 'OPEN',
+                                                                        'signal_origin': 'NEW_LIVE',
+                                                                        'weighted_score': confidence * score / 100 if score_max else 0
+                                                                    })
+                                                                    
+                                                                    if _dual_write_ready:
+                                                                        try:
+                                                                            verify_result = verify_signal_dual_write(
+                                                                                signal_uuid=signal_uuid,
+                                                                                signal_data={'symbol': symbol_val, 'timeframe': '4h', 'entry_price': entry_price},
+                                                                                raise_on_failure=False
+                                                                            )
+                                                                            if verify_result:
+                                                                                print(f"[DUAL-WRITE] ✅ Verified {signal_uuid[:12]} 4h | FIRE: {symbol_val}", flush=True)
+                                                                            else:
+                                                                                _divergence_tracker.record_failure(signal_uuid)
+                                                                                alert_msg = f"Dual-write failed: {signal_uuid[:12]} {symbol_val} 4h"
+                                                                                print(f"[DUAL-WRITE] ❌ {alert_msg}", flush=True)
+                                                                                send_ops_alert(alert_msg, "CRITICAL")
+                                                                        except Exception as e:
+                                                                            print(f"[DUAL-WRITE] Warning: Verification error (continuing): {e}", flush=True)
+                                                                    
+                                                                    trigger_executor_on_signal(signal_uuid, symbol_val, '4h')
+                                                            except Exception as e:
+                                                                print(f"[ERROR] Failed to log PEC signal for {symbol_val}: {e}", flush=True)
+                                                        else:
+                                                            logger.signal_rejected(symbol_val, "4h", "Telegram send failed")
+                                                    except Exception as e:
+                                                        print(f"[ERROR] Exception during Telegram send for {symbol_val} (4h): {e}", flush=True)
+                        else:
+                            pass  # Cooldown not elapsed
+                        
+                        except Exception as e:
+                            print(f"[ERROR] Exception in DirectionAwareGatekeeper check for 4h {symbol}: {e}", flush=True)
+            except Exception as e:
+                print(f"[ERROR] Exception in processing 4h for {symbol}: {e}", flush=True)
                 traceback.print_exc()
 
         except Exception as e:
