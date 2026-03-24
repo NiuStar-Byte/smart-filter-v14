@@ -21,7 +21,7 @@ from datetime import datetime
 # Configuration
 SIGNALS_FILE = '/Users/geniustarigan/.openclaw/workspace/SIGNALS_MASTER.jsonl'
 FOUNDATION_BOUNDARY = '2026-03-19T18:03:17'
-PHASE1_DEPLOY_UTC = '2026-03-24T11:52:00'  # 2026-03-24 18:52 GMT+7 (when Phase 1 deployed)
+PHASE1_DEPLOY_UTC = '2026-03-24T17:00:00'  # Fresh tracking start (2026-03-25 00:00 GMT+7)
 
 # FOUNDATION BASELINE - from PEC_ENHANCED_REPORT.txt (locked, immutable)
 FOUNDATION_LOCKED = {
