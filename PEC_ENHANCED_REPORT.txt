@@ -13,15 +13,15 @@ LONG WR: 28.6% | SHORT WR: 46.4% | P&L: $-4,427.61
 ========================================================================================================================================================================================================
 📊 SECTION 1: TOTAL SIGNALS (Foundation + New)
 ========================================================================================================================================================================================================
-Total Signals Loaded: 5784
+Total Signals Loaded: 5825
 
 SIGNAL BREAKDOWN (All signals shown for audit trail):
   INCLUDED IN METRICS (TP/SL/TIMEOUT/OPEN):
-    • TP_HIT: 933
-    • SL_HIT: 2472
-    • TIMEOUT: 1279
-    • OPEN: 171
-    Subtotal (Counted in WR & P&L): 4855
+    • TP_HIT: 938
+    • SL_HIT: 2491
+    • TIMEOUT: 1291
+    • OPEN: 176
+    Subtotal (Counted in WR & P&L): 4896
 
   EXCLUDED FROM METRICS (Not counted in WR or P&L):
     • REJECTED_NOT_SENT_TELEGRAM: 549 (never sent to traders)
@@ -29,32 +29,32 @@ SIGNAL BREAKDOWN (All signals shown for audit trail):
     Subtotal (Excluded from all calculations): 929
 
 BREAKDOWN VERIFICATION:
-  Included (4855) + Excluded (929) = Total (5784)
-  ✓ Verified: All 5784 signals in audit trail
+  Included (4896) + Excluded (929) = Total (5825)
+  ✓ Verified: All 5825 signals in audit trail
 
 CLOSED TRADES ANALYSIS (Backtest Signals Only):
-  Closed Trades (Clean Data): 4684
-    • TP_HIT: 933
-    • SL_HIT: 2472
-    • TimeOut: 1279
-      - TimeOut Win: 515 (approximate)
-      - TimeOut Loss: 764 (approximate)
+  Closed Trades (Clean Data): 4720
+    • TP_HIT: 938
+    • SL_HIT: 2491
+    • TimeOut: 1291
+      - TimeOut Win: 518 (approximate)
+      - TimeOut Loss: 773 (approximate)
 
-Overall Win Rate: 30.91%
-Calculation: (933 TP + 515 TIMEOUT_WIN) / 4684 Closed = 1448 / 4684 = 30.91%
+Overall Win Rate: 30.85%
+Calculation: (938 TP + 518 TIMEOUT_WIN) / 4720 Closed = 1456 / 4720 = 30.85%
 
-Total P&L (Clean Data): $-24,769.37
+Total P&L (Clean Data): $-24,929.95
 Avg P&L per Signal: $-4.28
-Avg P&L per Closed Trade: $-5.29
+Avg P&L per Closed Trade: $-5.28
 
 P&L BREAKDOWN (STALE_TIMEOUT completely excluded):
 
   INCLUDED IN TOTAL P&L (Counted in metrics):
-    • TP_HIT:      +20,454.16
-    • SL_HIT:      -37,755.10
-    • TIMEOUT:      -7,468.43
+    • TP_HIT:      +20,511.39
+    • SL_HIT:      -37,937.33
+    • TIMEOUT:      -7,504.02
     • OPEN:             +0.00 (unrealized)
-    Subtotal (Backtest P&L):   -24,769.37
+    Subtotal (Backtest P&L):   -24,929.95
 
   EXCLUDED FROM TOTAL P&L (Not counted in any metric):
     • REJECTED:         +0.00 (never sent to traders, excluded from WR)
@@ -62,13 +62,13 @@ P&L BREAKDOWN (STALE_TIMEOUT completely excluded):
     Subtotal (Excluded P&L):        +0.00
 
   VALIDATION:
-    Included in Total P&L:   -24,769.37
-    Total P&L Reported:      -24,769.37
+    Included in Total P&L:   -24,929.95
+    Total P&L Reported:      -24,929.95
     ✓ Verified: P&L matches Total P&L
 
 Average P&L per Count:
-  Avg P&L TP per Count TP: $+21.92
-  Avg P&L SL per Count SL: $-15.27
+  Avg P&L TP per Count TP: $+21.87
+  Avg P&L SL per Count SL: $-15.23
 
 Risk:Reward (RR) Metrics:
   Highest RR: 6.3
@@ -83,15 +83,15 @@ Actual Max Timeout Duration by Timeframe:
 ========================================================================================================================================================================================================
 📊 SECTION 2: TOTAL SIGNALS (NEW ONLY - Mar 21+ onwards)
 ========================================================================================================================================================================================================
-Total Signals Loaded (NEW ONLY): 3560
+Total Signals Loaded (NEW ONLY): 3601
 
 SIGNAL BREAKDOWN (All signals shown for audit trail):
   INCLUDED IN METRICS (TP/SL/TIMEOUT/OPEN):
-    • TP_HIT: 585
-    • SL_HIT: 1726
-    • TIMEOUT: 1034
-    • OPEN: 149
-    Subtotal (Counted in WR & P&L): 3494
+    • TP_HIT: 590
+    • SL_HIT: 1745
+    • TIMEOUT: 1046
+    • OPEN: 154
+    Subtotal (Counted in WR & P&L): 3535
 
   EXCLUDED FROM METRICS (Not counted in WR or P&L):
     • REJECTED_NOT_SENT_TELEGRAM: 0 (never sent to traders)
@@ -99,32 +99,32 @@ SIGNAL BREAKDOWN (All signals shown for audit trail):
     Subtotal (Excluded from all calculations): 66
 
 BREAKDOWN VERIFICATION:
-  Included (3494) + Excluded (66) = Total (3560)
-  ✓ Verified: All 3560 signals in audit trail
+  Included (3535) + Excluded (66) = Total (3601)
+  ✓ Verified: All 3601 signals in audit trail
 
 CLOSED TRADES ANALYSIS (Backtest Signals Only):
-  Closed Trades (Clean Data): 3345
-    • TP_HIT: 585
-    • SL_HIT: 1726
-    • TimeOut: 1034
-      - TimeOut Win: 425 (approximate)
-      - TimeOut Loss: 609 (approximate)
+  Closed Trades (Clean Data): 3381
+    • TP_HIT: 590
+    • SL_HIT: 1745
+    • TimeOut: 1046
+      - TimeOut Win: 428 (approximate)
+      - TimeOut Loss: 618 (approximate)
 
-Overall Win Rate: 30.19%
-Calculation: (585 TP + 425 TIMEOUT_WIN) / 3345 Closed = 1010 / 3345 = 30.19%
+Overall Win Rate: 30.11%
+Calculation: (590 TP + 428 TIMEOUT_WIN) / 3381 Closed = 1018 / 3381 = 30.11%
 
-Total P&L (Clean Data): $-20,341.76
-Avg P&L per Signal: $-5.71
-Avg P&L per Closed Trade: $-6.08
+Total P&L (Clean Data): $-20,502.34
+Avg P&L per Signal: $-5.69
+Avg P&L per Closed Trade: $-6.06
 
 P&L BREAKDOWN (STALE_TIMEOUT completely excluded):
 
   INCLUDED IN TOTAL P&L (Counted in metrics):
-    • TP_HIT:       +8,024.92
-    • SL_HIT:      -23,109.53
-    • TIMEOUT:      -5,257.15
+    • TP_HIT:       +8,082.15
+    • SL_HIT:      -23,291.75
+    • TIMEOUT:      -5,292.74
     • OPEN:             +0.00 (unrealized)
-    Subtotal (Backtest P&L):   -20,341.76
+    Subtotal (Backtest P&L):   -20,502.34
 
   EXCLUDED FROM TOTAL P&L (Not counted in any metric):
     • REJECTED:         +0.00 (never sent to traders, excluded from WR)
@@ -132,17 +132,17 @@ P&L BREAKDOWN (STALE_TIMEOUT completely excluded):
     Subtotal (Excluded P&L):        +0.00
 
   VALIDATION:
-    Included in Total P&L:   -20,341.76
-    Total P&L Reported:      -20,341.76
+    Included in Total P&L:   -20,502.34
+    Total P&L Reported:      -20,502.34
     ✓ Verified: P&L matches Total P&L
 
 Average P&L per Count:
-  Avg P&L TP per Count TP: $+13.72
-  Avg P&L SL per Count SL: $-13.39
+  Avg P&L TP per Count TP: $+13.70
+  Avg P&L SL per Count SL: $-13.35
 
 Risk:Reward (RR) Metrics:
   Highest RR: 6.3
-  Avg RR: 1.31
+  Avg RR: 1.3
   Lowest RR: 0.03
 
 Actual Max Timeout Duration by Timeframe:
@@ -159,51 +159,51 @@ Actual Max Timeout Duration by Timeframe:
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 TimeFrame    | Total  | TP   | SL   | TIMEOUT  | Closed  | Open   | WR       | P&L        | Avg TP Duration   | Avg SL Duration  
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-15min        | 2344   | 450  | 1196 | 609      | 2255    | 89     |   29.3% | $-11755.53 | 56m               | 43m              
-1h           | 775    | 143  | 343  | 258      | 744     | 31     |   36.4% | $-2945.46 | 2h 8m             | 1h 38m           
-30min        | 1736   | 340  | 933  | 411      | 1684    | 52     |   30.6% | $-10068.39 | 1h 26m            | 1h 18m           
+15min        | 2370   | 454  | 1206 | 617      | 2277    | 93     |   29.2% | $-11827.39 | 56m               | 43m              
+1h           | 778    | 144  | 345  | 260      | 749     | 29     |   36.6% | $-2956.57 | 2h 7m             | 1h 38m           
+30min        | 1748   | 340  | 940  | 413      | 1693    | 55     |   30.5% | $-10145.99 | 1h 26m            | 1h 17m           
 
 📈 BY DIRECTION
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 Direction    | Total  | TP   | SL   | TIMEOUT  | Closed  | Open   | WR       | P&L        | Avg TP Duration   | Avg SL Duration  
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-LONG         | 2238   | 472  | 1248 | 482      | 2202    | 36     |   29.1% | $-11535.55 | 1h 20m            | 1h 9m            
-SHORT        | 2617   | 461  | 1224 | 796      | 2481    | 136    |   32.5% | $-13233.82 | 1h 16m            | 58m              
+LONG         | 2259   | 475  | 1254 | 482      | 2211    | 48     |   29.1% | $-11550.89 | 1h 19m            | 1h 9m            
+SHORT        | 2637   | 463  | 1237 | 808      | 2508    | 129    |   32.4% | $-13379.06 | 1h 16m            | 58m              
 
 🛣️  BY ROUTE
 ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 Route                | Total  | TP   | SL   | TIMEOUT  | Closed  | Open   | WR       | P&L        | Avg TP Duration   | Avg SL Duration  
 ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 AMBIGUOUS            | 100    | 19   | 64   | 16       | 99      | 1      |   27.3% | $ -590.00 | 1h 23m            | 1h 38m           
-NONE                 | 155    | 24   | 80   | 45       | 149     | 6      |   21.5% | $-1378.60 | 48m               | 1h 18m           
+NONE                 | 155    | 24   | 81   | 45       | 150     | 5      |   21.3% | $-1389.33 | 48m               | 1h 18m           
 REVERSAL             | 199    | 44   | 96   | 32       | 172     | 27     |   33.7% | $ -192.53 | 55m               | 1h 34m           
-TREND CONTINUATION   | 4074   | 785  | 2048 | 1108     | 3941    | 133    |   31.3% | $-20199.43 | 1h 22m            | 1h 2m            
-TREND_CONTINUATION   | 327    | 61   | 184  | 77       | 322     | 5      |   30.7% | $-2408.81 | 52m               | 43m              
+TREND CONTINUATION   | 4112   | 789  | 2065 | 1120     | 3974    | 138    |   31.2% | $-20339.18 | 1h 22m            | 1h 2m            
+TREND_CONTINUATION   | 330    | 62   | 185  | 77       | 324     | 6      |   30.9% | $-2418.92 | 51m               | 43m              
 
 🌊 BY REGIME
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 Regime       | Total  | TP   | SL   | TIMEOUT  | Closed  | Open   | WR       | P&L        | Avg TP Duration   | Avg SL Duration  
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-BEAR         | 2550   | 483  | 1209 | 741      | 2433    | 117    |   32.9% | $-11527.22 | 1h 22m            | 1h 0m            
-BULL         | 1994   | 394  | 1112 | 435      | 1941    | 53     |   28.4% | $-12795.83 | 1h 16m            | 1h 7m            
+BEAR         | 2570   | 485  | 1222 | 753      | 2460    | 110    |   32.8% | $-11672.46 | 1h 22m            | 1h 0m            
+BULL         | 2015   | 397  | 1118 | 435      | 1950    | 65     |   28.4% | $-12811.16 | 1h 16m            | 1h 7m            
 RANGE        | 311    | 56   | 151  | 102      | 309     | 2      |   31.1% | $ -446.33 | 58m               | 1h 8m            
 
 💰 BY SYMBOL GROUP
 ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 Symbol Group         | Total  | TP   | SL   | TIMEOUT  | Closed  | Open   | WR       | P&L        | Avg TP Duration   | Avg SL Duration  
 ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-LOW_ALTS             | 3628   | 646  | 1844 | 977      | 3467    | 161    |   29.8% | $-19568.19 | 1h 20m            | 1h 4m            
-MAIN_BLOCKCHAIN      | 492    | 107  | 278  | 101      | 486     | 6      |   30.9% | $-1719.13 | 1h 18m            | 1h 7m            
-MID_ALTS             | 459    | 112  | 218  | 125      | 455     | 4      |   38.0% | $-2051.16 | 1h 10m            | 1h 7m            
-TOP_ALTS             | 276    | 68   | 132  | 75       | 275     | 1      |   33.8% | $-1430.90 | 1h 14m            | 51m              
+LOW_ALTS             | 3664   | 651  | 1860 | 988      | 3499    | 165    |   29.7% | $-19706.83 | 1h 19m            | 1h 3m            
+MAIN_BLOCKCHAIN      | 492    | 107  | 280  | 101      | 488     | 4      |   30.7% | $-1729.64 | 1h 18m            | 1h 7m            
+MID_ALTS             | 461    | 112  | 218  | 126      | 456     | 5      |   38.2% | $-2050.79 | 1h 10m            | 1h 7m            
+TOP_ALTS             | 279    | 68   | 133  | 75       | 276     | 3      |   33.7% | $-1442.70 | 1h 14m            | 51m              
 
 💡 BY CONFIDENCE LEVEL
 ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 Confidence           | Total  | TP   | SL   | TIMEOUT  | Closed  | Open   | WR       | P&L        | Avg TP Duration   | Avg SL Duration  
 ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-HIGH (≥73%)          | 1384   | 323  | 700  | 296      | 1319    | 65     |   32.6% | $-6797.66 | 1h 29m            | 1h 22m           
-MID (66-72%)         | 1270   | 232  | 649  | 340      | 1221    | 49     |   29.8% | $-6309.64 | 1h 14m            | 1h 0m            
-LOW (≤65%)           | 2201   | 378  | 1123 | 643      | 2144    | 57     |   30.5% | $-11662.08 | 1h 11m            | 54m              
+HIGH (≥73%)          | 1404   | 326  | 711  | 303      | 1340    | 64     |   32.4% | $-6910.28 | 1h 29m            | 1h 22m           
+MID (66-72%)         | 1289   | 234  | 655  | 345      | 1234    | 55     |   29.8% | $-6344.25 | 1h 13m            | 59m              
+LOW (≤65%)           | 2203   | 378  | 1125 | 643      | 2146    | 57     |   30.5% | $-11675.42 | 1h 11m            | 54m              
 
 ========================================================================================================================================================================================================
 📊 MULTI-DIMENSIONAL AGGREGATES
@@ -213,55 +213,55 @@ LOW (≤65%)           | 2201   | 378  | 1123 | 643      | 2144    | 57     |   
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 TF       | Symbol Group       | Total  | TP   | SL   | TIMEOUT  | Closed  | Open   | WR       | P&L        | Avg TP Duration   | Avg SL Duration  
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-15min    | LOW_ALTS           | 1783   | 305  | 915  | 476      | 1696    | 87     |   27.4% | $-10052.96 | 53m               | 44m              
-15min    | MAIN_BLOCKCHAIN    | 212    | 57   | 122  | 32       | 211     | 1      |   32.7% | $ -441.33 | 1h 6m             | 39m              
-15min    | MID_ALTS           | 205    | 55   | 97   | 52       | 204     | 1      |   39.2% | $ -669.18 | 55m               | 45m              
-15min    | TOP_ALTS           | 144    | 33   | 62   | 49       | 144     | 0      |   33.3% | $ -592.05 | 1h 8m             | 25m              
-1h       | LOW_ALTS           | 564    | 103  | 242  | 191      | 536     | 28     |   36.9% | $-2012.65 | 2h 16m            | 1h 35m           
+15min    | LOW_ALTS           | 1806   | 309  | 924  | 484      | 1717    | 89     |   27.3% | $-10120.38 | 53m               | 44m              
+15min    | MAIN_BLOCKCHAIN    | 212    | 57   | 123  | 32       | 212     | 0      |   32.5% | $ -445.77 | 1h 6m             | 39m              
+15min    | MID_ALTS           | 206    | 55   | 97   | 52       | 204     | 2      |   39.2% | $ -669.18 | 55m               | 45m              
+15min    | TOP_ALTS           | 146    | 33   | 62   | 49       | 144     | 2      |   33.3% | $ -592.05 | 1h 8m             | 25m              
+1h       | LOW_ALTS           | 567    | 104  | 244  | 192      | 540     | 27     |   37.0% | $-2024.13 | 2h 15m            | 1h 35m           
 1h       | MAIN_BLOCKCHAIN    | 93     | 13   | 56   | 22       | 91      | 2      |   25.3% | $ -588.79 | 2h 8m             | 1h 49m           
-1h       | MID_ALTS           | 81     | 20   | 26   | 34       | 80      | 1      |   46.2% | $  -47.55 | 1h 39m            | 1h 37m           
+1h       | MID_ALTS           | 81     | 20   | 26   | 35       | 81      | 0      |   46.9% | $  -47.18 | 1h 39m            | 1h 37m           
 1h       | TOP_ALTS           | 37     | 7    | 19   | 11       | 37      | 0      |   35.1% | $ -296.47 | 1h 37m            | 1h 45m           
-30min    | LOW_ALTS           | 1281   | 238  | 687  | 310      | 1235    | 46     |   30.0% | $-7502.57 | 1h 30m            | 1h 18m           
-30min    | MAIN_BLOCKCHAIN    | 187    | 37   | 100  | 47       | 184     | 3      |   31.5% | $ -689.01 | 1h 20m            | 1h 17m           
-30min    | MID_ALTS           | 173    | 37   | 95   | 39       | 171     | 2      |   32.7% | $-1334.43 | 1h 17m            | 1h 21m           
-30min    | TOP_ALTS           | 95     | 28   | 51   | 15       | 94      | 1      |   34.0% | $ -542.38 | 1h 17m            | 1h 3m            
+30min    | LOW_ALTS           | 1291   | 238  | 692  | 312      | 1242    | 49     |   29.8% | $-7562.31 | 1h 30m            | 1h 18m           
+30min    | MAIN_BLOCKCHAIN    | 187    | 37   | 101  | 47       | 185     | 2      |   31.4% | $ -695.07 | 1h 20m            | 1h 17m           
+30min    | MID_ALTS           | 174    | 37   | 95   | 39       | 171     | 3      |   32.7% | $-1334.43 | 1h 17m            | 1h 21m           
+30min    | TOP_ALTS           | 96     | 28   | 52   | 15       | 95      | 1      |   33.7% | $ -554.17 | 1h 17m            | 1h 3m            
 
 📈💰 BY DIRECTION x SYMBOL_GROUP
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 Dir    | Symbol Group       | Total  | TP   | SL   | TIMEOUT  | Closed  | Open   | WR       | P&L        | Avg TP Duration   | Avg SL Duration  
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-LONG   | LOW_ALTS           | 1651   | 320  | 942  | 356      | 1618    | 33     |   26.7% | $-8591.02 | 1h 19m            | 1h 7m            
+LONG   | LOW_ALTS           | 1669   | 323  | 948  | 356      | 1627    | 42     |   26.7% | $-8606.36 | 1h 18m            | 1h 6m            
 LONG   | MAIN_BLOCKCHAIN    | 254    | 53   | 146  | 53       | 252     | 2      |   31.0% | $ -905.36 | 1h 30m            | 1h 18m           
 LONG   | MID_ALTS           | 216    | 62   | 102  | 51       | 215     | 1      |   41.9% | $-1091.97 | 1h 9m             | 1h 22m           
-LONG   | TOP_ALTS           | 117    | 37   | 58   | 22       | 117     | 0      |   35.0% | $ -947.21 | 1h 30m            | 1h 4m            
-SHORT  | LOW_ALTS           | 1977   | 326  | 902  | 621      | 1849    | 128    |   32.4% | $-10977.17 | 1h 20m            | 1h 0m            
-SHORT  | MAIN_BLOCKCHAIN    | 238    | 54   | 132  | 48       | 234     | 4      |   30.8% | $ -813.77 | 1h 7m             | 54m              
-SHORT  | MID_ALTS           | 243    | 50   | 116  | 74       | 240     | 3      |   34.6% | $ -959.19 | 1h 11m            | 54m              
-SHORT  | TOP_ALTS           | 159    | 31   | 74   | 53       | 158     | 1      |   32.9% | $ -483.69 | 55m               | 41m              
+LONG   | TOP_ALTS           | 120    | 37   | 58   | 22       | 117     | 3      |   35.0% | $ -947.21 | 1h 30m            | 1h 4m            
+SHORT  | LOW_ALTS           | 1995   | 328  | 912  | 632      | 1872    | 123    |   32.3% | $-11100.47 | 1h 20m            | 1h 0m            
+SHORT  | MAIN_BLOCKCHAIN    | 238    | 54   | 134  | 48       | 236     | 2      |   30.5% | $ -824.28 | 1h 7m             | 54m              
+SHORT  | MID_ALTS           | 245    | 50   | 116  | 75       | 241     | 4      |   34.9% | $ -958.83 | 1h 11m            | 54m              
+SHORT  | TOP_ALTS           | 159    | 31   | 75   | 53       | 159     | 0      |   32.7% | $ -495.49 | 55m               | 42m              
 
 🕐📈 BY TIMEFRAME x DIRECTION
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 TF       | Dir    | Total  | TP   | SL   | TIMEOUT  | Closed  | Open   | WR       | P&L        | Avg TP Duration   | Avg SL Duration  
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-15min    | LONG   | 1057   | 228  | 589  | 223      | 1040    | 17     |   28.7% | $-5196.26 | 1h 7m             | 49m              
-15min    | SHORT  | 1287   | 222  | 607  | 386      | 1215    | 72     |   29.9% | $-6559.27 | 45m               | 37m              
-1h       | LONG   | 326    | 74   | 161  | 85       | 320     | 6      |   34.7% | $ -772.49 | 1h 44m            | 1h 37m           
-1h       | SHORT  | 449    | 69   | 182  | 173      | 424     | 25     |   37.7% | $-2172.96 | 2h 35m            | 1h 38m           
-30min    | LONG   | 855    | 170  | 498  | 174      | 842     | 13     |   27.6% | $-5566.80 | 1h 27m            | 1h 24m           
-30min    | SHORT  | 881    | 170  | 435  | 237      | 842     | 39     |   33.7% | $-4501.58 | 1h 26m            | 1h 10m           
+15min    | LONG   | 1072   | 230  | 595  | 223      | 1048    | 24     |   28.6% | $-5226.34 | 1h 6m             | 48m              
+15min    | SHORT  | 1298   | 224  | 611  | 394      | 1229    | 69     |   29.8% | $-6601.05 | 44m               | 37m              
+1h       | LONG   | 328    | 75   | 161  | 85       | 321     | 7      |   34.9% | $ -757.74 | 1h 42m            | 1h 37m           
+1h       | SHORT  | 450    | 69   | 184  | 175      | 428     | 22     |   37.9% | $-2198.83 | 2h 35m            | 1h 39m           
+30min    | LONG   | 859    | 170  | 498  | 174      | 842     | 17     |   27.6% | $-5566.80 | 1h 27m            | 1h 24m           
+30min    | SHORT  | 889    | 170  | 442  | 239      | 851     | 38     |   33.4% | $-4579.19 | 1h 26m            | 1h 10m           
 
 🕐🌊 BY TIMEFRAME x REGIME
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 TF       | Regime   | Total  | TP   | SL   | TIMEOUT  | Closed  | Open   | WR       | P&L        | Avg TP Duration   | Avg SL Duration  
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-15min    | BEAR     | 1243   | 234  | 603  | 357      | 1194    | 49     |   29.9% | $-6644.50 | 53m               | 38m              
-15min    | BULL     | 980    | 202  | 528  | 211      | 941     | 39     |   28.9% | $-4675.89 | 1h 0m             | 50m              
+15min    | BEAR     | 1254   | 236  | 607  | 365      | 1208    | 46     |   29.8% | $-6686.28 | 53m               | 38m              
+15min    | BULL     | 995    | 204  | 534  | 211      | 949     | 46     |   28.9% | $-4705.98 | 1h 0m             | 49m              
 15min    | RANGE    | 121    | 14   | 65   | 41       | 120     | 1      |   26.7% | $ -435.14 | 46m               | 28m              
-1h       | BEAR     | 449    | 72   | 180  | 170      | 422     | 27     |   38.4% | $-2173.39 | 2h 30m            | 1h 38m           
-1h       | BULL     | 274    | 57   | 142  | 71       | 270     | 4      |   32.2% | $-1009.13 | 1h 58m            | 1h 33m           
+1h       | BEAR     | 450    | 72   | 182  | 172      | 426     | 24     |   38.5% | $-2199.25 | 2h 30m            | 1h 38m           
+1h       | BULL     | 276    | 58   | 142  | 71       | 271     | 5      |   32.5% | $ -994.38 | 1h 57m            | 1h 33m           
 1h       | RANGE    | 52     | 14   | 21   | 17       | 52      | 0      |   42.3% | $ +237.06 | 59m               | 2h 10m           
-30min    | BEAR     | 858    | 177  | 426  | 214      | 817     | 41     |   34.5% | $-2709.32 | 1h 32m            | 1h 14m           
-30min    | BULL     | 740    | 135  | 442  | 153      | 730     | 10     |   26.3% | $-7110.80 | 1h 22m            | 1h 20m           
+30min    | BEAR     | 866    | 177  | 433  | 216      | 826     | 40     |   34.1% | $-2786.93 | 1h 32m            | 1h 14m           
+30min    | BULL     | 744    | 135  | 442  | 153      | 730     | 14     |   26.3% | $-7110.80 | 1h 22m            | 1h 20m           
 30min    | RANGE    | 138    | 28   | 65   | 44       | 137     | 1      |   30.7% | $ -248.26 | 1h 4m             | 1h 28m           
 
 📈🌊 BY DIRECTION x REGIME
@@ -269,9 +269,9 @@ TF       | Regime   | Total  | TP   | SL   | TIMEOUT  | Closed  | Open   | WR   
 Dir    | Regime   | Total  | TP   | SL   | TIMEOUT  | Closed  | Open   | WR       | P&L        | Avg TP Duration   | Avg SL Duration  
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 LONG   | BEAR     | 200    | 51   | 105  | 38       | 194     | 6      |   32.0% | $+1045.77 | 2h 13m            | 1h 21m           
-LONG   | BULL     | 1912   | 389  | 1082 | 412      | 1883    | 29     |   28.4% | $-12516.65 | 1h 16m            | 1h 7m            
+LONG   | BULL     | 1933   | 392  | 1088 | 412      | 1892    | 41     |   28.4% | $-12531.99 | 1h 16m            | 1h 7m            
 LONG   | RANGE    | 126    | 32   | 61   | 32       | 125     | 1      |   36.0% | $  -64.67 | 39m               | 1h 19m           
-SHORT  | BEAR     | 2350   | 432  | 1104 | 703      | 2239    | 111    |   33.0% | $-12572.99 | 1h 16m            | 58m              
+SHORT  | BEAR     | 2370   | 434  | 1117 | 715      | 2266    | 104    |   32.8% | $-12718.23 | 1h 15m            | 58m              
 SHORT  | BULL     | 82     | 5    | 30   | 23       | 58      | 24     |   29.3% | $ -279.18 | 1h 29m            | 58m              
 SHORT  | RANGE    | 185    | 24   | 90   | 70       | 184     | 1      |   27.7% | $ -381.66 | 1h 23m            | 1h 1m            
 
@@ -282,13 +282,13 @@ Dir    | Route                | Total  | TP   | SL   | TIMEOUT  | Closed  | Open
 LONG   | AMBIGUOUS            | 66     | 12   | 47   | 7        | 66      | 0      |   22.7% | $ -470.29 | 1h 37m            | 1h 45m           
 LONG   | NONE                 | 98     | 10   | 55   | 31       | 96      | 2      |   13.5% | $-1193.95 | 44m               | 1h 39m           
 LONG   | REVERSAL             | 119    | 41   | 67   | 9        | 117     | 2      |   38.5% | $  +98.41 | 53m               | 1h 46m           
-LONG   | TREND CONTINUATION   | 1762   | 389  | 933  | 409      | 1731    | 31     |   30.8% | $-8165.84 | 1h 25m            | 1h 7m            
-LONG   | TREND_CONTINUATION   | 193    | 20   | 146  | 26       | 192     | 1      |   17.7% | $-1803.88 | 45m               | 41m              
+LONG   | TREND CONTINUATION   | 1782   | 392  | 939  | 409      | 1740    | 42     |   30.9% | $-8181.18 | 1h 24m            | 1h 7m            
+LONG   | TREND_CONTINUATION   | 194    | 20   | 146  | 26       | 192     | 2      |   17.7% | $-1803.88 | 45m               | 41m              
 SHORT  | AMBIGUOUS            | 34     | 7    | 17   | 9        | 33      | 1      |   36.4% | $ -119.71 | 1h 0m             | 1h 17m           
-SHORT  | NONE                 | 57     | 14   | 25   | 14       | 53      | 4      |   35.8% | $ -184.65 | 50m               | 32m              
+SHORT  | NONE                 | 57     | 14   | 26   | 14       | 54      | 3      |   35.2% | $ -195.37 | 50m               | 34m              
 SHORT  | REVERSAL             | 80     | 3    | 29   | 23       | 55      | 25     |   23.6% | $ -290.94 | 1h 33m            | 1h 7m            
-SHORT  | TREND CONTINUATION   | 2312   | 396  | 1115 | 699      | 2210    | 102    |   31.6% | $-12033.58 | 1h 19m            | 58m              
-SHORT  | TREND_CONTINUATION   | 134    | 41   | 38   | 51       | 130     | 4      |   50.0% | $ -604.93 | 55m               | 52m              
+SHORT  | TREND CONTINUATION   | 2330   | 397  | 1126 | 711      | 2234    | 96     |   31.4% | $-12158.00 | 1h 19m            | 58m              
+SHORT  | TREND_CONTINUATION   | 136    | 42   | 39   | 51       | 132     | 4      |   50.0% | $ -615.04 | 54m               | 52m              
 
 🛣️ 🌊 BY ROUTE x REGIME
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -297,17 +297,17 @@ Route                | Regime   | Total  | TP   | SL   | TIMEOUT  | Closed  | Op
 AMBIGUOUS            | BEAR     | 36     | 7    | 22   | 6        | 35      | 1      |   31.4% | $ -190.54 | 1h 0m             | 1h 13m           
 AMBIGUOUS            | BULL     | 52     | 10   | 35   | 7        | 52      | 0      |   25.0% | $ -302.69 | 1h 50m            | 1h 50m           
 AMBIGUOUS            | RANGE    | 12     | 2    | 7    | 3        | 12      | 0      |   25.0% | $  -96.77 | 29m               | 1h 56m           
-NONE                 | BEAR     | 54     | 11   | 24   | 13       | 48      | 6      |   29.2% | $ -335.92 | 57m               | 1h 13m           
+NONE                 | BEAR     | 54     | 11   | 25   | 13       | 49      | 5      |   28.6% | $ -346.64 | 57m               | 1h 13m           
 NONE                 | BULL     | 68     | 7    | 38   | 23       | 68      | 0      |   14.7% | $ -881.54 | 40m               | 1h 28m           
 NONE                 | RANGE    | 33     | 6    | 18   | 9        | 33      | 0      |   24.2% | $ -161.14 | 38m               | 1h 4m            
 REVERSAL             | BEAR     | 47     | 4    | 30   | 12       | 46      | 1      |   26.1% | $ -394.18 | 2h 0m             | 1h 37m           
 REVERSAL             | BULL     | 88     | 18   | 41   | 4        | 63      | 25     |   31.7% | $ -147.59 | 1h 8m             | 2h 1m            
 REVERSAL             | RANGE    | 64     | 22   | 25   | 16       | 63      | 1      |   41.3% | $ +349.24 | 34m               | 46m              
-TREND CONTINUATION   | BEAR     | 2276   | 418  | 1094 | 659      | 2171    | 105    |   32.1% | $-10009.73 | 1h 25m            | 58m              
-TREND CONTINUATION   | BULL     | 1596   | 341  | 853  | 375      | 1569    | 27     |   30.3% | $-9652.04 | 1h 18m            | 1h 6m            
+TREND CONTINUATION   | BEAR     | 2294   | 419  | 1105 | 671      | 2195    | 99     |   31.9% | $-10134.14 | 1h 25m            | 58m              
+TREND CONTINUATION   | BULL     | 1616   | 344  | 859  | 375      | 1578    | 38     |   30.4% | $-9667.38 | 1h 18m            | 1h 6m            
 TREND CONTINUATION   | RANGE    | 202    | 26   | 101  | 74       | 201     | 1      |   29.4% | $ -537.66 | 1h 26m            | 1h 11m           
-TREND_CONTINUATION   | BEAR     | 137    | 43   | 39   | 51       | 133     | 4      |   50.4% | $ -596.85 | 54m               | 50m              
-TREND_CONTINUATION   | BULL     | 190    | 18   | 145  | 26       | 189     | 1      |   16.9% | $-1811.96 | 45m               | 41m              
+TREND_CONTINUATION   | BEAR     | 139    | 44   | 40   | 51       | 135     | 4      |   50.4% | $ -606.96 | 53m               | 51m              
+TREND_CONTINUATION   | BULL     | 191    | 18   | 145  | 26       | 189     | 2      |   16.9% | $-1811.96 | 45m               | 41m              
 
 🛣️ 💰 BY ROUTE x SYMBOL_GROUP
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -317,7 +317,7 @@ AMBIGUOUS            | LOW_ALTS           | 81     | 17   | 55   | 8        | 80
 AMBIGUOUS            | MAIN_BLOCKCHAIN    | 11     | 1    | 5    | 5        | 11      | 0      |   27.3% | $ -110.84 | 2h 26m            | 2h 1m            
 AMBIGUOUS            | MID_ALTS           | 5      | 1    | 1    | 3        | 5       | 0      |   40.0% | $  -25.21 | 40m               | 1h 19m           
 AMBIGUOUS            | TOP_ALTS           | 3      | 0    | 3    | 0        | 3       | 0      |    0.0% | $  -65.51 | N/A               | 1h 47m           
-NONE                 | LOW_ALTS           | 104    | 17   | 58   | 24       | 99      | 5      |   22.2% | $ -624.49 | 49m               | 54m              
+NONE                 | LOW_ALTS           | 104    | 17   | 59   | 24       | 100     | 4      |   22.0% | $ -635.21 | 49m               | 54m              
 NONE                 | MAIN_BLOCKCHAIN    | 20     | 4    | 9    | 7        | 20      | 0      |   20.0% | $ -259.26 | 58m               | 3h 1m            
 NONE                 | MID_ALTS           | 21     | 1    | 10   | 9        | 20      | 1      |   10.0% | $ -478.78 | 47m               | 2h 21m           
 NONE                 | TOP_ALTS           | 10     | 2    | 3    | 5        | 10      | 0      |   40.0% | $  -16.07 | 18m               | 18m              
@@ -325,27 +325,27 @@ REVERSAL             | LOW_ALTS           | 153    | 22   | 77   | 27       | 12
 REVERSAL             | MAIN_BLOCKCHAIN    | 17     | 12   | 3    | 2        | 17      | 0      |   76.5% | $ +281.95 | 46m               | 2h 21m           
 REVERSAL             | MID_ALTS           | 20     | 6    | 12   | 2        | 20      | 0      |   35.0% | $  -57.93 | 34m               | 2h 39m           
 REVERSAL             | TOP_ALTS           | 9      | 4    | 4    | 1        | 9       | 0      |   44.4% | $   +9.72 | 1h 38m            | 1h 0m            
-TREND CONTINUATION   | LOW_ALTS           | 3058   | 546  | 1521 | 867      | 2934    | 124    |   30.2% | $-16320.68 | 1h 24m            | 1h 3m            
-TREND CONTINUATION   | MAIN_BLOCKCHAIN    | 381    | 79   | 221  | 75       | 375     | 6      |   30.7% | $-1112.94 | 1h 25m            | 1h 5m            
-TREND CONTINUATION   | MID_ALTS           | 392    | 102  | 189  | 98       | 389     | 3      |   39.1% | $-1394.98 | 1h 14m            | 58m              
-TREND CONTINUATION   | TOP_ALTS           | 243    | 58   | 117  | 68       | 243     | 0      |   32.9% | $-1370.82 | 1h 16m            | 51m              
-TREND_CONTINUATION   | LOW_ALTS           | 232    | 44   | 133  | 51       | 228     | 4      |   30.3% | $-1808.32 | 50m               | 46m              
+TREND CONTINUATION   | LOW_ALTS           | 3091   | 550  | 1536 | 878      | 2964    | 127    |   30.1% | $-16450.29 | 1h 23m            | 1h 3m            
+TREND CONTINUATION   | MAIN_BLOCKCHAIN    | 381    | 79   | 223  | 75       | 377     | 4      |   30.5% | $-1123.45 | 1h 25m            | 1h 5m            
+TREND CONTINUATION   | MID_ALTS           | 394    | 102  | 189  | 99       | 390     | 4      |   39.2% | $-1394.62 | 1h 14m            | 58m              
+TREND CONTINUATION   | TOP_ALTS           | 246    | 58   | 117  | 68       | 243     | 3      |   32.9% | $-1370.82 | 1h 16m            | 51m              
+TREND_CONTINUATION   | LOW_ALTS           | 235    | 45   | 133  | 51       | 229     | 6      |   30.6% | $-1806.63 | 49m               | 46m              
 TREND_CONTINUATION   | MAIN_BLOCKCHAIN    | 63     | 11   | 40   | 12       | 63      | 0      |   23.8% | $ -518.03 | 1h 2m             | 36m              
 TREND_CONTINUATION   | MID_ALTS           | 21     | 2    | 6    | 13       | 21      | 0      |   47.6% | $  -94.25 | 21m               | 41m              
-TREND_CONTINUATION   | TOP_ALTS           | 11     | 4    | 5    | 1        | 10      | 1      |   50.0% | $  +11.78 | 58m               | 40m              
+TREND_CONTINUATION   | TOP_ALTS           | 11     | 4    | 6    | 1        | 11      | 0      |   45.5% | $   -0.01 | 58m               | 44m              
 
 🌊💰 BY REGIME x SYMBOL_GROUP
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 Regime   | Symbol Group       | Total  | TP   | SL   | TIMEOUT  | Closed  | Open   | WR       | P&L        | Avg TP Duration   | Avg SL Duration  
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-BEAR     | LOW_ALTS           | 1894   | 334  | 875  | 576      | 1785    | 109    |   32.5% | $-9472.85 | 1h 24m            | 1h 2m            
-BEAR     | MAIN_BLOCKCHAIN    | 253    | 65   | 136  | 48       | 249     | 4      |   33.7% | $ -606.52 | 1h 27m            | 55m              
-BEAR     | MID_ALTS           | 257    | 54   | 129  | 71       | 254     | 3      |   34.3% | $-1079.19 | 1h 13m            | 58m              
-BEAR     | TOP_ALTS           | 146    | 30   | 69   | 46       | 145     | 1      |   33.8% | $ -368.65 | 59m               | 39m              
-BULL     | LOW_ALTS           | 1500   | 276  | 850  | 324      | 1450    | 50     |   26.3% | $-9714.55 | 1h 17m            | 1h 5m            
+BEAR     | LOW_ALTS           | 1912   | 336  | 885  | 587      | 1808    | 104    |   32.4% | $-9596.16 | 1h 24m            | 1h 2m            
+BEAR     | MAIN_BLOCKCHAIN    | 253    | 65   | 138  | 48       | 251     | 2      |   33.5% | $ -617.03 | 1h 27m            | 55m              
+BEAR     | MID_ALTS           | 259    | 54   | 129  | 72       | 255     | 4      |   34.5% | $-1078.83 | 1h 13m            | 58m              
+BEAR     | TOP_ALTS           | 146    | 30   | 70   | 46       | 146     | 0      |   33.6% | $ -380.45 | 59m               | 39m              
+BULL     | LOW_ALTS           | 1518   | 279  | 856  | 324      | 1459    | 59     |   26.3% | $-9729.89 | 1h 16m            | 1h 4m            
 BULL     | MAIN_BLOCKCHAIN    | 201    | 31   | 123  | 45       | 199     | 2      |   27.1% | $-1153.81 | 1h 12m            | 1h 16m           
 BULL     | MID_ALTS           | 175    | 51   | 80   | 43       | 174     | 1      |   42.5% | $ -967.90 | 1h 8m             | 1h 21m           
-BULL     | TOP_ALTS           | 118    | 36   | 59   | 23       | 118     | 0      |   35.6% | $ -959.56 | 1h 27m            | 1h 4m            
+BULL     | TOP_ALTS           | 121    | 36   | 59   | 23       | 118     | 3      |   35.6% | $ -959.56 | 1h 27m            | 1h 4m            
 RANGE    | LOW_ALTS           | 234    | 36   | 119  | 77       | 232     | 2      |   30.2% | $ -380.78 | 1h 1m             | 1h 4m            
 RANGE    | MAIN_BLOCKCHAIN    | 38     | 11   | 19   | 8        | 38      | 0      |   31.6% | $  +41.20 | 43m               | 1h 31m           
 RANGE    | MID_ALTS           | 27     | 7    | 9    | 11       | 27      | 0      |   44.4% | $   -4.06 | 58m               | 1h 11m           
@@ -358,54 +358,54 @@ TF       | Dir    | Route                | Total  | TP   | SL   | TIMEOUT  | Clo
 15min    | LONG   | AMBIGUOUS            | 23     | 3    | 17   | 3        | 23      | 0      |   21.7% | $ -271.86 | 1h 1m             | 1h 8m            
 15min    | LONG   | NONE                 | 35     | 3    | 28   | 4        | 35      | 0      |   11.4% | $ -238.69 | 51m               | 44m              
 15min    | LONG   | REVERSAL             | 30     | 10   | 19   | 1        | 30      | 0      |   33.3% | $ -220.48 | 49m               | 35m              
-15min    | LONG   | TREND CONTINUATION   | 894    | 201  | 473  | 203      | 877     | 17     |   29.8% | $-3948.28 | 1h 10m            | 49m              
-15min    | LONG   | TREND_CONTINUATION   | 75     | 11   | 52   | 12       | 75      | 0      |   24.0% | $ -516.95 | 38m               | 48m              
+15min    | LONG   | TREND CONTINUATION   | 908    | 203  | 479  | 203      | 885     | 23     |   29.7% | $-3978.36 | 1h 9m             | 49m              
+15min    | LONG   | TREND_CONTINUATION   | 76     | 11   | 52   | 12       | 75      | 1      |   24.0% | $ -516.95 | 38m               | 48m              
 15min    | SHORT  | AMBIGUOUS            | 14     | 4    | 8    | 2        | 14      | 0      |   35.7% | $  -58.35 | 54m               | 51m              
 15min    | SHORT  | NONE                 | 34     | 11   | 16   | 7        | 34      | 0      |   41.2% | $  -66.03 | 38m               | 31m              
 15min    | SHORT  | REVERSAL             | 56     | 2    | 18   | 12       | 32      | 24     |   21.9% | $ -172.42 | 21m               | 23m              
-15min    | SHORT  | TREND CONTINUATION   | 1118   | 184  | 545  | 342      | 1071    | 47     |   28.8% | $-5713.18 | 45m               | 37m              
-15min    | SHORT  | TREND_CONTINUATION   | 65     | 21   | 20   | 23       | 64      | 1      |   45.3% | $ -549.29 | 45m               | 55m              
+15min    | SHORT  | TREND CONTINUATION   | 1127   | 185  | 549  | 350      | 1084    | 43     |   28.6% | $-5756.65 | 45m               | 37m              
+15min    | SHORT  | TREND_CONTINUATION   | 67     | 22   | 20   | 23       | 65      | 2      |   46.2% | $ -547.60 | 43m               | 55m              
 1h       | LONG   | AMBIGUOUS            | 12     | 5    | 6    | 1        | 12      | 0      |   41.7% | $ +184.09 | 2h 3m             | 2h 8m            
 1h       | LONG   | NONE                 | 14     | 2    | 6    | 4        | 12      | 2      |   25.0% | $ -103.50 | 28m               | 1h 56m           
 1h       | LONG   | REVERSAL             | 28     | 13   | 8    | 7        | 28      | 0      |   60.7% | $ +454.39 | 1h 9m             | 1h 59m           
-1h       | LONG   | TREND CONTINUATION   | 235    | 51   | 113  | 67       | 231     | 4      |   34.6% | $ -916.42 | 1h 54m            | 1h 49m           
+1h       | LONG   | TREND CONTINUATION   | 237    | 52   | 113  | 67       | 232     | 5      |   34.9% | $ -901.67 | 1h 52m            | 1h 49m           
 1h       | LONG   | TREND_CONTINUATION   | 37     | 3    | 28   | 6        | 37      | 0      |   16.2% | $ -391.07 | 1h 30m            | 34m              
 1h       | SHORT  | AMBIGUOUS            | 8      | 1    | 2    | 4        | 7       | 1      |   42.9% | $  -35.22 | 1h 35m            | 3h 36m           
-1h       | SHORT  | NONE                 | 6      | 1    | 0    | 3        | 4       | 2      |   50.0% | $  +12.14 | 2h 43m            | N/A              
+1h       | SHORT  | NONE                 | 6      | 1    | 1    | 3        | 5       | 1      |   40.0% | $   +1.42 | 2h 43m            | 1h 8m            
 1h       | SHORT  | REVERSAL             | 3      | 1    | 0    | 2        | 3       | 0      |   66.7% | $   +9.59 | 3h 57m            | N/A              
-1h       | SHORT  | TREND CONTINUATION   | 411    | 63   | 175  | 153      | 391     | 20     |   36.8% | $-2093.41 | 2h 37m            | 1h 37m           
+1h       | SHORT  | TREND CONTINUATION   | 412    | 63   | 176  | 155      | 394     | 18     |   37.1% | $-2108.55 | 2h 37m            | 1h 38m           
 1h       | SHORT  | TREND_CONTINUATION   | 21     | 3    | 5    | 11       | 19      | 2      |   47.4% | $  -66.06 | 1h 41m            | 1h 22m           
 30min    | LONG   | AMBIGUOUS            | 31     | 4    | 24   | 3        | 31      | 0      |   16.1% | $ -382.53 | 1h 30m            | 2h 6m            
 30min    | LONG   | NONE                 | 49     | 5    | 21   | 23       | 49      | 0      |   12.2% | $ -851.77 | 46m               | 2h 47m           
 30min    | LONG   | REVERSAL             | 61     | 18   | 40   | 1        | 59      | 2      |   30.5% | $ -135.50 | 43m               | 2h 17m           
-30min    | LONG   | TREND CONTINUATION   | 633    | 137  | 347  | 139      | 623     | 10     |   31.0% | $-3301.15 | 1h 36m            | 1h 19m           
+30min    | LONG   | TREND CONTINUATION   | 637    | 137  | 347  | 139      | 623     | 14     |   31.0% | $-3301.15 | 1h 36m            | 1h 19m           
 30min    | LONG   | TREND_CONTINUATION   | 81     | 6    | 66   | 8        | 80      | 1      |   12.5% | $ -895.86 | 35m               | 38m              
 30min    | SHORT  | AMBIGUOUS            | 12     | 2    | 7    | 3        | 12      | 0      |   33.3% | $  -26.14 | 54m               | 1h 8m            
 30min    | SHORT  | NONE                 | 17     | 2    | 9    | 4        | 15      | 2      |   20.0% | $ -130.76 | 59m               | 35m              
 30min    | SHORT  | REVERSAL             | 21     | 0    | 11   | 9        | 20      | 1      |   20.0% | $ -128.11 | N/A               | 2h 19m           
-30min    | SHORT  | TREND CONTINUATION   | 783    | 149  | 395  | 204      | 748     | 35     |   32.9% | $-4226.99 | 1h 29m            | 1h 10m           
-30min    | SHORT  | TREND_CONTINUATION   | 48     | 17   | 13   | 17       | 47      | 1      |   57.4% | $  +10.42 | 59m               | 35m              
+30min    | SHORT  | TREND CONTINUATION   | 791    | 149  | 401  | 206      | 756     | 35     |   32.5% | $-4292.79 | 1h 29m            | 1h 10m           
+30min    | SHORT  | TREND_CONTINUATION   | 48     | 17   | 14   | 17       | 48      | 0      |   56.2% | $   -1.38 | 59m               | 37m              
 
 🕐📈🌊 BY TIMEFRAME x DIRECTION x REGIME
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 TF       | Dir    | Regime   | Total  | TP   | SL   | TIMEOUT  | Closed  | Open   | WR       | P&L        | Avg TP Duration   | Avg SL Duration  
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 15min    | LONG   | BEAR     | 102    | 27   | 58   | 16       | 101     | 1      |   28.7% | $ -363.83 | 1h 59m            | 44m              
-15min    | LONG   | BULL     | 920    | 198  | 508  | 199      | 905     | 15     |   28.8% | $-4575.98 | 1h 0m             | 50m              
+15min    | LONG   | BULL     | 935    | 200  | 514  | 199      | 913     | 22     |   28.8% | $-4606.06 | 1h 0m             | 50m              
 15min    | LONG   | RANGE    | 35     | 3    | 23   | 8        | 34      | 1      |   23.5% | $ -256.44 | 30m               | 29m              
-15min    | SHORT  | BEAR     | 1141   | 207  | 545  | 341      | 1093    | 48     |   30.0% | $-6280.67 | 44m               | 38m              
+15min    | SHORT  | BEAR     | 1152   | 209  | 549  | 349      | 1107    | 45     |   29.9% | $-6322.45 | 44m               | 38m              
 15min    | SHORT  | BULL     | 60     | 4    | 20   | 12       | 36      | 24     |   30.6% | $  -99.91 | 52m               | 35m              
 15min    | SHORT  | RANGE    | 86     | 11   | 42   | 33       | 86      | 0      |   27.9% | $ -178.69 | 50m               | 28m              
 1h       | LONG   | BEAR     | 34     | 6    | 12   | 14       | 32      | 2      |   43.8% | $  -68.98 | 1h 50m            | 2h 15m           
-1h       | LONG   | BULL     | 266    | 56   | 141  | 65       | 262     | 4      |   31.7% | $-1008.87 | 1h 56m            | 1h 34m           
+1h       | LONG   | BULL     | 268    | 57   | 141  | 65       | 263     | 5      |   31.9% | $ -994.12 | 1h 54m            | 1h 34m           
 1h       | LONG   | RANGE    | 26     | 12   | 8    | 6        | 26      | 0      |   53.8% | $ +305.36 | 42m               | 1h 48m           
-1h       | SHORT  | BEAR     | 415    | 66   | 168  | 156      | 390     | 25     |   37.9% | $-2104.41 | 2h 33m            | 1h 35m           
+1h       | SHORT  | BEAR     | 416    | 66   | 170  | 158      | 394     | 22     |   38.1% | $-2130.27 | 2h 33m            | 1h 35m           
 1h       | SHORT  | BULL     | 8      | 1    | 1    | 6        | 8       | 0      |   50.0% | $   -0.26 | 3h 57m            | 50m              
 1h       | SHORT  | RANGE    | 26     | 2    | 13   | 11       | 26      | 0      |   30.8% | $  -68.30 | 2h 37m            | 2h 23m           
 30min    | LONG   | BEAR     | 64     | 18   | 35   | 8        | 61      | 3      |   31.1% | $+1478.58 | 2h 42m            | 2h 5m            
-30min    | LONG   | BULL     | 726    | 135  | 433  | 148      | 716     | 10     |   26.5% | $-6931.80 | 1h 22m            | 1h 19m           
+30min    | LONG   | BULL     | 730    | 135  | 433  | 148      | 716     | 14     |   26.5% | $-6931.80 | 1h 22m            | 1h 19m           
 30min    | LONG   | RANGE    | 65     | 17   | 30   | 18       | 65      | 0      |   35.4% | $ -113.59 | 39m               | 1h 49m           
-30min    | SHORT  | BEAR     | 794    | 159  | 391  | 206      | 756     | 38     |   34.8% | $-4187.91 | 1h 25m            | 1h 9m            
+30min    | SHORT  | BEAR     | 802    | 159  | 398  | 208      | 765     | 37     |   34.4% | $-4265.51 | 1h 25m            | 1h 9m            
 30min    | SHORT  | BULL     | 14     | 0    | 9    | 5        | 14      | 0      |   14.3% | $ -179.00 | N/A               | 1h 50m           
 30min    | SHORT  | RANGE    | 73     | 11   | 35   | 26       | 72      | 1      |   26.4% | $ -134.67 | 1h 42m            | 1h 10m           
 
@@ -423,40 +423,40 @@ LONG   | REVERSAL             | BEAR     | 21     | 4    | 14   | 2        | 20 
 LONG   | REVERSAL             | BULL     | 57     | 17   | 36   | 3        | 56      | 1      |   33.9% | $ -122.96 | 58m               | 2h 11m           
 LONG   | REVERSAL             | RANGE    | 41     | 20   | 17   | 4        | 41      | 0      |   48.8% | $ +405.71 | 35m               | 57m              
 LONG   | TREND CONTINUATION   | BEAR     | 158    | 45   | 77   | 33       | 155     | 3      |   34.8% | $+1479.49 | 2h 18m            | 1h 12m           
-LONG   | TREND CONTINUATION   | BULL     | 1551   | 337  | 831  | 356      | 1524    | 27     |   30.2% | $-9424.61 | 1h 18m            | 1h 7m            
+LONG   | TREND CONTINUATION   | BULL     | 1571   | 340  | 837  | 356      | 1533    | 38     |   30.3% | $-9439.95 | 1h 18m            | 1h 6m            
 LONG   | TREND CONTINUATION   | RANGE    | 53     | 7    | 25   | 20       | 52      | 1      |   36.5% | $ -220.72 | 49m               | 1h 20m           
 LONG   | TREND_CONTINUATION   | BEAR     | 3      | 2    | 1    | 0        | 3       | 0      |   66.7% | $   +8.08 | 44m               | 1m               
-LONG   | TREND_CONTINUATION   | BULL     | 190    | 18   | 145  | 26       | 189     | 1      |   16.9% | $-1811.96 | 45m               | 41m              
+LONG   | TREND_CONTINUATION   | BULL     | 191    | 18   | 145  | 26       | 189     | 2      |   16.9% | $-1811.96 | 45m               | 41m              
 SHORT  | AMBIGUOUS            | BEAR     | 29     | 7    | 15   | 6        | 28      | 1      |   39.3% | $ -101.75 | 1h 0m             | 1h 11m           
 SHORT  | AMBIGUOUS            | BULL     | 4      | 0    | 2    | 2        | 4       | 0      |    0.0% | $  -32.06 | N/A               | 2h 7m            
 SHORT  | AMBIGUOUS            | RANGE    | 1      | 0    | 0    | 1        | 1       | 0      |  100.0% | $  +14.10 | N/A               | N/A              
-SHORT  | NONE                 | BEAR     | 43     | 11   | 18   | 10       | 39      | 4      |   35.9% | $ -167.26 | 57m               | 39m              
+SHORT  | NONE                 | BEAR     | 43     | 11   | 19   | 10       | 40      | 3      |   35.0% | $ -177.98 | 57m               | 40m              
 SHORT  | NONE                 | BULL     | 2      | 0    | 1    | 1        | 2       | 0      |   50.0% | $   +4.95 | N/A               | 0m               
 SHORT  | NONE                 | RANGE    | 12     | 3    | 6    | 3        | 12      | 0      |   33.3% | $  -22.34 | 23m               | 19m              
 SHORT  | REVERSAL             | BEAR     | 26     | 0    | 16   | 10       | 26      | 0      |   23.1% | $ -209.83 | N/A               | 1h 34m           
 SHORT  | REVERSAL             | BULL     | 31     | 1    | 5    | 1        | 7       | 24     |   14.3% | $  -24.63 | 3h 57m            | 54m              
 SHORT  | REVERSAL             | RANGE    | 23     | 2    | 8    | 12       | 22      | 1      |   27.3% | $  -56.48 | 21m               | 23m              
-SHORT  | TREND CONTINUATION   | BEAR     | 2118   | 373  | 1017 | 626      | 2016    | 102    |   31.9% | $-11489.22 | 1h 19m            | 57m              
+SHORT  | TREND CONTINUATION   | BEAR     | 2136   | 374  | 1028 | 638      | 2040    | 96     |   31.7% | $-11613.63 | 1h 19m            | 57m              
 SHORT  | TREND CONTINUATION   | BULL     | 45     | 4    | 22   | 19       | 45      | 0      |   33.3% | $ -227.43 | 52m               | 56m              
 SHORT  | TREND CONTINUATION   | RANGE    | 149    | 19   | 76   | 54       | 149     | 0      |   26.8% | $ -316.94 | 1h 39m            | 1h 8m            
-SHORT  | TREND_CONTINUATION   | BEAR     | 134    | 41   | 38   | 51       | 130     | 4      |   50.0% | $ -604.93 | 55m               | 52m              
+SHORT  | TREND_CONTINUATION   | BEAR     | 136    | 42   | 39   | 51       | 132     | 4      |   50.0% | $ -615.04 | 54m               | 52m              
 
 🕐📈💡 BY TIMEFRAME x DIRECTION x CONFIDENCE
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 TF       | Dir    | Confidence   | Total  | TP   | SL   | TIMEOUT  | Closed  | Open   | WR       | P&L        | Avg TP Duration   | Avg SL Duration  
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 15min    | LONG   | HIGH         | 288    | 86   | 161  | 37       | 284     | 4      |   33.8% | $-1104.44 | 1h 30m            | 1h 1m            
-15min    | LONG   | MID          | 769    | 142  | 428  | 186      | 756     | 13     |   26.7% | $-4091.82 | 52m               | 44m              
-15min    | SHORT  | HIGH         | 104    | 20   | 39   | 33       | 92      | 12     |   37.0% | $ -302.60 | 37m               | 26m              
-15min    | SHORT  | MID          | 1183   | 202  | 568  | 353      | 1123    | 60     |   29.3% | $-6256.67 | 45m               | 38m              
+15min    | LONG   | MID          | 784    | 144  | 434  | 186      | 764     | 20     |   26.7% | $-4121.90 | 52m               | 44m              
+15min    | SHORT  | HIGH         | 110    | 21   | 40   | 36       | 97      | 13     |   36.1% | $ -303.09 | 38m               | 25m              
+15min    | SHORT  | MID          | 1188   | 203  | 571  | 358      | 1132    | 56     |   29.2% | $-6297.96 | 44m               | 38m              
 1h       | LONG   | HIGH         | 126    | 28   | 66   | 28       | 122     | 4      |   32.8% | $ -456.96 | 1h 40m            | 2h 11m           
-1h       | LONG   | MID          | 200    | 46   | 95   | 57       | 198     | 2      |   35.9% | $ -315.53 | 1h 46m            | 1h 14m           
-1h       | SHORT  | HIGH         | 29     | 1    | 15   | 6        | 22      | 7      |   22.7% | $ -156.72 | 4h 53m            | 2h 7m            
-1h       | SHORT  | MID          | 420    | 68   | 167  | 167      | 402     | 18     |   38.6% | $-2016.24 | 2h 31m            | 1h 34m           
+1h       | LONG   | MID          | 202    | 47   | 95   | 57       | 199     | 3      |   36.2% | $ -300.78 | 1h 44m            | 1h 14m           
+1h       | SHORT  | HIGH         | 30     | 1    | 17   | 6        | 24      | 6      |   20.8% | $ -184.55 | 4h 53m            | 2h 6m            
+1h       | SHORT  | MID          | 420    | 68   | 167  | 169      | 404     | 16     |   38.9% | $-2014.27 | 2h 31m            | 1h 34m           
 30min    | LONG   | HIGH         | 323    | 88   | 171  | 56       | 315     | 8      |   31.1% | $-2132.84 | 1h 35m            | 1h 50m           
-30min    | LONG   | MID          | 532    | 82   | 327  | 118      | 527     | 5      |   25.4% | $-3433.96 | 1h 18m            | 1h 7m            
-30min    | SHORT  | HIGH         | 63     | 15   | 25   | 14       | 54      | 9      |   37.0% | $ -102.24 | 1h 18m            | 42m              
-30min    | SHORT  | MID          | 818    | 155  | 410  | 223      | 788     | 30     |   33.5% | $-4399.35 | 1h 24m            | 1h 13m           
+30min    | LONG   | MID          | 536    | 82   | 327  | 118      | 527     | 9      |   25.4% | $-3433.96 | 1h 18m            | 1h 7m            
+30min    | SHORT  | HIGH         | 68     | 15   | 28   | 14       | 57      | 11     |   35.1% | $ -131.20 | 1h 18m            | 43m              
+30min    | SHORT  | MID          | 821    | 155  | 414  | 225      | 794     | 27     |   33.2% | $-4447.99 | 1h 24m            | 1h 12m           
 
 🕐🛣️ 🌊 BY TIMEFRAME x ROUTE x REGIME
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -471,22 +471,22 @@ TF       | Route                | Regime   | Total  | TP   | SL   | TIMEOUT  | C
 15min    | REVERSAL             | BEAR     | 22     | 2    | 14   | 6        | 22      | 0      |   27.3% | $ -252.85 | 1h 43m            | 25m              
 15min    | REVERSAL             | BULL     | 41     | 5    | 11   | 1        | 17      | 24     |   29.4% | $  -74.92 | 39m               | 38m              
 15min    | REVERSAL             | RANGE    | 23     | 5    | 12   | 6        | 23      | 0      |   26.1% | $  -65.13 | 26m               | 27m              
-15min    | TREND CONTINUATION   | BEAR     | 1112   | 199  | 544  | 321      | 1064    | 48     |   28.9% | $-5671.94 | 53m               | 38m              
-15min    | TREND CONTINUATION   | BULL     | 818    | 180  | 432  | 191      | 803     | 15     |   29.9% | $-3701.77 | 1h 2m             | 50m              
+15min    | TREND CONTINUATION   | BEAR     | 1121   | 200  | 548  | 329      | 1077    | 44     |   28.7% | $-5715.41 | 53m               | 38m              
+15min    | TREND CONTINUATION   | BULL     | 832    | 182  | 438  | 191      | 811     | 21     |   29.8% | $-3731.86 | 1h 2m             | 49m              
 15min    | TREND CONTINUATION   | RANGE    | 82     | 6    | 42   | 33       | 81      | 1      |   27.2% | $ -287.75 | 1h 14m            | 30m              
-15min    | TREND_CONTINUATION   | BEAR     | 66     | 21   | 21   | 23       | 65      | 1      |   44.6% | $ -553.37 | 45m               | 53m              
-15min    | TREND_CONTINUATION   | BULL     | 74     | 11   | 51   | 12       | 74      | 0      |   24.3% | $ -512.87 | 38m               | 49m              
+15min    | TREND_CONTINUATION   | BEAR     | 68     | 22   | 21   | 23       | 66      | 2      |   45.5% | $ -551.68 | 43m               | 53m              
+15min    | TREND_CONTINUATION   | BULL     | 75     | 11   | 51   | 12       | 74      | 1      |   24.3% | $ -512.87 | 38m               | 49m              
 1h       | AMBIGUOUS            | BEAR     | 8      | 1    | 3    | 3        | 7       | 1      |   42.9% | $  -42.25 | 1h 35m            | 2h 51m           
 1h       | AMBIGUOUS            | BULL     | 8      | 4    | 3    | 1        | 8       | 0      |   50.0% | $ +207.07 | 2h 27m            | 2h 46m           
 1h       | AMBIGUOUS            | RANGE    | 4      | 1    | 2    | 1        | 4       | 0      |   25.0% | $  -15.95 | 29m               | 1h 36m           
-1h       | NONE                 | BEAR     | 12     | 1    | 3    | 4        | 8       | 4      |   12.5% | $ -103.68 | 2h 43m            | 3h 0m            
+1h       | NONE                 | BEAR     | 12     | 1    | 4    | 4        | 9       | 3      |   11.1% | $ -114.40 | 2h 43m            | 2h 32m           
 1h       | NONE                 | BULL     | 7      | 1    | 3    | 3        | 7       | 0      |   42.9% | $  -29.85 | 9m                | 51m              
 1h       | NONE                 | RANGE    | 1      | 1    | 0    | 0        | 1       | 0      |  100.0% | $  +42.17 | 47m               | N/A              
 1h       | REVERSAL             | BEAR     | 7      | 2    | 2    | 3        | 7       | 0      |   57.1% | $  +57.10 | 2h 16m            | 1h 32m           
 1h       | REVERSAL             | BULL     | 10     | 3    | 5    | 2        | 10      | 0      |   50.0% | $  +68.23 | 2h 36m            | 2h 1m            
 1h       | REVERSAL             | RANGE    | 14     | 9    | 1    | 4        | 14      | 0      |   71.4% | $ +338.65 | 44m               | 2h 41m           
-1h       | TREND CONTINUATION   | BEAR     | 401    | 65   | 167  | 149      | 381     | 20     |   38.1% | $-2018.50 | 2h 33m            | 1h 36m           
-1h       | TREND CONTINUATION   | BULL     | 212    | 46   | 103  | 59       | 208     | 4      |   33.2% | $ -863.52 | 1h 58m            | 1h 47m           
+1h       | TREND CONTINUATION   | BEAR     | 402    | 65   | 168  | 151      | 384     | 18     |   38.3% | $-2033.64 | 2h 33m            | 1h 36m           
+1h       | TREND CONTINUATION   | BULL     | 214    | 47   | 103  | 59       | 209     | 5      |   33.5% | $ -848.77 | 1h 55m            | 1h 47m           
 1h       | TREND CONTINUATION   | RANGE    | 33     | 3    | 18   | 12       | 33      | 0      |   30.3% | $ -127.81 | 1h 56m            | 2h 12m           
 1h       | TREND_CONTINUATION   | BEAR     | 21     | 3    | 5    | 11       | 19      | 2      |   47.4% | $  -66.06 | 1h 41m            | 1h 22m           
 1h       | TREND_CONTINUATION   | BULL     | 37     | 3    | 28   | 6        | 37      | 0      |   16.2% | $ -391.07 | 1h 30m            | 34m              
@@ -499,17 +499,17 @@ TF       | Route                | Regime   | Total  | TP   | SL   | TIMEOUT  | C
 30min    | REVERSAL             | BEAR     | 18     | 0    | 14   | 3        | 17      | 1      |   11.8% | $ -198.43 | N/A               | 2h 49m           
 30min    | REVERSAL             | BULL     | 37     | 10   | 25   | 1        | 36      | 1      |   27.8% | $ -140.90 | 56m               | 2h 38m           
 30min    | REVERSAL             | RANGE    | 27     | 8    | 12   | 6        | 26      | 1      |   38.5% | $  +75.72 | 26m               | 56m              
-30min    | TREND CONTINUATION   | BEAR     | 763    | 154  | 383  | 189      | 726     | 37     |   33.7% | $-2319.29 | 1h 38m            | 1h 12m           
-30min    | TREND CONTINUATION   | BULL     | 566    | 115  | 318  | 125      | 558     | 8      |   29.9% | $-5086.75 | 1h 27m            | 1h 16m           
+30min    | TREND CONTINUATION   | BEAR     | 771    | 154  | 389  | 191      | 734     | 37     |   33.4% | $-2385.09 | 1h 38m            | 1h 12m           
+30min    | TREND CONTINUATION   | BULL     | 570    | 115  | 318  | 125      | 558     | 12     |   29.9% | $-5086.75 | 1h 27m            | 1h 16m           
 30min    | TREND CONTINUATION   | RANGE    | 87     | 17   | 41   | 29       | 87      | 0      |   31.0% | $ -122.10 | 1h 24m            | 1h 26m           
-30min    | TREND_CONTINUATION   | BEAR     | 50     | 19   | 13   | 17       | 49      | 1      |   59.2% | $  +22.59 | 57m               | 35m              
+30min    | TREND_CONTINUATION   | BEAR     | 50     | 19   | 14   | 17       | 50      | 0      |   58.0% | $  +10.79 | 57m               | 37m              
 30min    | TREND_CONTINUATION   | BULL     | 79     | 4    | 66   | 8        | 78      | 1      |   10.3% | $ -908.03 | 30m               | 38m              
 
 
 ==================================================================================================================================================================================================================================================================================================
 📋 DETAILED SIGNAL LIST: FIXED POSITION SIZE $100, LEVERAGE 10x, NOTIONAL $1000
-Report Generated: 2026-03-24 22:01:13 GMT+7
-Total Signals Loaded: 5784
+Report Generated: 2026-03-24 22:46:22 GMT+7
+Total Signals Loaded: 5825
 
 ⚠️  NOTE: Signals marked 'STALE_TIMEOUT' in Data Quality column are EXCLUDED from Aggregates/Summary/Hierarchy
     (They appear here for audit trail only, but don't affect backtest P&L calculations)
@@ -517,15 +517,56 @@ Total Signals Loaded: 5784
 ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 Symbol       TF       Dir    Route                Regime Conf   Sym Grp      Status     Entry        Exit         PnL        Fired Time   Exit Time/TimeOut  Duration     Data Quality                
 ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+TON-USDT     1h       LONG   TREND CONTINUATION   BULL   68%    LOW_ALTS     OPEN       1.335234     N/A          OPEN       Mar-24 22:46:10 -                  -            ✓ CLEAN                     
+DOT-USDT     15min    SHORT  TREND CONTINUATION   BEAR   74%    MID_ALTS     OPEN       1.381817     N/A          OPEN       Mar-24 22:45:40 -                  -            ✓ CLEAN                     
+ACTSOL-USDT  1h       SHORT  TREND CONTINUATION   BEAR   77%    LOW_ALTS     OPEN       0.013726     N/A          OPEN       Mar-24 22:44:31 -                  -            ✓ CLEAN                     
+ACTSOL-USDT  30min    SHORT  TREND CONTINUATION   BEAR   77%    LOW_ALTS     OPEN       0.013726     N/A          OPEN       Mar-24 22:44:28 -                  -            ✓ CLEAN                     
+AERO-USDT    15min    SHORT  TREND CONTINUATION   BEAR   69%    LOW_ALTS     OPEN       0.326773     N/A          OPEN       Mar-24 22:44:11 -                  -            ✓ CLEAN                     
+EIGEN-USDT   15min    LONG   TREND CONTINUATION   BULL   73%    LOW_ALTS     OPEN       0.198498     N/A          OPEN       Mar-24 22:39:42 -                  -            ✓ CLEAN                     
+TON-USDT     15min    LONG   TREND CONTINUATION   BULL   73%    LOW_ALTS     OPEN       1.335034     N/A          OPEN       Mar-24 22:38:38 -                  -            ✓ CLEAN                     
+EIGEN-USDT   15min    LONG   TREND CONTINUATION   BULL   67%    LOW_ALTS     OPEN       0.197998     N/A          OPEN       Mar-24 22:38:29 -                  -            ✓ CLEAN                     
+AIN-USDT     30min    SHORT  TREND CONTINUATION   BEAR   84%    LOW_ALTS     OPEN       0.062627     N/A          OPEN       Mar-24 22:38:27 -                  -            ✓ CLEAN                     
+AIN-USDT     15min    SHORT  TREND CONTINUATION   BEAR   80%    LOW_ALTS     OPEN       0.062627     N/A          OPEN       Mar-24 22:38:21 -                  -            ✓ CLEAN                     
+AIN-USDT     30min    SHORT  TREND CONTINUATION   BEAR   84%    LOW_ALTS     OPEN       0.062587     N/A          OPEN       Mar-24 22:38:19 -                  -            ✓ CLEAN                     
+AIN-USDT     15min    SHORT  TREND CONTINUATION   BEAR   80%    LOW_ALTS     OPEN       0.062607     N/A          OPEN       Mar-24 22:38:16 -                  -            ✓ CLEAN                     
+TON-USDT     15min    LONG   TREND CONTINUATION   BULL   67%    LOW_ALTS     OPEN       1.333732     N/A          OPEN       Mar-24 22:36:55 -                  -            ✓ CLEAN                     
+NEWT-USDT    15min    LONG   TREND CONTINUATION   BULL   73%    LOW_ALTS     TP_HIT     0.074104     0.074940     $+11.2810  Mar-24 22:34:18 Mar-24 22:45:33    00:11:15     ✓ CLEAN                     
+NEWT-USDT    15min    LONG   TREND CONTINUATION   BULL   73%    LOW_ALTS     SL_HIT     0.074404     0.073680     $-9.7351   Mar-24 22:32:44 Mar-24 22:36:49    00:04:04     ✓ CLEAN                     
+XAUT-USDT    15min    LONG   TREND CONTINUATION   BULL   67%    TOP_ALTS     OPEN       4421.807390  N/A          OPEN       Mar-24 22:32:39 -                  -            ✓ CLEAN                     
+XAUT-USDT    15min    LONG   TREND CONTINUATION   BULL   67%    TOP_ALTS     OPEN       4425.451030  N/A          OPEN       Mar-24 22:31:31 -                  -            ✓ CLEAN                     
+MAGIC-USDT   15min    SHORT  TREND CONTINUATION   BEAR   76%    LOW_ALTS     OPEN       0.059940     N/A          OPEN       Mar-24 22:30:16 -                  -            ✓ CLEAN                     
+WLFI-USDT    30min    LONG   TREND CONTINUATION   BULL   68%    LOW_ALTS     OPEN       0.105605     N/A          OPEN       Mar-24 22:28:11 -                  -            ✓ CLEAN                     
+WLFI-USDT    15min    LONG   TREND_CONTINUATION   BULL   69%    LOW_ALTS     OPEN       0.105605     N/A          OPEN       Mar-24 22:28:08 -                  -            ✓ CLEAN                     
+HYPE-USDT    15min    LONG   TREND CONTINUATION   BULL   68%    LOW_ALTS     SL_HIT     39.475436    39.075000    $-10.1439  Mar-24 22:28:01 Mar-24 22:32:36    00:04:34     ✓ CLEAN                     
+DOT-USDT     30min    SHORT  TREND CONTINUATION   BEAR   72%    MID_ALTS     OPEN       1.392506     N/A          OPEN       Mar-24 22:27:38 -                  -            ✓ CLEAN                     
+HYPE-USDT    15min    LONG   TREND CONTINUATION   BULL   68%    LOW_ALTS     SL_HIT     39.501462    39.075000    $-10.7961  Mar-24 22:26:34 Mar-24 22:32:35    00:06:00     ✓ CLEAN                     
+BONK-USDT    15min    LONG   TREND CONTINUATION   BULL   61%    LOW_ALTS     SL_HIT     0.000006     0.000006     $-7.0050   Mar-24 22:26:29 Mar-24 22:32:35    00:06:05     ✓ CLEAN                     
+BONK-USDT    15min    LONG   TREND CONTINUATION   BULL   61%    LOW_ALTS     SL_HIT     0.000006     0.000006     $-6.3413   Mar-24 22:24:21 Mar-24 22:32:35    00:08:13     ✓ CLEAN                     
+ZORA-USDT    30min    SHORT  TREND CONTINUATION   BEAR   71%    LOW_ALTS     OPEN       0.016034     N/A          OPEN       Mar-24 22:22:42 -                  -            ✓ CLEAN                     
+LA-USDT      15min    SHORT  TREND CONTINUATION   BEAR   71%    LOW_ALTS     OPEN       0.199590     N/A          OPEN       Mar-24 22:22:27 -                  -            ✓ CLEAN                     
+ZORA-USDT    30min    SHORT  TREND CONTINUATION   BEAR   71%    LOW_ALTS     SL_HIT     0.015994     0.016091     $-6.0288   Mar-24 22:21:51 Mar-24 22:39:37    00:17:45     ✓ CLEAN                     
+ATH-USDT     30min    SHORT  TREND CONTINUATION   BEAR   82%    LOW_ALTS     OPEN       0.006889     N/A          OPEN       Mar-24 22:19:00 -                  -            ✓ CLEAN                     
+ZKJ-USDT     30min    LONG   TREND CONTINUATION   BULL   74%    TOP_ALTS     OPEN       0.021361     N/A          OPEN       Mar-24 22:14:57 -                  -            ✓ CLEAN                     
+ERA-USDT     15min    SHORT  TREND CONTINUATION   BEAR   76%    LOW_ALTS     SL_HIT     0.128371     0.129000     $-4.8721   Mar-24 22:12:31 Mar-24 22:29:24    00:16:52     ✓ CLEAN                     
+NEWT-USDT    15min    LONG   TREND CONTINUATION   BULL   73%    LOW_ALTS     TP_HIT     0.073493     0.074180     $+9.3421   Mar-24 22:12:25 Mar-24 22:14:57    00:02:32     ✓ CLEAN                     
+KNC-USDT     30min    LONG   TREND CONTINUATION   BULL   74%    LOW_ALTS     OPEN       0.142142     N/A          OPEN       Mar-24 22:11:38 -                  -            ✓ CLEAN                     
+VOXEL-USDT   15min    SHORT  TREND_CONTINUATION   BEAR   92%    LOW_ALTS     OPEN       0.007443     N/A          OPEN       Mar-24 22:08:55 -                  -            ✓ CLEAN                     
+MAGIC-USDT   15min    SHORT  TREND CONTINUATION   BEAR   76%    LOW_ALTS     OPEN       0.059940     N/A          OPEN       Mar-24 22:08:13 -                  -            ✓ CLEAN                     
+ASTER-USDT   15min    LONG   TREND CONTINUATION   BULL   74%    LOW_ALTS     SL_HIT     0.668167     0.663700     $-6.6862   Mar-24 22:07:00 Mar-24 22:14:56    00:07:56     ✓ CLEAN                     
+DUCK-USDT    1h       LONG   TREND CONTINUATION   BULL   68%    LOW_ALTS     OPEN       0.001042     N/A          OPEN       Mar-24 22:05:29 -                  -            ✓ CLEAN                     
+DUCK-USDT    30min    LONG   TREND CONTINUATION   BULL   67%    LOW_ALTS     OPEN       0.001042     N/A          OPEN       Mar-24 22:05:26 -                  -            ✓ CLEAN                     
+PROMPT-USDT  15min    SHORT  TREND_CONTINUATION   BEAR   72%    LOW_ALTS     TP_HIT     0.033457     0.033400     $+1.6919   Mar-24 22:02:29 Mar-24 22:03:14    00:00:44     ✓ CLEAN                     
+LA-USDT      30min    SHORT  TREND CONTINUATION   BEAR   78%    LOW_ALTS     SL_HIT     0.198891     0.200180     $-6.4397   Mar-24 22:01:37 Mar-24 22:27:30    00:25:53     ✓ CLEAN                     
+LA-USDT      15min    SHORT  TREND CONTINUATION   BEAR   71%    LOW_ALTS     SL_HIT     0.198891     0.200180     $-6.4397   Mar-24 22:01:35 Mar-24 22:27:30    00:25:54     ✓ CLEAN                     
 ERA-USDT     30min    SHORT  TREND CONTINUATION   BEAR   67%    LOW_ALTS     OPEN       0.128571     N/A          OPEN       Mar-24 21:59:39 -                  -            ✓ CLEAN                     
 BNB-USDT     30min    SHORT  TREND CONTINUATION   BEAR   93%    MAIN_BLOCKC  OPEN       630.199170   N/A          OPEN       Mar-24 21:56:57 -                  -            ✓ CLEAN                     
-DYDX-USDT    30min    SHORT  TREND CONTINUATION   BEAR   85%    LOW_ALTS     OPEN       0.081319     N/A          OPEN       Mar-24 21:55:55 -                  -            ✓ CLEAN                     
+DYDX-USDT    30min    SHORT  TREND CONTINUATION   BEAR   85%    LOW_ALTS     SL_HIT     0.081319     0.082200     $-10.7226  Mar-24 21:55:55 Mar-24 22:41:33    00:45:38     ✓ CLEAN                     
 XLM-USDT     1h       LONG   TREND CONTINUATION   BULL   72%    MAIN_BLOCKC  OPEN       0.167067     N/A          OPEN       Mar-24 21:54:12 -                  -            ✓ CLEAN                     
 XLM-USDT     30min    LONG   TREND CONTINUATION   BULL   62%    MAIN_BLOCKC  OPEN       0.167067     N/A          OPEN       Mar-24 21:54:09 -                  -            ✓ CLEAN                     
-NEWT-USDT    1h       LONG   TREND CONTINUATION   BULL   73%    LOW_ALTS     OPEN       0.072392     N/A          OPEN       Mar-24 21:52:13 -                  -            ✓ CLEAN                     
+NEWT-USDT    1h       LONG   TREND CONTINUATION   BULL   73%    LOW_ALTS     TP_HIT     0.072392     0.073460     $+14.7485  Mar-24 21:52:13 Mar-24 22:05:26    00:13:12     ✓ CLEAN                     
 NEWT-USDT    30min    LONG   TREND_CONTINUATION   BULL   81%    LOW_ALTS     TP_HIT     0.072392     0.073210     $+11.2951  Mar-24 21:52:11 Mar-24 21:56:36    00:04:25     ✓ CLEAN                     
 NEWT-USDT    15min    LONG   TREND CONTINUATION   BULL   79%    LOW_ALTS     OPEN       0.072262     N/A          OPEN       Mar-24 21:52:08 -                  -            ✓ CLEAN                     
-VINE-USDT    30min    SHORT  TREND CONTINUATION   BEAR   74%    LOW_ALTS     OPEN       0.015514     N/A          OPEN       Mar-24 21:51:45 -                  -            ✓ CLEAN                     
+VINE-USDT    30min    SHORT  TREND CONTINUATION   BEAR   74%    LOW_ALTS     SL_HIT     0.015514     0.015850     $-21.1691  Mar-24 21:51:45 Mar-24 22:39:32    00:47:46     ✓ CLEAN                     
 VINE-USDT    15min    SHORT  TREND CONTINUATION   BEAR   74%    LOW_ALTS     SL_HIT     0.015514     0.015760     $-15.5793  Mar-24 21:51:43 Mar-24 22:00:26    00:08:42     ✓ CLEAN                     
 AVAX-USDT    1h       SHORT  TREND CONTINUATION   BEAR   81%    MAIN_BLOCKC  OPEN       9.385605     N/A          OPEN       Mar-24 21:50:55 -                  -            ✓ CLEAN                     
 XRP-USDT     15min    SHORT  TREND CONTINUATION   BEAR   73%    MAIN_BLOCKC  SL_HIT     1.394884     1.403200     $-5.9267   Mar-24 21:50:51 Mar-24 21:53:05    00:02:14     ✓ CLEAN                     
@@ -536,7 +577,7 @@ PENGU-USDT   15min    SHORT  TREND CONTINUATION   BEAR   77%    LOW_ALTS     SL_
 MAGIC-USDT   15min    SHORT  TREND CONTINUATION   BEAR   71%    LOW_ALTS     OPEN       0.059740     N/A          OPEN       Mar-24 21:48:10 -                  -            ✓ CLEAN                     
 SUI-USDT     15min    SHORT  TREND CONTINUATION   BEAR   77%    LOW_ALTS     SL_HIT     0.935364     0.941400     $-6.4120   Mar-24 21:46:07 Mar-24 21:56:35    00:10:28     ✓ CLEAN                     
 AIN-USDT     30min    SHORT  TREND CONTINUATION   BEAR   79%    LOW_ALTS     OPEN       0.063626     N/A          OPEN       Mar-24 21:44:50 -                  -            ✓ CLEAN                     
-AIN-USDT     15min    SHORT  TREND CONTINUATION   BEAR   93%    LOW_ALTS     OPEN       0.063556     N/A          OPEN       Mar-24 21:44:47 -                  -            ✓ CLEAN                     
+AIN-USDT     15min    SHORT  TREND CONTINUATION   BEAR   93%    LOW_ALTS     TP_HIT     0.063556     0.062300     $+20.1666  Mar-24 21:44:47 Mar-24 22:45:21    01:00:34     ✓ CLEAN                     
 KNC-USDT     15min    LONG   TREND CONTINUATION   BULL   78%    LOW_ALTS     SL_HIT     0.142342     0.140900     $-10.1319  Mar-24 21:44:40 Mar-24 21:48:55    00:04:15     ✓ CLEAN                     
 OP-USDT      1h       SHORT  TREND_CONTINUATION   BEAR   73%    LOW_ALTS     OPEN       0.111888     N/A          OPEN       Mar-24 21:43:21 -                  -            ✓ CLEAN                     
 KAS-USDT     15min    SHORT  TREND CONTINUATION   BEAR   79%    LOW_ALTS     OPEN       0.035544     N/A          OPEN       Mar-24 21:41:57 -                  -            ✓ CLEAN                     
@@ -545,7 +586,7 @@ PUMP-USDT    15min    SHORT  TREND CONTINUATION   BEAR   71%    LOW_ALTS     OPE
 YFI-USDT     30min    SHORT  TREND CONTINUATION   BEAR   77%    LOW_ALTS     OPEN       2573.893530  N/A          OPEN       Mar-24 21:37:07 -                  -            ✓ CLEAN                     
 BMT-USDT     30min    SHORT  TREND CONTINUATION   BEAR   73%    LOW_ALTS     TP_HIT     0.015584     0.015410     $+11.3173  Mar-24 21:34:10 Mar-24 21:35:05    00:00:55     ✓ CLEAN                     
 BMT-USDT     15min    SHORT  TREND CONTINUATION   BEAR   73%    LOW_ALTS     TP_HIT     0.015584     0.015410     $+11.3173  Mar-24 21:34:07 Mar-24 21:35:04    00:00:57     ✓ CLEAN                     
-DYDX-USDT    1h       SHORT  NONE                 BEAR   78%    LOW_ALTS     OPEN       0.081319     N/A          OPEN       Mar-24 21:32:44 -                  -            ✓ CLEAN                     
+DYDX-USDT    1h       SHORT  NONE                 BEAR   78%    LOW_ALTS     SL_HIT     0.081319     0.082200     $-10.7226  Mar-24 21:32:44 Mar-24 22:41:29    01:08:45     ✓ CLEAN                     
 NEWT-USDT    15min    LONG   AMBIGUOUS            BULL   68%    LOW_ALTS     SL_HIT     0.072022     0.071670     $-4.8867   Mar-24 21:29:24 Mar-24 21:30:06    00:00:42     ✓ CLEAN                     
 UNI-USDT     15min    SHORT  TREND CONTINUATION   BEAR   73%    LOW_ALTS     SL_HIT     3.547049     3.564700     $-4.9515   Mar-24 21:26:37 Mar-24 21:28:35    00:01:57     ✓ CLEAN                     
 ALGO-USDT    15min    SHORT  TREND CONTINUATION   BEAR   74%    LOW_ALTS     OPEN       0.086114     N/A          OPEN       Mar-24 21:26:19 -                  -            ✓ CLEAN                     
@@ -556,13 +597,13 @@ NEAR-USDT    1h       SHORT  TREND CONTINUATION   BEAR   82%    LOW_ALTS     OPE
 HYPE-USDT    15min    SHORT  NONE                 BEAR   85%    LOW_ALTS     SL_HIT     38.105856    38.429000    $-8.4089   Mar-24 21:20:02 Mar-24 21:28:34    00:08:31     ✓ CLEAN                     
 ENA-USDT     30min    SHORT  NONE                 BEAR   73%    MID_ALTS     OPEN       0.092507     N/A          OPEN       Mar-24 21:19:54 -                  -            ✓ CLEAN                     
 AUCTION-USD  15min    SHORT  TREND CONTINUATION   BEAR   73%    LOW_ALTS     OPEN       4.705290     N/A          OPEN       Mar-24 21:19:30 -                  -            ✓ CLEAN                     
-ZORA-USDT    30min    SHORT  TREND CONTINUATION   BEAR   76%    LOW_ALTS     OPEN       0.015947     N/A          OPEN       Mar-24 21:19:25 -                  -            ✓ CLEAN                     
+ZORA-USDT    30min    SHORT  TREND CONTINUATION   BEAR   76%    LOW_ALTS     SL_HIT     0.015947     0.016091     $-8.9468   Mar-24 21:19:25 Mar-24 22:39:27    01:20:01     ✓ CLEAN                     
 LA-USDT      30min    SHORT  TREND CONTINUATION   BEAR   80%    LOW_ALTS     OPEN       0.197762     N/A          OPEN       Mar-24 21:18:27 -                  -            ✓ CLEAN                     
 NEAR-USDT    30min    SHORT  TREND CONTINUATION   BEAR   72%    LOW_ALTS     OPEN       1.286812     N/A          OPEN       Mar-24 21:17:28 -                  -            ✓ CLEAN                     
 ERA-USDT     30min    SHORT  TREND CONTINUATION   BEAR   74%    LOW_ALTS     OPEN       0.128072     N/A          OPEN       Mar-24 21:16:31 -                  -            ✓ CLEAN                     
 ERA-USDT     15min    SHORT  TREND CONTINUATION   BEAR   67%    LOW_ALTS     OPEN       0.128072     N/A          OPEN       Mar-24 21:16:28 -                  -            ✓ CLEAN                     
-BNB-USDT     15min    SHORT  TREND CONTINUATION   BEAR   67%    MAIN_BLOCKC  OPEN       629.558811   N/A          OPEN       Mar-24 21:15:14 -                  -            ✓ CLEAN                     
-XRP-USDT     30min    SHORT  TREND CONTINUATION   BEAR   70%    MAIN_BLOCKC  OPEN       1.398510     N/A          OPEN       Mar-24 21:15:05 -                  -            ✓ CLEAN                     
+BNB-USDT     15min    SHORT  TREND CONTINUATION   BEAR   67%    MAIN_BLOCKC  SL_HIT     629.558811   632.370000   $-4.4455   Mar-24 21:15:14 Mar-24 22:23:37    01:08:23     ✓ CLEAN                     
+XRP-USDT     30min    SHORT  TREND CONTINUATION   BEAR   70%    MAIN_BLOCKC  SL_HIT     1.398510     1.407040     $-6.0623   Mar-24 21:15:05 Mar-24 22:25:08    01:10:02     ✓ CLEAN                     
 XRP-USDT     15min    SHORT  TREND CONTINUATION   BEAR   67%    MAIN_BLOCKC  SL_HIT     1.398630     1.404800     $-4.3921   Mar-24 21:15:03 Mar-24 21:52:54    00:37:50     ✓ CLEAN                     
 BONK-USDT    15min    SHORT  TREND CONTINUATION   BEAR   80%    LOW_ALTS     OPEN       0.000006     N/A          OPEN       Mar-24 21:14:52 -                  -            ✓ CLEAN                     
 AVNT-USDT    15min    SHORT  TREND CONTINUATION   BEAR   78%    LOW_ALTS     OPEN       0.138012     N/A          OPEN       Mar-24 21:14:12 -                  -            ✓ CLEAN                     
@@ -576,7 +617,7 @@ HYPE-USDT    15min    LONG   TREND CONTINUATION   BULL   63%    LOW_ALTS     SL_
 LA-USDT      15min    SHORT  TREND CONTINUATION   BEAR   76%    LOW_ALTS     OPEN       0.198751     N/A          OPEN       Mar-24 21:06:48 -                  -            ✓ CLEAN                     
 TUT-USDT     15min    SHORT  TREND CONTINUATION   BEAR   82%    LOW_ALTS     OPEN       0.009351     N/A          OPEN       Mar-24 21:05:00 -                  -            ✓ CLEAN                     
 CVX-USDT     15min    SHORT  TREND CONTINUATION   BEAR   78%    LOW_ALTS     OPEN       1.788210     N/A          OPEN       Mar-24 21:03:46 -                  -            ✓ CLEAN                     
-ZKJ-USDT     30min    SHORT  TREND_CONTINUATION   BEAR   86%    TOP_ALTS     OPEN       0.021029     N/A          OPEN       Mar-24 21:01:37 -                  -            ✓ CLEAN                     
+ZKJ-USDT     30min    SHORT  TREND_CONTINUATION   BEAR   86%    TOP_ALTS     SL_HIT     0.021029     0.021280     $-11.7975  Mar-24 21:01:37 Mar-24 22:04:11    01:02:34     ✓ CLEAN                     
 DOT-USDT     15min    SHORT  TREND CONTINUATION   BEAR   67%    MID_ALTS     SL_HIT     1.388210     1.402100     $-9.9063   Mar-24 20:59:52 Mar-24 21:52:50    00:52:58     ✓ CLEAN                     
 DOGE-USDT    15min    SHORT  TREND CONTINUATION   BEAR   77%    LOW_ALTS     SL_HIT     0.093526     0.094020     $-5.2502   Mar-24 20:59:47 Mar-24 21:06:31    00:06:43     ✓ CLEAN                     
 TURBO-USDT   15min    SHORT  TREND CONTINUATION   BEAR   67%    LOW_ALTS     OPEN       0.001093     N/A          OPEN       Mar-24 20:59:39 -                  -            ✓ CLEAN                     
@@ -584,7 +625,7 @@ AGLD-USDT    1h       SHORT  TREND CONTINUATION   BEAR   78%    LOW_ALTS     OPE
 AGLD-USDT    30min    SHORT  TREND CONTINUATION   BEAR   70%    LOW_ALTS     OPEN       0.240659     N/A          OPEN       Mar-24 20:57:48 -                  -            ✓ CLEAN                     
 AUCTION-USD  15min    SHORT  TREND CONTINUATION   BEAR   73%    LOW_ALTS     SL_HIT     4.695300     4.730000     $-7.3362   Mar-24 20:56:31 Mar-24 20:57:18    00:00:47     ✓ CLEAN                     
 VINE-USDT    1h       SHORT  TREND CONTINUATION   BEAR   72%    LOW_ALTS     OPEN       0.015584     N/A          OPEN       Mar-24 20:56:25 -                  -            ✓ CLEAN                     
-VINE-USDT    15min    SHORT  TREND CONTINUATION   BEAR   73%    LOW_ALTS     OPEN       0.015584     N/A          OPEN       Mar-24 20:56:22 -                  -            ✓ CLEAN                     
+VINE-USDT    15min    SHORT  TREND CONTINUATION   BEAR   73%    LOW_ALTS     SL_HIT     0.015584     0.015850     $-16.7571  Mar-24 20:56:22 Mar-24 22:39:20    01:42:58     ✓ CLEAN                     
 BTC-USDT     15min    SHORT  TREND CONTINUATION   BEAR   80%    MAIN_BLOCKC  SL_HIT     70030.29960  70305.10000  $-3.9087   Mar-24 20:55:10 Mar-24 21:06:29    00:11:19     ✓ CLEAN                     
 YFI-USDT     30min    SHORT  TREND CONTINUATION   BEAR   77%    LOW_ALTS     OPEN       2578.878540  N/A          OPEN       Mar-24 20:55:00 -                  -            ✓ CLEAN                     
 CRV-USDT     1h       SHORT  TREND_CONTINUATION   BEAR   66%    LOW_ALTS     OPEN       0.223077     N/A          OPEN       Mar-24 20:54:53 -                  -            ✓ CLEAN                     
@@ -601,13 +642,13 @@ ORDER-USDT   1h       SHORT  TREND CONTINUATION   BEAR   77%    LOW_ALTS     SL_
 ATH-USDT     30min    SHORT  TREND CONTINUATION   BEAR   72%    LOW_ALTS     SL_HIT     0.006847     0.006932     $-12.2409  Mar-24 20:45:43 Mar-24 21:00:49    00:15:05     ✓ CLEAN                     
 ALU-USDT     15min    SHORT  TREND_CONTINUATION   BEAR   73%    LOW_ALTS     OPEN       0.004456     N/A          OPEN       Mar-24 20:44:53 -                  -            ✓ CLEAN                     
 TUT-USDT     30min    SHORT  TREND CONTINUATION   BEAR   74%    LOW_ALTS     OPEN       0.009341     N/A          OPEN       Mar-24 20:44:48 -                  -            ✓ CLEAN                     
-TUT-USDT     15min    SHORT  TREND CONTINUATION   BEAR   82%    LOW_ALTS     OPEN       0.009341     N/A          OPEN       Mar-24 20:44:46 -                  -            ✓ CLEAN                     
+TUT-USDT     15min    SHORT  TREND CONTINUATION   BEAR   82%    LOW_ALTS     TIMEOUT    0.009341     0.009360     $-2.0673   Mar-24 20:44:46 Mar-24 22:44:46    03:45:00     ✓ CLEAN                     
 MAGIC-USDT   15min    SHORT  TREND CONTINUATION   BEAR   71%    LOW_ALTS     OPEN       0.059740     N/A          OPEN       Mar-24 20:44:09 -                  -            ✓ CLEAN                     
-RAY-USDT     15min    SHORT  TREND CONTINUATION   BEAR   85%    LOW_ALTS     OPEN       0.601198     N/A          OPEN       Mar-24 20:44:04 -                  -            ✓ CLEAN                     
+RAY-USDT     15min    SHORT  TREND CONTINUATION   BEAR   85%    LOW_ALTS     TIMEOUT    0.601198     0.602300     $-1.8293   Mar-24 20:44:04 Mar-24 22:44:04    03:45:00     ✓ CLEAN                     
 LQTY-USDT    15min    SHORT  TREND CONTINUATION   BEAR   73%    LOW_ALTS     SL_HIT     0.283017     0.283900     $-3.1113   Mar-24 20:44:00 Mar-24 20:44:46    00:00:45     ✓ CLEAN                     
-CVX-USDT     15min    SHORT  TREND CONTINUATION   BEAR   76%    LOW_ALTS     OPEN       1.792506     N/A          OPEN       Mar-24 20:43:08 -                  -            ✓ CLEAN                     
+CVX-USDT     15min    SHORT  TREND CONTINUATION   BEAR   76%    LOW_ALTS     TIMEOUT    1.792506     1.799700     $-3.9975   Mar-24 20:43:08 Mar-24 22:43:08    03:45:00     ✓ CLEAN                     
 LDO-USDT     15min    SHORT  TREND_CONTINUATION   BEAR   78%    LOW_ALTS     TP_HIT     0.291208     0.290500     $+2.4389   Mar-24 20:43:03 Mar-24 20:53:31    00:10:27     ✓ CLEAN                     
-BIO-USDT     15min    SHORT  TREND CONTINUATION   BEAR   87%    LOW_ALTS     OPEN       0.018132     N/A          OPEN       Mar-24 20:42:20 -                  -            ✓ CLEAN                     
+BIO-USDT     15min    SHORT  TREND CONTINUATION   BEAR   87%    LOW_ALTS     TIMEOUT    0.018132     0.018350     $-11.8883  Mar-24 20:42:20 Mar-24 22:42:20    03:45:00     ✓ CLEAN                     
 EIGEN-USDT   15min    SHORT  TREND CONTINUATION   BEAR   76%    LOW_ALTS     SL_HIT     0.194206     0.194800     $-3.0513   Mar-24 20:41:42 Mar-24 20:42:20    00:00:37     ✓ CLEAN                     
 SUI-USDT     15min    SHORT  TREND CONTINUATION   BEAR   80%    LOW_ALTS     TP_HIT     0.941258     0.932300     $+9.6083   Mar-24 20:41:39 Mar-24 21:50:32    01:08:53     ✓ CLEAN                     
 PEPE-USDT    15min    SHORT  TREND CONTINUATION   BEAR   72%    LOW_ALTS     SL_HIT     0.000003     0.000003     $-4.2132   Mar-24 20:41:32 Mar-24 20:53:30    00:11:57     ✓ CLEAN                     
@@ -621,21 +662,21 @@ HYPE-USDT    15min    LONG   TREND CONTINUATION   BULL   62%    LOW_ALTS     SL_
 TURBO-USDT   30min    SHORT  TREND CONTINUATION   BEAR   80%    LOW_ALTS     TP_HIT     0.001103     0.001089     $+12.7603  Mar-24 20:38:31 Mar-24 21:13:57    00:35:26     ✓ CLEAN                     
 TURBO-USDT   15min    SHORT  TREND CONTINUATION   BEAR   71%    LOW_ALTS     TP_HIT     0.001103     0.001091     $+10.9038  Mar-24 20:38:28 Mar-24 20:59:15    00:20:46     ✓ CLEAN                     
 CROSS-USDT   30min    LONG   TREND CONTINUATION   BULL   68%    MID_ALTS     OPEN       0.068038     N/A          OPEN       Mar-24 20:37:51 -                  -            ✓ CLEAN                     
-AUCTION-USD  15min    SHORT  TREND CONTINUATION   BEAR   73%    LOW_ALTS     OPEN       4.715280     N/A          OPEN       Mar-24 20:35:49 -                  -            ✓ CLEAN                     
+AUCTION-USD  15min    SHORT  TREND CONTINUATION   BEAR   73%    LOW_ALTS     TIMEOUT    4.715280     4.730000     $-3.1121   Mar-24 20:35:49 Mar-24 22:35:49    03:45:00     ✓ CLEAN                     
 ENS-USDT     15min    SHORT  TREND CONTINUATION   BEAR   76%    LOW_ALTS     TP_HIT     6.098895     6.066000     $+5.4228   Mar-24 20:34:48 Mar-24 20:41:30    00:06:42     ✓ CLEAN                     
-PORTAL-USDT  15min    SHORT  TREND CONTINUATION   BEAR   73%    LOW_ALTS     OPEN       0.010300     N/A          OPEN       Mar-24 20:30:34 -                  -            ✓ CLEAN                     
+PORTAL-USDT  15min    SHORT  TREND CONTINUATION   BEAR   73%    LOW_ALTS     TIMEOUT    0.010300     0.010400     $-9.6452   Mar-24 20:30:34 Mar-24 22:30:34    03:45:00     ✓ CLEAN                     
 BMT-USDT     15min    SHORT  TREND CONTINUATION   BEAR   73%    LOW_ALTS     TP_HIT     0.015524     0.015410     $+7.4276   Mar-24 20:29:46 Mar-24 20:30:24    00:00:38     ✓ CLEAN                     
 BTC-USDT     15min    SHORT  TREND CONTINUATION   BEAR   83%    MAIN_BLOCKC  TP_HIT     70619.01030  70313.00000  $+4.3521   Mar-24 20:26:48 Mar-24 20:43:52    00:17:04     ✓ CLEAN                     
 NMR-USDT     15min    SHORT  TREND CONTINUATION   BEAR   71%    LOW_ALTS     SL_HIT     6.825168     6.864000     $-5.6573   Mar-24 20:25:50 Mar-24 20:36:24    00:10:33     ✓ CLEAN                     
 AVNT-USDT    15min    SHORT  TREND CONTINUATION   BEAR   73%    LOW_ALTS     SL_HIT     0.138741     0.139320     $-4.1550   Mar-24 20:22:27 Mar-24 20:31:46    00:09:19     ✓ CLEAN                     
-MAGIC-USDT   15min    SHORT  TREND CONTINUATION   BEAR   71%    LOW_ALTS     OPEN       0.059740     N/A          OPEN       Mar-24 20:20:38 -                  -            ✓ CLEAN                     
+MAGIC-USDT   15min    SHORT  TREND CONTINUATION   BEAR   71%    LOW_ALTS     TIMEOUT    0.059740     0.059900     $-2.6678   Mar-24 20:20:38 Mar-24 22:20:38    03:45:00     ✓ CLEAN                     
 AUCTION-USD  15min    LONG   TREND CONTINUATION   BULL   72%    LOW_ALTS     SL_HIT     4.874870     4.830000     $-9.2043   Mar-24 20:18:01 Mar-24 20:19:06    00:01:04     ✓ CLEAN                     
 ZORA-USDT    15min    SHORT  TREND CONTINUATION   BEAR   72%    LOW_ALTS     TP_HIT     0.016048     0.015971     $+4.8172   Mar-24 20:14:47 Mar-24 20:46:28    00:31:41     ✓ CLEAN                     
 LA-USDT      15min    SHORT  TREND CONTINUATION   BEAR   67%    LOW_ALTS     SL_HIT     0.199490     0.200450     $-4.7877   Mar-24 20:13:48 Mar-24 20:30:23    00:16:34     ✓ CLEAN                     
 BIO-USDT     15min    SHORT  NONE                 BEAR   75%    LOW_ALTS     SL_HIT     0.018252     0.018310     $-3.1824   Mar-24 20:12:32 Mar-24 20:13:33    00:01:00     ✓ CLEAN                     
 ALGO-USDT    15min    SHORT  TREND CONTINUATION   BEAR   79%    LOW_ALTS     SL_HIT     0.087113     0.087400     $-3.2860   Mar-24 20:11:44 Mar-24 20:27:42    00:15:57     ✓ CLEAN                     
 POL-USDT     15min    SHORT  TREND CONTINUATION   BEAR   87%    MAIN_BLOCKC  SL_HIT     0.094805     0.095300     $-5.1931   Mar-24 20:10:29 Mar-24 20:21:30    00:11:01     ✓ CLEAN                     
-PROMPT-USDT  15min    SHORT  TREND CONTINUATION   BEAR   74%    LOW_ALTS     OPEN       0.033536     N/A          OPEN       Mar-24 20:08:36 -                  -            ✓ CLEAN                     
+PROMPT-USDT  15min    SHORT  TREND CONTINUATION   BEAR   74%    LOW_ALTS     TIMEOUT    0.033536     0.033400     $+4.0847   Mar-24 20:08:36 Mar-24 22:08:36    03:45:00     ✓ CLEAN                     
 BMT-USDT     15min    SHORT  TREND_CONTINUATION   BEAR   74%    LOW_ALTS     TP_HIT     0.015475     0.015410     $+4.1862   Mar-24 20:07:30 Mar-24 20:11:30    00:04:00     ✓ CLEAN                     
 KAS-USDT     30min    LONG   TREND CONTINUATION   BULL   73%    LOW_ALTS     SL_HIT     0.037527     0.036930     $-15.9214  Mar-24 19:58:38 Mar-24 20:41:28    00:42:49     ✓ CLEAN                     
 ZKJ-USDT     15min    SHORT  NONE                 BEAR   75%    TOP_ALTS     TIMEOUT    0.021089     0.021180     $-4.3017   Mar-24 19:57:08 Mar-24 21:57:08    03:45:00     ✓ CLEAN                     
@@ -658,10 +699,10 @@ PUMP-USDT    30min    SHORT  NONE                 BEAR   81%    LOW_ALTS     SL_
 ZORA-USDT    1h       SHORT  TREND CONTINUATION   BEAR   72%    LOW_ALTS     OPEN       0.016052     N/A          OPEN       Mar-24 19:35:54 -                  -            ✓ CLEAN                     
 XRP-USDT     15min    SHORT  TREND_CONTINUATION   BEAR   79%    MAIN_BLOCKC  SL_HIT     1.414184     1.418610     $-3.1197   Mar-24 19:34:47 Mar-24 19:53:33    00:18:46     ✓ CLEAN                     
 PENGU-USDT   15min    SHORT  TREND CONTINUATION   BEAR   76%    LOW_ALTS     SL_HIT     0.006937     0.006968     $-4.4409   Mar-24 19:33:10 Mar-24 19:42:36    00:09:25     ✓ CLEAN                     
-AERO-USDT    1h       SHORT  TREND CONTINUATION   BEAR   83%    LOW_ALTS     OPEN       0.322977     N/A          OPEN       Mar-24 19:31:44 -                  -            ✓ CLEAN                     
+AERO-USDT    1h       SHORT  TREND CONTINUATION   BEAR   83%    LOW_ALTS     SL_HIT     0.322977     0.328600     $-17.1129  Mar-24 19:31:44 Mar-24 22:24:58    02:53:13     ✓ CLEAN                     
 ATH-USDT     15min    SHORT  TREND CONTINUATION   BEAR   76%    LOW_ALTS     SL_HIT     0.006890     0.006950     $-8.6183   Mar-24 19:30:27 Mar-24 20:36:21    01:05:54     ✓ CLEAN                     
 DUCK-USDT    30min    LONG   TREND_CONTINUATION   BULL   74%    LOW_ALTS     SL_HIT     0.001041     0.001033     $-7.7230   Mar-24 19:29:26 Mar-24 19:47:29    00:18:02     ✓ CLEAN                     
-VINE-USDT    30min    SHORT  TREND CONTINUATION   BEAR   67%    LOW_ALTS     OPEN       0.015734     N/A          OPEN       Mar-24 19:29:17 -                  -            ✓ CLEAN                     
+VINE-USDT    30min    SHORT  TREND CONTINUATION   BEAR   67%    LOW_ALTS     TIMEOUT    0.015734     0.015760     $-1.6339   Mar-24 19:29:17 Mar-24 22:29:17    05:00:00     ✓ CLEAN                     
 CRV-USDT     30min    LONG   TREND CONTINUATION   BULL   73%    LOW_ALTS     SL_HIT     0.226326     0.224600     $-7.6266   Mar-24 19:27:40 Mar-24 20:24:59    00:57:19     ✓ CLEAN                     
 BLUR-USDT    15min    SHORT  TREND_CONTINUATION   BEAR   71%    LOW_ALTS     SL_HIT     0.018981     0.019050     $-3.6220   Mar-24 19:27:32 Mar-24 20:08:25    00:40:52     ✓ CLEAN                     
 PROMPT-USDT  15min    SHORT  TREND CONTINUATION   BEAR   74%    LOW_ALTS     TIMEOUT    0.033606     0.033510     $+2.8756   Mar-24 19:26:09 Mar-24 21:26:09    03:45:00     ✓ CLEAN                     
@@ -675,7 +716,7 @@ PROMPT-USDT  15min    SHORT  TREND CONTINUATION   BEAR   74%    LOW_ALTS     TIM
 LQTY-USDT    15min    SHORT  TREND CONTINUATION   BEAR   81%    LOW_ALTS     SL_HIT     0.284915     0.285900     $-3.4460   Mar-24 19:21:31 Mar-24 19:25:43    00:04:11     ✓ CLEAN                     
 ARK-USDT     15min    LONG   TREND CONTINUATION   BULL   73%    LOW_ALTS     OPEN       0.172800     N/A          OPEN       Mar-24 19:18:56 -                  -            ✓ CLEAN                     
 AGLD-USDT    15min    SHORT  TREND CONTINUATION   BEAR   83%    LOW_ALTS     TIMEOUT    0.243456     0.239900     $+14.8241  Mar-24 19:17:29 Mar-24 21:17:29    03:45:00     ✓ CLEAN                     
-VINE-USDT    30min    SHORT  TREND CONTINUATION   BEAR   67%    LOW_ALTS     OPEN       0.015684     N/A          OPEN       Mar-24 19:16:15 -                  -            ✓ CLEAN                     
+VINE-USDT    30min    SHORT  TREND CONTINUATION   BEAR   67%    LOW_ALTS     TIMEOUT    0.015684     0.015760     $-4.8033   Mar-24 19:16:15 Mar-24 22:16:15    05:00:00     ✓ CLEAN                     
 BMT-USDT     15min    SHORT  TREND_CONTINUATION   BEAR   74%    LOW_ALTS     TP_HIT     0.015624     0.015410     $+13.9104  Mar-24 19:15:23 Mar-24 20:11:20    00:55:56     ✓ CLEAN                     
 ROAM-USDT    30min    SHORT  TREND CONTINUATION   BEAR   76%    TOP_ALTS     SL_HIT     0.037146     0.037627     $-12.7882  Mar-24 19:13:00 Mar-24 19:14:01    00:01:00     ✓ CLEAN                     
 BLUR-USDT    15min    SHORT  TREND_CONTINUATION   BEAR   71%    LOW_ALTS     SL_HIT     0.018941     0.019050     $-5.7197   Mar-24 19:10:15 Mar-24 20:08:21    00:58:06     ✓ CLEAN                     
@@ -719,11 +760,11 @@ LA-USDT      15min    SHORT  TREND CONTINUATION   BEAR   74%    LOW_ALTS     TIM
 XPL-USDT     15min    LONG   TREND CONTINUATION   BULL   63%    MID_ALTS     SL_HIT     0.097197     0.096600     $-6.1432   Mar-24 18:37:20 Mar-24 18:54:02    00:16:42     ✓ CLEAN                     
 ENA-USDT     15min    LONG   TREND CONTINUATION   BULL   79%    MID_ALTS     SL_HIT     0.095696     0.095100     $-6.2239   Mar-24 18:36:40 Mar-24 18:43:38    00:06:58     ✓ CLEAN                     
 BNB-USDT     15min    LONG   TREND CONTINUATION   BULL   66%    MAIN_BLOCKC  SL_HIT     638.745107   636.733000   $-3.1501   Mar-24 18:35:36 Mar-24 19:34:03    00:58:27     ✓ CLEAN                     
-NMR-USDT     1h       SHORT  TREND CONTINUATION   BEAR   68%    LOW_ALTS     OPEN       6.909084     N/A          OPEN       Mar-24 18:34:43 -                  -            ✓ CLEAN                     
+NMR-USDT     1h       SHORT  TREND CONTINUATION   BEAR   68%    LOW_ALTS     TIMEOUT    6.909084     6.898000     $+1.6068   Mar-24 18:34:43 Mar-24 22:34:43    05:00:00     ✓ CLEAN                     
 NMR-USDT     15min    SHORT  TREND_CONTINUATION   BEAR   68%    LOW_ALTS     TP_HIT     6.909084     6.853000     $+8.1839   Mar-24 18:34:40 Mar-24 19:50:59    01:16:18     ✓ CLEAN                     
 SAHARA-USDT  15min    SHORT  TREND CONTINUATION   BEAR   79%    TOP_ALTS     TP_HIT     0.025974     0.025850     $+4.7969   Mar-24 18:34:13 Mar-24 19:19:47    00:45:34     ✓ CLEAN                     
 KNC-USDT     15min    LONG   TREND CONTINUATION   BULL   67%    LOW_ALTS     SL_HIT     0.140741     0.140100     $-4.5516   Mar-24 18:33:30 Mar-24 18:34:11    00:00:41     ✓ CLEAN                     
-DOT-USDT     1h       SHORT  TREND CONTINUATION   BEAR   72%    MID_ALTS     OPEN       1.389609     N/A          OPEN       Mar-24 18:31:50 -                  -            ✓ CLEAN                     
+DOT-USDT     1h       SHORT  TREND CONTINUATION   BEAR   72%    MID_ALTS     TIMEOUT    1.389609     1.389100     $+0.3664   Mar-24 18:31:50 Mar-24 22:31:50    05:00:00     ✓ CLEAN                     
 ROAM-USDT    30min    SHORT  TREND CONTINUATION   BEAR   76%    TOP_ALTS     SL_HIT     0.037624     0.038014     $-10.2505  Mar-24 18:31:35 Mar-24 20:33:44    02:02:09     ✓ CLEAN                     
 POL-USDT     1h       SHORT  NONE                 BEAR   71%    MAIN_BLOCKC  TP_HIT     0.095405     0.094400     $+10.6409  Mar-24 18:30:50 Mar-24 21:13:52    02:43:01     ✓ CLEAN                     
 DOT-USDT     15min    SHORT  TREND CONTINUATION   BEAR   77%    MID_ALTS     SL_HIT     1.386612     1.394600     $-5.7278   Mar-24 18:20:40 Mar-24 18:35:21    00:14:41     ✓ CLEAN                     
@@ -6310,19 +6351,19 @@ MAGIC-USDT   30min    LONG   TREND CONTINUATION   BEAR   78%    LOW_ALTS     SL_
 Total Signals: 2224 | Closed: 1339 | WR: 32.7%
 LONG WR: 28.6% | SHORT WR: 46.4% | P&L: $-4,427.61
 
-Total Signals (Foundation + New): 5784 (Count Win = 933; Count Loss = 2472; Count TimeOut = 1278; Count Open = 171; Count Rejected = 549; Stale Timeouts Excluded = 759)
-Closed Trades (Clean Data): 4683 (TP: 933, SL: 2472; TimeOut Win = 515; TimeOut Loss = 763)
-Overall Win Rate: 30.92% >> [ (count TP + Count TimeOut Win) / (Closed Trades) ] = [ (933+515) / 4683 ]
-Total P&L (Clean Data): $-24769.37 (Avg P&L per Signal = $-4.28; Avg P&L per Closed Trade = $-5.29)
-Total P&L TP = $+20454.16; Total P&L SL = $-37755.10; Total P&L TIMEOUT Win = $+3689.07; Total P&L TIMEOUT Loss = $-11157.50
-Avg P&L TP per Count TP = $+21.92; Avg P&L SL per Count SL = $-15.27; Avg P&L TIMEOUT Win per Count TIMEOUT Win = $+7.16; Avg P&L TIMEOUT Loss per Count TIMEOUT Loss = $-14.62
-Avg TP Duration (Clean): 1h 18m | Avg SL Duration (Clean): 1h 4m
+Total Signals (Foundation + New): 5825 (Count Win = 938; Count Loss = 2491; Count TimeOut = 1290; Count Open = 176; Count Rejected = 549; Stale Timeouts Excluded = 759)
+Closed Trades (Clean Data): 4719 (TP: 938, SL: 2491; TimeOut Win = 518; TimeOut Loss = 772)
+Overall Win Rate: 30.85% >> [ (count TP + Count TimeOut Win) / (Closed Trades) ] = [ (938+518) / 4719 ]
+Total P&L (Clean Data): $-24929.95 (Avg P&L per Signal = $-4.28; Avg P&L per Closed Trade = $-5.28)
+Total P&L TP = $+20511.39; Total P&L SL = $-37937.33; Total P&L TIMEOUT Win = $+3695.13; Total P&L TIMEOUT Loss = $-11199.15
+Avg P&L TP per Count TP = $+21.87; Avg P&L SL per Count SL = $-15.23; Avg P&L TIMEOUT Win per Count TIMEOUT Win = $+7.13; Avg P&L TIMEOUT Loss per Count TIMEOUT Loss = $-14.51
+Avg TP Duration (Clean): 1h 18m | Avg SL Duration (Clean): 1h 3m
 Max TIMEOUT Window (Designed): 15min=3h 45m | 30min=5h 0m | 1h=5h 0m
 Max TIMEOUT Actual (Clean Data): 15min=3h 45m | 30min=5h 0m | 1h=5h 0m
 
 ⚠️  DATA QUALITY ALERT: 379 signals marked as 'STALE_TIMEOUT' (closed >150% past deadline)
 EXCLUDED from all metrics to preserve backtest accuracy.
-⚠️  CRITICAL: 1h timeframe shows None because ALL 258 1h timeouts exceed 5h design limit!
+⚠️  CRITICAL: 1h timeframe shows None because ALL 260 1h timeouts exceed 5h design limit!
 These signals should be reviewed for data/trade quality issues.
 
 ====================================================================================================================================
@@ -6342,7 +6383,7 @@ These signals should be reviewed for data/trade quality issues.
   2026-03-21: Total Fired=726 | Unique Fired=726 | Tele Sent=726 | 01:24:31-23:57:38 | ✓ IMMUTABLE
   2026-03-22: Total Fired=762 | Unique Fired=762 | Tele Sent=762 | 00:02:27-23:53:52 | ✓ IMMUTABLE
   2026-03-23: Total Fired=1174 | Unique Fired=1174 | Tele Sent=1174 | 00:02:20-23:59:40 | ✓ IMMUTABLE
-  2026-03-24: Total Fired=898 | Unique Fired=766 | Tele Sent=766 | 00:01:46-21:59:39 | 🔄 still accumulating
+  2026-03-24: Total Fired=939 | Unique Fired=807 | Tele Sent=807 | 00:01:46-22:46:10 | 🔄 still accumulating
 
 ⏰ TODAY'S BREAKDOWN BY HOUR (2026-03-24):
   00:00-01:00: Total=66 | Unique=66 | TeleSent=66 | ✓ IMMUTABLE
@@ -6367,7 +6408,7 @@ These signals should be reviewed for data/trade quality issues.
   19:00-20:00: Total=50 | Unique=50 | TeleSent=50 | ✓ IMMUTABLE
   20:00-21:00: Total=60 | Unique=60 | TeleSent=60 | ✓ IMMUTABLE
   21:00-22:00: Total=60 | Unique=60 | TeleSent=60 | ✓ IMMUTABLE
-  22:00-23:00: Total=0 | Unique=0 | TeleSent=0 | 🔄 still accumulating
+  22:00-23:00: Total=41 | Unique=41 | TeleSent=41 | 🔄 still accumulating
 
 ========================================================================================================================================================================================================
 🎯 HIERARCHY RANKING - 6D / 5D / 4D / 3D / 2D PERFORMANCE TRACKING
@@ -6378,11 +6419,11 @@ These signals should be reviewed for data/trade quality issues.
 
   Top 10 6D Combos by WR:
     ✓ 15min|LONG|TREND CONTINUATION|BULL|MID_ALTS|HIGH             | WR:  50.0% | P&L: $  -28.59 | Avg: $-1.02 | Closed: 28
-    ✓ 30min|SHORT|TREND CONTINUATION|BEAR|LOW_ALTS|HIGH            | WR:  49.6% | P&L: $ +158.62 | Avg: $+1.38 | Closed: 115
     ✓ 30min|LONG|TREND CONTINUATION|BULL|MID_ALTS|HIGH             | WR:  48.4% | P&L: $  +52.28 | Avg: $+1.69 | Closed: 31
     ✓ 30min|LONG|TREND CONTINUATION|BULL|TOP_ALTS|HIGH             | WR:  48.0% | P&L: $ -128.82 | Avg: $-5.15 | Closed: 25
+    ✓ 30min|SHORT|TREND CONTINUATION|BEAR|LOW_ALTS|HIGH            | WR:  47.9% | P&L: $ +111.34 | Avg: $+0.94 | Closed: 119
+    ✓ 1h|LONG|TREND CONTINUATION|BULL|LOW_ALTS|MID                 | WR:  46.5% | P&L: $ +511.77 | Avg: $+11.90 | Closed: 43
     ✓ 1h|LONG|TREND CONTINUATION|BULL|LOW_ALTS|LOW                 | WR:  45.8% | P&L: $  -98.40 | Avg: $-2.05 | Closed: 48
-    ✓ 1h|LONG|TREND CONTINUATION|BULL|LOW_ALTS|MID                 | WR:  45.2% | P&L: $ +497.02 | Avg: $+11.83 | Closed: 42
     ✓ 1h|SHORT|TREND CONTINUATION|BEAR|MID_ALTS|LOW                | WR:  44.4% | P&L: $  -62.92 | Avg: $-2.33 | Closed: 27
     ✓ 30min|SHORT|TREND CONTINUATION|BEAR|MID_ALTS|LOW             | WR:  43.8% | P&L: $  -17.32 | Avg: $-0.54 | Closed: 32
     ✓ 15min|LONG|TREND CONTINUATION|BEAR|MAIN_BLOCKCHAIN|HIGH      | WR:  42.3% | P&L: $  +59.85 | Avg: $+2.30 | Closed: 26
@@ -6394,46 +6435,46 @@ These signals should be reviewed for data/trade quality issues.
   Top 10 5D Combos by WR:
     ✓ TF_DIR_ROUTE_REGIME_SG_30min_SHORT_TREND_CONTINUATION_BEAR_LOW_ALTS              | WR:  60.7% | P&L: $  +64.59 | Avg: $+2.31 | Closed: 28
     ✓ TF_DIR_ROUTE_REGIME_SG_15min_LONG_TREND CONTINUATION_BULL_MID_ALTS               | WR:  52.9% | P&L: $  -33.42 | Avg: $-0.49 | Closed: 68
-    ✓ TF_DIR_ROUTE_REGIME_SG_15min_SHORT_TREND_CONTINUATION_BEAR_LOW_ALTS              | WR:  46.0% | P&L: $ -505.44 | Avg: $-10.11 | Closed: 50
-    ✓ TF_DIR_ROUTE_REGIME_SG_1h_SHORT_TREND CONTINUATION_BEAR_MID_ALTS                 | WR:  42.9% | P&L: $ -113.72 | Avg: $-2.32 | Closed: 49
+    ✓ TF_DIR_ROUTE_REGIME_SG_15min_SHORT_TREND_CONTINUATION_BEAR_LOW_ALTS              | WR:  47.1% | P&L: $ -503.75 | Avg: $-9.88 | Closed: 51
+    ✓ TF_DIR_ROUTE_REGIME_SG_1h_SHORT_TREND CONTINUATION_BEAR_MID_ALTS                 | WR:  44.0% | P&L: $ -113.36 | Avg: $-2.27 | Closed: 50
     ✓ TF_DIR_ROUTE_REGIME_SG_30min_LONG_TREND CONTINUATION_BULL_TOP_ALTS               | WR:  42.9% | P&L: $ -352.20 | Avg: $-10.06 | Closed: 35
     ✓ TF_DIR_ROUTE_REGIME_SG_30min_LONG_TREND CONTINUATION_BULL_MID_ALTS               | WR:  41.4% | P&L: $ -279.49 | Avg: $-4.82 | Closed: 58
     ✓ TF_DIR_ROUTE_REGIME_SG_15min_LONG_TREND CONTINUATION_BEAR_MAIN_BLOCKCHAIN        | WR:  40.7% | P&L: $  +56.60 | Avg: $+2.10 | Closed: 27
-    ✓ TF_DIR_ROUTE_REGIME_SG_1h_SHORT_TREND CONTINUATION_BEAR_LOW_ALTS                 | WR:  38.1% | P&L: $-1586.44 | Avg: $-6.17 | Closed: 257
+    ✓ TF_DIR_ROUTE_REGIME_SG_1h_SHORT_TREND CONTINUATION_BEAR_LOW_ALTS                 | WR:  38.2% | P&L: $-1601.95 | Avg: $-6.19 | Closed: 259
+    ✓ TF_DIR_ROUTE_REGIME_SG_1h_LONG_TREND CONTINUATION_BULL_LOW_ALTS                  | WR:  35.1% | P&L: $ -349.59 | Avg: $-2.32 | Closed: 151
     ✓ TF_DIR_ROUTE_REGIME_SG_15min_SHORT_TREND CONTINUATION_BEAR_TOP_ALTS              | WR:  34.8% | P&L: $ -175.35 | Avg: $-2.54 | Closed: 69
-    ✓ TF_DIR_ROUTE_REGIME_SG_1h_LONG_TREND CONTINUATION_BULL_LOW_ALTS                  | WR:  34.7% | P&L: $ -364.34 | Avg: $-2.43 | Closed: 150
 
 📊 4-DIMENSIONAL COMBOS (TimeFrame × Direction × Route × Regime)
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
   Top 5 4D Combos by WR:
-    ✓ TF_DIR_ROUTE_REGIME_30min_SHORT_TREND_CONTINUATION_BEAR                | WR:  57.4% | P&L: $  +10.42 | Avg: $+0.22 | Closed: 47
-    ✓ TF_DIR_ROUTE_REGIME_15min_SHORT_TREND_CONTINUATION_BEAR                | WR:  45.3% | P&L: $ -549.29 | Avg: $-8.58 | Closed: 64
+    ✓ TF_DIR_ROUTE_REGIME_30min_SHORT_TREND_CONTINUATION_BEAR                | WR:  56.2% | P&L: $   -1.38 | Avg: $-0.03 | Closed: 48
+    ✓ TF_DIR_ROUTE_REGIME_15min_SHORT_TREND_CONTINUATION_BEAR                | WR:  46.2% | P&L: $ -547.60 | Avg: $-8.42 | Closed: 65
     ✓ TF_DIR_ROUTE_REGIME_15min_SHORT_NONE_BEAR                              | WR:  40.0% | P&L: $  -56.46 | Avg: $-2.26 | Closed: 25
     ✓ TF_DIR_ROUTE_REGIME_30min_LONG_TREND CONTINUATION_RANGE                | WR:  39.3% | P&L: $  -24.31 | Avg: $-0.87 | Closed: 28
-    ✓ TF_DIR_ROUTE_REGIME_1h_SHORT_TREND CONTINUATION_BEAR                   | WR:  37.4% | P&L: $-1997.68 | Avg: $-5.53 | Closed: 361
+    ✓ TF_DIR_ROUTE_REGIME_1h_SHORT_TREND CONTINUATION_BEAR                   | WR:  37.6% | P&L: $-2012.82 | Avg: $-5.53 | Closed: 364
 
 📊 3-DIMENSIONAL COMBOS (Sample: TF_DIR_ROUTE, TF_DIR_REGIME, DIR_ROUTE_REGIME, TF_ROUTE_REGIME)
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
   Top 5 3D Combos by WR:
     ✓ TF_DIR_ROUTE_1h_LONG_REVERSAL                           | WR:  60.7% | P&L: $ +454.39 | Avg: $+16.23 | Closed: 28
-    ✓ TF_ROUTE_REGIME_30min_TREND_CONTINUATION_BEAR           | WR:  59.2% | P&L: $  +22.59 | Avg: $+0.46 | Closed: 49
-    ✓ TF_DIR_ROUTE_30min_SHORT_TREND_CONTINUATION             | WR:  57.4% | P&L: $  +10.42 | Avg: $+0.22 | Closed: 47
+    ✓ TF_ROUTE_REGIME_30min_TREND_CONTINUATION_BEAR           | WR:  58.0% | P&L: $  +10.79 | Avg: $+0.22 | Closed: 50
+    ✓ TF_DIR_ROUTE_30min_SHORT_TREND_CONTINUATION             | WR:  56.2% | P&L: $   -1.38 | Avg: $-0.03 | Closed: 48
     ✓ TF_DIR_REGIME_1h_LONG_RANGE                             | WR:  53.8% | P&L: $ +305.36 | Avg: $+11.74 | Closed: 26
-    ✓ DIR_ROUTE_REGIME_SHORT_TREND_CONTINUATION_BEAR          | WR:  50.0% | P&L: $ -604.93 | Avg: $-4.65 | Closed: 130
+    ✓ DIR_ROUTE_REGIME_SHORT_TREND_CONTINUATION_BEAR          | WR:  50.0% | P&L: $ -615.04 | Avg: $-4.66 | Closed: 132
 
 📊 2-DIMENSIONAL COMBOS (TF_DIR, TF_REGIME, DIR_REGIME, DIR_ROUTE, ROUTE_REGIME)
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
   Top 8 2D Combos by WR:
-    ✓ ROUTE_REGIME_TREND_CONTINUATION_BEAR          | WR:  50.4% | P&L: $ -596.85 | Avg: $-4.49 | Closed: 133
-    ✓ DIR_ROUTE_SHORT_TREND_CONTINUATION            | WR:  50.0% | P&L: $ -604.93 | Avg: $-4.65 | Closed: 130
+    ✓ ROUTE_REGIME_TREND_CONTINUATION_BEAR          | WR:  50.4% | P&L: $ -606.96 | Avg: $-4.50 | Closed: 135
+    ✓ DIR_ROUTE_SHORT_TREND_CONTINUATION            | WR:  50.0% | P&L: $ -615.04 | Avg: $-4.66 | Closed: 132
     ✓ TF_REGIME_1h_RANGE                            | WR:  42.3% | P&L: $ +237.06 | Avg: $+4.56 | Closed: 52
     ✓ ROUTE_REGIME_REVERSAL_RANGE                   | WR:  41.3% | P&L: $ +349.24 | Avg: $+5.54 | Closed: 63
+    ✓ TF_REGIME_1h_BEAR                             | WR:  38.5% | P&L: $-2199.25 | Avg: $-5.16 | Closed: 426
     ✓ DIR_ROUTE_LONG_REVERSAL                       | WR:  38.5% | P&L: $  +98.41 | Avg: $+0.84 | Closed: 117
-    ✓ TF_REGIME_1h_BEAR                             | WR:  38.4% | P&L: $-2173.39 | Avg: $-5.15 | Closed: 422
-    ✓ TF_DIR_1h_SHORT                               | WR:  37.7% | P&L: $-2172.96 | Avg: $-5.12 | Closed: 424
+    ✓ TF_DIR_1h_SHORT                               | WR:  37.9% | P&L: $-2198.83 | Avg: $-5.14 | Closed: 428
     ✓ DIR_ROUTE_SHORT_AMBIGUOUS                     | WR:  36.4% | P&L: $ -119.71 | Avg: $-3.63 | Closed: 33
 
 ================================================================================================================================================================
