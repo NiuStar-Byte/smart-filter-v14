@@ -5040,3 +5040,5 @@
 [2026-03-24 23:15:29 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
 [2026-03-24 23:15:29 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
 [2026-03-24 23:16:29 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-24 23:17:29 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-03-24 23:18:29 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
