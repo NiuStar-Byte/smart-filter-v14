@@ -44,7 +44,12 @@ def load_signals():
         with open(SIGNALS_FILE, 'r') as f:
             for line in f:
                 try:
-                    signals.append(json.loads(line.strip()))
+                    signal = json.loads(line.strip())
+                    # Normalize field names: convert 'direction' → 'signal_type' if needed
+                    # (pec_enhanced_reporter does this - mirror for consistency)
+                    if 'direction' in signal and 'signal_type' not in signal:
+                        signal['signal_type'] = signal['direction']
+                    signals.append(signal)
                 except:
                     pass
     return signals
