@@ -55,3 +55,5 @@ fired_signals_temp.csv
 test_*.py
 sample_*.txt
 exit_condition_debug.log
+daemon.log
+exit_condition_debug.log

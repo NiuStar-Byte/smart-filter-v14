@@ -9,8 +9,8 @@ from datetime import datetime
 class SignalLogger:
     def __init__(self, enabled=True):
         self.enabled = enabled
-        self.signal_count = {"15min": 0, "30min": 0, "1h": 0}
-        self.sent_count = {"15min": 0, "30min": 0, "1h": 0}
+        self.signal_count = {"15min": 0, "30min": 0, "1h": 0, "4h": 0}
+        self.sent_count = {"15min": 0, "30min": 0, "1h": 0, "4h": 0}
         self.rejected_count = 0
         self.start_time = datetime.now()
 
@@ -48,14 +48,14 @@ class SignalLogger:
         
         print("\n" + "="*70, flush=True)
         print(f"CYCLE SUMMARY ({elapsed:.1f}s) | {cycle_time}", flush=True)
-        print(f"  Generated: 15m={self.signal_count['15min']} | 30m={self.signal_count['30min']} | 1h={self.signal_count['1h']} (Total: {total_generated})", flush=True)
-        print(f"  Sent:      15m={self.sent_count['15min']} | 30m={self.sent_count['30min']} | 1h={self.sent_count['1h']} (Total: {total_sent})", flush=True)
+        print(f"  Generated: 15m={self.signal_count['15min']} | 30m={self.signal_count['30min']} | 1h={self.signal_count['1h']} | 4h={self.signal_count['4h']} (Total: {total_generated})", flush=True)
+        print(f"  Sent:      15m={self.sent_count['15min']} | 30m={self.sent_count['30min']} | 1h={self.sent_count['1h']} | 4h={self.sent_count['4h']} (Total: {total_sent})", flush=True)
         print(f"  Rejected:  {self.rejected_count}", flush=True)
         print("="*70 + "\n", flush=True)
 
     def reset(self):
         """Reset counters for next cycle"""
-        self.signal_count = {"15min": 0, "30min": 0, "1h": 0}
-        self.sent_count = {"15min": 0, "30min": 0, "1h": 0}
+        self.signal_count = {"15min": 0, "30min": 0, "1h": 0, "4h": 0}
+        self.sent_count = {"15min": 0, "30min": 0, "1h": 0, "4h": 0}
         self.rejected_count = 0
         self.start_time = datetime.now()

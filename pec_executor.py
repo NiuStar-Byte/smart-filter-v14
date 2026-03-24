@@ -40,7 +40,8 @@ class PECExecutor:
         self.champion_max_bars = {
             "15min": 15,   # 15 bars × 15min = 225 min = 3.75 hours
             "30min": 10,   # 10 bars × 30min = 300 min = 5 hours
-            "1h": 5        # 5 bars × 60min = 300 min = 5 hours
+            "1h": 5,       # 5 bars × 60min = 300 min = 5 hours
+            "4h": 5        # 5 bars × 4h = 1200 min = 20 hours (4h candles need longer runway)
         }
         
         # CHALLENGER: Tier-based timeout windows (minutes, not bars)
@@ -59,6 +60,11 @@ class PECExecutor:
                 "TIER-1": 6 * 60,      # 6h (extra runway for proven combos)
                 "TIER-2": 5 * 60,      # 5h
                 "TIER-3": 4 * 60,      # 4h (quick exit for losing combos)
+            },
+            "4h": {
+                "TIER-1": 24 * 60,     # 24h (full day for high conviction 4h signals)
+                "TIER-2": 18 * 60,     # 18h (mid-range)
+                "TIER-3": 12 * 60,     # 12h (quick exit for losing combos)
             }
         }
         

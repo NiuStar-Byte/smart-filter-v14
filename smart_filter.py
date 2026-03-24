@@ -963,7 +963,14 @@ class SmartFilter:
         score_check = score >= (self.min_score if isinstance(self.min_score, (int, float)) else 0)
         
         # === PHASE 1: ROUTE-BASED GATEKEEPER - Integrated into filters_ok ===
-        route_veto_pass = route not in ["NONE", "AMBIGUOUS"]  # Veto toxic routes
+        # Block ONLY: REVERSAL with AMBIGUOUS reversal_side (mixed BULLISH + BEARISH)
+        is_ambiguous_reversal = (
+            route == "REVERSAL" 
+            and isinstance(reversal_side, (list, set)) 
+            and "BULLISH" in reversal_side 
+            and "BEARISH" in reversal_side
+        )
+        route_veto_pass = not is_ambiguous_reversal  # Veto ambiguous reversals only
         
         filters_ok = (
             direction in ["LONG", "SHORT"]
@@ -973,14 +980,16 @@ class SmartFilter:
             and route_veto_pass  # PHASE 1: Block NONE/AMBIGUOUS routes
         )
         
-        veto_status = "✓" if route_veto_pass else f"❌ VETO({route})"
+        veto_reason = "AMBIGUOUS_REVERSAL" if is_ambiguous_reversal else None
+        veto_status = "✓" if route_veto_pass else f"❌ VETO({veto_reason})"
         print(f"[CRITICAL-FILTERS_OK] {self.symbol}: direction={direction} | score={score}>={self.min_score}? {score_check} | passes={passes}>={required_for_signal}? {passes >= required_for_signal} | soft_passed={soft_passed} | route_veto={veto_status} → filters_ok={filters_ok}", flush=True)
         
         # DEBUG: Log why filters_ok might be False
         if not filters_ok:
+            veto_detail = f"AMBIGUOUS_REVERSAL(mixed)" if is_ambiguous_reversal else f"{route}"
             print(f"[{self.symbol}] [FILTERS_OK_DEBUG] direction={direction in ['LONG', 'SHORT']} | "
                   f"score_ok={score_check} | passes_ok={passes >= required_for_signal} | "
-                  f"soft_gk_ok={soft_passed} | route_veto_ok={route_veto_pass}({route})", flush=True)
+                  f"soft_gk_ok={soft_passed} | route_veto_ok={route_veto_pass}({veto_detail})", flush=True)
 
         # Keep valid_signal for backwards compatibility but do NOT include super_gk_ok here.
         # main.py will compute the final valid_signal by combining filters_ok + super_gk_aligned(...)
