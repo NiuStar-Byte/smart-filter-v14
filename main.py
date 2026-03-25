@@ -66,7 +66,7 @@ def check_multitf_alignment_30_1h(symbol, ohlcv_data):
     
     Args:
         symbol: Trading symbol (e.g., "BTC-USDT")
-        ohlcv_data: Dict from safe_fetch_ohlcv_by_tf with keys "15min", "30min", "1h"
+        ohlcv_data: Dict from safe_fetch_ohlcv_by_tf with keys "15min", "30min", "1h", "2h", "4h"
     
     Returns:
         (should_allow_signal, trend_30min, trend_1h, reason_log)
@@ -197,7 +197,7 @@ TOKENS = [
     "BLUR-USDT", "LDO-USDT", "CRV-USDT", "CVX-USDT", "YFI-USDT", "ENS-USDT", "BONK-USDT"
 ]
 
-COOLDOWN = {"15min": 120, "30min": 240, "1h": 600, "4h": 1200}  # 4h: 20 min cooldown
+COOLDOWN = {"15min": 120, "30min": 240, "1h": 600, "2h": 480, "4h": 1200}  # 2h: 8 min cooldown, 4h: 20 min cooldown
 last_sent = {}
 
 # === LOGGING CONTROL ===
@@ -670,6 +670,7 @@ def run_cycle():
             df15 = ohlcv_data.get("15min")
             df30 = ohlcv_data.get("30min")
             df1h = ohlcv_data.get("1h")
+            df2h = ohlcv_data.get("2h")  # 2h ADD (2026-03-25)
             df4h = ohlcv_data.get("4h")  # PHASE 2 ADD
             
             # DEBUG: Log TF4h fetch status (PHASE 2 - FIX TF4h not firing)
@@ -682,6 +683,7 @@ def run_cycle():
             early_breakout_15m = early_breakout(df15, lookback=3) if df15 is not None else None
             early_breakout_30m = early_breakout(df30, lookback=3) if df30 is not None else None
             early_breakout_1h = early_breakout(df1h, lookback=3) if df1h is not None else None
+            early_breakout_2h = early_breakout(df2h, lookback=3) if df2h is not None else None  # 2h ADD (2026-03-25)
             early_breakout_4h = early_breakout(df4h, lookback=3) if df4h is not None else None  # PHASE 2 ADD
 
             # --- 15min TF block ---
@@ -2120,6 +2122,380 @@ def run_cycle():
                 print(f"[ERROR] Exception in processing 1h for {symbol}: {e}", flush=True)
                 traceback.print_exc()
 
+            # --- 2h TF block (NEW - mirror of 1h with identical safe flow) ---
+            try:
+                key2h = f"{symbol}_2h"
+                if df2h is None or df2h.empty:
+                    res2h = None
+                else:
+                    sf2h = SmartFilter(symbol, df2h, tf="2h")
+                    regime2h = sf2h._market_regime()
+                    res2h = sf2h.analyze()
+
+                if isinstance(res2h, dict):
+                    score_2h = res2h.get("score")
+                    try:
+                        all_signals_path = "/Users/geniustarigan/.openclaw/workspace/ALL_SIGNALS.jsonl"
+                        all_signal_entry = {
+                            "symbol": symbol,
+                            "timeframe": "2h",
+                            "score": score_2h,
+                            "min_score_required": MIN_SCORE,
+                            "passed_filter": score_2h is not None and score_2h >= MIN_SCORE,
+                            "fired_time_utc": datetime.utcnow().isoformat(),
+                            "filters_ok": res2h.get("filters_ok")
+                        }
+                        with open(all_signals_path, 'a') as f:
+                            f.write(json.dumps(all_signal_entry) + '\n')
+                    except Exception as e:
+                        print(f"[WARN] Failed to log to ALL_SIGNALS.jsonl: {e}", flush=True)
+
+                if isinstance(res2h, dict) and res2h.get("filters_ok") is True:
+                    
+                    if score_2h is None or score_2h < MIN_SCORE:
+                        print(f"[SCORE_GATE] 2h {symbol} REJECTED: score={score_2h} < MIN_SCORE={MIN_SCORE}", flush=True)
+                        continue
+                    
+                    signal_type = res2h.get("bias", "UNKNOWN")
+                    try:
+                        gates_passed, gate_results = DirectionAwareGatekeeper.check_all_gates(
+                            df2h,
+                            direction=signal_type,
+                            regime=regime2h,
+                            debug=False
+                        )
+                        
+                        if not gates_passed:
+                            failed_gates = [k for k, v in gate_results.items() if not v]
+                            print(f"[PHASE2-FIXED] 2h {symbol} {signal_type} REJECTED - failed: {failed_gates}", flush=True)
+                            continue
+                        else:
+                            print(f"[PHASE2-FIXED] 2h {symbol} {signal_type} ✓ ALL GATES PASS ({regime2h})", flush=True)
+                    except Exception as e:
+                        print(f"[PHASE2-FIXED] Error checking gates for {symbol}: {e}", flush=True)
+                        pass
+                    
+                    last2h = last_sent.get(key2h, 0)
+                    if now - last2h >= COOLDOWN["2h"]:
+                        numbered_signal = f"{idx}.D"
+
+                        log_orderbook_and_density(symbol)
+                        try:
+                            orderbook_result = get_order_wall_delta(symbol) or {}
+                        except Exception as e:
+                            print(f"[ERROR] get_order_wall_delta failed for {symbol}: {e}", flush=True)
+                            orderbook_result = {"buy_wall": 0, "sell_wall": 0, "wall_delta": 0, "midprice": None}
+                        try:
+                            density_result = get_resting_order_density(symbol) or {}
+                        except Exception as e:
+                            print(f"[ERROR] get_resting_order_density failed for {symbol}: {e}", flush=True)
+                            density_result = {"bid_density": 0.0, "ask_density": 0.0, "bid_levels": 0, "ask_levels": 0, "midprice": None}
+
+                        bias = res2h.get("bias", "NEUTRAL")
+                        sf2h.bias = bias
+
+                        print("[SuperGK][MAIN] DISABLED (broken) - bypassing SuperGK for ALL signals", flush=True)
+                        super_gk_ok = True
+                        print(f"[SuperGK][MAIN] Result -> bias={bias} super_gk_ok={super_gk_ok} (bypassed)", flush=True)
+
+                        if not super_gk_ok:
+                            print(f"[BLOCKED] SuperGK not aligned: Signal={bias} — NO SIGNAL SENT", flush=True)
+                            continue
+
+                        print(f"[LOG] Sending 2h alert for {res2h.get('symbol')}", flush=True)
+                        fired_time_utc = datetime.utcnow()
+
+                        entry_price_raw = None
+                        try:
+                            entry_price_raw = get_live_entry_price(
+                                res2h.get("symbol"),
+                                bias,
+                                tf=res2h.get("tf"),
+                                slippage=DEFAULT_SLIPPAGE
+                            ) or res2h.get("price", 0.0)
+                        except Exception as e:
+                            print(f"[WARN] get_live_entry_price raised: {e} -- falling back to analyzer price", flush=True)
+                            entry_price_raw = res2h.get("price", 0.0)
+
+                        try:
+                            entry_price = float(entry_price_raw)
+                        except Exception:
+                            try:
+                                entry_price = float(str(entry_price_raw))
+                                print(f"[WARN] Coerced entry_price from {entry_price_raw} to {entry_price}", flush=True)
+                            except Exception:
+                                print(f"[WARN] Failed to coerce entry_price ({entry_price_raw}); defaulting to 0.0", flush=True)
+                                entry_price = 0.0
+
+                        print(f"[DEBUG] 2h entry_price_final={entry_price:.8f} analyzer_price={res2h.get('price')}", flush=True)
+
+                        score = res2h.get("score", 0)
+                        score_max = res2h.get("score_max", 0)
+                        passes = res2h.get("passes", 0)
+                        gatekeepers_total = res2h.get("gatekeepers_total", 0)
+                        passed_weight = res2h.get("passed_weight", 0.0)
+                        total_weight = res2h.get("total_weight", 0.0)
+                        Route = res2h.get("Route", None)
+                        signal_type = bias
+                        tf_val = res2h.get("tf", "2h")
+                        symbol_val = res2h.get("symbol", symbol)
+                        try:
+                            confidence = round((passed_weight / total_weight) * 100, 1) if total_weight else 0.0
+                        except Exception:
+                            confidence = 0.0
+                        entry_idx = df2h.index.get_loc(df2h.index[-1])
+
+                        logger.signal_generated(symbol_val, tf_val, signal_type, score, entry_price)
+
+                        regime = sf2h._market_regime() if hasattr(sf2h, "_market_regime") else None
+                        
+                        if Route == "REVERSAL":
+                            reversal_type = res2h.get("reversal_type", None)
+                            
+                            quality_check = check_reversal_quality(
+                                symbol=symbol_val,
+                                df=df2h,
+                                reversal_type=reversal_type,
+                                regime=regime,
+                                direction=signal_type
+                            )
+                            
+                            gate_status = ", ".join([f"{k.split('_', 1)[1]}={'✓' if v else '✗'}" for k, v in quality_check["gate_results"].items()])
+                            print(f"[PHASE3B-RQ] 2h {symbol_val} {signal_type}: {gate_status} → Strength={quality_check['reversal_strength_score']:.0f}%", flush=True)
+                            
+                            if not quality_check["allowed"]:
+                                Route = quality_check["recommendation"]
+                                print(f"[PHASE3B-FALLBACK] 2h {symbol_val}: REVERSAL rejected ({quality_check['reason']}) → Routed to {Route}", flush=True)
+                            else:
+                                print(f"[PHASE3B-APPROVED] 2h {symbol_val}: REVERSAL approved ({quality_check['reason']})", flush=True)
+                        
+                        if Route in ["NONE", "AMBIGUOUS"]:
+                            print(f"[VETO-POST-3B] 2h {symbol_val} {signal_type}: Route={Route} (changed by Phase 3B). REJECTING signal.", flush=True)
+                            continue
+                        
+                        route_score = calculate_route_score(Route, signal_type, regime, reversal_strength_score=None)
+                        route_rec = get_route_recommendation(Route, signal_type, regime)
+                        print(f"[PHASE3B-SCORE] 2h {symbol_val}: {route_rec} (score: {route_score})", flush=True)
+
+                        tp_sl = None
+                        tp = None
+                        sl = None
+                        fib_levels = None
+                        try:
+                            tp_sl = calculate_tp_sl(df2h, entry_price, signal_type, regime=regime)
+                            tp = tp_sl.get('tp')
+                            sl = tp_sl.get('sl')
+                            fib_levels = tp_sl.get('fib_levels')
+                            print(f"[DEBUG] calculate_tp_sl -> tp={tp} sl={sl} chosen_ratio={tp_sl.get('chosen_ratio')} achieved_rr={tp_sl.get('achieved_rr')}", flush=True)
+                            print(f"[DEBUG] tp_sl full dict for {symbol_val}: {tp_sl}", flush=True)
+                        except Exception as e:
+                            print(f"[WARN] calculate_tp_sl failed: {e}", flush=True)
+                            tp = sl = fib_levels = None
+                            tp_sl = None
+
+                        try:
+                            log_fired_signal(
+                                symbol=symbol_val,
+                                tf=tf_val,
+                                signal_type=signal_type,
+                                entry_idx=entry_idx,
+                                fired_time=fired_time_utc,
+                                score=score,
+                                max_score=score_max,
+                                passed=passes,
+                                max_passed=gatekeepers_total,
+                                weights=passed_weight,
+                                max_weights=total_weight,
+                                confidence_rate=confidence,
+                                entry_price=entry_price
+                            )
+                        except Exception as e:
+                            print(f"[WARN] log_fired_signal raised: {e}", flush=True)
+                            traceback.print_exc()
+
+                        achieved_rr_value = tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None
+                        
+                        if achieved_rr_value is None or achieved_rr_value < MIN_ACCEPTED_RR:
+                            print(f"[RR_FILTER] 2h signal REJECTED: {symbol_val} - RR {achieved_rr_value} < MIN {MIN_ACCEPTED_RR}", flush=True)
+                            continue
+                        
+                        print(f"[RR_FILTER] 2h signal ACCEPTED: {symbol_val} - RR {achieved_rr_value} >= MIN {MIN_ACCEPTED_RR}", flush=True)
+                        
+                        tp_pct_val = ((tp - entry_price) / entry_price * 100) if tp and entry_price else 0
+                        sl_pct_val = ((sl - entry_price) / entry_price * 100) if sl and entry_price else 0
+                        
+                        if signal_type == 'LONG':
+                            results = res2h.get('results_long', {})
+                        else:
+                            results = res2h.get('results_short', {})
+                        
+                        passed_filters = results.get('passed_filters', [])
+                        failed_filters = results.get('failed_filters', [])
+                        passed_filter_count = results.get('passed_filter_count', 0)
+                        failed_filter_count = results.get('failed_filter_count', 0)
+                        
+                        telegram_msg_id = str(uuid_lib.uuid4())[:12]
+                        
+                        signal_uuid = create_and_store_signal(
+                            symbol=symbol_val,
+                            timeframe=tf_val,
+                            signal_type=signal_type,
+                            fired_time_utc=fired_time_utc,
+                            entry_price=entry_price,
+                            tp_target=tp,
+                            sl_target=sl,
+                            tp_pct=tp_pct_val,
+                            sl_pct=sl_pct_val,
+                            achieved_rr=achieved_rr_value,
+                            fib_ratio=None,
+                            atr_value=tp_sl.get('atr_value') if isinstance(tp_sl, dict) else None,
+                            score=score,
+                            max_score=score_max,
+                            confidence=confidence,
+                            route=Route,
+                            regime=regime,
+                            passed_gatekeepers=passes,
+                            max_gatekeepers=gatekeepers_total,
+                            passed_filters=passed_filters,
+                            failed_filters=failed_filters,
+                            passed_filter_count=passed_filter_count,
+                            failed_filter_count=failed_filter_count,
+                            telegram_msg_id=telegram_msg_id
+                        )
+                        
+                        if not signal_uuid:
+                            print(f"[WARN] Signal {symbol_val} (2h) REJECTED - duplicate within 120s. NOT sending Telegram alert.", flush=True)
+                            continue
+
+                        cycle_key = f"{symbol_val}|2h|{signal_type}"
+                        if cycle_key in signals_sent_this_cycle:
+                            print(f"[DEDUP-CYCLE] 2h {symbol_val} {signal_type}: Already sent in THIS CYCLE. SKIPPING.", flush=True)
+                            continue
+                        
+                        if is_duplicate_signal(symbol_val, "2h", signal_type):
+                            continue
+                        
+                        signals_sent_this_cycle.add(cycle_key)
+                        
+                        if os.getenv("DRY_RUN", "false").lower() != "true":
+                            try:
+                                signal_tier = get_signal_tier(tf_val, signal_type, Route, regime)
+                                print(f"[TIER] 2h {symbol_val}: {signal_tier}", flush=True)
+                                
+                                print(f"[DEBUG] 2h: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
+                                sent_ok = send_telegram_alert(
+                                    numbered_signal=numbered_signal,
+                                    symbol=symbol_val,
+                                    signal_type=signal_type,
+                                    Route=Route,
+                                    price=entry_price,
+                                    tf=tf_val,
+                                    score=score,
+                                    passed=passes,
+                                    confidence=confidence,
+                                    weighted=passed_weight,
+                                    score_max=score_max,
+                                    gatekeepers_total=gatekeepers_total,
+                                    total_weight=total_weight,
+                                    reversal_side=res2h.get("reversal_side"),
+                                    regime=regime,
+                                    early_breakout_15m=early_breakout_2h,
+                                    tp=tp,
+                                    sl=sl,
+                                    tp_sl=tp_sl,
+                                    chosen_ratio=None,
+                                    achieved_rr=achieved_rr_value,
+                                    tier=signal_tier
+                                )
+                                print(f"[DEBUG] 2h: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
+                                if sent_ok:
+                                    last_sent[key2h] = now
+                                    logger.signal_sent(symbol_val, "2h", signal_uuid[:12])
+                                    
+                                    try:
+                                        _sent_signal_tracker.log_sent_signal(
+                                            signal_uuid=signal_uuid,
+                                            symbol=symbol_val,
+                                            timeframe="2h",
+                                            signal_type=signal_type,
+                                            entry_price=entry_price,
+                                            tp_target=tp,
+                                            sl_target=sl,
+                                            tp_pct=tp_pct_val,
+                                            sl_pct=sl_pct_val,
+                                            achieved_rr=achieved_rr_value,
+                                            score=score,
+                                            max_score=score_max,
+                                            confidence=confidence,
+                                            route=Route,
+                                            regime=regime,
+                                            telegram_msg_id=signal_uuid[:12],
+                                            fired_time_utc=fired_time_utc.isoformat(),
+                                            passed_filters=passed_filters,
+                                            failed_filters=failed_filters,
+                                            passed_filter_count=passed_filter_count,
+                                            failed_filter_count=failed_filter_count
+                                        )
+                                        if _master_writer_ready:
+                                            _signals_master_writer.write_signal({
+                                                'signal_uuid': signal_uuid,
+                                                'symbol': symbol_val,
+                                                'timeframe': '2h',
+                                                'signal_type': signal_type,
+                                                'entry_price': entry_price,
+                                                'tp_target': tp,
+                                                'sl_target': sl,
+                                                'tp_pct': tp_pct_val,
+                                                'sl_pct': sl_pct_val,
+                                                'achieved_rr': achieved_rr_value,
+                                                'score': score,
+                                                'max_score': score_max,
+                                                'confidence': confidence,
+                                                'route': Route,
+                                                'regime': regime,
+                                                'telegram_msg_id': signal_uuid[:12],
+                                                'fired_time_utc': fired_time_utc.isoformat(),
+                                                'sent_time_utc': datetime.utcnow().isoformat(),
+                                                'passed_filters': passed_filters,
+                                                'failed_filters': failed_filters,
+                                                'passed_filter_count': passed_filter_count,
+                                                'failed_filter_count': failed_filter_count,
+                                                'status': 'OPEN',
+                                                'signal_origin': 'NEW_LIVE',
+                                                'weighted_score': confidence * score / 100 if score_max else 0
+                                            })
+                                            
+                                            if _dual_write_ready:
+                                                try:
+                                                    verify_result = verify_signal_dual_write(
+                                                        signal_uuid=signal_uuid,
+                                                        signal_data={'symbol': symbol_val, 'timeframe': '2h', 'entry_price': entry_price},
+                                                        raise_on_failure=False
+                                                    )
+                                                    if verify_result:
+                                                        print(f"[DUAL-WRITE] ✅ Verified {signal_uuid[:12]} to both files | FIRE: {symbol_val} 2h", flush=True)
+                                                    else:
+                                                        _divergence_tracker.record_failure(signal_uuid)
+                                                        alert_msg = f"Dual-write failed: {signal_uuid[:12]} {symbol_val} 2h | MASTER:✓ AUDIT:✗"
+                                                        print(f"[DUAL-WRITE] ❌ {alert_msg}", flush=True)
+                                                        send_ops_alert(alert_msg, "CRITICAL")
+                                                except Exception as e:
+                                                    print(f"[DUAL-WRITE] Warning: Verification error (continuing): {e}", flush=True)
+                                            
+                                            trigger_executor_on_signal(signal_uuid, symbol_val, '2h')
+                                    except Exception as e:
+                                        print(f"[ERROR] Failed to log PEC signal for {symbol_val}: {e}", flush=True)
+                                else:
+                                    logger.signal_rejected(symbol_val, "2h", "Telegram send failed")
+                            except Exception as e:
+                                print(f"[ERROR] Exception during Telegram send for {symbol_val} (2h): {e}", flush=True)
+                                traceback.print_exc()
+                else:
+                    pass
+            except Exception as e:
+                print(f"[ERROR] Exception in processing 2h for {symbol}: {e}", flush=True)
+                traceback.print_exc()
+
             # --- 4h TF block (PHASE 2 ADD - mirror of 15min/30min/1h with identical safe flow) ---
             # --- 4h TF block (SIMPLIFIED - mirror of 1h exactly, no extra gates) ---
             try:
@@ -2140,7 +2516,7 @@ def run_cycle():
                         last4h = last_sent.get(key4h, 0)
                         
                         if now - last4h >= COOLDOWN["4h"]:
-                            numbered_signal = f"{idx}.D"
+                            numbered_signal = f"{idx}.E"
                             
                             try:
                                 entry_price_raw = get_live_entry_price(
@@ -2206,7 +2582,7 @@ def run_cycle():
                             passed_filter_count = results.get('passed_filter_count', 0)
                             failed_filter_count = results.get('failed_filter_count', 0)
 
-                            numbered_signal = f"{idx}.D"
+                            numbered_signal = f"{idx}.E"
                             fired_time_utc = datetime.utcnow()
                             telegram_msg_id = str(uuid_lib.uuid4())[:12]
                             

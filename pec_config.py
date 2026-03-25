@@ -22,12 +22,16 @@ print(f"[PEC_CONFIG] MIN_ACCEPTED_RR = {MIN_ACCEPTED_RR}:1", flush=True)
 # MAX HOLD BARS BY TIMEFRAME
 # ============================================================================
 # Determines how many bars to hold before timeout exit
-# Aligned to ~3.75-5 hour hold time across all timeframes
+# 2026-03-25 REDESIGN: Progressive reduction in bar count as TF increases
+# Rationale: Higher TFs have clearer market structure, need fewer bars
+# Result: Timeout duration increases (2h→3h→4h→6h→8h) but bar count decreases (8→6→4→3→2)
 
 MAX_BARS_BY_TF = {
-    "15min": 20,     # 300 min (5 hr) hold
-    "30min": 10,     # 300 min (5 hr) hold
-    "1h": 5,         # 5 hr hold
+    "15min": 8,      # 8 bars × 15min = 120 min (2h 0m) hold
+    "30min": 6,      # 6 bars × 30min = 180 min (3h 0m) hold
+    "1h": 4,         # 4 bars × 1h = 240 min (4h 0m) hold
+    "2h": 3,         # 3 bars × 2h = 360 min (6h 0m) hold - NEW!
+    "4h": 2,         # 2 bars × 4h = 480 min (8h 0m) hold - NEW!
 }
 
 def get_max_bars(timeframe: str) -> int:

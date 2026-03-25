@@ -182,20 +182,20 @@ def print_tracker(stats):
     print("  Timeframe Comparison:")
     print()
     
-    tf_order = ['15min', '30min', '1h', '4h']
+    tf_order = ['15min', '30min', '1h', '2h', '4h']
     total_tf_check = 0
     
     for tf_name in tf_order:
         if tf_name in stats['timeframes']:
             tf = stats['timeframes'][tf_name]
-            status = "🆕" if tf_name == '4h' else "✅"
+            status = "🆕" if tf_name in ['2h', '4h'] else "✅"
             if tf['total'] > 0:
                 print(f"  {status} {tf_name:10} | Total: {tf['total']:4} | Closed: {tf['closed']:4} | TP: {tf['tp']:3} | SL: {tf['sl']:3} | WR: {tf['wr']:6.2f}%")
                 total_tf_check += tf['total']
             else:
                 print(f"  {status} {tf_name:10} | Total:    0 | Closed:    0 | TP:   0 | SL:   0 | WR:   0.00%")
         else:
-            status = "🆕" if tf_name == '4h' else "✅"
+            status = "🆕" if tf_name in ['2h', '4h'] else "✅"
             print(f"  {status} {tf_name:10} | Total:    0 | Closed:    0 | TP:   0 | SL:   0 | WR:   0.00%")
     
     # Verify total matches
@@ -245,6 +245,8 @@ def print_tracker(stats):
     checks = [
         ("NEW signals >100 total", n['total'] > 100),
         ("NEW closed signals >50", n['closed'] > 50),
+        ("TF2h fired at least 10 signals", stats['timeframes'].get('2h', {}).get('total', 0) >= 10),
+        ("TF2h WR stable >35%", stats['timeframes'].get('2h', {}).get('wr', 0) > 35 if stats['timeframes'].get('2h', {}).get('total', 0) > 0 else False),
         ("TF4h fired at least 5 signals", stats['timeframes'].get('4h', {}).get('total', 0) >= 5),
         ("TF4h WR stable >25%", stats['timeframes'].get('4h', {}).get('wr', 0) > 25 if stats['timeframes'].get('4h', {}).get('total', 0) > 0 else False),
         ("NEW WR approaching baseline", n['wr'] >= f['wr'] * 0.95),

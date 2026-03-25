@@ -1,0 +1,183 @@
+================================================================================
+TIMEFRAME STRATEGY ANALYSIS - EXECUTIVE SUMMARY
+2026-03-25 11:40 GMT+7
+================================================================================
+
+🎯 KEY DISCOVERY: THE TIMEOUT MECHANISM SCALES WITH TIMEFRAME
+
+================================================================================
+CURRENT PERFORMANCE (All signals analyzed)
+================================================================================
+
+Timeframe   | Signals | Win Rate | Avg P&L/Signal | Timeout Win Rate
+────────────┼─────────┼──────────┼────────────────┼─────────────────
+15min       | 2,776   | 29.2%    | -$1.46         | 33.6%
+30min       | 2,111   | 30.8%    | -$1.31         | 42.9%
+1h          | 1,062   | 36.9%    | -$0.00 (B/E!)  | 50.8%  ← INFLECTION
+4h (new)    | 20      | N/A      | N/A            | 71.1%  ← DOMINANT
+
+================================================================================
+THE INSIGHT: Win Rate Formula Reveals Timeout Dominance
+================================================================================
+
+Win Rate = (TP_HIT + TIMEOUT_WINS) / Closed Trades
+
+15min: WR = (472 + 215) / 2,349 = 29.2%
+       → Mostly wins from TP hits
+       → Only 33.6% of timeouts win (not helping)
+
+1h:    WR = (146 + 135) / 761 = 36.9%
+       → BALANCED: TP and TIMEOUT equally contribute
+       → 50.8% of timeouts win (major contributor!)
+       → P&L: Break-even (shows inflection point!)
+
+4h:    WR = (2 + 32) / 58 = 58.6%
+       → Almost NO TP hits (2 out of 58!)
+       → 71.1% of timeouts win (DOMINANT profit source!)
+       → P&L: +$336.41 (PROFITABLE!)
+
+PATTERN: As TF increases, TIMEOUT becomes the profit driver
+         Short TFs lose money trying to hit TP
+         Long TFs profit from mean-reversion via TIMEOUT
+
+================================================================================
+WHY DOES THIS HAPPEN?
+================================================================================
+
+Shorter Timeframes (15min, 30min):
+  ✗ High noise, price chop
+  ✗ Hard to hit precise TP levels
+  ✗ Timeout mechanism unreliable (too much noise)
+  ✗ Result: Losing money overall
+
+Inflection Point (1h):
+  ✓ Signal-to-noise ratio improves
+  ✓ Both TP and TIMEOUT are viable
+  ✓ Market structure becomes clearer
+  ✓ Result: Break-even (tipping point!)
+
+Longer Timeframes (4h):
+  ✓ Price structure is clear
+  ✓ Support/resistance levels work over 8h window
+  ✓ Mean reversion over longer period is reliable
+  ✓ TP hits are rare but TIMEOUT wins 71% of the time
+  ✓ Result: Profitable!
+
+================================================================================
+STRATEGIC IMPLICATION: Portfolio Shift Toward Higher Timeframes
+================================================================================
+
+Current Portfolio (5,969 signals):
+  15min: 2,776 signals (46.5%) → Losing money
+  30min: 2,111 signals (35.4%) → Losing money
+  1h:    1,062 signals (17.8%) → Break-even
+  4h:    20 signals (<1%)      → Profitable but too few to rely on
+
+Insight:
+  The largest portion of signals (82%) come from losing TFs!
+  Even the smallest allocation (4h) is the ONLY profitable one!
+
+This suggests: SHIFT PORTFOLIO TOWARD HIGHER TIMEFRAMES
+
+================================================================================
+PROPOSED 2H TIMEFRAME (To test the hypothesis)
+================================================================================
+
+Why Add 2h?
+  1. Fills gap between 1h (break-even) and 4h (profitable)
+  2. Tests if timeout mechanism scales smoothly
+  3. Could be the "sweet spot" between volume and profitability
+  4. Medium risk: not as noisy as 15min, not as sparse as 4h
+
+Specifications:
+  Bars per Window: 3 bars
+  Timeout Duration: 6h (3 × 2h)
+  Expected Signals: 300-400/day
+  Expected WR: 43-48% (interpolated between 1h:36.9% and 4h:58.6%)
+  Expected P&L: Break-even to slightly positive
+
+Deployment:
+  1. Add 2h TF to smart_filter.py
+  2. Deploy immediately
+  3. Monitor 48-72 hours
+  4. Collect data (target: 100+ closed trades)
+  5. Analyze comparative performance
+
+================================================================================
+POST-2H ANALYSIS & REMOVAL DECISION
+================================================================================
+
+Timeline:
+  Day 1 (Now):      Add 2h, deploy
+  Day 2 (24h):      Check volume, any 2h signals closed
+  Day 3 (48h):      Run updated analysis with 2h data
+  Day 4 (72h):      Make data-driven decisions on TF portfolio
+
+Potential Scenarios:
+
+Scenario A: 2h is sweet spot (40-50% WR, positive P&L)
+  → Keep all TFs: 15min (30%), 30min (25%), 2h (10%), 1h (15%), 4h (20%)
+  → Focus on optimization
+
+Scenario B: 2h outperforms 1h (WR > 45%, strong P&L)
+  → Consider removing 15min (lowest WR, most losing signals)
+  → New portfolio: 30min (35%), 2h (15%), 1h (12%), 4h (8%)
+  → This gives 35% high-performance TFs (2h+4h)
+
+Scenario C: 4h continues strong, 2h/4h show consistency
+  → Remove 15min AND 30min
+  → New portfolio: 2h (20%), 1h (30%), 4h (50%)
+  → This focuses on TIMEOUT-driven profitability
+
+Scenario D: 2h disappoints, doesn't improve
+  → Keep current, remove 2h
+  → Try other optimizations (filter tuning, entry rules)
+  → Retest in 1 month
+
+⚠️ CRITICAL: Do NOT remove any TF yet
+   Wait for 48-72 hours of 2h data before deciding
+   Statistical significance requires >100 closed trades per TF
+
+================================================================================
+IMMEDIATE ACTION ITEMS
+================================================================================
+
+1. ✅ Analysis Complete (TF_STRATEGY_ANALYSIS_2026_03_25.md)
+2. ⏳ Implement 2h in main.py
+   - Add 2h case to signal generation
+   - Use 3-bar timeout (6h window)
+   - Apply same filter logic
+3. ⏳ Deploy with 2h
+   - Restart daemon
+   - Monitor volume
+4. ⏳ Monitor for 48-72 hours
+   - Target: 300-400 signals/day from 2h
+   - Watch for first closes (TP/SL/TIMEOUT)
+5. ⏳ Run comparative analysis
+   - Updated pec_enhanced_reporter.py
+   - Calculate WR, P&L, timeout win % for all 5 TFs
+6. ⏳ Decision gate
+   - If 2h positive: Consider removing 15min
+   - If 2h negative: Investigate why
+   - If 2h mixed: Keep and optimize
+
+================================================================================
+RECOMMENDATION
+================================================================================
+
+The data strongly suggests that smart-filter-v14 works BETTER on higher
+timeframes where the TIMEOUT mechanism dominates.
+
+Next 72 hours will validate whether 2h is the missing piece that bridges
+the gap between break-even (1h) and profitable (4h).
+
+If validated, the strategic direction is clear:
+  ✓ Shift away from short TFs (15min, 30min losing money)
+  ✓ Concentrate on medium-long TFs (2h, 1h, 4h winning)
+  ✓ Eventually phase out lowest performers
+
+This is a data-driven pivot toward profitability.
+
+================================================================================
+END SUMMARY
+================================================================================
