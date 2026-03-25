@@ -2375,7 +2375,7 @@ class PECEnhancedReporter:
 
 if __name__ == "__main__":
     reporter = PECEnhancedReporter()
-    report = reporter.generate_report()
+    report = reporter.generate_report()  # Returns joined string
     print(report)
     
     # Also save to file
