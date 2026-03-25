@@ -21,7 +21,7 @@ from datetime import datetime
 # Configuration
 SIGNALS_FILE = '/Users/geniustarigan/.openclaw/workspace/SIGNALS_MASTER.jsonl'
 FOUNDATION_BOUNDARY = '2026-03-19T18:03:17'
-PHASE1_DEPLOY_UTC = '2026-03-24T11:52:00'  # 2026-03-24 18:52 GMT+7 (when Phase 1 deployed)
+PHASE1_DEPLOY_UTC = '2026-03-24T17:00:00'  # Fresh tracking start (2026-03-25 00:00 GMT+7)
 
 # FOUNDATION BASELINE - from PEC_ENHANCED_REPORT.txt (locked, immutable)
 FOUNDATION_LOCKED = {
@@ -77,8 +77,9 @@ def analyze_signals(signals):
         closed = tp + sl + timeout
         wr = 100 * tp / closed if closed > 0 else 0
         
-        long_sigs = [s for s in sig_list if s.get('direction') == 'LONG']
-        short_sigs = [s for s in sig_list if s.get('direction') == 'SHORT']
+        # Read from signal_type (actual field in data), not direction
+        long_sigs = [s for s in sig_list if s.get('signal_type') == 'LONG']
+        short_sigs = [s for s in sig_list if s.get('signal_type') == 'SHORT']
         
         return {
             'total': total,
@@ -98,16 +99,18 @@ def analyze_signals(signals):
         tf = s.get('timeframe', 'UNKNOWN')
         timeframes[tf].append(s)
     
-    # Calculate by route
+    # Calculate by route (normalize underscore/space inconsistency)
     routes = defaultdict(list)
     for s in new_phase1_2:
         route = s.get('route', 'UNKNOWN')
+        # Normalize: TREND_CONTINUATION → TREND CONTINUATION (standardize to space format)
+        route = route.replace('_', ' ') if route else 'UNKNOWN'
         routes[route].append(s)
     
-    # Calculate by direction
+    # Calculate by direction (use signal_type, not direction field)
     directions = defaultdict(list)
     for s in new_phase1_2:
-        direction = s.get('direction', 'UNKNOWN')
+        direction = s.get('signal_type', 'UNKNOWN')  # READ FROM signal_type, not direction
         directions[direction].append(s)
     
     # Calculate by regime
