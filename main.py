@@ -197,7 +197,7 @@ TOKENS = [
     "BLUR-USDT", "LDO-USDT", "CRV-USDT", "CVX-USDT", "YFI-USDT", "ENS-USDT", "BONK-USDT"
 ]
 
-COOLDOWN = {"15min": 120, "30min": 240, "1h": 600, "2h": 480, "4h": 1200}  # 2h: 8 min cooldown, 4h: 20 min cooldown
+COOLDOWN = {"15min": 120, "30min": 300, "1h": 600, "2h": 900, "4h": 1200}  # Scaled: 15m=2min, 30m=5min, 1h=10min, 2h=15min, 4h=20min
 last_sent = {}
 
 # === LOGGING CONTROL ===
