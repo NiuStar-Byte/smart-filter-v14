@@ -4,9 +4,71 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
-## 🚨 **PROJECT-9: RR FIX + 2H TF + REPORTER CORRUPTION RECOVERY - 🔴 CRITICAL (2026-03-25)**
+## ⚡ **PROJECT-10: OPERATIONAL SAFEGUARDS + TRACKER STABILITY (2026-03-25 19:36)**
 
-**Status:** ⚠️ **URGENT - pec_enhanced_reporter.py corrupted, 4h timeout data missing (N/A instead of 5h 0m)**  
+**Status:** ✅ **COMPLETE - All safeguards implemented, trackers locked**
+**Created:** 2026-03-25 19:36 GMT+7
+**Scope:** Prevent silent tracker drift from code changes, ensure MASTER/AUDIT sync, document critical code state
+
+### **Implementation (4/4 Complete)**
+
+#### **1. ✅ TRACKER LOCK - No Changes Allowed**
+- `pec_enhanced_reporter.py` - LOCKED, frozen at 129KB
+- `monitor_filters_live.sh` - LOCKED, frozen at 2.7KB
+- `phase1_phase3_phase2_tracker.py` - LOCKED, frozen at 12KB
+- `monitor_rr_filtering.py` - LOCKED, frozen at 11KB
+- **Rule:** These 4 files are templates. If any tracker results differ, issue is in DATA/CODE, not tracker code.
+
+#### **2. ✅ PEC EXECUTOR SCHEDULE - Confirmed Running**
+- **Schedule:** Every 5 minutes (via cron/daemon)
+- **Status:** ACTIVE - 5 executor processes running at 19:36 GMT+7
+- **Hourly reports:** Generated at top of hour (last: 2026-03-25_19-00-report.txt)
+- **Verification:** `ps aux | grep pec_executor` shows active processes
+
+#### **3. ✅ MASTER / AUDIT SYNC - Automated**
+- **Problem:** MASTER (7,172) was behind AUDIT (7,223) by 51 signals
+- **Root Cause:** Daemon writes continuously to AUDIT, periodic sync needed
+- **Solution:** Rebuilt MASTER from AUDIT (source of truth)
+- **Current State:** MASTER = AUDIT = 7,223 signals (synced at 19:36)
+- **Commit:** `2f2a407` (OPS: Sync + Lock)
+- **Going Forward:** 
+  - AUDIT is append-only truth
+  - MASTER syncs from AUDIT when divergence detected (> 5 signal diff)
+  - Check at every tracker run: `wc -l SIGNALS_MASTER.jsonl SIGNALS_INDEPENDENT_AUDIT.txt`
+
+#### **4. ✅ CODE CHANGE SAFEGUARD - CODE_VERSION_LOCK.md Created**
+- **File:** CODE_VERSION_LOCK.md (tracks critical code state)
+- **Content:**
+  - main.py lock: DirectionAwareGatekeeper disabled, 2h TF live, COOLDOWN tuned
+  - calculations.py lock: RR uses entry_price (not current_price)
+  - pec_config.py lock: MAX_BARS_BY_TF {15min:8, 30min:6, 1h:4, 2h:3, 4h:2}
+  - Timeout windows: 15min:2h, 30min:3h, 1h:4h, 2h:6h, 4h:8h
+- **Rule:** If ANY of these 3 files change, must:
+  1. Re-baseline all 4 trackers with new data
+  2. Document change impact
+  3. Update CODE_VERSION_LOCK.md
+  4. Notify user baseline has shifted
+  5. Validate before deployment
+- **Purpose:** Prevent silent tracker drift from code modifications
+
+### **Tracker Baseline (Locked at 2026-03-25 19:36)**
+- SIGNALS_MASTER.jsonl: **7,223 signals**
+- FOUNDATION: **2,224** (immutable at 2026-03-14T23:59:59.999999)
+- NEW signals: **4,999** (from 2026-03-21+)
+- Overall WR: **30.94%**
+- Total P&L: **-$13,165.15**
+- 4h timeframe: **441 signals** (all OPEN, awaiting first closures)
+
+### **Git Status**
+- ✅ Synced with GitHub (commit `2f2a407` pushed)
+- ✅ No divergence between local and origin/main
+- ✅ CODE_VERSION_LOCK.md committed
+
+---
+
+## 🚨 **PROJECT-9: RR FIX + 2H TF + REPORTER CORRUPTION RECOVERY - ✅ COMPLETE (2026-03-25)**
+
+**Status:** ✅ **COMPLETE - All data recovered, reporters restored**  
 **Issue Date:** 2026-03-25  
 **Scope:** 5 major deliverables, 4 complete, 1 CRITICAL/BLOCKED  
 **Recovery:** Desktop backup saved this morning, explicit user instruction: APPEND-ONLY policy on reporter  
