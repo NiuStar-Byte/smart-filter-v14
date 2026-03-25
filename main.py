@@ -2176,7 +2176,7 @@ def run_cycle():
                     
                     last2h = last_sent.get(key2h, 0)
                     if now - last2h >= COOLDOWN["2h"]:
-                        numbered_signal = f"{idx}.B5"
+                        numbered_signal = f"{idx}.D"
 
                         log_orderbook_and_density(symbol)
                         try:
@@ -2515,7 +2515,7 @@ def run_cycle():
                         last4h = last_sent.get(key4h, 0)
                         
                         if now - last4h >= COOLDOWN["4h"]:
-                            numbered_signal = f"{idx}.D"
+                            numbered_signal = f"{idx}.E"
                             
                             try:
                                 entry_price_raw = get_live_entry_price(
@@ -2581,7 +2581,7 @@ def run_cycle():
                             passed_filter_count = results.get('passed_filter_count', 0)
                             failed_filter_count = results.get('failed_filter_count', 0)
 
-                            numbered_signal = f"{idx}.D"
+                            numbered_signal = f"{idx}.E"
                             fired_time_utc = datetime.utcnow()
                             telegram_msg_id = str(uuid_lib.uuid4())[:12]
                             
