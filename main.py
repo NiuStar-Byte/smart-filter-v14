@@ -2127,13 +2127,23 @@ def run_cycle():
                 key2h = f"{symbol}_2h"
                 if df2h is None or df2h.empty:
                     res2h = None
+                    print(f"[DEBUG-2h] {symbol}: df2h is None/empty - SKIPPING 2h processing", flush=True)
                 else:
                     sf2h = SmartFilter(symbol, df2h, tf="2h")
                     regime2h = sf2h._market_regime()
                     res2h = sf2h.analyze()
+                    print(f"[DEBUG-2h] {symbol}: analyze() returned - filters_ok={res2h.get('filters_ok') if isinstance(res2h, dict) else 'NOT_DICT'}", flush=True)
 
                 if isinstance(res2h, dict):
                     score_2h = res2h.get("score")
+                    filters_ok_2h = res2h.get("filters_ok")
+                    bias_2h = res2h.get("bias", "UNKNOWN")
+                    passes_2h = res2h.get("passes", 0)
+                    max_gatekeepers_2h = res2h.get("gatekeepers_total", 0)
+                    score_max_2h = res2h.get("score_max", 0)
+                    print(f"[DEBUG-2h] {symbol}: score={score_2h}/{score_max_2h}, passes={passes_2h}/{max_gatekeepers_2h}, bias={bias_2h}, filters_ok={filters_ok_2h}", flush=True)
+                    if filters_ok_2h is not True:
+                        print(f"[DEBUG-2h] {symbol}: REJECTED - filters_ok={filters_ok_2h} (need score>=12)", flush=True)
                     try:
                         all_signals_path = "/Users/geniustarigan/.openclaw/workspace/ALL_SIGNALS.jsonl"
                         all_signal_entry = {
