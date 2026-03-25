@@ -2162,19 +2162,35 @@ def run_cycle():
                     passes_2h = res2h.get("passes", 0)
                     max_gatekeepers_2h = res2h.get("gatekeepers_total", 0)
                     score_max_2h = res2h.get("score_max", 0)
+                    
+                    # ===== 4TH FACTOR: DYNAMIC MIN_SCORE FOR 2h =====
+                    # 2h has higher volatility (3.2x) and fewer filters passing due to structural constraints
+                    # Instead of requiring MIN_SCORE=10 (designed for 15min), use relaxed threshold for 2h
+                    # Target: Allow 2h signals at score=8-9/19 (67% filter confidence vs 83% for 15min)
+                    MIN_SCORE_2h = 8  # Relaxed from global 10 to account for TF volatility differences
+                    
                     print(f"[DEBUG-2h] {symbol}: score={score_2h}/{score_max_2h}, passes={passes_2h}/{max_gatekeepers_2h}, bias={bias_2h}, filters_ok={filters_ok_2h}", flush=True)
                     if filters_ok_2h is not True:
                         print(f"[DEBUG-2h] {symbol}: REJECTED - filters_ok={filters_ok_2h} (score={score_2h}, MIN_SCORE={MIN_SCORE} from smart_filter.py)", flush=True)
+                    
+                    # ===== APPLY DYNAMIC MIN_SCORE FOR 2h =====
+                    # If global MIN_SCORE check failed but TF-specific check passes, override
+                    if not filters_ok_2h and score_2h is not None and score_2h >= MIN_SCORE_2h:
+                        filters_ok_2h = True  # Override: allow signal with relaxed 2h threshold
+                        print(f"[MIN-SCORE-OVERRIDE] 2h {symbol}: score={score_2h} >= MIN_SCORE_2h={MIN_SCORE_2h} → filters_ok=True (overridden from global MIN_SCORE={MIN_SCORE})", flush=True)
                     try:
                         all_signals_path = "/Users/geniustarigan/.openclaw/workspace/ALL_SIGNALS.jsonl"
+                        # Use TF-specific MIN_SCORE for 2h
+                        min_score_to_use = MIN_SCORE_2h if score_2h is not None else MIN_SCORE
                         all_signal_entry = {
                             "symbol": symbol,
                             "timeframe": "2h",
                             "score": score_2h,
-                            "min_score_required": MIN_SCORE,
-                            "passed_filter": score_2h is not None and score_2h >= MIN_SCORE,
+                            "min_score_required": min_score_to_use,
+                            "min_score_global": MIN_SCORE,
+                            "passed_filter": score_2h is not None and score_2h >= min_score_to_use,
                             "fired_time_utc": datetime.utcnow().isoformat(),
-                            "filters_ok": res2h.get("filters_ok")
+                            "filters_ok": filters_ok_2h
                         }
                         with open(all_signals_path, 'a') as f:
                             f.write(json.dumps(all_signal_entry) + '\n')
@@ -2530,6 +2546,21 @@ def run_cycle():
                 else:
                     sf4h = SmartFilter(symbol, df4h, tf="4h")
                     res4h = sf4h.analyze()
+
+                # ===== 4TH FACTOR: DYNAMIC MIN_SCORE FOR 4h =====
+                # 4h has highest volatility (4.4x) and fewest filters passing
+                # Instead of requiring MIN_SCORE=10, use MIN_SCORE_4h=8 for 4h
+                # This allows 4h signals at score=8-9/19 (same as 2h)
+                if isinstance(res4h, dict):
+                    score_4h = res4h.get("score")
+                    filters_ok_4h = res4h.get("filters_ok")
+                    MIN_SCORE_4h = 8  # Relaxed from global 10 for high-volatility TF
+                    
+                    # If global MIN_SCORE check failed but TF-specific check passes, override
+                    if not filters_ok_4h and score_4h is not None and score_4h >= MIN_SCORE_4h:
+                        filters_ok_4h = True  # Override: allow signal with relaxed 4h threshold
+                        res4h["filters_ok"] = True
+                        print(f"[MIN-SCORE-OVERRIDE] 4h {symbol}: score={score_4h} >= MIN_SCORE_4h={MIN_SCORE_4h} → filters_ok=True (overridden from global MIN_SCORE={MIN_SCORE})", flush=True)
 
                 if isinstance(res4h, dict) and res4h.get("filters_ok") is True:
                     bias = res4h.get("bias", "UNKNOWN")
