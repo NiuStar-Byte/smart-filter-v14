@@ -2397,19 +2397,10 @@ def run_cycle():
                         
                         if not signal_uuid:
                             print(f"[WARN] Signal {symbol_val} (2h) REJECTED - duplicate within 120s. NOT sending Telegram alert.", flush=True)
-                            continue
-
-                        cycle_key = f"{symbol_val}|2h|{signal_type}"
-                        if cycle_key in signals_sent_this_cycle:
-                            print(f"[DEDUP-CYCLE] 2h {symbol_val} {signal_type}: Already sent in THIS CYCLE. SKIPPING.", flush=True)
-                            continue
+                            pass
                         
-                        if is_duplicate_signal(symbol_val, "2h", signal_type):
-                            continue
-                        
-                        signals_sent_this_cycle.add(cycle_key)
-                        
-                        if os.getenv("DRY_RUN", "false").lower() != "true":
+                        # Send trade alert to Telegram
+                        if signal_uuid and os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
                                 signal_tier = get_signal_tier(tf_val, signal_type, Route, regime)
                                 print(f"[TIER] 2h {symbol_val}: {signal_tier}", flush=True)
