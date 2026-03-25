@@ -2178,10 +2178,8 @@ def run_cycle():
                         print(f"[WARN] Failed to log to ALL_SIGNALS.jsonl: {e}", flush=True)
 
                 if isinstance(res2h, dict) and res2h.get("filters_ok") is True:
-                    
-                    if score_2h is None or score_2h < MIN_SCORE:
-                        print(f"[SCORE_GATE] 2h {symbol} REJECTED: score={score_2h} < MIN_SCORE={MIN_SCORE}", flush=True)
-                        continue
+                    # SmartFilter already enforces MIN_SCORE in filters_ok calculation, so no need to check again
+                    # Just proceed with signal processing
                     
                     # ===== PHASE 2-FIXED: DIRECTION-AWARE GATEKEEPER CHECK - 2h (DISABLED 2026-03-25) =====
                     signal_type = res2h.get("bias", "UNKNOWN")
