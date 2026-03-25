@@ -198,6 +198,12 @@ TOKENS = [
 ]
 
 COOLDOWN = {"15min": 120, "30min": 300, "1h": 420, "2h": 600, "4h": 900}  # Tightened: 15m=2min, 30m=5min, 1h=7min, 2h=10min, 4h=15min (more signal volume)
+
+# === PHASE 2 GATEKEEPER CONTROL ===
+# Set to False to disable DirectionAwareGatekeeper checks (data showed it reduces profitability)
+# Code is preserved - set to True to re-enable if needed
+ENABLE_DIRECTION_AWARE_GATEKEEPER = False  # DISABLED 2026-03-25: Data shows 4h without it has 56% WR vs 1h with it has 36% WR
+
 last_sent = {}
 
 # === LOGGING CONTROL ===
@@ -723,28 +729,33 @@ def run_cycle():
                         continue
                     # ===== END SCORE VALIDATION =====
                     
-                    # ===== PHASE 2-FIXED: DIRECTION-AWARE GATEKEEPER CHECK (RESTORED from golden state) =====
+                    # ===== PHASE 2-FIXED: DIRECTION-AWARE GATEKEEPER CHECK (DISABLED 2026-03-25) =====
+                    # Code preserved but disabled - data showed gatekeeper reduces profitability
+                    # 4h without gatekeeper: 56% WR | 1h with gatekeeper: 36% WR
                     signal_type = res15.get("bias", "UNKNOWN")
-                    try:
-                        gates_passed, gate_results = DirectionAwareGatekeeper.check_all_gates(
-                            df15,
-                            direction=signal_type,
-                            regime=regime15,
-                            debug=False
-                        )
-                        
-                        if not gates_passed:
-                            failed_gates = [k for k, v in gate_results.items() if not v]
-                            print(f"[PHASE2-FIXED] 15min {symbol} {signal_type} REJECTED - "
-                                  f"failed: {failed_gates}", flush=True)
-                            continue  # Skip to next symbol
-                        else:
-                            print(f"[PHASE2-FIXED] 15min {symbol} {signal_type} ✓ ALL GATES PASS ({regime15})", flush=True)
-                    except Exception as e:
-                        print(f"[PHASE2-FIXED] Error checking gates for {symbol}: {e}", flush=True)
-                        # Fail gracefully - still allow signal if gates can't be checked
-                        pass
-                    # ===== END PHASE 2-FIXED GATES =====
+                    if ENABLE_DIRECTION_AWARE_GATEKEEPER:
+                        try:
+                            gates_passed, gate_results = DirectionAwareGatekeeper.check_all_gates(
+                                df15,
+                                direction=signal_type,
+                                regime=regime15,
+                                debug=False
+                            )
+                            
+                            if not gates_passed:
+                                failed_gates = [k for k, v in gate_results.items() if not v]
+                                print(f"[PHASE2-FIXED] 15min {symbol} {signal_type} REJECTED - "
+                                      f"failed: {failed_gates}", flush=True)
+                                continue  # Skip to next symbol
+                            else:
+                                print(f"[PHASE2-FIXED] 15min {symbol} {signal_type} ✓ ALL GATES PASS ({regime15})", flush=True)
+                        except Exception as e:
+                            print(f"[PHASE2-FIXED] Error checking gates for {symbol}: {e}", flush=True)
+                            # Fail gracefully - still allow signal if gates can't be checked
+                            pass
+                    else:
+                        print(f"[GATEKEEPER-DISABLED] 15min {symbol}: DirectionAwareGatekeeper bypassed (code preserved)", flush=True)
+                    # ===== END PHASE 2-FIXED GATES (DISABLED) =====
                     
                     last15 = last_sent.get(key15, 0)
                     if now - last15 >= COOLDOWN["15min"]:
@@ -1199,27 +1210,30 @@ def run_cycle():
                         continue
                     # ===== END SCORE VALIDATION =====
                     
-                    # ===== PHASE 2-FIXED: DIRECTION-AWARE GATEKEEPER CHECK - 30min (RESTORED from golden state) =====
+                    # ===== PHASE 2-FIXED: DIRECTION-AWARE GATEKEEPER CHECK - 30min (DISABLED 2026-03-25) =====
                     signal_type = res30.get("bias", "UNKNOWN")
-                    try:
-                        gates_passed, gate_results = DirectionAwareGatekeeper.check_all_gates(
-                            df30,
-                            direction=signal_type,
-                            regime=regime30,
-                            debug=False
-                        )
-                        
-                        if not gates_passed:
-                            failed_gates = [k for k, v in gate_results.items() if not v]
-                            print(f"[PHASE2-FIXED] 30min {symbol} {signal_type} REJECTED - "
-                                  f"failed: {failed_gates}", flush=True)
-                            continue  # Skip to next symbol
-                        else:
-                            print(f"[PHASE2-FIXED] 30min {symbol} {signal_type} ✓ ALL GATES PASS ({regime30})", flush=True)
-                    except Exception as e:
-                        print(f"[PHASE2-FIXED] Error checking gates for {symbol}: {e}", flush=True)
-                        pass
-                    # ===== END PHASE 2-FIXED GATES =====
+                    if ENABLE_DIRECTION_AWARE_GATEKEEPER:
+                        try:
+                            gates_passed, gate_results = DirectionAwareGatekeeper.check_all_gates(
+                                df30,
+                                direction=signal_type,
+                                regime=regime30,
+                                debug=False
+                            )
+                            
+                            if not gates_passed:
+                                failed_gates = [k for k, v in gate_results.items() if not v]
+                                print(f"[PHASE2-FIXED] 30min {symbol} {signal_type} REJECTED - "
+                                      f"failed: {failed_gates}", flush=True)
+                                continue  # Skip to next symbol
+                            else:
+                                print(f"[PHASE2-FIXED] 30min {symbol} {signal_type} ✓ ALL GATES PASS ({regime30})", flush=True)
+                        except Exception as e:
+                            print(f"[PHASE2-FIXED] Error checking gates for {symbol}: {e}", flush=True)
+                            pass
+                    else:
+                        print(f"[GATEKEEPER-DISABLED] 30min {symbol}: DirectionAwareGatekeeper bypassed (code preserved)", flush=True)
+                    # ===== END PHASE 2-FIXED GATES (DISABLED) =====
                     
                     last30 = last_sent.get(key30, 0)
                     if now - last30 >= COOLDOWN["30min"]:
@@ -1695,27 +1709,30 @@ def run_cycle():
                         continue
                     # ===== END SCORE VALIDATION =====
                     
-                    # ===== PHASE 2-FIXED: DIRECTION-AWARE GATEKEEPER CHECK - 1h (RESTORED from golden state) =====
+                    # ===== PHASE 2-FIXED: DIRECTION-AWARE GATEKEEPER CHECK - 1h (DISABLED 2026-03-25) =====
                     signal_type = res1h.get("bias", "UNKNOWN")
-                    try:
-                        gates_passed, gate_results = DirectionAwareGatekeeper.check_all_gates(
-                            df1h,
-                            direction=signal_type,
-                            regime=regime1h,
-                            debug=False
-                        )
-                        
-                        if not gates_passed:
-                            failed_gates = [k for k, v in gate_results.items() if not v]
-                            print(f"[PHASE2-FIXED] 1h {symbol} {signal_type} REJECTED - "
-                                  f"failed: {failed_gates}", flush=True)
-                            continue  # Skip to next symbol
-                        else:
-                            print(f"[PHASE2-FIXED] 1h {symbol} {signal_type} ✓ ALL GATES PASS ({regime1h})", flush=True)
-                    except Exception as e:
-                        print(f"[PHASE2-FIXED] Error checking gates for {symbol}: {e}", flush=True)
-                        pass
-                    # ===== END PHASE 2-FIXED GATES =====
+                    if ENABLE_DIRECTION_AWARE_GATEKEEPER:
+                        try:
+                            gates_passed, gate_results = DirectionAwareGatekeeper.check_all_gates(
+                                df1h,
+                                direction=signal_type,
+                                regime=regime1h,
+                                debug=False
+                            )
+                            
+                            if not gates_passed:
+                                failed_gates = [k for k, v in gate_results.items() if not v]
+                                print(f"[PHASE2-FIXED] 1h {symbol} {signal_type} REJECTED - "
+                                      f"failed: {failed_gates}", flush=True)
+                                continue  # Skip to next symbol
+                            else:
+                                print(f"[PHASE2-FIXED] 1h {symbol} {signal_type} ✓ ALL GATES PASS ({regime1h})", flush=True)
+                        except Exception as e:
+                            print(f"[PHASE2-FIXED] Error checking gates for {symbol}: {e}", flush=True)
+                            pass
+                    else:
+                        print(f"[GATEKEEPER-DISABLED] 1h {symbol}: DirectionAwareGatekeeper bypassed (code preserved)", flush=True)
+                    # ===== END PHASE 2-FIXED GATES (DISABLED) =====
                     
                     last1h = last_sent.get(key1h, 0)
                     if now - last1h >= COOLDOWN["1h"]:
@@ -2166,24 +2183,29 @@ def run_cycle():
                         print(f"[SCORE_GATE] 2h {symbol} REJECTED: score={score_2h} < MIN_SCORE={MIN_SCORE}", flush=True)
                         continue
                     
+                    # ===== PHASE 2-FIXED: DIRECTION-AWARE GATEKEEPER CHECK - 2h (DISABLED 2026-03-25) =====
                     signal_type = res2h.get("bias", "UNKNOWN")
-                    try:
-                        gates_passed, gate_results = DirectionAwareGatekeeper.check_all_gates(
-                            df2h,
-                            direction=signal_type,
-                            regime=regime2h,
-                            debug=False
-                        )
-                        
-                        if not gates_passed:
-                            failed_gates = [k for k, v in gate_results.items() if not v]
-                            print(f"[PHASE2-FIXED] 2h {symbol} {signal_type} REJECTED - failed: {failed_gates}", flush=True)
-                            continue
-                        else:
-                            print(f"[PHASE2-FIXED] 2h {symbol} {signal_type} ✓ ALL GATES PASS ({regime2h})", flush=True)
-                    except Exception as e:
-                        print(f"[PHASE2-FIXED] Error checking gates for {symbol}: {e}", flush=True)
-                        pass
+                    if ENABLE_DIRECTION_AWARE_GATEKEEPER:
+                        try:
+                            gates_passed, gate_results = DirectionAwareGatekeeper.check_all_gates(
+                                df2h,
+                                direction=signal_type,
+                                regime=regime2h,
+                                debug=False
+                            )
+                            
+                            if not gates_passed:
+                                failed_gates = [k for k, v in gate_results.items() if not v]
+                                print(f"[PHASE2-FIXED] 2h {symbol} {signal_type} REJECTED - failed: {failed_gates}", flush=True)
+                                continue
+                            else:
+                                print(f"[PHASE2-FIXED] 2h {symbol} {signal_type} ✓ ALL GATES PASS ({regime2h})", flush=True)
+                        except Exception as e:
+                            print(f"[PHASE2-FIXED] Error checking gates for {symbol}: {e}", flush=True)
+                            pass
+                    else:
+                        print(f"[GATEKEEPER-DISABLED] 2h {symbol}: DirectionAwareGatekeeper bypassed (code preserved)", flush=True)
+                    # ===== END PHASE 2-FIXED GATES (DISABLED) =====
                     
                     last2h = last_sent.get(key2h, 0)
                     if now - last2h >= COOLDOWN["2h"]:
