@@ -487,8 +487,9 @@ def calculate_tp_sl_from_df(df, entry_price, direction, regime=None):
                 # Both S&R exist - use natural market structure
                 sl = supports[0]  # Nearest support
                 tp = resistances[0]  # Nearest resistance
-                reward = tp - current_price
-                risk = current_price - sl
+                # CRITICAL FIX: Use entry_price for RR calculation, not current_price!
+                reward = tp - entry_price
+                risk = entry_price - sl
                 achieved_rr = round(reward / risk, 2) if risk > 0 else 0
                 
                 # Quality gate: reject if RR unrealistic (0.5-4.0) OR cap if RR > 2.5:1
@@ -545,8 +546,9 @@ def calculate_tp_sl_from_df(df, entry_price, direction, regime=None):
                 # Both S&R exist - use natural market structure
                 sl = resistances[0]  # Nearest resistance
                 tp = supports[0]  # Nearest support
-                reward = current_price - tp
-                risk = sl - current_price
+                # CRITICAL FIX: Use entry_price for RR calculation, not current_price!
+                reward = entry_price - tp
+                risk = sl - entry_price
                 achieved_rr = round(reward / risk, 2) if risk > 0 else 0
                 
                 # Quality gate: reject if RR unrealistic (0.5-4.0) OR cap if RR > 2.5:1
