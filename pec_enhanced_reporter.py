@@ -356,8 +356,10 @@ class PECEnhancedReporter:
         detail_lines.append(f"Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S GMT+7')}")
         detail_lines.append(f"Total Signals Loaded: {len(self.signals)}")
         detail_lines.append("")
-        detail_lines.append("⚠️  NOTE: Signals marked 'STALE_TIMEOUT' in Data Quality column are EXCLUDED from Aggregates/Summary/Hierarchy")
+        detail_lines.append("⚠️  NOTE: Signals marked 'STALE_TIMEOUT' or 'EXTREME_RR' in Data Quality column are EXCLUDED from Aggregates/Summary/Hierarchy")
         detail_lines.append("    (They appear here for audit trail only, but don't affect backtest P&L calculations)")
+        detail_lines.append("    - STALE_TIMEOUT: Signals with outdated market data")
+        detail_lines.append("    - EXTREME_RR: Signals with RR outside valid bounds (pre-2026-03-25 calculation bug)")
         detail_lines.append("")
         
         # Column headers
@@ -430,7 +432,7 @@ class PECEnhancedReporter:
             # Add data quality flag column
             data_quality_flag = signal.get('data_quality_flag', '')
             if data_quality_flag:
-                if 'STALE_TIMEOUT' in data_quality_flag:
+                if 'STALE_TIMEOUT' in data_quality_flag or 'EXTREME_RR' in data_quality_flag:
                     # Extract hours overdue from flag
                     hours_match = data_quality_flag.split('_')[-2]  # Gets the "Xh" part
                     quality_str = f"⚠️  {data_quality_flag[:27]}"  # Truncate if too long
@@ -846,9 +848,9 @@ class PECEnhancedReporter:
         
         # Bin confidence levels - EXCLUDE STALE and REJECTED signals
         # NEW RANGES: HIGH (≥73%), MID (66-72%), LOW (≤65%)
-        high_conf = [s for s in self.signals if s.get('status') not in ['STALE_TIMEOUT', 'REJECTED_NOT_SENT_TELEGRAM'] and s.get('confidence', 0) >= 73]
-        mid_conf = [s for s in self.signals if s.get('status') not in ['STALE_TIMEOUT', 'REJECTED_NOT_SENT_TELEGRAM'] and 66 <= s.get('confidence', 0) < 73]
-        low_conf = [s for s in self.signals if s.get('status') not in ['STALE_TIMEOUT', 'REJECTED_NOT_SENT_TELEGRAM'] and s.get('confidence', 0) < 66]
+        high_conf = [s for s in self.signals if s.get('status') not in ['STALE_TIMEOUT', 'REJECTED_NOT_SENT_TELEGRAM'] and not (s.get('data_quality_flag') and 'EXTREME_RR' in s.get('data_quality_flag')) and s.get('confidence', 0) >= 73]
+        mid_conf = [s for s in self.signals if s.get('status') not in ['STALE_TIMEOUT', 'REJECTED_NOT_SENT_TELEGRAM'] and not (s.get('data_quality_flag') and 'EXTREME_RR' in s.get('data_quality_flag')) and 66 <= s.get('confidence', 0) < 73]
+        low_conf = [s for s in self.signals if s.get('status') not in ['STALE_TIMEOUT', 'REJECTED_NOT_SENT_TELEGRAM'] and not (s.get('data_quality_flag') and 'EXTREME_RR' in s.get('data_quality_flag')) and s.get('confidence', 0) < 66]
         
         for conf_level, signals_list, label in [
             ('HIGH', high_conf, 'HIGH (≥73%)'),
@@ -1208,17 +1210,17 @@ class PECEnhancedReporter:
         report.append("📊 SUMMARY")
         report.append("=" * 132)
         
-        # Count signals by status (EXCLUDING stale timeouts from backtest)
+        # Count signals by status (EXCLUDING stale timeouts + extreme RR from backtest)
         total_signals = len(self.signals)
-        total_tp = sum(1 for s in self.signals if s.get('status') == 'TP_HIT' and not (s.get('data_quality_flag') and 'STALE_TIMEOUT' in s.get('data_quality_flag')))
-        total_sl = sum(1 for s in self.signals if s.get('status') == 'SL_HIT' and not (s.get('data_quality_flag') and 'STALE_TIMEOUT' in s.get('data_quality_flag')))
+        total_tp = sum(1 for s in self.signals if s.get('status') == 'TP_HIT' and not (s.get('data_quality_flag') and ('STALE_TIMEOUT' in s.get('data_quality_flag') or 'EXTREME_RR' in s.get('data_quality_flag'))))
+        total_sl = sum(1 for s in self.signals if s.get('status') == 'SL_HIT' and not (s.get('data_quality_flag') and ('STALE_TIMEOUT' in s.get('data_quality_flag') or 'EXTREME_RR' in s.get('data_quality_flag'))))
         
-        # Separate TIMEOUT into wins and losses based on P&L (EXCLUDING stale)
+        # Separate TIMEOUT into wins and losses based on P&L (EXCLUDING stale + extreme RR)
         timeout_wins = 0
         timeout_losses = 0
         for s in self.signals:
-            # Skip stale timeouts from metrics (overdue quality issues)
-            if s.get('data_quality_flag') and 'STALE_TIMEOUT' in s.get('data_quality_flag'):
+            # Skip stale timeouts + extreme RR from metrics (quality issues)
+            if s.get('data_quality_flag') and ('STALE_TIMEOUT' in s.get('data_quality_flag') or 'EXTREME_RR' in s.get('data_quality_flag')):
                 continue
             if s.get('status') == 'STALE_TIMEOUT':
                 continue
@@ -1247,14 +1249,14 @@ class PECEnhancedReporter:
         win_count = total_tp + timeout_wins
         overall_wr = (win_count / closed_signals * 100) if closed_signals > 0 else 0
         
-        # Calculate total P&L (EXCLUDING stale timeouts)
+        # Calculate total P&L (EXCLUDING stale timeouts + extreme RR)
         # USE STORED PNL_USD when available (may be based on max_bar closing price for timeouts)
         # Fall back to recalculation if stored value missing
-        # Stale timeouts = zero P&L (overdue quality issues)
+        # Stale timeouts + extreme RR = zero P&L (quality issues)
         total_pnl = 0.0
         for s in self.signals:
-            # SKIP stale timeouts completely (overdue quality issues, zero P&L)
-            if s.get('data_quality_flag') and 'STALE_TIMEOUT' in s.get('data_quality_flag'):
+            # SKIP stale timeouts + extreme RR completely (quality issues, zero P&L)
+            if s.get('data_quality_flag') and ('STALE_TIMEOUT' in s.get('data_quality_flag') or 'EXTREME_RR' in s.get('data_quality_flag')):
                 continue
             if s.get('status') == 'STALE_TIMEOUT':
                 continue
