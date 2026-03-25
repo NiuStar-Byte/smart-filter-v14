@@ -2164,7 +2164,7 @@ def run_cycle():
                     score_max_2h = res2h.get("score_max", 0)
                     print(f"[DEBUG-2h] {symbol}: score={score_2h}/{score_max_2h}, passes={passes_2h}/{max_gatekeepers_2h}, bias={bias_2h}, filters_ok={filters_ok_2h}", flush=True)
                     if filters_ok_2h is not True:
-                        print(f"[DEBUG-2h] {symbol}: REJECTED - filters_ok={filters_ok_2h} (need score>=12)", flush=True)
+                        print(f"[DEBUG-2h] {symbol}: REJECTED - filters_ok={filters_ok_2h} (score={score_2h}, MIN_SCORE={MIN_SCORE} from smart_filter.py)", flush=True)
                     try:
                         all_signals_path = "/Users/geniustarigan/.openclaw/workspace/ALL_SIGNALS.jsonl"
                         all_signal_entry = {
