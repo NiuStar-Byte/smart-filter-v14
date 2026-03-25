@@ -66,7 +66,7 @@ def check_multitf_alignment_30_1h(symbol, ohlcv_data):
     
     Args:
         symbol: Trading symbol (e.g., "BTC-USDT")
-        ohlcv_data: Dict from safe_fetch_ohlcv_by_tf with keys "15min", "30min", "1h"
+        ohlcv_data: Dict from safe_fetch_ohlcv_by_tf with keys "15min", "30min", "1h", "2h", "4h"
     
     Returns:
         (should_allow_signal, trend_30min, trend_1h, reason_log)
@@ -670,6 +670,7 @@ def run_cycle():
             df15 = ohlcv_data.get("15min")
             df30 = ohlcv_data.get("30min")
             df1h = ohlcv_data.get("1h")
+            df2h = ohlcv_data.get("2h")  # 2h ADD (2026-03-25)
             df4h = ohlcv_data.get("4h")  # PHASE 2 ADD
             
             # DEBUG: Log TF4h fetch status (PHASE 2 - FIX TF4h not firing)
