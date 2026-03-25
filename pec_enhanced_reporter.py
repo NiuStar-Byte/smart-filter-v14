@@ -458,6 +458,15 @@ class PECEnhancedReporter:
         report.append("=" * 200)
         report.append("📊 PEC ENHANCED REPORTER - SIGNAL PERFORMANCE ANALYSIS")
         report.append("=" * 200)
+        
+        # Add timestamp with local timezone
+        # Convert UTC to GMT+7 (Bangkok timezone)
+        utc_now = datetime.now(timezone.utc)
+        gmt7_tz = timezone(timedelta(hours=7))
+        local_time = utc_now.astimezone(gmt7_tz)
+        timestamp_str = local_time.strftime('%Y-%m-%d %H:%M:%S GMT+7')
+        report.append(f"Last updated: {timestamp_str}")
+        
         report.append("")
         
         # === SECTION 1 & 2 (Summary Statistics) ===
