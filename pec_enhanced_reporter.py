@@ -461,11 +461,11 @@ class PECEnhancedReporter:
         report.append("")
         
         # === SECTION 1 & 2 (Summary Statistics) ===
-        # FOUNDATION_CUTOFF_TIME: LOCKED to 2026-03-19T18:03:17.605610 (last signal in clean baseline)
-        # Foundation: All signals fired <= this time (IMMUTABLE snapshot)
+        # FOUNDATION_CUTOFF_TIME: LOCKED to 2026-03-14T23:59:59.999999 (end of Mar 14 - original clean baseline = 2,224 signals)
+        # Foundation: All signals fired <= this time (IMMUTABLE snapshot, NEVER CHANGED)
         # New: All signals fired > this time (dynamic, calculated as Total - Foundation)
         # Parse cutoff as naive datetime (signals are stored as naive UTC times)
-        cutoff_naive = datetime.fromisoformat('2026-03-19T18:03:17.605610')
+        cutoff_naive = datetime.fromisoformat('2026-03-14T23:59:59.999999')
         
         foundation_signals = []
         new_signals = []
@@ -495,7 +495,7 @@ class PECEnhancedReporter:
         
         # === DISPLAY FOUNDATION BASELINE (LOCKED - immutable snapshot) ===
         report.append("=" * 200)
-        report.append("🔒 FOUNDATION BASELINE (LOCKED - All signals fired <= 2026-03-19T18:03:17.605610)")
+        report.append("🔒 FOUNDATION BASELINE (LOCKED - All signals fired <= 2026-03-14T23:59:59.999999 = 2,224 signals, IMMUTABLE)")
         report.append("=" * 200)
         report.append(f"Total Signals: {foundation_stats['total']} | Closed: {foundation_stats['closed']} | WR: {foundation_stats['wr']:.1f}%")
         report.append(f"LONG WR: {self._calculate_wr_by_direction(foundation_signals, 'LONG'):.1f}% | SHORT WR: {self._calculate_wr_by_direction(foundation_signals, 'SHORT'):.1f}% | P&L: ${foundation_stats['total_pnl']:+,.2f}")
