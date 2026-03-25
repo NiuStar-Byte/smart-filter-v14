@@ -677,6 +677,10 @@ def run_cycle():
             df30 = ohlcv_data.get("30min")
             df1h = ohlcv_data.get("1h")
             df2h = ohlcv_data.get("2h")  # 2h ADD (2026-03-25)
+            if df2h is not None and not df2h.empty:
+                print(f"[LOAD] {symbol}: df2h loaded - {len(df2h)} candles", flush=True)
+            else:
+                print(f"[LOAD] {symbol}: df2h is None or empty - ohlcv_data.keys()={list(ohlcv_data.keys())}", flush=True)
             df4h = ohlcv_data.get("4h")  # PHASE 2 ADD
             
             # DEBUG: Log TF4h fetch status (PHASE 2 - FIX TF4h not firing)
