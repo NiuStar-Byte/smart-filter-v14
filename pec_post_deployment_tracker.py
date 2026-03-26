@@ -140,7 +140,8 @@ class PostDeploymentTracker:
     
     def _calculate_rr_metrics(self, signals_list):
         """Calculate Risk:Reward metrics: Max, Min, Avg
-        RR = (TP - Entry) / (Entry - SL)
+        RR = |TP - Entry| / |Entry - SL|
+        Works for both LONG and SHORT
         """
         try:
             rr_values = []
@@ -156,9 +157,9 @@ class PostDeploymentTracker:
                         tp_f = float(tp)
                         sl_f = float(sl)
                         
-                        # Calculate RR
-                        reward = tp_f - entry_f
-                        risk = entry_f - sl_f
+                        # Calculate RR using absolute values (works for LONG and SHORT)
+                        reward = abs(tp_f - entry_f)
+                        risk = abs(entry_f - sl_f)
                         
                         if risk > 0:  # Avoid division by zero
                             rr = reward / risk
