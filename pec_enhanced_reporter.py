@@ -457,6 +457,7 @@ class PECEnhancedReporter:
         report.append("")
         report.append("=" * 200)
         report.append("📊 PEC ENHANCED REPORTER - SIGNAL PERFORMANCE ANALYSIS")
+        report.append(f"Report Generated: {datetime.now(timezone(timedelta(hours=7))).strftime('%Y-%m-%d %H:%M:%S GMT+7')}")
         report.append("=" * 200)
         report.append("")
         
