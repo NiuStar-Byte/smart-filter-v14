@@ -9,8 +9,8 @@ from datetime import datetime
 class SignalLogger:
     def __init__(self, enabled=True):
         self.enabled = enabled
-        self.signal_count = {"15min": 0, "30min": 0, "1h": 0, "4h": 0}
-        self.sent_count = {"15min": 0, "30min": 0, "1h": 0, "4h": 0}
+        self.signal_count = {"15min": 0, "30min": 0, "1h": 0, "2h": 0, "4h": 0}
+        self.sent_count = {"15min": 0, "30min": 0, "1h": 0, "2h": 0, "4h": 0}
         self.rejected_count = 0
         self.start_time = datetime.now()
 

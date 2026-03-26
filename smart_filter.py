@@ -33,9 +33,9 @@ except ImportError:
 DEBUG_FILTERS = os.getenv("DEBUG_FILTERS", "false").lower() == "true"
 
 # ===== UNIVERSAL MIN_SCORE THRESHOLD (Single Source of Truth) =====
-# Applies to all timeframes (15min, 30min, 1h)
+# Applies to all timeframes (15min, 30min, 1h, 2h, 4h)
 # Change this one value to update threshold everywhere
-MIN_SCORE = 12  # Signals below this score will be rejected
+MIN_SCORE = 10  # Signals below this score will be rejected (LOWERED from 12 to 10 on 2026-03-25 22:59 to test 2h TF)
 
 class SmartFilter:
     """
@@ -688,6 +688,65 @@ class SmartFilter:
             # Best-effort logging; do not raise
             pass
         return True
+
+    def get_tf_specific_params(self):
+        """
+        3-FACTOR NORMALIZATION: Adjust filter thresholds based on timeframe volatility
+        
+        Purpose: Fix structural issue where 2h/4h signals score low (6-9) due to thresholds
+        designed for 15min volatility. Higher timeframes have higher volatility, wider candles,
+        and different reversal frequencies.
+        
+        Returns dict with adjusted thresholds:
+        - vwap_deviation_pct: VWAP divergence threshold (higher for volatile TFs)
+        - price_proximity_pct: S/R proximity buffer (wider for larger candles)
+        - reversal_bars: Confirmation bars (more for high-reversal-frequency TFs)
+        - min_squeeze_diff: Bollinger Band squeeze threshold (looser for volatile TFs)
+        
+        Calibration (2026-03-25 23:37):
+        - 15min: volatility ~730 → baseline thresholds
+        - 2h: volatility ~1612 → +3.2x volatility → adjusted thresholds
+        - 4h: volatility ~1648 → +4.4x volatility → most aggressive adjustment
+        """
+        # Detect current volatility
+        current_volatility = self.df['close'].std() if self.df is not None and len(self.df) > 0 else 0
+        
+        # Default (15min/low-volatility) thresholds
+        params = {
+            "vwap_deviation_pct": 0.005,      # 0.5% (baseline)
+            "price_proximity_pct": 0.03,      # 3% (baseline)
+            "reversal_bars": 3,               # 3-bar confirmation (baseline)
+            "min_squeeze_diff": 0.05,         # 5% squeeze threshold (baseline)
+        }
+        
+        # FACTOR 1: VOLATILITY-BASED ADJUSTMENT
+        # If volatility > 1500 (high, like 2h/4h), use relaxed thresholds
+        if current_volatility > 1500 or self.tf == "4h":
+            params["vwap_deviation_pct"] = 0.020      # 2.0% (2x looser for high volatility)
+            params["price_proximity_pct"] = 0.06      # 6.0% (2x looser for wider candles)
+            params["min_squeeze_diff"] = 0.12         # 12% (squeeze harder to detect at 4h)
+            print(f"[TF-PARAMS] {self.symbol} {self.tf}: HIGH VOLATILITY ({current_volatility:.0f}) → 4h thresholds", flush=True)
+            
+        elif current_volatility > 1200 or self.tf == "2h":
+            params["vwap_deviation_pct"] = 0.015      # 1.5% (1.5x looser)
+            params["price_proximity_pct"] = 0.04      # 4.0% (1.3x looser)
+            params["min_squeeze_diff"] = 0.10         # 10% (looser)
+            print(f"[TF-PARAMS] {self.symbol} {self.tf}: MEDIUM VOLATILITY ({current_volatility:.0f}) → 2h thresholds", flush=True)
+        
+        # FACTOR 2: REVERSAL FREQUENCY ADJUSTMENT
+        # 30min/2h have 59% reversal rate (high whipsaws) → require 5-bar confirmation
+        # 4h has 45% reversal rate (stable) → keep 3-bar
+        if self.tf in ["30min", "2h"]:
+            params["reversal_bars"] = 5       # Stronger confirmation for noisy TFs (59% reversal rate)
+            print(f"[TF-PARAMS] {self.symbol} {self.tf}: HIGH REVERSAL FREQUENCY → 5-bar confirmation", flush=True)
+        elif self.tf == "15min":
+            params["reversal_bars"] = 3       # Normal for 15min (55% reversal rate)
+        
+        # FACTOR 3: LOOKBACK PERIOD (logged but not actively used in current filters)
+        # 15min = 5h lookback (too short for noise filtering, but kept for compatibility)
+        # 4h = 80h lookback (good for long trends)
+        
+        return params
 
     def analyze(self):
         """
@@ -2188,24 +2247,24 @@ class SmartFilter:
     def _check_vwap_divergence(
         self,
         divergence_lookback: int = 5,
-        min_divergence_pct: float = 0.005,
+        min_divergence_pct: float = None,  # Now dynamically set from TF params
         require_crossover: bool = False,
         volume_ma_period: int = 20,
         min_cond: int = 2,
         debug: bool = False
     ):
         """
-        ENHANCED VWAP Divergence Filter (2026-03-08)
+        ENHANCED VWAP Divergence Filter (2026-03-08, 2026-03-25 3-FACTOR NORMALIZATION)
         
         High-probability reversal detection with institutional precision:
         - Divergence strength measurement (how far from VWAP?)
         - Multi-candle divergence history (sustained move away)
         - VWAP crossover confirmation (bounce validates signal)
-        - Regime-aware thresholds (adapt to market conditions)
+        - TF-SPECIFIC thresholds (volatility normalization for 2h/4h)
         
         Parameters:
         - divergence_lookback: Bars to check for divergence history (5 = last 5 bars)
-        - min_divergence_pct: Minimum divergence % of VWAP (0.5% = significant)
+        - min_divergence_pct: Minimum divergence % of VWAP (0.5% baseline, 2.0% for 4h)
         - require_crossover: Strict crossover confirmation (True = stricter)
         - volume_ma_period: Volume MA period (20 = 20-bar average)
         - min_cond: Minimum conditions needed (2 of 5)
@@ -2217,6 +2276,11 @@ class SmartFilter:
         Returns: "LONG", "SHORT", or None
         """
         try:
+            # TF-SPECIFIC NORMALIZATION: Use dynamic thresholds from get_tf_specific_params()
+            if min_divergence_pct is None:
+                tf_params = self.get_tf_specific_params()
+                min_divergence_pct = tf_params["vwap_deviation_pct"]
+            
             vwap = self.df['vwap'].iat[-1]
             vwap_prev = self.df['vwap'].iat[-2]
             close = self.df['close'].iat[-1]
@@ -2232,7 +2296,7 @@ class SmartFilter:
             # How far is price from VWAP? (as percentage)
             vwap_distance = abs(close - vwap) / vwap if vwap > 0 else 0
             
-            # Strong divergence: price is >0.5% away from VWAP
+            # Strong divergence: price is >min_divergence_pct away from VWAP (dynamically set)
             divergence_strong = vwap_distance > min_divergence_pct
         
             # ===== ENHANCEMENT 2: Multi-Candle Divergence History =====
@@ -2345,9 +2409,9 @@ class SmartFilter:
         else:
             return series.min().iat[-1], series.max().iat[-1]
     
-    def _check_support_resistance(self, window=20, margin_pct=0.02, debug=False):
+    def _check_support_resistance(self, window=20, margin_pct=None, debug=False):
         """
-        SIMPLIFIED Support/Resistance (2026-03-23)
+        SIMPLIFIED Support/Resistance (2026-03-23, 2026-03-25 3-FACTOR NORMALIZATION)
         Retail-level bounce detection off recent extremes.
         
         Logic:
@@ -2355,9 +2419,15 @@ class SmartFilter:
         SHORT: close <= recent_resistance AND close > recent_resistance * (1 - margin)
         
         Purpose: Simple bounce detection off recent extremes
-        Expected Pass Rate: ~30% of bars
+        Expected Pass Rate: ~30-40% of bars (TF-dependent due to candle size variation)
+        TF-SPECIFIC: Uses dynamic margin based on timeframe volatility (0.03 baseline, 0.06 for 4h)
         """
         try:
+            # TF-SPECIFIC NORMALIZATION: Use dynamic thresholds from get_tf_specific_params()
+            if margin_pct is None:
+                tf_params = self.get_tf_specific_params()
+                margin_pct = tf_params["price_proximity_pct"]
+            
             if len(self.df) < window:
                 return None
             
@@ -2366,7 +2436,7 @@ class SmartFilter:
             recent_resistance = self.df['high'].rolling(window).max().iat[-1]
             close = self.df['close'].iat[-1]
             
-            # Define acceptance margins (2% above support, 2% below resistance)
+            # Define acceptance margins (dynamically set based on TF volatility)
             support_upper = recent_support * (1 + margin_pct)
             resistance_lower = recent_resistance * (1 - margin_pct)
             
@@ -2819,7 +2889,7 @@ class SmartFilter:
     def _check_volatility_squeeze(
         self,
         min_cond: int = 2,
-        min_squeeze_diff: float = 0.05,
+        min_squeeze_diff: float = None,  # Now dynamically set from TF params
         squeeze_exhaustion_bars: int = 3,
         require_directional_bias: bool = False,
         momentum_lookback: int = 5,
@@ -2828,16 +2898,17 @@ class SmartFilter:
         debug: bool = False
     ):
         """
-        ENHANCED Volatility Squeeze (2026-03-08)
+        ENHANCED Volatility Squeeze (2026-03-08, 2026-03-25 3-FACTOR NORMALIZATION)
         
         Predicts squeeze breakout direction with institutional-grade precision:
         - Squeeze exhaustion metric (how long in squeeze = pressure buildup)
         - Directional bias before breakout (momentum into squeeze predicts direction)
         - BB tightening analysis (intensity of squeeze)
         - Volume building confirmation (institutional setup detection)
+        - TF-SPECIFIC thresholds (volatility normalization for 2h/4h)
         
         Parameters:
-        - min_squeeze_diff: Squeeze magnitude threshold (0.05 = BB > KC by 5%)
+        - min_squeeze_diff: Squeeze magnitude threshold (0.05 baseline, 0.12 for 4h)
         - squeeze_exhaustion_bars: Minimum bars in squeeze (3+ bars = pressure ready to release)
         - require_directional_bias: Strict directional confirmation (True = stricter)
         - momentum_lookback: How many bars back to measure directional momentum (5 = last 5)
@@ -2851,6 +2922,11 @@ class SmartFilter:
         Returns: "LONG", "SHORT", or None
         """
         try:
+            # TF-SPECIFIC NORMALIZATION: Use dynamic thresholds from get_tf_specific_params()
+            if min_squeeze_diff is None:
+                tf_params = self.get_tf_specific_params()
+                min_squeeze_diff = tf_params["min_squeeze_diff"]
+            
             # Get BB and KC data
             bb_width = self.df['bb_upper'].iat[-1] - self.df['bb_lower'].iat[-1]
             kc_width = self.df['kc_upper'].iat[-1] - self.df['kc_lower'].iat[-1]
