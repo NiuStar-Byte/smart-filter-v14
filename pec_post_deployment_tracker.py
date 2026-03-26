@@ -395,6 +395,51 @@ class PostDeploymentTracker:
         report.append("─" * 200)
         report.append("")
         
+        # ===== OVERALL RR METRICS SECTION =====
+        report.append("📊 OVERALL RISK:REWARD (RR) METRICS")
+        report.append("─" * 200)
+        
+        # Calculate RR for ALL included signals
+        all_rr_values = []
+        for s in self.signals:
+            status = s.get('status')
+            if status not in ['REJECTED_NOT_SENT_TELEGRAM', 'STALE_TIMEOUT']:
+                entry = s.get('entry_price')
+                tp = s.get('tp_price') or s.get('tp_target')
+                sl = s.get('sl_price') or s.get('sl_target')
+                
+                if entry and tp and sl:
+                    try:
+                        entry_f = float(entry)
+                        tp_f = float(tp)
+                        sl_f = float(sl)
+                        
+                        reward = abs(tp_f - entry_f)
+                        risk = abs(entry_f - sl_f)
+                        
+                        if risk > 0:
+                            rr = reward / risk
+                            all_rr_values.append(rr)
+                    except:
+                        pass
+        
+        if all_rr_values:
+            highest_rr = max(all_rr_values)
+            avg_rr = sum(all_rr_values) / len(all_rr_values)
+            lowest_rr = min(all_rr_values)
+            
+            report.append(f"Highest RR: {highest_rr:.2f}")
+            report.append(f"Avg RR:     {avg_rr:.2f}")
+            report.append(f"Lowest RR:  {lowest_rr:.2f}")
+            report.append("")
+            report.append(f"Total signals analyzed: {len(all_rr_values)}")
+        else:
+            report.append("No RR data available")
+        
+        report.append("")
+        report.append("─" * 200)
+        report.append("")
+        
         # BY TIMEFRAME (Enhanced table)
         report.append("🕐 BY TIMEFRAME")
         report.append("─" * 260)
