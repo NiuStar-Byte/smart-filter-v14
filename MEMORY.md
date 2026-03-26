@@ -4,6 +4,105 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
+## 🔧 **PROJECT-12: P&L CALCULATION BUG FIX (2026-03-26 18:09 → 18:25)**
+
+**Status:** ✅ **COMPLETE - TP/SL P&L now uses target prices, RR ratio validated**
+**Created:** 2026-03-26 18:09 GMT+7
+**Fixed:** 2026-03-26 18:25 GMT+7
+**Commit:** `9d3369f` (submodule) + `a5d5827` (workspace sync)
+**Scope:** Fix P&L calculation bug affecting all TP/SL outcomes
+
+### **The Bug**
+
+When TP or SL was hit, P&L was calculated using **current_price** instead of **target price**:
+
+```
+WRONG (before):
+├─ TP_HIT: P&L = (current_price - entry) / entry × notional
+├─ SL_HIT: P&L = (entry - current_price) / entry × notional
+└─ Result: Overstated profit when price overshoots TP
+           Overstated loss when price gaps past SL
+
+CORRECT (after):
+├─ TP_HIT: P&L = (tp_target - entry) / entry × notional ✓
+├─ SL_HIT: P&L = (entry - sl_target) / entry × notional ✓
+├─ TIMEOUT_WIN: P&L = (current_price - entry) / entry (correct - target never hit)
+└─ TIMEOUT_LOSS: P&L = (entry - current_price) / entry (correct - target never hit)
+```
+
+### **Example (LONG Trade)**
+
+```
+Entry: $100, TP Target: $131, SL Target: $90.69
+
+TP_HIT @ $135 (overshot):
+├─ WRONG: P&L = (135-100)/100 × 100 = +$35 ❌
+├─ CORRECT: P&L = (131-100)/100 × 100 = +$31 ✓
+└─ Overstated by $4.00
+
+SL_HIT @ $88 (gapped down):
+├─ WRONG: P&L = (100-88)/100 × 100 = -$12 ❌
+├─ CORRECT: P&L = (100-90.69)/100 × 100 = -$9.31 ✓
+└─ Overstated loss by $2.69
+```
+
+### **Impact on RR Validation**
+
+Before fix:
+```
+Target RR: 1.31 (from tp_target/sl_target)
+Calculated RR: 1.22 (from avg P&L - WRONG)
+Ratio mismatch ❌
+```
+
+After fix:
+```
+Target RR: 1.31
+Calculated RR: 1.31 (Avg TP / Avg SL - CORRECT)
+Ratio matches exactly ✓
+```
+
+### **Why This Matters**
+
+P&L calculation must use the **recognized exit price**, not market price:
+- **TP/SL:** Were recognized/hit at target → Use target price
+- **TIMEOUT:** Never hit target, forced exit → Use current market price
+
+This ensures RR ratio is preserved: If RR = 1.31, then Avg TP P&L = 1.31 × Avg SL P&L
+
+### **Not a New Feature - Bug Fix Only**
+
+✅ No new tracker created (same 5 locked trackers)
+✅ No code version change (internal executor logic fix)
+✅ Results auto-recalculate from corrected P&L data
+✅ When trackers run, they see new P&L numbers (from fixed executor)
+
+**Example:** pec_post_deployment_tracker.py code unchanged
+- Run 1 (with bug): Avg TP = $10.81, Avg SL = $13.19, RR ratio = 1.22 ❌
+- Run 2 (after fix): Avg TP = $13.10, Avg SL = $10.00, RR ratio = 1.31 ✓
+- Code identical, data corrected by executor
+
+### **Implementation**
+
+File: `pec_executor.py` (lines 220-270)
+- Changed: Use `tp_target` instead of `current_price` for TP_HIT P&L
+- Changed: Use `sl_target` instead of `current_price` for SL_HIT P&L
+- Unchanged: TIMEOUT uses `current_price` (target never reached)
+
+### **Verification**
+
+8 scenarios tested and documented in `BUG_FIX_EXAMPLES.md`:
+- ✅ LONG TP_HIT (uses tp_target)
+- ✅ LONG SL_HIT (uses sl_target)
+- ✅ LONG TIMEOUT_WIN (uses current_price)
+- ✅ LONG TIMEOUT_LOSS (uses current_price)
+- ✅ SHORT TP_HIT (uses tp_target)
+- ✅ SHORT SL_HIT (uses sl_target)
+- ✅ SHORT TIMEOUT_WIN (uses current_price)
+- ✅ SHORT TIMEOUT_LOSS (uses current_price)
+
+---
+
 ## 🎯 **PROJECT-11: RR VALIDATION & ENFORCEMENT SYSTEM (2026-03-26 12:39 → 14:04)**
 
 **Status:** ✅ **COMPLETE - RR bounds enforced, TP/SL validation active, integrated into daemon**
