@@ -131,10 +131,10 @@ NEW WAY (clean):
 
 ### **Deployment Timestamps (Reference)**
 
-| Date | Time | Change | Tracker | Cut-off |
+| Date (GMT+7) | UTC Equivalent | Change | Tracker | Cut-off |
 |------|------|--------|---------|---------|
-| 2026-03-14 | 23:59:59.999999 | FOUNDATION baseline | pec_enhanced_reporter | ≤ this time |
-| 2026-03-26 | 08:54:00 | 3-factor + 4-factor deployed | pec_post_deployment_tracker | ≥ this time |
+| 2026-03-14 23:59:59.999999 | - | FOUNDATION baseline | pec_enhanced_reporter | ≤ this time |
+| 2026-03-26 00:54:00 | 2026-03-25 17:54:00 | 3-factor + 4-factor deployed | pec_post_deployment_tracker | ≥ 2026-03-25T17:54:00Z |
 | (future) | TBD | (next deployment) | (new tracker) | (new cut-off) |
 
 ### **Implementation Files**
@@ -145,11 +145,18 @@ NEW WAY (clean):
   - Signals: 7,223 (immutable baseline)
 
 - **pec_post_deployment_tracker.py** (NEW)
-  - Cut-off: 2026-03-26T08:54:00Z (after)
+  - Cut-off: 2026-03-25T17:54:00Z onwards (00:54 GMT+7 2026-03-26)
   - Code: New (3-factor + 4-factor active)
-  - Signals: TBD (accumulating)
+  - Signals: 406 (as of 2026-03-26 11:31 GMT+7)
+  - WR: 35.20% (vs 30.94% pre-deployment) = **+4.26% improvement**
 
 Both read SIGNALS_MASTER.jsonl. Different windows, different logic versions, clean comparison.
+
+**Early Results (406 post-deployment signals):**
+- Win Rate: 35.20% ✅ (improvement from 30.94%)
+- Closed: 196 | TP: 54 | SL: 116 | TIMEOUT: 26
+- By TF: 15min (166), 2h (72), 4h (75), 30min (54), 1h (39)
+- Status: Accumulating, need more data for statistical significance
 
 ---
 
