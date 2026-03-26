@@ -4,10 +4,11 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
-## 🎯 **PROJECT-11: RR VALIDATION & ENFORCEMENT SYSTEM (2026-03-26 12:39)**
+## 🎯 **PROJECT-11: RR VALIDATION & ENFORCEMENT SYSTEM (2026-03-26 12:39 → 14:04)**
 
-**Status:** ✅ **IMPLEMENTED - RR bounds enforced, TP/SL validation active**
+**Status:** ✅ **COMPLETE - RR bounds enforced, TP/SL validation active, integrated into daemon**
 **Created:** 2026-03-26 12:39 GMT+7
+**Integrated:** 2026-03-26 14:04 GMT+7
 **Scope:** Ensure all signals have valid, bounded Risk:Reward ratios
 
 ### **RR Enforcement Rules**
@@ -159,6 +160,76 @@ Every signal should log:
 
 ---
 
+## 📊 **TRACKER ENHANCEMENT - DETAILED SIGNAL BREAKDOWN (2026-03-26 14:19)**
+
+**Status:** ✅ **COMPLETE - Enhanced pec_post_deployment_tracker.py with comprehensive audit trail**
+**Enhancement:** Commit `f652651` (2026-03-26 14:19 GMT+7)
+
+### **New Sections Added**
+
+#### **1. SIGNAL BREAKDOWN (Inclusion/Exclusion Analysis)**
+Shows clear categorization of all 655 post-deployment signals:
+- **INCLUDED IN METRICS (655 signals)** — Counted in WR & P&L
+  - TP_HIT: 152 signals
+  - SL_HIT: 184 signals
+  - TIMEOUT: 87 signals
+  - OPEN: 232 signals (unrealized)
+- **EXCLUDED FROM METRICS (0 signals)** — Not counted
+  - REJECTED_NOT_SENT_TELEGRAM: 0
+  - STALE_TIMEOUT: 0
+- **BREAKDOWN VERIFICATION:** All 655 signals accounted for ✓
+
+#### **2. CLOSED TRADES ANALYSIS (Backtest Signals Only)**
+Detailed breakdown of 423 closed trades:
+- **TP_HIT:** 152 signals (profit targets hit)
+- **SL_HIT:** 184 signals (stop losses hit)
+- **TIMEOUT:** 87 signals
+  - Timeout Win: 46 (closed > entry)
+  - Timeout Loss: 41 (closed < entry)
+- **Overall Win Rate:** 46.81%
+- **Calculation:** (152 TP + 46 TIMEOUT_WIN) / 423 = 198 / 423 = 46.81%
+
+#### **3. P&L BREAKDOWN (Included vs Excluded)**
+Clear audit trail of P&L composition:
+- **INCLUDED IN TOTAL P&L:** -$1,064.83
+  - TP_HIT: +$1,624.24
+  - SL_HIT: -$2,389.76
+  - TIMEOUT: -$299.31
+  - OPEN: $0.00 (unrealized)
+- **EXCLUDED FROM TOTAL P&L:** $0.00
+  - REJECTED: $0.00
+  - STALE: Not calculated (data quality)
+- **VALIDATION:** P&L matches total ✓
+
+#### **4. Per-Signal Averages**
+- Average P&L per Closed Trade: -$2.52
+- Average P&L per Signal (Included): -$1.63
+- Average P&L per TP_HIT: +$10.69
+- Average P&L per SL_HIT: -$12.99
+
+### **Benefits of Enhancement**
+
+1. **Data Quality Validation** — Shows exactly what's counted vs excluded
+2. **Audit Trail** — Clear breakdown of where P&L comes from
+3. **Transparency** — No hidden calculations, all verified
+4. **Decision Support** — Easy to see if exclusions are affecting metrics
+5. **Future Debugging** — If data quality issues arise, fast to identify
+
+### **Current Metrics Summary (655 post-deployment signals)**
+
+| Metric | Value |
+|--------|-------|
+| Total Signals | 655 |
+| Closed Trades | 423 |
+| Overall Win Rate | 46.81% |
+| Total P&L | -$1,064.83 |
+| Best TF | 30min (66.7% WR) |
+| Best Direction | SHORT (65.3% WR) |
+| Best Regime | RANGE (66.1% WR) |
+| Best Symbol Group | MAIN_BLOCKCHAIN (67.4% WR) |
+
+---
+
 ## 🚀 **DEPLOYMENT CUT-OFF PROTOCOL (Established 2026-03-26 09:24)**
 
 **Problem Solved:** Tracker "always changing" issue — caused by re-baselining old signals with new code logic
@@ -226,11 +297,15 @@ NEW WAY (clean):
 
 Both read SIGNALS_MASTER.jsonl. Different windows, different logic versions, clean comparison.
 
-**Early Results (406 post-deployment signals):**
-- Win Rate: 35.20% ✅ (improvement from 30.94%)
-- Closed: 196 | TP: 54 | SL: 116 | TIMEOUT: 26
-- By TF: 15min (166), 2h (72), 4h (75), 30min (54), 1h (39)
-- Status: Accumulating, need more data for statistical significance
+**Early Results (639 post-deployment signals - 2026-03-26 14:04):**
+- Win Rate: 45.74% ✅ (improvement from pre-deployment 30.94%) = **+14.8% WR gain**
+- Closed: 411 | TP: 147 | SL: 183 | TIMEOUT: 81 (W:41 L:40)
+- By TF: 15min (43.5%), 30min (65.8% ✓ BEST), 1h (61.9%), 2h (38.1%), 4h (15.6%)
+- By Direction: LONG (13.9%), SHORT (64.2% ✓ STRONG)
+- By Regime: RANGE (62.3% ✓ BEST), BEAR (50.7%), BULL (33.8%)
+- By Symbol Group: MAIN_BLOCKCHAIN (65.9% ✓ BEST), MID_ALTS (45.2%), LOW_ALTS (44.7%), TOP_ALTS (21.1%)
+- Status: Accumulating, 639 signals collected, target 1000+ for statistical significance
+- **Observation:** SHORT direction strong, LONG weak (needs investigation), 4h underperforming
 
 ---
 
