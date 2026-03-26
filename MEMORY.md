@@ -47,13 +47,15 @@ TIMEOUT: -$2,647.38
 - Overall P&L -$14.2K: TP (+$21.6K) - SL (-$33.2K) - TIMEOUT (-$2.6K)
 - Timeout acts as a "buffer" between TP wins and SL losses, partially offsetting
 
-**Note on "Last Updated Timestamps":**
-- User mentioned this field is missing from tracker
-- Likely existed in a previous version or configuration
-- Current reporter uses generation timestamp: `Report Generated: YYYY-MM-DD HH:MM:SS GMT+7` at report header
-- Not part of the "locked tracker" code (dynamic data only)
-- If needed, can be added as a new section in _analyze_signal_group()
-- Status: Monitor if this becomes a critical need
+**Report Generation Timestamps:**
+- ✅ **ADDED to pec_enhanced_reporter.py** (2026-03-26 21:02)
+  - Format: `Report Generated: YYYY-MM-DD HH:MM:SS GMT+7`
+  - Location: Immediately after title line
+  - Commit: `18ec347` (submodule) + `ca0c92d` (workspace)
+- ✅ **Already in pec_post_deployment_tracker.py**
+  - Same format and location
+  - Shows when each report was generated
+- Status: Both trackers now have consistent timestamps
 
 **5 Locked Trackers Summary:**
 | Tracker | Code Status | Data Status | Latest Commit |
