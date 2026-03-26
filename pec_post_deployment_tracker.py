@@ -4,7 +4,7 @@ POST-DEPLOYMENT TRACKER - 3-Factor + 4-Factor Normalization (2026-03-26 08:54 GM
 
 Purpose: Track signal performance AFTER 3-factor and 4-factor normalization deployment
 Source: SIGNALS_MASTER.jsonl (same as pec_enhanced_reporter.py)
-Cut-off: 2026-03-26T08:54:00Z (deployment timestamp - onwards only)
+Cut-off: 2026-03-25T17:54:00Z (00:54 GMT+7 2026-03-26 deployment timestamp - onwards only)
 
 Code Changes Applied:
 - 3-Factor: smart_filter.py - volatility-based thresholds, S/R proximity, reversal frequency
@@ -23,7 +23,8 @@ from collections import defaultdict
 import os
 
 # DEPLOYMENT CUT-OFF TIMESTAMP (when daemon restarted with 3-factor + 4-factor)
-DEPLOYMENT_CUTOFF_UTC = datetime.fromisoformat('2026-03-26T08:54:00+00:00')
+# 00:54 GMT+7 (2026-03-26) = 17:54 UTC (2026-03-25)
+DEPLOYMENT_CUTOFF_UTC = datetime.fromisoformat('2026-03-25T17:54:00+00:00')
 
 class PostDeploymentTracker:
     def __init__(self, signals_file=None):
@@ -87,7 +88,7 @@ class PostDeploymentTracker:
         report.append("📊 POST-DEPLOYMENT TRACKER (3-Factor + 4-Factor Normalization)")
         report.append("=" * 140)
         report.append("")
-        report.append(f"Deployment Cut-off: 2026-03-26T08:54:00Z (onwards)")
+        report.append(f"Deployment Cut-off: 2026-03-25T17:54:00Z / 00:54 GMT+7 (2026-03-26) — onwards")
         report.append(f"Report Generated: {datetime.now(timezone(timedelta(hours=7))).strftime('%Y-%m-%d %H:%M:%S GMT+7')}")
         report.append("")
         
