@@ -4,6 +4,64 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
+## 🎯 **PROJECT-11: RR VALIDATION & ENFORCEMENT SYSTEM (2026-03-26 12:39)**
+
+**Status:** ✅ **IMPLEMENTED - RR bounds enforced, TP/SL validation active**
+**Created:** 2026-03-26 12:39 GMT+7
+**Scope:** Ensure all signals have valid, bounded Risk:Reward ratios
+
+### **RR Enforcement Rules**
+
+**Bounds:**
+- MIN_ACCEPTED_RR: 1.25:1 (minimum profit potential, never losing-bet)
+- MAX_ACCEPTED_RR: 2.75:1 (cap extreme cases, stay realistic)
+
+**Validation:**
+- LONG: TP must be > Entry, SL must be < Entry
+- SHORT: TP must be < Entry, SL must be > Entry
+- If violated → BLOCK signal (data quality issue)
+
+**Enforcement Actions:**
+1. **VALID** — RR within [1.25, 2.75], no adjustment
+2. **CAPPED_MAX** — RR > 2.75, adjust TP closer to achieve 2.75
+3. **RAISED_MIN** — RR < 1.25, adjust SL closer to achieve 1.25
+4. **DEFAULT_MIN** — No RR calculated, set to 1.25 via SL adjustment
+5. **INVALID_RELATIONSHIP** — TP/SL wrong for direction, BLOCK
+
+**Implementation:**
+- File: `pec_config.py`
+- Functions:
+  - `validate_tp_sl_relationship()` — Check direction-based TP/SL
+  - `calculate_rr()` — Compute RR value
+  - `enforce_rr_bounds()` — Adjust TP/SL, return action taken
+- Commit: `d8cd05f` (submodule) + `35520ac` (workspace sync)
+
+**Audit Trail:**
+Every signal should log:
+```json
+{
+  "calculated_rr": 3.5,          // Market-driven RR
+  "enforced_rr": 2.75,           // After enforcement
+  "rr_action": "CAPPED_MAX",     // Action taken
+  "adjusted_tp": 42750.50,       // New TP if adjusted
+  "adjusted_sl": 42400.25        // New SL if adjusted
+}
+```
+
+### **Next Step: Integrate into Daemon**
+
+**Files to update:**
+1. `main.py` (signal firing block) — Call enforce_rr_bounds() before firing
+2. `signal_logger.py` — Add calculated_rr, enforced_rr, rr_action fields
+3. Test with signals to verify:
+   - Negative RR signals are BLOCKED
+   - Extreme RR (> 2.75) are CAPPED
+   - Low RR (< 1.25) are RAISED
+
+**Current Status:** RR enforcement functions ready in pec_config.py, awaiting integration into daemon firing logic.
+
+---
+
 ## ⚡ **PROJECT-10: OPERATIONAL SAFEGUARDS + TRACKER STABILITY (2026-03-25 19:36)**
 
 **Status:** 🔴 **LOCK VIOLATION DETECTED & ENFORCED (2026-03-26 08:42)**
