@@ -9,14 +9,155 @@ Defines parameters for signal firing and backtesting.
 import os
 
 # ============================================================================
-# RISK-REWARD RATIO FILTERING
+# RISK-REWARD RATIO FILTERING & ENFORCEMENT
 # ============================================================================
 
-# Minimum accepted R:R ratio for signal firing
-# Signals with lower RR will be filtered out (not fired)
+# Minimum accepted R:R ratio (never accept losing bets)
+# RR < 1.25 means profit potential is < risk, reject it
 MIN_ACCEPTED_RR = float(os.getenv("MIN_ACCEPTED_RR", "1.25"))
 
-print(f"[PEC_CONFIG] MIN_ACCEPTED_RR = {MIN_ACCEPTED_RR}:1", flush=True)
+# Maximum accepted R:R ratio (cap extreme cases)
+# RR > 2.75 is too greedy, unrealistic, cap it
+MAX_ACCEPTED_RR = float(os.getenv("MAX_ACCEPTED_RR", "2.75"))
+
+print(f"[PEC_CONFIG] RR ENFORCEMENT: MIN = {MIN_ACCEPTED_RR}:1, MAX = {MAX_ACCEPTED_RR}:1", flush=True)
+
+# ============================================================================
+# RR VALIDATION & ENFORCEMENT LOGIC
+# ============================================================================
+
+def validate_tp_sl_relationship(entry_price, tp_price, sl_price, direction):
+    """
+    Validate TP/SL relationship matches direction.
+    
+    LONG: TP must be > Entry, SL must be < Entry
+    SHORT: TP must be < Entry, SL must be > Entry
+    
+    Args:
+        entry_price: Entry price
+        tp_price: Take Profit price
+        sl_price: Stop Loss price
+        direction: 'LONG' or 'SHORT'
+    
+    Returns:
+        (is_valid, error_message)
+    """
+    try:
+        entry = float(entry_price)
+        tp = float(tp_price)
+        sl = float(sl_price)
+        
+        if direction.upper() == 'LONG':
+            if tp <= entry:
+                return False, f"LONG TP ({tp}) must be > Entry ({entry})"
+            if sl >= entry:
+                return False, f"LONG SL ({sl}) must be < Entry ({entry})"
+        elif direction.upper() == 'SHORT':
+            if tp >= entry:
+                return False, f"SHORT TP ({tp}) must be < Entry ({entry})"
+            if sl <= entry:
+                return False, f"SHORT SL ({sl}) must be > Entry ({entry})"
+        else:
+            return False, f"Unknown direction: {direction}"
+        
+        return True, None
+    except Exception as e:
+        return False, f"Error validating TP/SL: {e}"
+
+
+def calculate_rr(entry_price, tp_price, sl_price):
+    """
+    Calculate Risk:Reward ratio.
+    RR = (TP - Entry) / (Entry - SL)
+    
+    Returns: RR value or None if invalid
+    """
+    try:
+        entry = float(entry_price)
+        tp = float(tp_price)
+        sl = float(sl_price)
+        
+        reward = tp - entry
+        risk = entry - sl
+        
+        if risk <= 0:
+            return None
+        
+        rr = reward / risk
+        return round(rr, 3)
+    except:
+        return None
+
+
+def enforce_rr_bounds(entry_price, tp_price, sl_price, direction, calculated_rr=None):
+    """
+    Enforce RR bounds by adjusting TP or SL if needed.
+    
+    Returns: (adjusted_tp, adjusted_sl, enforced_rr, action_taken)
+    
+    Actions:
+    - "VALID": RR already within bounds
+    - "CAPPED_MAX": RR was > 2.75, adjusted TP closer
+    - "RAISED_MIN": RR was < 1.25, adjusted SL closer
+    - "DEFAULT_MIN": No RR calculated, set to 1.25
+    - "INVALID_RELATIONSHIP": TP/SL relationship wrong for direction
+    """
+    try:
+        entry = float(entry_price)
+        tp = float(tp_price)
+        sl = float(sl_price)
+        
+        # Step 1: Validate TP/SL relationship
+        is_valid, error_msg = validate_tp_sl_relationship(entry, tp, sl, direction)
+        if not is_valid:
+            return None, None, None, f"INVALID_RELATIONSHIP: {error_msg}"
+        
+        # Step 2: Calculate RR
+        if calculated_rr is None:
+            calculated_rr = calculate_rr(entry, tp, sl)
+        
+        if calculated_rr is None:
+            # No RR available, default to 1.25 by adjusting SL
+            if direction.upper() == 'LONG':
+                # SL = Entry - (TP - Entry) / 1.25
+                sl_adjusted = entry - (tp - entry) / MIN_ACCEPTED_RR
+                enforced_rr = calculate_rr(entry, tp, sl_adjusted)
+                return tp, round(sl_adjusted, 8), enforced_rr, "DEFAULT_MIN"
+            else:  # SHORT
+                # SL = Entry + (Entry - TP) / 1.25
+                sl_adjusted = entry + (entry - tp) / MIN_ACCEPTED_RR
+                enforced_rr = calculate_rr(entry, tp, sl_adjusted)
+                return tp, round(sl_adjusted, 8), enforced_rr, "DEFAULT_MIN"
+        
+        # Step 3: Check bounds
+        if calculated_rr < MIN_ACCEPTED_RR:
+            # Too low, raise to MIN by adjusting SL
+            if direction.upper() == 'LONG':
+                sl_adjusted = entry - (tp - entry) / MIN_ACCEPTED_RR
+                enforced_rr = MIN_ACCEPTED_RR
+                return tp, round(sl_adjusted, 8), enforced_rr, "RAISED_MIN"
+            else:  # SHORT
+                sl_adjusted = entry + (entry - tp) / MIN_ACCEPTED_RR
+                enforced_rr = MIN_ACCEPTED_RR
+                return tp, round(sl_adjusted, 8), enforced_rr, "RAISED_MIN"
+        
+        elif calculated_rr > MAX_ACCEPTED_RR:
+            # Too high, cap to MAX by adjusting TP closer
+            if direction.upper() == 'LONG':
+                tp_adjusted = entry + (entry - sl) * MAX_ACCEPTED_RR
+                enforced_rr = MAX_ACCEPTED_RR
+                return round(tp_adjusted, 8), sl, enforced_rr, "CAPPED_MAX"
+            else:  # SHORT
+                tp_adjusted = entry - (sl - entry) * MAX_ACCEPTED_RR
+                enforced_rr = MAX_ACCEPTED_RR
+                return round(tp_adjusted, 8), sl, enforced_rr, "CAPPED_MAX"
+        
+        else:
+            # Within bounds, no adjustment needed
+            return tp, sl, calculated_rr, "VALID"
+    
+    except Exception as e:
+        return None, None, None, f"ERROR: {e}"
 
 # ============================================================================
 # MAX HOLD BARS BY TIMEFRAME
