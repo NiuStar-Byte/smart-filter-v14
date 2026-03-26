@@ -57,16 +57,39 @@ TIMEOUT: -$2,647.38
   - Shows when each report was generated
 - Status: Both trackers now have consistent timestamps
 
+**Timestamped Report Archiving (2026-03-26 21:21)**
+
+Added automatic timestamped archiving to both trackers:
+- **pec_enhanced_reporter.py** + **pec_post_deployment_tracker.py**
+- Commit: `9f1073c` (submodule) + `0c0696b` (workspace)
+
+**How It Works:**
+1. **Latest version**: `PEC_*_REPORT.txt` in workspace root (quick access, always current)
+2. **Timestamped archive**: `pec_reports/PEC_*_YYYY-MM-DD_HH-MM-SS.txt` (audit trail)
+
+**Benefits:**
+- ✅ Keep latest results readily accessible
+- ✅ Build audit trail of historical reports
+- ✅ Recover from issues with timestamped snapshots
+- ✅ Compare metrics over time
+
+**Archive Structure:**
+```
+pec_reports/
+├── PEC_ENHANCED_REPORT_2026-03-26_21-22-11.txt (1.8M)
+└── PEC_POST_DEPLOYMENT_TRACKER_2026-03-26_21-21-56.txt (26K)
+```
+
 **5 Locked Trackers Summary:**
 | Tracker | Code Status | Data Status | Latest Commit |
 |---------|------------|------------|--|
-| pec_enhanced_reporter.py | LOCKED (2,396L) | DYNAMIC | `1b839e8` |
-| pec_post_deployment_tracker.py | LOCKED (2,551L) | DYNAMIC | `11ce41e` |
+| pec_enhanced_reporter.py | LOCKED (2,410L) | DYNAMIC + ARCHIVED | `9f1073c` |
+| pec_post_deployment_tracker.py | LOCKED (2,565L) | DYNAMIC + ARCHIVED | `9f1073c` |
 | monitor_filters_live.sh | LOCKED | DYNAMIC | (sub) |
 | phase1_phase3_phase2_tracker.py | LOCKED | DYNAMIC | (sub) |
 | monitor_rr_filtering.py | LOCKED | DYNAMIC | (sub) |
 
-All trackers: **Code unchanged** (templates), **Results dynamic** (auto-update as signals grow)
+All trackers: **Code unchanged** (templates), **Results dynamic + timestamped** (auto-update + archive as signals grow)
 
 ---
 
