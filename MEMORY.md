@@ -92,16 +92,68 @@ Every signal should log:
 - **Detection:** 2026-03-26 08:33 GMT+7 (user query about tracker changes)
 - **Response:** Restored to locked commit 4e0489e at 2026-03-26 08:42 GMT+7
 - **Enforcement:** Pushed commit `42676fc` to GitHub - both copies now verified identical & locked
-- **Consequence:** All 4 trackers must be re-baselined before ANY further changes
+- **Consequence:** All 5 locked trackers now protected - NO CODE MODIFICATIONS allowed
 
-### **Implementation (5/5 Complete)**
+### **Implementation (5/5 Complete) - LOCKED TRACKERS PROTOCOL**
 
-#### **1. ✅ TRACKER LOCK - No Changes Allowed**
-- `pec_enhanced_reporter.py` - LOCKED, frozen at 2,395 lines (commit 4e0489e)
-- `monitor_filters_live.sh` - LOCKED, frozen at 2.7KB
-- `phase1_phase3_phase2_tracker.py` - LOCKED, frozen at 12KB
-- `monitor_rr_filtering.py` - LOCKED, frozen at 11KB
-- **Rule:** These 4 files are immutable templates. Their results depend only on DATA and CODE, never on tracker modifications.
+#### **1. ✅ LOCKED CODE TRACKERS (5 Total - Code IMMUTABLE, Data DYNAMIC)**
+**Rule:** These 5 tracker files are UNCHANGED/LOCKED CODE TEMPLATES. Code frozen, results dynamically update as signals accumulate.
+
+**Locked Tracker List:**
+1. **`pec_enhanced_reporter.py`** 
+   - LOCKED at 2,395 lines (commit 4e0489e)
+   - Source: SIGNALS_MASTER.jsonl (≤ 2026-03-25T17:54:00Z, pre-deployment)
+   - Purpose: Track pre-3-factor/4-factor baseline (7,223 signals)
+   - Data: Dynamic (updates as historical signals updated), Code: Immutable
+
+2. **`pec_post_deployment_tracker.py`** ✨ NEW
+   - LOCKED at 2,551 lines (commit f652651 - with detailed breakdown)
+   - Source: SIGNALS_MASTER.jsonl (≥ 2026-03-25T17:54:00Z, post-deployment)
+   - Purpose: Track 3-factor/4-factor improvement (655 signals, growing)
+   - Data: Dynamic (updates as new signals fire), Code: Immutable
+   - Sections: Signal breakdown, closed trades analysis, P&L breakdown with validation, 6 BY-X dimensions
+   
+3. **`monitor_filters_live.sh`** 
+   - LOCKED at 2.7KB
+   - Purpose: Filter effectiveness tracking
+   - Data: Dynamic, Code: Immutable
+
+4. **`phase1_phase3_phase2_tracker.py`** 
+   - LOCKED at 12KB
+   - Purpose: Phase methodology validation
+   - Data: Dynamic, Code: Immutable
+
+5. **`monitor_rr_filtering.py`** 
+   - LOCKED at 11KB
+   - Purpose: Risk:Reward bounds enforcement verification
+   - Data: Dynamic, Code: Immutable
+
+**Key Design:**
+- **Code:** Never modified after lock (prevents silent drift)
+- **Data:** Continuously updated as signals accumulate
+- **Result:** Stable metrics with growing sample size
+- **Purpose:** Isolate code changes from market conditions, measure impact cleanly
+- **No re-baselining:** When code changes, create NEW tracker (same source, different cut-off), don't recalculate old trackers
+
+**Dynamic Update Mechanism:**
+```
+Each time you run a locked tracker:
+├─ Read source file (SIGNALS_MASTER.jsonl)
+├─ Filter by cut-off date (deployment timestamp)
+├─ Recalculate metrics (WR, P&L, averages)
+├─ Output fresh report
+└─ Code unchanged, data reflects current signal state
+```
+
+**Example (pec_post_deployment_tracker.py):**
+```
+Day 1 run: 655 signals loaded, 46.81% WR
+Day 2 run: 720 signals loaded, 47.2% WR (5 new signals, results improved)
+Day 3 run: 800 signals loaded, 46.9% WR (80 new signals, results normalized)
+│
+└─ CODE UNCHANGED (same f652651 commit)
+└─ RESULTS DYNAMIC (reflect signal accumulation)
+```
 
 #### **NEW: Post-Deployment Tracker Protocol (2026-03-26)**
 - `pec_post_deployment_tracker.py` - NEW tracker for 3-factor + 4-factor normalization
@@ -137,12 +189,13 @@ Every signal should log:
   - pec_config.py lock: MAX_BARS_BY_TF {15min:8, 30min:6, 1h:4, 2h:3, 4h:2}
   - Timeout windows: 15min:2h, 30min:3h, 1h:4h, 2h:6h, 4h:8h
 - **Rule:** If ANY of these 3 files change, must:
-  1. Re-baseline all 4 trackers with new data
-  2. Document change impact
-  3. Update CODE_VERSION_LOCK.md
-  4. Notify user baseline has shifted
-  5. Validate before deployment
-- **Purpose:** Prevent silent tracker drift from code modifications
+  1. Do NOT re-baseline locked trackers (they're immutable templates)
+  2. Create NEW tracker with same source, different cut-off (deployment timestamp)
+  3. Document change impact in MEMORY.md
+  4. Update CODE_VERSION_LOCK.md
+  5. Notify user baseline has shifted
+  6. Validate before deployment
+- **Purpose:** Prevent silent tracker drift from code modifications (via deployment cut-off protocol)
 
 ### **Tracker Baseline (Locked at 2026-03-25 19:36 - RESTORED 2026-03-26 08:42)**
 - SIGNALS_MASTER.jsonl: **7,223 signals**
