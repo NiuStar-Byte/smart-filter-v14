@@ -322,6 +322,8 @@ class PostDeploymentTracker:
         pnl_tp = 0.0
         pnl_sl = 0.0
         pnl_timeout = 0.0
+        pnl_timeout_win = 0.0
+        pnl_timeout_loss = 0.0
         pnl_open = 0.0
         
         for s in self.signals:
@@ -337,6 +339,11 @@ class PostDeploymentTracker:
                         pnl_sl += pnl_calc
                     elif status == 'TIMEOUT':
                         pnl_timeout += pnl_calc
+                        # Separate timeout into wins and losses
+                        if pnl_calc > 0:
+                            pnl_timeout_win += pnl_calc
+                        else:
+                            pnl_timeout_loss += pnl_calc
             elif status == 'OPEN':
                 pnl_open += 0.0  # Unrealized, counted as 0
         
@@ -364,6 +371,8 @@ class PostDeploymentTracker:
         report.append(f"  • TP_HIT:   ${pnl_tp:>+12.2f}")
         report.append(f"  • SL_HIT:   ${pnl_sl:>+12.2f}")
         report.append(f"  • TIMEOUT:  ${pnl_timeout:>+12.2f}")
+        report.append(f"    - Timeout Win:  ${pnl_timeout_win:>+10.2f}")
+        report.append(f"    - Timeout Loss: ${pnl_timeout_loss:>+10.2f}")
         report.append(f"  • OPEN:     ${pnl_open:>+12.2f} (unrealized)")
         report.append(f"  ──────────────────────────────")
         report.append(f"  Subtotal (Backtest P&L): ${total_pnl_included:>+12.2f}")
