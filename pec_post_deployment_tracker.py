@@ -137,6 +137,45 @@ class PostDeploymentTracker:
             return int(avg_seconds)
         except:
             return None
+    
+    def _calculate_rr_metrics(self, signals_list):
+        """Calculate Risk:Reward metrics: Max, Min, Avg
+        RR = (TP - Entry) / (Entry - SL)
+        """
+        try:
+            rr_values = []
+            for s in signals_list:
+                entry = s.get('entry_price')
+                # Support BOTH schemas: old (tp_price/sl_price) + new (tp_target/sl_target)
+                tp = s.get('tp_price') or s.get('tp_target')
+                sl = s.get('sl_price') or s.get('sl_target')
+                
+                if entry and tp and sl:
+                    try:
+                        entry_f = float(entry)
+                        tp_f = float(tp)
+                        sl_f = float(sl)
+                        
+                        # Calculate RR
+                        reward = tp_f - entry_f
+                        risk = entry_f - sl_f
+                        
+                        if risk > 0:  # Avoid division by zero
+                            rr = reward / risk
+                            rr_values.append(rr)
+                    except:
+                        pass
+            
+            if not rr_values:
+                return None, None, None
+            
+            highest_rr = max(rr_values)
+            avg_rr = sum(rr_values) / len(rr_values)
+            lowest_rr = min(rr_values)
+            
+            return round(highest_rr, 2), round(avg_rr, 2), round(lowest_rr, 2)
+        except:
+            return None, None, None
 
     def generate_summary(self):
         """Generate detailed summary of post-deployment signals"""
@@ -205,9 +244,9 @@ class PostDeploymentTracker:
         
         # BY TIMEFRAME (Enhanced table)
         report.append("🕐 BY TIMEFRAME")
-        report.append("─" * 200)
-        report.append(f"{'TF':<8} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<10} | {'Closed':<7} | {'Open':<6} | {'WR':<8} | {'P&L':<12} | {'Avg TP Dur':<12} | {'Avg SL Dur':<12}")
-        report.append("─" * 200)
+        report.append("─" * 260)
+        report.append(f"{'TF':<8} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<10} | {'Closed':<7} | {'Open':<6} | {'WR':<8} | {'P&L':<12} | {'Max RR':<8} | {'Avg RR':<8} | {'Min RR':<8} | {'Avg TP Dur':<12} | {'Avg SL Dur':<12}")
+        report.append("─" * 260)
         
         # Build timeframe statistics
         tf_stats = defaultdict(lambda: {
@@ -266,9 +305,15 @@ class PostDeploymentTracker:
             avg_tp_dur_str = self._format_duration_hm(avg_tp_dur) if avg_tp_dur else "N/A"
             avg_sl_dur_str = self._format_duration_hm(avg_sl_dur) if avg_sl_dur else "N/A"
             
-            report.append(f"{tf:<8} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {timeout_str:<10} | {closed:<7} | {open_count:<6} | {wr:>6.1f}% | {pnl_str:>10} | {avg_tp_dur_str:<12} | {avg_sl_dur_str:<12}")
+            # Calculate RR metrics for this timeframe
+            max_rr, avg_rr, min_rr = self._calculate_rr_metrics(tf_signals)
+            max_rr_str = f"{max_rr}" if max_rr is not None else "N/A"
+            avg_rr_str = f"{avg_rr}" if avg_rr is not None else "N/A"
+            min_rr_str = f"{min_rr}" if min_rr is not None else "N/A"
+            
+            report.append(f"{tf:<8} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {timeout_str:<10} | {closed:<7} | {open_count:<6} | {wr:>6.1f}% | {pnl_str:>10} | {max_rr_str:>6} | {avg_rr_str:>6} | {min_rr_str:>6} | {avg_tp_dur_str:<12} | {avg_sl_dur_str:<12}")
         
-        report.append("─" * 200)
+        report.append("─" * 260)
         report.append("")
         report.append("=" * 200)
         
