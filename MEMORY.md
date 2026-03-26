@@ -6,9 +6,18 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ## ⚡ **PROJECT-10: OPERATIONAL SAFEGUARDS + TRACKER STABILITY (2026-03-25 19:36)**
 
-**Status:** ✅ **COMPLETE - All safeguards implemented, trackers locked**
+**Status:** 🔴 **LOCK VIOLATION DETECTED & ENFORCED (2026-03-26 08:42)**
 **Created:** 2026-03-25 19:36 GMT+7
 **Scope:** Prevent silent tracker drift from code changes, ensure MASTER/AUDIT sync, document critical code state
+
+### **VIOLATION INCIDENT (2026-03-26 08:54 - 08:42)**
+- **What happened:** pec_enhanced_reporter.py was modified by 3-factor/4-factor normalization deployment
+- **How:** Daemon created symlink + code additions (timestamp feature) to both workspace root and submodule
+- **Evidence:** File grew from 2,395 → 2,404 lines with commits `b60db95` and `375b419`
+- **Detection:** 2026-03-26 08:33 GMT+7 (user query about tracker changes)
+- **Response:** Restored to locked commit 4e0489e at 2026-03-26 08:42 GMT+7
+- **Enforcement:** Pushed commit `42676fc` to GitHub - both copies now verified identical & locked
+- **Consequence:** All 4 trackers must be re-baselined before ANY further changes
 
 ### **Implementation (4/4 Complete)**
 
@@ -51,13 +60,14 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
   5. Validate before deployment
 - **Purpose:** Prevent silent tracker drift from code modifications
 
-### **Tracker Baseline (Locked at 2026-03-25 19:36)**
+### **Tracker Baseline (Locked at 2026-03-25 19:36 - RESTORED 2026-03-26 08:42)**
 - SIGNALS_MASTER.jsonl: **7,223 signals**
 - FOUNDATION: **2,224** (immutable at 2026-03-14T23:59:59.999999)
 - NEW signals: **4,999** (from 2026-03-21+)
 - Overall WR: **30.94%**
 - Total P&L: **-$13,165.15**
 - 4h timeframe: **441 signals** (all OPEN, awaiting first closures)
+- **LOCK STATUS:** ✅ Restored to 2,395 lines (commit 4e0489e) - violation fixed at 08:42 GMT+7
 
 ### **Git Status**
 - ✅ Synced with GitHub (commit `2f2a407` pushed)
