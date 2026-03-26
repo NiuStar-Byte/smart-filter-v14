@@ -538,6 +538,8 @@ class PECEnhancedReporter:
         report.append(f"")
         report.append(f"Overall Win Rate: {combined_stats['wr']:.2f}%")
         report.append(f"Calculation: ({combined_stats['tp']} TP + {combined_stats['timeout_win']} TIMEOUT_WIN) / {combined_stats['closed']} Closed = {combined_stats['wins']} / {combined_stats['closed']} = {combined_stats['wr']:.2f}%")
+        report.append(f"Win Rate (based on TP & SL ONLY): {combined_stats['wr_v2']:.2f}%")
+        report.append(f"Calculation: ({combined_stats['tp']} TP) / ({combined_stats['tp']} TP + {combined_stats['sl']} SL) = {combined_stats['tp']} / {combined_stats['tp'] + combined_stats['sl']} = {combined_stats['wr_v2']:.2f}%")
         report.append(f"")
         report.append(f"Total P&L (Clean Data): ${combined_stats['total_pnl']:+,.2f}")
         report.append(f"Avg P&L per Signal: ${combined_stats['avg_pnl_signal']:+.2f}")
@@ -549,6 +551,8 @@ class PECEnhancedReporter:
         report.append(f"    • TP_HIT:    {combined_stats['tp_pnl']:+12,.2f}")
         report.append(f"    • SL_HIT:    {combined_stats['sl_pnl']:+12,.2f}")
         report.append(f"    • TIMEOUT:   {combined_stats['timeout_pnl']:+12,.2f}")
+        report.append(f"      - Timeout Win:  {combined_stats['timeout_win_pnl']:+10,.2f}")
+        report.append(f"      - Timeout Loss: {combined_stats['timeout_loss_pnl']:+10,.2f}")
         report.append(f"    • OPEN:      {combined_stats['open_pnl']:+12,.2f} (unrealized)")
         report.append(f"    Subtotal (Backtest P&L): {combined_stats['tp_pnl'] + combined_stats['sl_pnl'] + combined_stats['timeout_pnl'] + combined_stats['open_pnl']:+12,.2f}")
         report.append(f"")
@@ -641,6 +645,8 @@ class PECEnhancedReporter:
             report.append(f"Calculation: ({new_stats['tp']} TP + {new_stats['timeout_win']} TIMEOUT_WIN) / {new_stats['closed']} Closed = {new_stats['wins']} / {new_stats['closed']} = {new_stats['wr']:.2f}%")
         else:
             report.append(f"Note: Insufficient closed trades for reliable WR")
+        report.append(f"Win Rate (based on TP & SL ONLY): {new_stats['wr_v2']:.2f}%")
+        report.append(f"Calculation: ({new_stats['tp']} TP) / ({new_stats['tp']} TP + {new_stats['sl']} SL) = {new_stats['tp']} / {new_stats['tp'] + new_stats['sl']} = {new_stats['wr_v2']:.2f}%")
         report.append(f"")
         report.append(f"Total P&L (Clean Data): ${new_stats['total_pnl']:+,.2f}")
         report.append(f"Avg P&L per Signal: ${new_stats['avg_pnl_signal']:+.2f}")
@@ -652,6 +658,8 @@ class PECEnhancedReporter:
         report.append(f"    • TP_HIT:    {new_stats['tp_pnl']:+12,.2f}")
         report.append(f"    • SL_HIT:    {new_stats['sl_pnl']:+12,.2f}")
         report.append(f"    • TIMEOUT:   {new_stats['timeout_pnl']:+12,.2f}")
+        report.append(f"      - Timeout Win:  {new_stats['timeout_win_pnl']:+10,.2f}")
+        report.append(f"      - Timeout Loss: {new_stats['timeout_loss_pnl']:+10,.2f}")
         report.append(f"    • OPEN:      {new_stats['open_pnl']:+12,.2f} (unrealized)")
         report.append(f"    Subtotal (Backtest P&L): {new_stats['tp_pnl'] + new_stats['sl_pnl'] + new_stats['timeout_pnl'] + new_stats['open_pnl']:+12,.2f}")
         report.append(f"")
@@ -1640,6 +1648,8 @@ class PECEnhancedReporter:
         # CRITICAL: EXCLUDE STALE_TIMEOUT signals completely from all calculations
         # STALE_TIMEOUT = data quality issues, not valid for backtest metrics
         timeout_win = 0
+        timeout_win_pnl = 0.0
+        timeout_loss_pnl = 0.0
         total_pnl = 0.0
         tp_pnl = 0.0
         sl_pnl = 0.0
@@ -1673,6 +1683,9 @@ class PECEnhancedReporter:
                 timeout_pnl += pnl_val
                 if pnl_val > 0:
                     timeout_win += 1
+                    timeout_win_pnl += pnl_val
+                else:
+                    timeout_loss_pnl += pnl_val
             elif status == 'OPEN':
                 open_pnl += pnl_val
             elif status == 'REJECTED_NOT_SENT_TELEGRAM':
@@ -1680,6 +1693,10 @@ class PECEnhancedReporter:
         
         timeout_loss = timeout - timeout_win
         closed = tp + sl + timeout
+        
+        # Calculate WR v2 (TP & SL ONLY - excludes TIMEOUT)
+        tp_sl_closed = tp + sl
+        wr_v2 = (tp / tp_sl_closed * 100) if tp_sl_closed > 0 else 0
         
         avg_pnl_signal = total_pnl / len(signals) if signals else 0
         avg_pnl_closed = total_pnl / closed if closed > 0 else 0
@@ -1701,6 +1718,8 @@ class PECEnhancedReporter:
             'closed': closed,
             'timeout_win': timeout_win,
             'timeout_loss': timeout_loss,
+            'timeout_win_pnl': timeout_win_pnl,  # NEW: P&L from winning timeouts
+            'timeout_loss_pnl': timeout_loss_pnl,  # NEW: P&L from losing timeouts
             'total_pnl': total_pnl,  # EXCLUDES STALE_TIMEOUT
             'avg_pnl_signal': avg_pnl_signal,
             'avg_pnl_closed': avg_pnl_closed,
@@ -1713,6 +1732,7 @@ class PECEnhancedReporter:
             'avg_tp_pnl': avg_tp_pnl,
             'avg_sl_pnl': avg_sl_pnl,
             'wr': wr,
+            'wr_v2': wr_v2,  # NEW: WR based on TP & SL ONLY (excludes TIMEOUT)
             'wins': wins,
         }
     
