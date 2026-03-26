@@ -229,43 +229,171 @@ class PostDeploymentTracker:
         stale = sum(1 for s in self.signals if s.get('status') == 'STALE_TIMEOUT')
         
         total = len(self.signals)
+        included_count = tp + sl + timeout + open_trades
+        excluded_count = rejected + stale
         
-        report.append(f"Total Post-Deployment Signals: {total}")
-        report.append(f"  TP_HIT: {tp}")
-        report.append(f"  SL_HIT: {sl}")
-        report.append(f"  TIMEOUT: {timeout}")
-        report.append(f"  OPEN: {open_trades}")
-        report.append(f"  REJECTED: {rejected}")
-        report.append(f"  STALE: {stale}")
+        # ===== DETAILED BREAKDOWN SECTION =====
+        report.append("📋 SIGNAL BREAKDOWN")
+        report.append("─" * 200)
+        report.append("")
+        report.append(f"INCLUDED IN METRICS (TP/SL/TIMEOUT/OPEN - Counted in WR & P&L):")
+        report.append(f"  • TP_HIT:     {tp:>5} signals")
+        report.append(f"  • SL_HIT:     {sl:>5} signals")
+        report.append(f"  • TIMEOUT:    {timeout:>5} signals")
+        report.append(f"  • OPEN:       {open_trades:>5} signals (unrealized)")
+        report.append(f"  ──────────────────────")
+        report.append(f"  Subtotal (Counted in WR & P&L): {included_count}")
+        report.append("")
+        report.append(f"EXCLUDED FROM METRICS (Not counted in WR or P&L):")
+        report.append(f"  • REJECTED_NOT_SENT_TELEGRAM: {rejected:>5} signals (never sent to traders)")
+        report.append(f"  • STALE_TIMEOUT:              {stale:>5} signals ⚠️ DATA QUALITY ISSUE - COMPLETELY EXCLUDED")
+        report.append(f"  ──────────────────────")
+        report.append(f"  Subtotal (Excluded from all calculations): {excluded_count}")
+        report.append("")
+        report.append(f"BREAKDOWN VERIFICATION:")
+        report.append(f"  Included ({included_count}) + Excluded ({excluded_count}) = Total ({total})")
+        if included_count + excluded_count == total:
+            report.append(f"  ✓ Verified: All {total} signals accounted for")
+        else:
+            report.append(f"  ✗ ERROR: Mismatch detected! {included_count} + {excluded_count} ≠ {total}")
+        report.append("")
+        report.append(f"Loaded {total} post-deployment signals")
+        report.append("")
+        report.append("─" * 200)
         report.append("")
         
-        # Closed trades
+        # ===== CLOSED TRADES ANALYSIS SECTION =====
+        report.append("🎯 CLOSED TRADES ANALYSIS (Backtest Signals Only)")
+        report.append("─" * 200)
+        
         closed = tp + sl + timeout
-        if closed > 0:
-            # Separate timeout into wins/losses
-            timeout_wins = 0
-            for s in self.signals:
-                if s.get('status') == 'TIMEOUT' and s.get('actual_exit_price'):
-                    entry = float(s.get('entry_price', 0))
-                    exit_p = float(s.get('actual_exit_price', 0))
-                    direction = s.get('signal_type', 'LONG')
+        
+        # Separate timeout into wins/losses
+        timeout_wins = 0
+        timeout_losses = 0
+        for s in self.signals:
+            if s.get('status') == 'TIMEOUT' and s.get('actual_exit_price'):
+                entry = float(s.get('entry_price', 0))
+                exit_p = float(s.get('actual_exit_price', 0))
+                direction = s.get('signal_type', 'LONG')
+                
+                if entry > 0 and exit_p > 0:
+                    if direction.upper() == 'LONG':
+                        pnl = ((exit_p - entry) / entry) * 1000
+                    else:
+                        pnl = ((entry - exit_p) / exit_p) * 1000
                     
-                    if entry > 0 and exit_p > 0:
-                        if direction.upper() == 'LONG':
-                            pnl = ((exit_p - entry) / entry) * 1000
-                        else:
-                            pnl = ((entry - exit_p) / exit_p) * 1000
-                        
-                        if pnl > 0:
-                            timeout_wins += 1
-            
+                    if pnl > 0:
+                        timeout_wins += 1
+                    else:
+                        timeout_losses += 1
+        
+        if closed > 0:
             wins = tp + timeout_wins
             wr = (wins / closed * 100) if closed > 0 else 0
             
-            report.append(f"Closed Trades: {closed}")
-            report.append(f"  TP: {tp} | SL: {sl} | TIMEOUT: {timeout} (W:{timeout_wins} L:{timeout - timeout_wins})")
-            report.append(f"  Win Rate: {wr:.2f}%")
+            report.append(f"Closed Trades (Clean Data): {closed}")
+            report.append(f"  • TP_HIT:               {tp:>5} signals (profit targets hit)")
+            report.append(f"  • SL_HIT:               {sl:>5} signals (stop losses hit)")
+            report.append(f"  • TIMEOUT:              {timeout:>5} signals")
+            report.append(f"    - Timeout Win:       {timeout_wins:>5} (closed > entry)")
+            report.append(f"    - Timeout Loss:      {timeout_losses:>5} (closed < entry)")
             report.append("")
+            report.append(f"Overall Win Rate: {wr:.2f}%")
+            report.append(f"Calculation: ({tp} TP + {timeout_wins} TIMEOUT_WIN) / {closed} Closed = {wins} / {closed} = {wr:.2f}%")
+        else:
+            report.append(f"Closed Trades (Clean Data): {closed}")
+            report.append(f"  (No closed trades yet - awaiting first completions)")
+        
+        report.append("")
+        
+        # ===== P&L BREAKDOWN SECTION =====
+        report.append("💰 P&L BREAKDOWN")
+        report.append("─" * 200)
+        
+        # Calculate P&L by category (INCLUDED)
+        pnl_tp = 0.0
+        pnl_sl = 0.0
+        pnl_timeout = 0.0
+        pnl_open = 0.0
+        
+        for s in self.signals:
+            status = s.get('status', 'OPEN')
+            direction = s.get('signal_type', 'LONG')
+            
+            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                if pnl_calc:
+                    if status == 'TP_HIT':
+                        pnl_tp += pnl_calc
+                    elif status == 'SL_HIT':
+                        pnl_sl += pnl_calc
+                    elif status == 'TIMEOUT':
+                        pnl_timeout += pnl_calc
+            elif status == 'OPEN':
+                pnl_open += 0.0  # Unrealized, counted as 0
+        
+        # Calculate P&L by category (EXCLUDED)
+        pnl_rejected = 0.0
+        pnl_stale = 0.0
+        
+        for s in self.signals:
+            status = s.get('status', 'OPEN')
+            direction = s.get('signal_type', 'LONG')
+            
+            if status == 'REJECTED_NOT_SENT_TELEGRAM':
+                pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                if pnl_calc:
+                    pnl_rejected += pnl_calc
+            elif status == 'STALE_TIMEOUT':
+                # Stale: don't calculate P&L
+                pass
+        
+        total_pnl_included = pnl_tp + pnl_sl + pnl_timeout + pnl_open
+        total_pnl_excluded = pnl_rejected + pnl_stale
+        total_pnl = total_pnl_included + total_pnl_excluded
+        
+        report.append(f"INCLUDED IN TOTAL P&L (Counted in metrics):")
+        report.append(f"  • TP_HIT:   ${pnl_tp:>+12.2f}")
+        report.append(f"  • SL_HIT:   ${pnl_sl:>+12.2f}")
+        report.append(f"  • TIMEOUT:  ${pnl_timeout:>+12.2f}")
+        report.append(f"  • OPEN:     ${pnl_open:>+12.2f} (unrealized)")
+        report.append(f"  ──────────────────────────────")
+        report.append(f"  Subtotal (Backtest P&L): ${total_pnl_included:>+12.2f}")
+        report.append("")
+        report.append(f"EXCLUDED FROM TOTAL P&L (Not counted in any metric):")
+        report.append(f"  • REJECTED: ${pnl_rejected:>+12.2f} (never sent to traders, excluded from WR)")
+        report.append(f"  • STALE:    ⚠️ NOT CALCULATED (data quality - completely excluded)")
+        report.append(f"  ──────────────────────────────")
+        report.append(f"  Subtotal (Excluded P&L): ${total_pnl_excluded:>+12.2f}")
+        report.append("")
+        report.append(f"VALIDATION:")
+        report.append(f"  Included in Total P&L: ${total_pnl_included:>+12.2f}")
+        report.append(f"  Total P&L Reported:    ${total_pnl:>+12.2f}")
+        if abs(total_pnl - total_pnl_included) < 0.01:
+            report.append(f"  ✓ Verified: P&L matches")
+        report.append("")
+        
+        # Per-signal averages
+        if closed > 0:
+            avg_pnl_per_closed = total_pnl_included / closed
+            report.append(f"Average P&L per Closed Trade: ${avg_pnl_per_closed:>+.2f}")
+        
+        if included_count > 0:
+            avg_pnl_per_signal = total_pnl_included / included_count
+            report.append(f"Average P&L per Signal (Included): ${avg_pnl_per_signal:>+.2f}")
+        
+        if tp > 0:
+            avg_pnl_tp = pnl_tp / tp
+            report.append(f"Average P&L per TP_HIT: ${avg_pnl_tp:>+.2f}")
+        
+        if sl > 0:
+            avg_pnl_sl = pnl_sl / sl
+            report.append(f"Average P&L per SL_HIT: ${avg_pnl_sl:>+.2f}")
+        
+        report.append("")
+        report.append("─" * 200)
+        report.append("")
         
         # BY TIMEFRAME (Enhanced table)
         report.append("🕐 BY TIMEFRAME")
