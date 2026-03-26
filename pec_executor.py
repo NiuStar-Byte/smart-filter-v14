@@ -188,36 +188,44 @@ class PECExecutor:
         
         if signal_type == 'LONG':
             if current_price >= tp_target:
-                pnl_result = calculate_pnl(entry_price, current_price, 'LONG', NOTIONAL_POSITION)
+                # BUG FIX (2026-03-26): Use tp_target price for P&L, not current_price
+                # TP was recognized/hit, so use the target price for accurate P&L calculation
+                pnl_result = calculate_pnl(entry_price, tp_target, 'LONG', NOTIONAL_POSITION)
                 return {
                     'status': 'TP_HIT',
-                    'exit_price': current_price,
+                    'exit_price': tp_target,  # Record target as exit (not overshooting price)
                     'pnl_usd': pnl_result['pnl_usd'],
                     'pnl_pct': pnl_result['pnl_pct']
                 }
             elif current_price <= sl_target:
-                pnl_result = calculate_pnl(entry_price, current_price, 'LONG', NOTIONAL_POSITION)
+                # BUG FIX (2026-03-26): Use sl_target price for P&L, not current_price
+                # SL was recognized/hit, so use the target price for accurate P&L calculation
+                pnl_result = calculate_pnl(entry_price, sl_target, 'LONG', NOTIONAL_POSITION)
                 return {
                     'status': 'SL_HIT',
-                    'exit_price': current_price,
+                    'exit_price': sl_target,  # Record target as exit (not gapping down price)
                     'pnl_usd': pnl_result['pnl_usd'],
                     'pnl_pct': pnl_result['pnl_pct']
                 }
         
         elif signal_type == 'SHORT':
             if current_price <= tp_target:
-                pnl_result = calculate_pnl(entry_price, current_price, 'SHORT', NOTIONAL_POSITION)
+                # BUG FIX (2026-03-26): Use tp_target price for P&L, not current_price
+                # TP was recognized/hit, so use the target price for accurate P&L calculation
+                pnl_result = calculate_pnl(entry_price, tp_target, 'SHORT', NOTIONAL_POSITION)
                 return {
                     'status': 'TP_HIT',
-                    'exit_price': current_price,
+                    'exit_price': tp_target,  # Record target as exit (not overshooting price)
                     'pnl_usd': pnl_result['pnl_usd'],
                     'pnl_pct': pnl_result['pnl_pct']
                 }
             elif current_price >= sl_target:
-                pnl_result = calculate_pnl(entry_price, current_price, 'SHORT', NOTIONAL_POSITION)
+                # BUG FIX (2026-03-26): Use sl_target price for P&L, not current_price
+                # SL was recognized/hit, so use the target price for accurate P&L calculation
+                pnl_result = calculate_pnl(entry_price, sl_target, 'SHORT', NOTIONAL_POSITION)
                 return {
                     'status': 'SL_HIT',
-                    'exit_price': current_price,
+                    'exit_price': sl_target,  # Record target as exit (not gapping up price)
                     'pnl_usd': pnl_result['pnl_usd'],
                     'pnl_pct': pnl_result['pnl_pct']
                 }
