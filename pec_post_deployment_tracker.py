@@ -177,6 +177,30 @@ class PostDeploymentTracker:
         except:
             return None, None, None
 
+    def _get_symbol_group(self, symbol):
+        """Map symbol to group"""
+        main_blockchain = ["BTC-USDT", "ETH-USDT", "SOL-USDT", "XRP-USDT", "ADA-USDT", "AVAX-USDT", "BNB-USDT", "XLM-USDT", "LINK-USDT", "POL-USDT"]
+        top_alts = ["ZKJ-USDT", "ROAM-USDT", "XAUT-USDT", "SAHARA-USDT"]
+        mid_alts = ["XPL-USDT", "DOT-USDT", "FUEL-USDT", "VIRTUAL-USDT", "BERA-USDT", "CROSS-USDT", "FUN-USDT", "ENA-USDT"]
+        
+        if symbol in main_blockchain:
+            return "MAIN_BLOCKCHAIN"
+        elif symbol in top_alts:
+            return "TOP_ALTS"
+        elif symbol in mid_alts:
+            return "MID_ALTS"
+        else:
+            return "LOW_ALTS"
+    
+    def _get_confidence_level(self, confidence):
+        """Convert confidence % to level"""
+        if confidence >= 73:
+            return "HIGH"
+        elif confidence >= 66:
+            return "MID"
+        else:
+            return "LOW"
+
     def generate_summary(self):
         """Generate detailed summary of post-deployment signals"""
         report = []
@@ -314,6 +338,294 @@ class PostDeploymentTracker:
             report.append(f"{tf:<8} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {timeout_str:<10} | {closed:<7} | {open_count:<6} | {wr:>6.1f}% | {pnl_str:>10} | {max_rr_str:>6} | {avg_rr_str:>6} | {min_rr_str:>6} | {avg_tp_dur_str:<12} | {avg_sl_dur_str:<12}")
         
         report.append("─" * 260)
+        report.append("")
+        
+        # BY DIRECTION
+        report.append("📈 BY DIRECTION")
+        report.append("─" * 260)
+        report.append(f"{'Direction':<12} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<10} | {'Closed':<7} | {'Open':<6} | {'WR':<8} | {'P&L':<12} | {'Max RR':<8} | {'Avg RR':<8} | {'Min RR':<8} | {'Avg TP Dur':<12} | {'Avg SL Dur':<12}")
+        report.append("─" * 260)
+        
+        dir_stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout': 0, 'timeout_win': 0, 'timeout_loss': 0, 'open': 0, 'pnl': 0.0})
+        for s in self.signals:
+            direction = s.get('signal_type', 'N/A')
+            status = s.get('status', 'OPEN')
+            dir_stats[direction]['count'] += 1
+            
+            if status == 'TP_HIT':
+                dir_stats[direction]['tp'] += 1
+            elif status == 'SL_HIT':
+                dir_stats[direction]['sl'] += 1
+            elif status == 'TIMEOUT':
+                dir_stats[direction]['timeout'] += 1
+                if s.get('actual_exit_price'):
+                    pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                    if pnl_calc and pnl_calc > 0:
+                        dir_stats[direction]['timeout_win'] += 1
+                    elif pnl_calc and pnl_calc < 0:
+                        dir_stats[direction]['timeout_loss'] += 1
+            elif status == 'OPEN':
+                dir_stats[direction]['open'] += 1
+            
+            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                if pnl_calc:
+                    dir_stats[direction]['pnl'] += pnl_calc
+        
+        for direction in sorted(dir_stats.keys()):
+            stats = dir_stats[direction]
+            closed = stats['tp'] + stats['sl'] + stats['timeout']
+            open_count = stats['open']
+            timeout_str = f"{stats['timeout_win']}W/{stats['timeout_loss']}L" if stats['timeout'] > 0 else "-"
+            wr = (((stats['tp'] + stats['timeout_win']) / closed) * 100) if closed > 0 else 0
+            pnl_str = f"${stats['pnl']:+.2f}"
+            
+            dir_signals = [s for s in self.signals if s.get('signal_type') == direction]
+            max_rr, avg_rr, min_rr = self._calculate_rr_metrics(dir_signals)
+            max_rr_str = f"{max_rr}" if max_rr is not None else "N/A"
+            avg_rr_str = f"{avg_rr}" if avg_rr is not None else "N/A"
+            min_rr_str = f"{min_rr}" if min_rr is not None else "N/A"
+            
+            avg_tp_dur = self._calculate_avg_duration_by_status(dir_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(dir_signals, 'SL_HIT')
+            avg_tp_dur_str = self._format_duration_hm(avg_tp_dur) if avg_tp_dur else "N/A"
+            avg_sl_dur_str = self._format_duration_hm(avg_sl_dur) if avg_sl_dur else "N/A"
+            
+            report.append(f"{direction:<12} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {timeout_str:<10} | {closed:<7} | {open_count:<6} | {wr:>6.1f}% | {pnl_str:>10} | {max_rr_str:>6} | {avg_rr_str:>6} | {min_rr_str:>6} | {avg_tp_dur_str:<12} | {avg_sl_dur_str:<12}")
+        
+        report.append("─" * 260)
+        report.append("")
+        
+        # BY ROUTE
+        report.append("🛣️ BY ROUTE")
+        report.append("─" * 280)
+        report.append(f"{'Route':<20} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<10} | {'Closed':<7} | {'Open':<6} | {'WR':<8} | {'P&L':<12} | {'Max RR':<8} | {'Avg RR':<8} | {'Min RR':<8} | {'Avg TP Dur':<12} | {'Avg SL Dur':<12}")
+        report.append("─" * 280)
+        
+        route_stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout': 0, 'timeout_win': 0, 'timeout_loss': 0, 'open': 0, 'pnl': 0.0})
+        for s in self.signals:
+            route = s.get('route', 'N/A')
+            status = s.get('status', 'OPEN')
+            direction = s.get('signal_type', 'LONG')
+            route_stats[route]['count'] += 1
+            
+            if status == 'TP_HIT':
+                route_stats[route]['tp'] += 1
+            elif status == 'SL_HIT':
+                route_stats[route]['sl'] += 1
+            elif status == 'TIMEOUT':
+                route_stats[route]['timeout'] += 1
+                if s.get('actual_exit_price'):
+                    pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                    if pnl_calc and pnl_calc > 0:
+                        route_stats[route]['timeout_win'] += 1
+                    elif pnl_calc and pnl_calc < 0:
+                        route_stats[route]['timeout_loss'] += 1
+            elif status == 'OPEN':
+                route_stats[route]['open'] += 1
+            
+            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                if pnl_calc:
+                    route_stats[route]['pnl'] += pnl_calc
+        
+        for route in sorted(route_stats.keys()):
+            stats = route_stats[route]
+            closed = stats['tp'] + stats['sl'] + stats['timeout']
+            open_count = stats['open']
+            timeout_str = f"{stats['timeout_win']}W/{stats['timeout_loss']}L" if stats['timeout'] > 0 else "-"
+            wr = (((stats['tp'] + stats['timeout_win']) / closed) * 100) if closed > 0 else 0
+            pnl_str = f"${stats['pnl']:+.2f}"
+            
+            route_signals = [s for s in self.signals if s.get('route') == route]
+            max_rr, avg_rr, min_rr = self._calculate_rr_metrics(route_signals)
+            max_rr_str = f"{max_rr}" if max_rr is not None else "N/A"
+            avg_rr_str = f"{avg_rr}" if avg_rr is not None else "N/A"
+            min_rr_str = f"{min_rr}" if min_rr is not None else "N/A"
+            
+            avg_tp_dur = self._calculate_avg_duration_by_status(route_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(route_signals, 'SL_HIT')
+            avg_tp_dur_str = self._format_duration_hm(avg_tp_dur) if avg_tp_dur else "N/A"
+            avg_sl_dur_str = self._format_duration_hm(avg_sl_dur) if avg_sl_dur else "N/A"
+            
+            report.append(f"{route:<20} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {timeout_str:<10} | {closed:<7} | {open_count:<6} | {wr:>6.1f}% | {pnl_str:>10} | {max_rr_str:>6} | {avg_rr_str:>6} | {min_rr_str:>6} | {avg_tp_dur_str:<12} | {avg_sl_dur_str:<12}")
+        
+        report.append("─" * 280)
+        report.append("")
+        
+        # BY REGIME
+        report.append("🌊 BY REGIME")
+        report.append("─" * 260)
+        report.append(f"{'Regime':<12} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<10} | {'Closed':<7} | {'Open':<6} | {'WR':<8} | {'P&L':<12} | {'Max RR':<8} | {'Avg RR':<8} | {'Min RR':<8} | {'Avg TP Dur':<12} | {'Avg SL Dur':<12}")
+        report.append("─" * 260)
+        
+        regime_stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout': 0, 'timeout_win': 0, 'timeout_loss': 0, 'open': 0, 'pnl': 0.0})
+        for s in self.signals:
+            regime = s.get('regime', 'N/A')
+            status = s.get('status', 'OPEN')
+            direction = s.get('signal_type', 'LONG')
+            regime_stats[regime]['count'] += 1
+            
+            if status == 'TP_HIT':
+                regime_stats[regime]['tp'] += 1
+            elif status == 'SL_HIT':
+                regime_stats[regime]['sl'] += 1
+            elif status == 'TIMEOUT':
+                regime_stats[regime]['timeout'] += 1
+                if s.get('actual_exit_price'):
+                    pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                    if pnl_calc and pnl_calc > 0:
+                        regime_stats[regime]['timeout_win'] += 1
+                    elif pnl_calc and pnl_calc < 0:
+                        regime_stats[regime]['timeout_loss'] += 1
+            elif status == 'OPEN':
+                regime_stats[regime]['open'] += 1
+            
+            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                if pnl_calc:
+                    regime_stats[regime]['pnl'] += pnl_calc
+        
+        for regime in sorted(regime_stats.keys()):
+            stats = regime_stats[regime]
+            closed = stats['tp'] + stats['sl'] + stats['timeout']
+            open_count = stats['open']
+            timeout_str = f"{stats['timeout_win']}W/{stats['timeout_loss']}L" if stats['timeout'] > 0 else "-"
+            wr = (((stats['tp'] + stats['timeout_win']) / closed) * 100) if closed > 0 else 0
+            pnl_str = f"${stats['pnl']:+.2f}"
+            
+            regime_signals = [s for s in self.signals if s.get('regime') == regime]
+            max_rr, avg_rr, min_rr = self._calculate_rr_metrics(regime_signals)
+            max_rr_str = f"{max_rr}" if max_rr is not None else "N/A"
+            avg_rr_str = f"{avg_rr}" if avg_rr is not None else "N/A"
+            min_rr_str = f"{min_rr}" if min_rr is not None else "N/A"
+            
+            avg_tp_dur = self._calculate_avg_duration_by_status(regime_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(regime_signals, 'SL_HIT')
+            avg_tp_dur_str = self._format_duration_hm(avg_tp_dur) if avg_tp_dur else "N/A"
+            avg_sl_dur_str = self._format_duration_hm(avg_sl_dur) if avg_sl_dur else "N/A"
+            
+            report.append(f"{regime:<12} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {timeout_str:<10} | {closed:<7} | {open_count:<6} | {wr:>6.1f}% | {pnl_str:>10} | {max_rr_str:>6} | {avg_rr_str:>6} | {min_rr_str:>6} | {avg_tp_dur_str:<12} | {avg_sl_dur_str:<12}")
+        
+        report.append("─" * 260)
+        report.append("")
+        
+        # BY SYMBOL GROUP
+        report.append("💰 BY SYMBOL GROUP")
+        report.append("─" * 280)
+        report.append(f"{'Symbol Group':<20} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<10} | {'Closed':<7} | {'Open':<6} | {'WR':<8} | {'P&L':<12} | {'Max RR':<8} | {'Avg RR':<8} | {'Min RR':<8} | {'Avg TP Dur':<12} | {'Avg SL Dur':<12}")
+        report.append("─" * 280)
+        
+        symbol_group_stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout': 0, 'timeout_win': 0, 'timeout_loss': 0, 'open': 0, 'pnl': 0.0})
+        for s in self.signals:
+            symbol = s.get('symbol', 'UNKNOWN')
+            group = self._get_symbol_group(symbol)
+            status = s.get('status', 'OPEN')
+            direction = s.get('signal_type', 'LONG')
+            symbol_group_stats[group]['count'] += 1
+            
+            if status == 'TP_HIT':
+                symbol_group_stats[group]['tp'] += 1
+            elif status == 'SL_HIT':
+                symbol_group_stats[group]['sl'] += 1
+            elif status == 'TIMEOUT':
+                symbol_group_stats[group]['timeout'] += 1
+                if s.get('actual_exit_price'):
+                    pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                    if pnl_calc and pnl_calc > 0:
+                        symbol_group_stats[group]['timeout_win'] += 1
+                    elif pnl_calc and pnl_calc < 0:
+                        symbol_group_stats[group]['timeout_loss'] += 1
+            elif status == 'OPEN':
+                symbol_group_stats[group]['open'] += 1
+            
+            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                if pnl_calc:
+                    symbol_group_stats[group]['pnl'] += pnl_calc
+        
+        for group in sorted(symbol_group_stats.keys()):
+            stats = symbol_group_stats[group]
+            closed = stats['tp'] + stats['sl'] + stats['timeout']
+            open_count = stats['open']
+            timeout_str = f"{stats['timeout_win']}W/{stats['timeout_loss']}L" if stats['timeout'] > 0 else "-"
+            wr = (((stats['tp'] + stats['timeout_win']) / closed) * 100) if closed > 0 else 0
+            pnl_str = f"${stats['pnl']:+.2f}"
+            
+            group_signals = [s for s in self.signals if self._get_symbol_group(s.get('symbol', 'UNKNOWN')) == group]
+            max_rr, avg_rr, min_rr = self._calculate_rr_metrics(group_signals)
+            max_rr_str = f"{max_rr}" if max_rr is not None else "N/A"
+            avg_rr_str = f"{avg_rr}" if avg_rr is not None else "N/A"
+            min_rr_str = f"{min_rr}" if min_rr is not None else "N/A"
+            
+            avg_tp_dur = self._calculate_avg_duration_by_status(group_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(group_signals, 'SL_HIT')
+            avg_tp_dur_str = self._format_duration_hm(avg_tp_dur) if avg_tp_dur else "N/A"
+            avg_sl_dur_str = self._format_duration_hm(avg_sl_dur) if avg_sl_dur else "N/A"
+            
+            report.append(f"{group:<20} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {timeout_str:<10} | {closed:<7} | {open_count:<6} | {wr:>6.1f}% | {pnl_str:>10} | {max_rr_str:>6} | {avg_rr_str:>6} | {min_rr_str:>6} | {avg_tp_dur_str:<12} | {avg_sl_dur_str:<12}")
+        
+        report.append("─" * 280)
+        report.append("")
+        
+        # BY CONFIDENCE LEVEL
+        report.append("💡 BY CONFIDENCE LEVEL")
+        report.append("─" * 280)
+        report.append(f"{'Confidence':<20} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<10} | {'Closed':<7} | {'Open':<6} | {'WR':<8} | {'P&L':<12} | {'Max RR':<8} | {'Avg RR':<8} | {'Min RR':<8} | {'Avg TP Dur':<12} | {'Avg SL Dur':<12}")
+        report.append("─" * 280)
+        
+        conf_stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout': 0, 'timeout_win': 0, 'timeout_loss': 0, 'open': 0, 'pnl': 0.0})
+        for s in self.signals:
+            confidence = s.get('confidence', 0)
+            conf_level = self._get_confidence_level(confidence)
+            status = s.get('status', 'OPEN')
+            direction = s.get('signal_type', 'LONG')
+            conf_stats[conf_level]['count'] += 1
+            
+            if status == 'TP_HIT':
+                conf_stats[conf_level]['tp'] += 1
+            elif status == 'SL_HIT':
+                conf_stats[conf_level]['sl'] += 1
+            elif status == 'TIMEOUT':
+                conf_stats[conf_level]['timeout'] += 1
+                if s.get('actual_exit_price'):
+                    pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                    if pnl_calc and pnl_calc > 0:
+                        conf_stats[conf_level]['timeout_win'] += 1
+                    elif pnl_calc and pnl_calc < 0:
+                        conf_stats[conf_level]['timeout_loss'] += 1
+            elif status == 'OPEN':
+                conf_stats[conf_level]['open'] += 1
+            
+            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                if pnl_calc:
+                    conf_stats[conf_level]['pnl'] += pnl_calc
+        
+        for conf_level in ['HIGH', 'MID', 'LOW']:
+            if conf_level not in conf_stats:
+                continue
+            stats = conf_stats[conf_level]
+            closed = stats['tp'] + stats['sl'] + stats['timeout']
+            open_count = stats['open']
+            timeout_str = f"{stats['timeout_win']}W/{stats['timeout_loss']}L" if stats['timeout'] > 0 else "-"
+            wr = (((stats['tp'] + stats['timeout_win']) / closed) * 100) if closed > 0 else 0
+            pnl_str = f"${stats['pnl']:+.2f}"
+            
+            conf_signals = [s for s in self.signals if self._get_confidence_level(s.get('confidence', 0)) == conf_level]
+            max_rr, avg_rr, min_rr = self._calculate_rr_metrics(conf_signals)
+            max_rr_str = f"{max_rr}" if max_rr is not None else "N/A"
+            avg_rr_str = f"{avg_rr}" if avg_rr is not None else "N/A"
+            min_rr_str = f"{min_rr}" if min_rr is not None else "N/A"
+            
+            avg_tp_dur = self._calculate_avg_duration_by_status(conf_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(conf_signals, 'SL_HIT')
+            avg_tp_dur_str = self._format_duration_hm(avg_tp_dur) if avg_tp_dur else "N/A"
+            avg_sl_dur_str = self._format_duration_hm(avg_sl_dur) if avg_sl_dur else "N/A"
+            
+            report.append(f"{conf_level:<20} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {timeout_str:<10} | {closed:<7} | {open_count:<6} | {wr:>6.1f}% | {pnl_str:>10} | {max_rr_str:>6} | {avg_rr_str:>6} | {min_rr_str:>6} | {avg_tp_dur_str:<12} | {avg_sl_dur_str:<12}")
+        
+        report.append("─" * 280)
         report.append("")
         report.append("=" * 200)
         
