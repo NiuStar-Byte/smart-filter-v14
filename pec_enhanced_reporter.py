@@ -2390,11 +2390,22 @@ if __name__ == "__main__":
     report = reporter.generate_report()
     print(report)
     
-    # Also save to file
+    # Save latest version (for quick access)
     with open("PEC_ENHANCED_REPORT.txt", "w") as f:
         f.write(report)
-    
     print("\n✅ Report saved to PEC_ENHANCED_REPORT.txt")
+    
+    # Also save timestamped version (for audit trail/history)
+    import os
+    reports_dir = "pec_reports"
+    if not os.path.exists(reports_dir):
+        os.makedirs(reports_dir)
+    
+    timestamp = datetime.now(timezone(timedelta(hours=7))).strftime('%Y-%m-%d_%H-%M-%S')
+    timestamped_file = os.path.join(reports_dir, f"PEC_ENHANCED_REPORT_{timestamp}.txt")
+    with open(timestamped_file, "w") as f:
+        f.write(report)
+    print(f"✅ Timestamped copy saved to {timestamped_file}")
     
     # Generate and save signal tiers (append-only)
     tiers = reporter.generate_signal_tiers()

@@ -826,8 +826,18 @@ if __name__ == "__main__":
     report = tracker.generate_summary()
     print(report)
     
-    # Save to file
+    # Save latest version (for quick access)
     with open("PEC_POST_DEPLOYMENT_TRACKER.txt", "w") as f:
         f.write(report)
-    
     print("\n✅ Report saved to PEC_POST_DEPLOYMENT_TRACKER.txt")
+    
+    # Also save timestamped version (for audit trail/history)
+    reports_dir = "pec_reports"
+    if not os.path.exists(reports_dir):
+        os.makedirs(reports_dir)
+    
+    timestamp = datetime.now(timezone(timedelta(hours=7))).strftime('%Y-%m-%d_%H-%M-%S')
+    timestamped_file = os.path.join(reports_dir, f"PEC_POST_DEPLOYMENT_TRACKER_{timestamp}.txt")
+    with open(timestamped_file, "w") as f:
+        f.write(report)
+    print(f"✅ Timestamped copy saved to {timestamped_file}")
