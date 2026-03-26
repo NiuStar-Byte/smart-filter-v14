@@ -4,6 +4,70 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
+### **pec_enhanced_reporter.py (2026-03-26 20:13)**
+
+**Status:** ✅ **COMPLETE - Enhanced SECTION 1 & SECTION 2 with WR v2 and TIMEOUT breakdown**
+**Enhancement:** Commit `1b839e8` (submodule) + `a2f6ed1` (workspace)
+
+**Features Added:**
+
+1. **Win Rate v2 (TP & SL ONLY)**
+   - Location: Below "Overall Win Rate" in SECTION 1 & SECTION 2
+   - Purpose: Measures performance of signals hitting actual targets (excludes TIMEOUT)
+   - Formula: TP / (TP + SL)
+   - Distinction: Overall WR includes timeouts (total system), WR v2 focuses on target accuracy
+   - Example: Overall WR 37.58% vs WR v2 30.47%
+
+2. **TIMEOUT P&L Breakdown**
+   - Location: In P&L BREAKDOWN section
+   - Shows: Timeout Win (positive) + Timeout Loss (negative)
+   - Purpose: Understand how timeout outcomes contribute to total P&L
+   - Example:
+     ```
+     TIMEOUT: -$2,647.38
+       - Timeout Win:  +$9,272.74
+       - Timeout Loss: -$11,920.13
+     ```
+
+**Current Output (SECTION 1 - 8,659 signals):**
+```
+Overall Win Rate: 37.58%
+Calculation: (978 TP + 970 TIMEOUT_WIN) / 5184 Closed = 1948 / 5184 = 37.58%
+Win Rate (based on TP & SL ONLY): 30.47%
+Calculation: (978 TP) / (978 TP + 2232 SL) = 978 / 3210 = 30.47%
+
+P&L BREAKDOWN:
+TIMEOUT: -$2,647.38
+  - Timeout Win:  +$9,272.74
+  - Timeout Loss: -$11,920.13
+```
+
+**Key Insight:**
+- Timeout wins (+$9.3K) are helping but not enough to overcome SL losses (-$33.2K)
+- Overall P&L -$14.2K: TP (+$21.6K) - SL (-$33.2K) - TIMEOUT (-$2.6K)
+- Timeout acts as a "buffer" between TP wins and SL losses, partially offsetting
+
+**Note on "Last Updated Timestamps":**
+- User mentioned this field is missing from tracker
+- Likely existed in a previous version or configuration
+- Current reporter uses generation timestamp: `Report Generated: YYYY-MM-DD HH:MM:SS GMT+7` at report header
+- Not part of the "locked tracker" code (dynamic data only)
+- If needed, can be added as a new section in _analyze_signal_group()
+- Status: Monitor if this becomes a critical need
+
+**5 Locked Trackers Summary:**
+| Tracker | Code Status | Data Status | Latest Commit |
+|---------|------------|------------|--|
+| pec_enhanced_reporter.py | LOCKED (2,396L) | DYNAMIC | `1b839e8` |
+| pec_post_deployment_tracker.py | LOCKED (2,551L) | DYNAMIC | `11ce41e` |
+| monitor_filters_live.sh | LOCKED | DYNAMIC | (sub) |
+| phase1_phase3_phase2_tracker.py | LOCKED | DYNAMIC | (sub) |
+| monitor_rr_filtering.py | LOCKED | DYNAMIC | (sub) |
+
+All trackers: **Code unchanged** (templates), **Results dynamic** (auto-update as signals grow)
+
+---
+
 ## 🔧 **PROJECT-12: P&L CALCULATION BUG FIX (2026-03-26 18:09 → 18:25)**
 
 **Status:** ✅ **COMPLETE - TP/SL P&L now uses target prices, RR ratio validated**
@@ -312,10 +376,17 @@ Day 3 run: 800 signals loaded, 46.9% WR (80 new signals, results normalized)
 
 ---
 
-## 📊 **TRACKER ENHANCEMENT - DETAILED SIGNAL BREAKDOWN (2026-03-26 14:19)**
+## 📊 **TRACKER ENHANCEMENTS - COMPREHENSIVE ANALYSIS FEATURES (2026-03-26 14:19 → 20:13)**
 
-**Status:** ✅ **COMPLETE - Enhanced pec_post_deployment_tracker.py with comprehensive audit trail**
-**Enhancement:** Commit `f652651` (2026-03-26 14:19 GMT+7)
+### **pec_post_deployment_tracker.py (2026-03-26 14:19 → 20:01)**
+
+**Status:** ✅ **COMPLETE - Enhanced with WR v2, TIMEOUT breakdown, and RR metrics**
+**Enhancements:**
+- Commit `f652651` (2026-03-26 14:19 GMT+7) - Detailed signal breakdown + P&L validation
+- Commit `5dd69e4` (2026-03-26 19:53 GMT+7) - Win Rate v2 (TP & SL ONLY)
+- Commit `11ce41e` (2026-03-26 20:01 GMT+7) - TIMEOUT P&L breakdown (Win/Loss)
+
+**Features Added:**
 
 ### **New Sections Added**
 
