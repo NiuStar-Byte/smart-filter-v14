@@ -27,7 +27,7 @@ try:
 except ImportError:
     run_all_filter_tests = None  # test_filters optional (development only)
 from signal_store import get_signal_store
-from pec_config import MIN_ACCEPTED_RR, SIGNALS_JSONL_PATH
+from pec_config import MIN_ACCEPTED_RR, SIGNALS_JSONL_PATH, validate_tp_sl_relationship, calculate_rr, enforce_rr_bounds
 import math
 
 # NEW: Enhanced tracking & safe OHLCV (PROJECT-3 SmartFilter fixes)
@@ -963,16 +963,32 @@ def run_cycle():
                         # Disabled 2026-03-06 00:18 GMT+7
                         # (threshold check moved to SmartFilter min_score, which is now 3)
 
-                        # ===== RR FILTERING (Enhanced PEC) ===== (regime already calculated earlier)
+                        # ===== RR VALIDATION & ENFORCEMENT (PROJECT-11) ===== (regime already calculated earlier)
                         achieved_rr_value = tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None
                         
-                        if achieved_rr_value is None or achieved_rr_value < MIN_ACCEPTED_RR:
-                            # Filter out: RR too low
-                            print(f"[RR_FILTER] 15min signal REJECTED: {symbol_val} - RR {achieved_rr_value} < MIN {MIN_ACCEPTED_RR}", flush=True)
+                        # Step 1: Validate TP/SL relationship for direction
+                        is_valid_relationship, rr_error = validate_tp_sl_relationship(entry_price, tp, sl, signal_type)
+                        if not is_valid_relationship:
+                            print(f"[RR_ENFORCE] 15min signal REJECTED: {symbol_val} - {rr_error}", flush=True)
                             continue
                         
-                        # RR acceptable: Store signal + Fire
-                        print(f"[RR_FILTER] 15min signal ACCEPTED: {symbol_val} - RR {achieved_rr_value} >= MIN {MIN_ACCEPTED_RR}", flush=True)
+                        # Step 2: Enforce RR bounds (may adjust TP/SL)
+                        adjusted_tp, adjusted_sl, enforced_rr, rr_action = enforce_rr_bounds(entry_price, tp, sl, signal_type, achieved_rr_value)
+                        
+                        if rr_action.startswith("INVALID"):
+                            print(f"[RR_ENFORCE] 15min signal REJECTED: {symbol_val} - {rr_action}", flush=True)
+                            continue
+                        
+                        # Step 3: Log enforcement action
+                        if rr_action == "VALID":
+                            print(f"[RR_ENFORCE] 15min {symbol_val}: VALID RR {enforced_rr:.3f} (no adjustment)", flush=True)
+                        else:
+                            print(f"[RR_ENFORCE] 15min {symbol_val}: {rr_action} | Calculated RR: {achieved_rr_value} → Enforced RR: {enforced_rr} | TP: {tp} → {adjusted_tp} | SL: {sl} → {adjusted_sl}", flush=True)
+                            tp = adjusted_tp
+                            sl = adjusted_sl
+                        
+                        # RR valid and enforced: Store signal + Fire
+                        print(f"[RR_ENFORCE] 15min signal ACCEPTED: {symbol_val} - RR {enforced_rr:.3f} ({rr_action})", flush=True)
                         
                         # Store signal to JSONL
                         tp_pct_val = ((tp - entry_price) / entry_price * 100) if tp and entry_price else 0
@@ -1429,16 +1445,32 @@ def run_cycle():
                         # Disabled 2026-03-06 00:18 GMT+7
                         # ===== END PHASE 2-FIXED THRESHOLD =====
 
-                        # ===== RR FILTERING (Enhanced PEC) ===== (regime already calculated earlier)
+                        # ===== RR VALIDATION & ENFORCEMENT (PROJECT-11) ===== (regime already calculated earlier)
                         achieved_rr_value = tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None
                         
-                        if achieved_rr_value is None or achieved_rr_value < MIN_ACCEPTED_RR:
-                            # Filter out: RR too low
-                            print(f"[RR_FILTER] 30min signal REJECTED: {symbol_val} - RR {achieved_rr_value} < MIN {MIN_ACCEPTED_RR}", flush=True)
+                        # Step 1: Validate TP/SL relationship for direction
+                        is_valid_relationship, rr_error = validate_tp_sl_relationship(entry_price, tp, sl, signal_type)
+                        if not is_valid_relationship:
+                            print(f"[RR_ENFORCE] 30min signal REJECTED: {symbol_val} - {rr_error}", flush=True)
                             continue
                         
-                        # RR acceptable: Store signal + Fire
-                        print(f"[RR_FILTER] 30min signal ACCEPTED: {symbol_val} - RR {achieved_rr_value} >= MIN {MIN_ACCEPTED_RR}", flush=True)
+                        # Step 2: Enforce RR bounds (may adjust TP/SL)
+                        adjusted_tp, adjusted_sl, enforced_rr, rr_action = enforce_rr_bounds(entry_price, tp, sl, signal_type, achieved_rr_value)
+                        
+                        if rr_action.startswith("INVALID"):
+                            print(f"[RR_ENFORCE] 30min signal REJECTED: {symbol_val} - {rr_action}", flush=True)
+                            continue
+                        
+                        # Step 3: Log enforcement action
+                        if rr_action == "VALID":
+                            print(f"[RR_ENFORCE] 30min {symbol_val}: VALID RR {enforced_rr:.3f} (no adjustment)", flush=True)
+                        else:
+                            print(f"[RR_ENFORCE] 30min {symbol_val}: {rr_action} | Calculated RR: {achieved_rr_value} → Enforced RR: {enforced_rr} | TP: {tp} → {adjusted_tp} | SL: {sl} → {adjusted_sl}", flush=True)
+                            tp = adjusted_tp
+                            sl = adjusted_sl
+                        
+                        # RR valid and enforced: Store signal + Fire
+                        print(f"[RR_ENFORCE] 30min signal ACCEPTED: {symbol_val} - RR {enforced_rr:.3f} ({rr_action})", flush=True)
                         
                         # Store signal to JSONL
                         tp_pct_val = ((tp - entry_price) / entry_price * 100) if tp and entry_price else 0
@@ -1927,16 +1959,32 @@ def run_cycle():
                         # DISABLED: Direction-aware threshold was too strict (1h)
                         # Disabled 2026-03-06 00:18 GMT+7
 
-                        # ===== RR FILTERING (Enhanced PEC) ===== (regime already calculated earlier)
+                        # ===== RR VALIDATION & ENFORCEMENT (PROJECT-11) ===== (regime already calculated earlier)
                         achieved_rr_value = tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None
                         
-                        if achieved_rr_value is None or achieved_rr_value < MIN_ACCEPTED_RR:
-                            # Filter out: RR too low
-                            print(f"[RR_FILTER] 1h signal REJECTED: {symbol_val} - RR {achieved_rr_value} < MIN {MIN_ACCEPTED_RR}", flush=True)
+                        # Step 1: Validate TP/SL relationship for direction
+                        is_valid_relationship, rr_error = validate_tp_sl_relationship(entry_price, tp, sl, signal_type)
+                        if not is_valid_relationship:
+                            print(f"[RR_ENFORCE] 1h signal REJECTED: {symbol_val} - {rr_error}", flush=True)
                             continue
                         
-                        # RR acceptable: Store signal + Fire
-                        print(f"[RR_FILTER] 1h signal ACCEPTED: {symbol_val} - RR {achieved_rr_value} >= MIN {MIN_ACCEPTED_RR}", flush=True)
+                        # Step 2: Enforce RR bounds (may adjust TP/SL)
+                        adjusted_tp, adjusted_sl, enforced_rr, rr_action = enforce_rr_bounds(entry_price, tp, sl, signal_type, achieved_rr_value)
+                        
+                        if rr_action.startswith("INVALID"):
+                            print(f"[RR_ENFORCE] 1h signal REJECTED: {symbol_val} - {rr_action}", flush=True)
+                            continue
+                        
+                        # Step 3: Log enforcement action
+                        if rr_action == "VALID":
+                            print(f"[RR_ENFORCE] 1h {symbol_val}: VALID RR {enforced_rr:.3f} (no adjustment)", flush=True)
+                        else:
+                            print(f"[RR_ENFORCE] 1h {symbol_val}: {rr_action} | Calculated RR: {achieved_rr_value} → Enforced RR: {enforced_rr} | TP: {tp} → {adjusted_tp} | SL: {sl} → {adjusted_sl}", flush=True)
+                            tp = adjusted_tp
+                            sl = adjusted_sl
+                        
+                        # RR valid and enforced: Store signal + Fire
+                        print(f"[RR_ENFORCE] 1h signal ACCEPTED: {symbol_val} - RR {enforced_rr:.3f} ({rr_action})", flush=True)
                         
                         # Store signal to JSONL
                         tp_pct_val = ((tp - entry_price) / entry_price * 100) if tp and entry_price else 0
@@ -2363,13 +2411,32 @@ def run_cycle():
                             print(f"[WARN] log_fired_signal raised: {e}", flush=True)
                             traceback.print_exc()
 
+                        # ===== RR VALIDATION & ENFORCEMENT (PROJECT-11) ===== (regime already calculated earlier)
                         achieved_rr_value = tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None
                         
-                        if achieved_rr_value is None or achieved_rr_value < MIN_ACCEPTED_RR:
-                            print(f"[RR_FILTER] 2h signal REJECTED: {symbol_val} - RR {achieved_rr_value} < MIN {MIN_ACCEPTED_RR}", flush=True)
+                        # Step 1: Validate TP/SL relationship for direction
+                        is_valid_relationship, rr_error = validate_tp_sl_relationship(entry_price, tp, sl, signal_type)
+                        if not is_valid_relationship:
+                            print(f"[RR_ENFORCE] 2h signal REJECTED: {symbol_val} - {rr_error}", flush=True)
                             continue
                         
-                        print(f"[RR_FILTER] 2h signal ACCEPTED: {symbol_val} - RR {achieved_rr_value} >= MIN {MIN_ACCEPTED_RR}", flush=True)
+                        # Step 2: Enforce RR bounds (may adjust TP/SL)
+                        adjusted_tp, adjusted_sl, enforced_rr, rr_action = enforce_rr_bounds(entry_price, tp, sl, signal_type, achieved_rr_value)
+                        
+                        if rr_action.startswith("INVALID"):
+                            print(f"[RR_ENFORCE] 2h signal REJECTED: {symbol_val} - {rr_action}", flush=True)
+                            continue
+                        
+                        # Step 3: Log enforcement action
+                        if rr_action == "VALID":
+                            print(f"[RR_ENFORCE] 2h {symbol_val}: VALID RR {enforced_rr:.3f} (no adjustment)", flush=True)
+                        else:
+                            print(f"[RR_ENFORCE] 2h {symbol_val}: {rr_action} | Calculated RR: {achieved_rr_value} → Enforced RR: {enforced_rr} | TP: {tp} → {adjusted_tp} | SL: {sl} → {adjusted_sl}", flush=True)
+                            tp = adjusted_tp
+                            sl = adjusted_sl
+                        
+                        # RR valid and enforced: Store signal + Fire
+                        print(f"[RR_ENFORCE] 2h signal ACCEPTED: {symbol_val} - RR {enforced_rr:.3f} ({rr_action})", flush=True)
                         
                         tp_pct_val = ((tp - entry_price) / entry_price * 100) if tp and entry_price else 0
                         sl_pct_val = ((sl - entry_price) / entry_price * 100) if sl and entry_price else 0
