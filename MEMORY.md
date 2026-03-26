@@ -19,14 +19,23 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 - **Enforcement:** Pushed commit `42676fc` to GitHub - both copies now verified identical & locked
 - **Consequence:** All 4 trackers must be re-baselined before ANY further changes
 
-### **Implementation (4/4 Complete)**
+### **Implementation (5/5 Complete)**
 
 #### **1. ✅ TRACKER LOCK - No Changes Allowed**
-- `pec_enhanced_reporter.py` - LOCKED, frozen at 129KB
+- `pec_enhanced_reporter.py` - LOCKED, frozen at 2,395 lines (commit 4e0489e)
 - `monitor_filters_live.sh` - LOCKED, frozen at 2.7KB
 - `phase1_phase3_phase2_tracker.py` - LOCKED, frozen at 12KB
 - `monitor_rr_filtering.py` - LOCKED, frozen at 11KB
-- **Rule:** These 4 files are templates. If any tracker results differ, issue is in DATA/CODE, not tracker code.
+- **Rule:** These 4 files are immutable templates. Their results depend only on DATA and CODE, never on tracker modifications.
+
+#### **NEW: Post-Deployment Tracker Protocol (2026-03-26)**
+- `pec_post_deployment_tracker.py` - NEW tracker for 3-factor + 4-factor normalization
+- **Purpose:** Separate baseline for signals fired >= 2026-03-26T08:54:00Z (deployment timestamp)
+- **Source:** SIGNALS_MASTER.jsonl (same as pec_enhanced_reporter.py, different cut-off)
+- **Logic:** Each code deployment creates NEW tracker with same source but different time window
+- **Benefit:** Eliminates "silent drift" by isolating code changes from market conditions
+- **Pre-Deployment Baseline:** pec_enhanced_reporter.py (locked, <= 2026-03-26T08:54:00Z)
+- **Post-Deployment Baseline:** pec_post_deployment_tracker.py (new, >= 2026-03-26T08:54:00Z)
 
 #### **2. ✅ PEC EXECUTOR SCHEDULE - Confirmed Running**
 - **Schedule:** Every 5 minutes (via cron/daemon)
@@ -70,9 +79,77 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 - **LOCK STATUS:** ✅ Restored to 2,395 lines (commit 4e0489e) - violation fixed at 08:42 GMT+7
 
 ### **Git Status**
-- ✅ Synced with GitHub (commit `2f2a407` pushed)
+- ✅ Synced with GitHub (commit `05badac` pushed - lock restoration)
 - ✅ No divergence between local and origin/main
 - ✅ CODE_VERSION_LOCK.md committed
+
+---
+
+## 🚀 **DEPLOYMENT CUT-OFF PROTOCOL (Established 2026-03-26 09:24)**
+
+**Problem Solved:** Tracker "always changing" issue — caused by re-baselining old signals with new code logic
+
+**Solution:** Separate trackers by deployment timestamp, no recalculation
+
+### **Protocol for Every Code Deployment**
+
+**When deploying code changes affecting signal generation:**
+
+1. **Record Deployment Timestamp** (UTC)
+   - Example: `2026-03-26T08:54:00Z` (3-factor/4-factor restart)
+
+2. **Keep Old Tracker LOCKED**
+   - pec_enhanced_reporter.py (cut-off: ≤ 2026-03-26T08:54:00Z)
+   - Baseline: 7,223 signals (old code logic, immutable)
+
+3. **Create NEW Tracker with Same Source**
+   - pec_post_deployment_tracker.py (cut-off: ≥ 2026-03-26T08:54:00Z)
+   - Source: SIGNALS_MASTER.jsonl (same file)
+   - Logic: Only signals fired AFTER deployment timestamp
+   - No recalculation of old signals, just different time window
+
+4. **Result:**
+   - ✅ Old baseline stays clean (no ghost recalculations)
+   - ✅ New code only runs on new signals
+   - ✅ Clear before/after comparison
+   - ✅ Root cause: code change vs market condition (visible)
+
+### **Why This Works**
+
+```
+OLD WAY (causes drift):
+├─ Code changes
+├─ Re-baseline 7,223 signals with new logic
+└─ Numbers change (old signals recalculated) → CONFUSION
+
+NEW WAY (clean):
+├─ Code changes at 08:54:00Z
+├─ Old tracker: 7,223 signals (≤08:54:00Z, old logic) → IMMUTABLE
+├─ New tracker: N signals (≥08:54:00Z, new logic) → ISOLATED
+└─ Comparison is clean: no recalculation ghost, just new window
+```
+
+### **Deployment Timestamps (Reference)**
+
+| Date | Time | Change | Tracker | Cut-off |
+|------|------|--------|---------|---------|
+| 2026-03-14 | 23:59:59.999999 | FOUNDATION baseline | pec_enhanced_reporter | ≤ this time |
+| 2026-03-26 | 08:54:00 | 3-factor + 4-factor deployed | pec_post_deployment_tracker | ≥ this time |
+| (future) | TBD | (next deployment) | (new tracker) | (new cut-off) |
+
+### **Implementation Files**
+
+- **pec_enhanced_reporter.py** (LOCKED)
+  - Cut-off: 2026-03-26T08:54:00Z (before)
+  - Code: Old (pre-3-factor, pre-4-factor)
+  - Signals: 7,223 (immutable baseline)
+
+- **pec_post_deployment_tracker.py** (NEW)
+  - Cut-off: 2026-03-26T08:54:00Z (after)
+  - Code: New (3-factor + 4-factor active)
+  - Signals: TBD (accumulating)
+
+Both read SIGNALS_MASTER.jsonl. Different windows, different logic versions, clean comparison.
 
 ---
 
