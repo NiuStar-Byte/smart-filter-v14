@@ -301,6 +301,13 @@ class PostDeploymentTracker:
             report.append("")
             report.append(f"Overall Win Rate: {wr:.2f}%")
             report.append(f"Calculation: ({tp} TP + {timeout_wins} TIMEOUT_WIN) / {closed} Closed = {wins} / {closed} = {wr:.2f}%")
+            
+            # Add Win Rate v2 (TP & SL ONLY - excludes TIMEOUT)
+            tp_sl_closed = tp + sl
+            if tp_sl_closed > 0:
+                wr_v2 = (tp / tp_sl_closed * 100) if tp_sl_closed > 0 else 0
+                report.append(f"Win Rate (based on TP & SL ONLY): {wr_v2:.2f}%")
+                report.append(f"Calculation: ({tp} TP) / ({tp} TP + {sl} SL) = {tp} / {tp_sl_closed} = {wr_v2:.2f}%")
         else:
             report.append(f"Closed Trades (Clean Data): {closed}")
             report.append(f"  (No closed trades yet - awaiting first completions)")
