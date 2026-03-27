@@ -1,6 +1,6 @@
 ==========================================================================================
 PEC TIER DIMENSIONAL REPORT - Answers Q1 & Q2
-Report Generated: 2026-03-27 17:09:59 UTC
+Report Generated: 2026-03-27 17:38:40 UTC
 ==========================================================================================
 
 ==========================================================================================
@@ -8,11 +8,11 @@ QUESTION 1: PERFORMANCE WITH TIER vs WITHOUT TIER?
 ==========================================================================================
 
 SIGNALS WITH TIER (Tier-2, Tier-3, Tier-X combined)
-  Total Loaded:      13,529
-  Closed:            9,270 (68.5% close rate)
-  Win Rate:          37.50%
-  Total P&L:         $-6,186.88
-  Avg P&L per Closed: $-0.67
+  Total Loaded:      13,496
+  Closed:            7,053 (52.3% close rate)
+  Win Rate:          38.79%
+  Total P&L:         $-6,065.08
+  Avg P&L per Closed: $-0.86
 
 SIGNALS WITHOUT TIER: (none - all signals assigned tier)
 
@@ -23,21 +23,26 @@ TIER LEVEL BREAKDOWN (Answering Q1 with granularity)
 ==========================================================================================
 
 TIER-2
-  Total:    409 | Closed: 64
-  WR:       69.35%
-  P&L:      $42.83
-  Avg/Closed: $0.67
+  Total:    331 | Closed: 91 | Stale: 2
+  WR:       56.04%
+  P&L:      $31.09
+  Avg/Closed: $0.34
 
 TIER-3
-  Total:    77 | Closed: 0
-  WR:       0.00%
-  P&L:      $0.00
+  Total:    88 | Closed: 12 | Stale: 1
+  WR:       66.67%
+  P&L:      $8.82
+  Avg/Closed: $0.74
+
+  ⚠️  NOTE: Tier-3 signals fired TODAY (just hours ago)
+      Expect closes to accumulate over 24-48 hours
+      Current low close rate is due to recency, not quality
 
 TIER-X
-  Total:    13,043 | Closed: 9,206
-  WR:       37.19%
-  P&L:      $-6,229.71
-  Avg/Closed: $-0.68
+  Total:    13,077 | Closed: 6,950 | Stale: 2,917
+  WR:       38.52%
+  P&L:      $-6,104.99
+  Avg/Closed: $-0.88
 
 ==========================================================================================
 QUESTION 2: 6D COMBOS BY TIER STATUS?
@@ -45,11 +50,17 @@ QUESTION 2: 6D COMBOS BY TIER STATUS?
 
 TOP 10 COMBOS WITH TIER (Tier-2 + Tier-3)
   1. 4h|?|?|RANGE|?|?
-     Closed: 62, WR: 70.0%, Avg P&L: $0.51
-  2. 30min|SHORT|?|BEAR|?|?
+     Closed: 67, WR: 70.1%, Avg P&L: $0.56
+  2. 30min|?|?|BEAR|?|?
+     Closed: 26, WR: 23.1%, Avg P&L: $-0.50
+  3. 1h|?|?|RANGE|?|?
+     Closed: 7, WR: 71.4%, Avg P&L: $0.70
+  4. 30min|SHORT|?|BEAR|?|?
      Closed: 1, WR: 100.0%, Avg P&L: $18.66
-  3. 30min|SHORT|?|RANGE|?|?
+  5. 30min|SHORT|?|RANGE|?|?
      Closed: 1, WR: 0.0%, Avg P&L: $-7.19
+  6. 2h|?|?|BEAR|?|?
+     Closed: 1, WR: 0.0%, Avg P&L: $-0.99
 
 TOP 10 COMBOS WITHOUT TIER: (none - all signals assigned tier)
 
@@ -57,14 +68,45 @@ TOP 10 COMBOS WITHOUT TIER: (none - all signals assigned tier)
 SUMMARY
 ==========================================================================================
 
-Total Signals Analyzed:    13,529
-  WITH TIER:  13,529 (100.0%)
+Total Signals Analyzed:    13,496
+  WITH TIER:  13,496 (100.0%)
   WITHOUT TIER: 0 (0.0%)
 
 Tier Assignment Status:
-  Tier-2: 409 signals
-  Tier-3: 77 signals
-  Tier-X: 13,043 signals
+  Tier-2: 331 signals
+  Tier-3: 88 signals
+  Tier-X: 13,077 signals
+
+==========================================================================================
+SECTION 3: 6D/5D/4D/3D/2D HIERARCHY BY TIER STATUS
+==========================================================================================
+
+6D COMBOS WITH TIER (Tier-2 + Tier-3 only)
+   1. 30min|?|?|BEAR|?|? (258 signals)
+   2. 4h|?|?|RANGE|?|? (79 signals)
+   3. 2h|?|?|BEAR|?|? (56 signals)
+   4. 1h|?|?|RANGE|?|? (12 signals)
+   5. 2h|?|?|BULL|?|? (7 signals)
+   6. 2h|?|?|RANGE|?|? (5 signals)
+   7. 30min|SHORT|?|BEAR|?|? (1 signals)
+   8. 30min|SHORT|?|RANGE|?|? (1 signals)
+
+6D COMBOS WITHOUT TIER (Tier-X only)
+   1. 15min|?|?|BEAR|?|? (3306 signals)
+   2. 15min|?|?|BULL|?|? (1579 signals)
+   3. 30min|?|?|BEAR|?|? (1305 signals)
+   4. 1h|?|?|BEAR|?|? (968 signals)
+   5. 4h|?|?|BEAR|?|? (846 signals)
+   6. 2h|?|?|BEAR|?|? (836 signals)
+   7. 30min|?|?|BULL|?|? (752 signals)
+   8. 4h|?|?|BULL|?|? (626 signals)
+   9. 30min|LONG|?|BULL|?|? (455 signals)
+  10. 15min|LONG|?|BULL|?|? (450 signals)
+  11. 1h|?|?|BULL|?|? (405 signals)
+  12. 1h|LONG|?|BULL|?|? (302 signals)
+  13. 15min|?|?|RANGE|?|? (284 signals)
+  14. 30min|?|?|RANGE|?|? (164 signals)
+  15. 2h|?|?|BULL|?|? (151 signals)
 
 ==========================================================================================
 END OF REPORT

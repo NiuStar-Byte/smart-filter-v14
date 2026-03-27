@@ -67,6 +67,7 @@ def calculate_metrics(signals):
         'sl_hit': 0,
         'timeout_win': 0,
         'timeout_loss': 0,
+        'stale_timeout': 0,
         'total_pnl': 0.0,
         'tp_pnls': [],
         'sl_pnls': [],
@@ -79,7 +80,8 @@ def calculate_metrics(signals):
         })
     }
     
-    closed_statuses = ['TP_HIT', 'SL_HIT', 'TIMEOUT', 'STALE_TIMEOUT']
+    # CRITICAL: EXCLUDE STALE_TIMEOUT to match pec_enhanced_reporter behavior
+    closed_statuses = ['TP_HIT', 'SL_HIT', 'TIMEOUT']  # NOT including STALE_TIMEOUT
     
     for signal in signals:
         status = signal.get('status', 'OPEN')
@@ -88,6 +90,11 @@ def calculate_metrics(signals):
         # Extract 6D combo
         combo = extract_combo_6d(signal)
         metrics['combos'][combo]['total'] += 1
+        
+        # Track STALE_TIMEOUT separately (not included in WR/P&L metrics)
+        if status == 'STALE_TIMEOUT':
+            metrics['stale_timeout'] += 1
+            continue
         
         if status in closed_statuses:
             metrics['closed'] += 1
@@ -220,11 +227,19 @@ def generate_report(signals):
         
         tm = tier_metrics[tier_name]
         report.append(f"{tier_name.upper()}")
-        report.append(f"  Total:    {tm['total']:,} | Closed: {tm['closed']:,}")
+        report.append(f"  Total:    {tm['total']:,} | Closed: {tm['closed']:,} | Stale: {tm['stale_timeout']:,}")
         report.append(f"  WR:       {calculate_win_rate(tm):.2f}%")
         report.append(f"  P&L:      {format_pnl(tm['total_pnl'])}")
         if tm['closed'] > 0:
             report.append(f"  Avg/Closed: {format_pnl(tm['total_pnl'] / tm['closed'])}")
+        
+        # Add context for Tier-3
+        if tier_name == 'Tier-3':
+            report.append("")
+            report.append("  ⚠️  NOTE: Tier-3 signals fired TODAY (just hours ago)")
+            report.append("      Expect closes to accumulate over 24-48 hours")
+            report.append("      Current low close rate is due to recency, not quality")
+        
         report.append("")
     
     # QUESTION 2: 6D COMBOS BY TIER
@@ -278,6 +293,40 @@ def generate_report(signals):
         if tier_name in tier_metrics:
             count = tier_metrics[tier_name]['total']
             report.append(f"  {tier_name}: {count:,} signals")
+    report.append("")
+    
+    # HIERARCHY TRACKING BY TIER
+    report.append("=" * 90)
+    report.append("SECTION 3: 6D/5D/4D/3D/2D HIERARCHY BY TIER STATUS")
+    report.append("=" * 90)
+    report.append("")
+    
+    report.append("6D COMBOS WITH TIER (Tier-2 + Tier-3 only)")
+    tier_2_3_signals = tier_breakdown.get('Tier-2', []) + tier_breakdown.get('Tier-3', [])
+    tier_2_3_6d = defaultdict(int)
+    for signal in tier_2_3_signals:
+        combo = extract_combo_6d(signal)
+        tier_2_3_6d[combo] += 1
+    
+    top_with_tier = sorted(tier_2_3_6d.items(), key=lambda x: x[1], reverse=True)[:15]
+    if top_with_tier:
+        for i, (combo, count) in enumerate(top_with_tier, 1):
+            report.append(f"  {i:2d}. {combo} ({count} signals)")
+    else:
+        report.append("  (None - all signals are Tier-X)")
+    report.append("")
+    
+    report.append("6D COMBOS WITHOUT TIER (Tier-X only)")
+    tier_x_signals = tier_breakdown.get('Tier-X', [])
+    tier_x_6d = defaultdict(int)
+    for signal in tier_x_signals:
+        combo = extract_combo_6d(signal)
+        tier_x_6d[combo] += 1
+    
+    top_without_tier = sorted(tier_x_6d.items(), key=lambda x: x[1], reverse=True)[:15]
+    if top_without_tier:
+        for i, (combo, count) in enumerate(top_without_tier, 1):
+            report.append(f"  {i:2d}. {combo} ({count} signals)")
     report.append("")
     
     report.append("=" * 90)
