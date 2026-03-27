@@ -1,0 +1,71 @@
+==========================================================================================
+PEC TIER DIMENSIONAL REPORT - Answers Q1 & Q2
+Report Generated: 2026-03-27 17:09:59 UTC
+==========================================================================================
+
+==========================================================================================
+QUESTION 1: PERFORMANCE WITH TIER vs WITHOUT TIER?
+==========================================================================================
+
+SIGNALS WITH TIER (Tier-2, Tier-3, Tier-X combined)
+  Total Loaded:      13,529
+  Closed:            9,270 (68.5% close rate)
+  Win Rate:          37.50%
+  Total P&L:         $-6,186.88
+  Avg P&L per Closed: $-0.67
+
+SIGNALS WITHOUT TIER: (none - all signals assigned tier)
+
+COMPARISON: All signals have tier - no non-tier baseline available
+
+==========================================================================================
+TIER LEVEL BREAKDOWN (Answering Q1 with granularity)
+==========================================================================================
+
+TIER-2
+  Total:    409 | Closed: 64
+  WR:       69.35%
+  P&L:      $42.83
+  Avg/Closed: $0.67
+
+TIER-3
+  Total:    77 | Closed: 0
+  WR:       0.00%
+  P&L:      $0.00
+
+TIER-X
+  Total:    13,043 | Closed: 9,206
+  WR:       37.19%
+  P&L:      $-6,229.71
+  Avg/Closed: $-0.68
+
+==========================================================================================
+QUESTION 2: 6D COMBOS BY TIER STATUS?
+==========================================================================================
+
+TOP 10 COMBOS WITH TIER (Tier-2 + Tier-3)
+  1. 4h|?|?|RANGE|?|?
+     Closed: 62, WR: 70.0%, Avg P&L: $0.51
+  2. 30min|SHORT|?|BEAR|?|?
+     Closed: 1, WR: 100.0%, Avg P&L: $18.66
+  3. 30min|SHORT|?|RANGE|?|?
+     Closed: 1, WR: 0.0%, Avg P&L: $-7.19
+
+TOP 10 COMBOS WITHOUT TIER: (none - all signals assigned tier)
+
+==========================================================================================
+SUMMARY
+==========================================================================================
+
+Total Signals Analyzed:    13,529
+  WITH TIER:  13,529 (100.0%)
+  WITHOUT TIER: 0 (0.0%)
+
+Tier Assignment Status:
+  Tier-2: 409 signals
+  Tier-3: 77 signals
+  Tier-X: 13,043 signals
+
+==========================================================================================
+END OF REPORT
+==========================================================================================
