@@ -285,6 +285,12 @@ def extract_post_deployment_summary(output):
     if match:
         msg += f"• TIMEOUT: ${match.group(1)}\n"
     
+    # Total P&L
+    pattern = r'Subtotal \(Backtest P&L\):\s*\$?\s*([-+\d,.]+)'
+    match = re.search(pattern, output)
+    if match:
+        msg += f"\nTotal P&L: ${match.group(1)}\n"
+    
     msg += "\nAverage P&L:\n"
     
     # Averages - order: Signal, Closed Trade, SL, TP
