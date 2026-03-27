@@ -1,0 +1,57 @@
+{
+  "generated": "2026-03-27T20:56:29.314824+07:00",
+  "source": "PEC_ENHANCED_REPORT.txt",
+  "tier_1": [],
+  "tier_2": [
+    {
+      "combo": "TF_REGIME_4h_RANGE",
+      "wr": 70.0,
+      "avg": 5.34,
+      "closed": 60
+    },
+    {
+      "combo": "DIR_ROUTE_SHORT_NONE",
+      "wr": 64.9,
+      "avg": 4.75,
+      "closed": 57
+    },
+    {
+      "combo": "4h|LONG|TREND CONTINUATION|BULL|LOW_ALTS|MID",
+      "wr": 57.5,
+      "avg": 8.14,
+      "closed": 120
+    }
+  ],
+  "tier_3": [
+    {
+      "combo": "TF_DIR_2h_SHORT",
+      "wr": 64.2,
+      "avg": 2.64,
+      "closed": 215
+    },
+    {
+      "combo": "TF_DIR_ROUTE_REGIME_1h_SHORT_TREND CONTINUATION_BULL",
+      "wr": 59.5,
+      "avg": 2.61,
+      "closed": 42
+    },
+    {
+      "combo": "30min|SHORT|TREND CONTINUATION|BEAR|LOW_ALTS|HIGH",
+      "wr": 57.1,
+      "avg": 2.99,
+      "closed": 140
+    },
+    {
+      "combo": "TF_DIR_ROUTE_REGIME_SG_4h_LONG_TREND CONTINUATION_BULL_LOW_ALTS",
+      "wr": 49.4,
+      "avg": 2.15,
+      "closed": 263
+    }
+  ],
+  "summary": {
+    "tier_1_count": 0,
+    "tier_2_count": 3,
+    "tier_3_count": 4,
+    "total_qualifying": 7
+  }
+}

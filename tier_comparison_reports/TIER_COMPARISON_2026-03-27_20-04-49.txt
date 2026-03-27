@@ -1,0 +1,331 @@
+════════════════════════════════════════════════════════════════════════════════
+📊 TIER PERFORMANCE COMPARISON ANALYSIS (LIVE)
+════════════════════════════════════════════════════════════════════════════════
+Report Generated: 2026-03-27 20:04:49 GMT+7
+Cutoff Timestamp: 2026-03-25 17:54:00 UTC (3/4 Normalization Implementation)
+
+
+GROUP A: FOUNDATION (Pre-3/4 Norm) - NON-TIERED
+────────────────────────────────────────────────────────────────────────────────
+Total Signals: 7338
+
+SIGNAL BREAKDOWN:
+  • TP_HIT: 704
+  • SL_HIT: 1852
+  • TIMEOUT_WIN: 0
+  • TIMEOUT_LOSS: 0
+  • OPEN: 135
+
+CLOSED TRADES ANALYSIS:
+  Closed Trades: 2556
+  Overall WR: 27.54%
+  Calculation: (704 TP + 0 TIMEOUT_WIN) / 2556 Closed = 704 / 2556
+  WR (TP & SL ONLY): 27.54%
+  Calculation: (704 TP) / (704 TP + 1852 SL) = 704 / 2556
+
+P&L ANALYSIS:
+  Total P&L: $-6,041.28
+  Avg per Signal: $-0.82
+  Avg per Closed Trade: $-2.36
+  Avg per TP: $17.49
+  Avg per SL: $-8.58
+
+P&L BREAKDOWN:
+  • TP_HIT: $12,310.72
+  • SL_HIT: $-15,885.18
+  • TIMEOUT: $0.00
+
+RISK:REWARD (RR) METRICS:
+  Highest RR: 3.00
+  Avg RR: 1.82
+  Lowest RR: 1.50
+
+GROUP B: FRESH (Post-3/4 Norm) - NON-TIERED
+────────────────────────────────────────────────────────────────────────────────
+Total Signals: 4134
+
+SIGNAL BREAKDOWN:
+  • TP_HIT: 444
+  • SL_HIT: 744
+  • TIMEOUT_WIN: 0
+  • TIMEOUT_LOSS: 0
+  • OPEN: 1726
+
+CLOSED TRADES ANALYSIS:
+  Closed Trades: 1188
+  Overall WR: 37.37%
+  Calculation: (444 TP + 0 TIMEOUT_WIN) / 1188 Closed = 444 / 1188
+  WR (TP & SL ONLY): 37.37%
+  Calculation: (444 TP) / (444 TP + 744 SL) = 444 / 1188
+
+P&L ANALYSIS:
+  Total P&L: $-538.96
+  Avg per Signal: $-0.13
+  Avg per Closed Trade: $-0.45
+  Avg per TP: $1.08
+  Avg per SL: $-1.04
+
+P&L BREAKDOWN:
+  • TP_HIT: $481.42
+  • SL_HIT: $-771.13
+  • TIMEOUT: $0.00
+
+RISK:REWARD (RR) METRICS:
+  Highest RR: N/A
+  Avg RR: N/A
+  Lowest RR: N/A
+
+GROUP C: FOUNDATION (Pre-3/4 Norm) - TIERED (1,2,3)
+────────────────────────────────────────────────────────────────────────────────
+Total Signals: 158
+
+SIGNAL BREAKDOWN:
+  • TP_HIT: 32
+  • SL_HIT: 57
+  • TIMEOUT_WIN: 0
+  • TIMEOUT_LOSS: 0
+  • OPEN: 1
+
+CLOSED TRADES ANALYSIS:
+  Closed Trades: 89
+  Overall WR: 35.96%
+  Calculation: (32 TP + 0 TIMEOUT_WIN) / 89 Closed = 32 / 89
+  WR (TP & SL ONLY): 35.96%
+  Calculation: (32 TP) / (32 TP + 57 SL) = 32 / 89
+
+P&L ANALYSIS:
+  Total P&L: $354.30
+  Avg per Signal: $2.24
+  Avg per Closed Trade: $3.98
+  Avg per TP: $22.04
+  Avg per SL: $-5.85
+
+P&L BREAKDOWN:
+  • TP_HIT: $705.44
+  • SL_HIT: $-333.43
+  • TIMEOUT: $0.00
+
+RISK:REWARD (RR) METRICS:
+  Highest RR: 3.00
+  Avg RR: 2.96
+  Lowest RR: 2.00
+
+GROUP D: FRESH (Post-3/4 Norm) - TIERED (1,2,3)
+────────────────────────────────────────────────────────────────────────────────
+Total Signals: 91
+
+SIGNAL BREAKDOWN:
+  • TP_HIT: 10
+  • SL_HIT: 4
+  • TIMEOUT_WIN: 0
+  • TIMEOUT_LOSS: 0
+  • OPEN: 40
+
+CLOSED TRADES ANALYSIS:
+  Closed Trades: 14
+  Overall WR: 71.43%
+  Calculation: (10 TP + 0 TIMEOUT_WIN) / 14 Closed = 10 / 14
+  WR (TP & SL ONLY): 71.43%
+  Calculation: (10 TP) / (10 TP + 4 SL) = 10 / 14
+
+P&L ANALYSIS:
+  Total P&L: $39.05
+  Avg per Signal: $0.43
+  Avg per Closed Trade: $2.79
+  Avg per TP: $1.20
+  Avg per SL: $-1.14
+
+P&L BREAKDOWN:
+  • TP_HIT: $12.00
+  • SL_HIT: $-4.55
+  • TIMEOUT: $0.00
+
+RISK:REWARD (RR) METRICS:
+  Highest RR: N/A
+  Avg RR: N/A
+  Lowest RR: N/A
+
+════════════════════════════════════════════════════════════════════════════════
+📋 TIER BREAKDOWN: COMBOS BY QUALIFICATION
+════════════════════════════════════════════════════════════════════════════════
+
+TIER-X: Below Minimum (< 40% WR, < $2.00 avg, or < 40 trades)
+────────────────────────────────────────────────────────────────────────────────
+  ✓ 1h|REVERSAL
+      WR: 100.0% | P&L:       $5.08 | Avg:     $+2.54 | Closed:   2  
+  ✓ 4h|REVERSAL
+      WR: 100.0% | P&L:       $4.42 | Avg:     $+4.42 | Closed:   1  
+  ✓ 1h|LONG|NONE
+      WR: 100.0% | P&L:      $42.17 | Avg:    $+42.17 | Closed:   1  
+  ✓ 1h|TREND_CONTINUATION
+      WR: 100.0% | P&L:       $0.89 | Avg:     $+0.89 | Closed:   1  
+  ✓ 1h|LONG|REVERSAL
+      WR:  90.0% | P&L:     $344.80 | Avg:    $+34.48 | Closed:  10  
+  ✓ 4h|TREND CONTINUATION
+      WR:  75.0% | P&L:       $3.31 | Avg:     $+0.83 | Closed:   4  
+  ✓ 2h|TREND_CONTINUATION
+      WR:  70.0% | P&L:       $1.64 | Avg:     $+0.16 | Closed:  10  
+  ✓ 1h|AMBIGUOUS
+      WR:  66.7% | P&L:     $196.63 | Avg:    $+65.54 | Closed:   3  
+  ✓ 4h|NONE
+      WR:  66.7% | P&L:       $9.38 | Avg:     $+3.13 | Closed:   3  
+  ✓ 1h|TREND CONTINUATION
+      WR:  66.7% | P&L:       $3.25 | Avg:     $+0.36 | Closed:   9  
+  ✓ 30min|TREND_CONTINUATION
+      WR:  62.5% | P&L:       $1.13 | Avg:     $+0.14 | Closed:   8  
+  ✓ 4h|TREND CONTINUATION
+      WR:  62.2% | P&L:      $70.27 | Avg:     $+1.90 | Closed:  37  
+  ✓ 15min|LONG|REVERSAL
+      WR:  50.0% | P&L:     $-69.91 | Avg:     $-4.99 | Closed:  14  
+  ✓ 30min|LONG|REVERSAL
+      WR:  50.0% | P&L:     $117.66 | Avg:     $+7.35 | Closed:  16  
+  ✓ 30min|SHORT|NONE
+      WR:  50.0% | P&L:      $11.48 | Avg:     $+5.74 | Closed:   2  
+  ✓ 2h|TREND CONTINUATION
+      WR:  48.8% | P&L:     $-30.34 | Avg:     $-0.25 | Closed: 121  
+  ✓ 30min|TREND CONTINUATION
+      WR:  48.4% | P&L:      $-9.22 | Avg:     $-0.05 | Closed: 192  
+  ✓ 15min|REVERSAL
+      WR:  44.4% | P&L:       $0.20 | Avg:     $+0.02 | Closed:   9  
+  ✓ 1h|LONG|AMBIGUOUS
+      WR:  42.9% | P&L:       $5.28 | Avg:     $+0.75 | Closed:   7  
+  ✓ 4h|TREND CONTINUATION
+      WR:  41.4% | P&L:     $-27.78 | Avg:     $-0.48 | Closed:  58  
+  ✓ 30min|SHORT|TREND CONTINUATION
+      WR:  41.1% | P&L:       $9.92 | Avg:     $+0.14 | Closed:  73  
+  ✓ 15min|LONG|TREND CONTINUATION
+      WR:  38.6% | P&L:    $-278.59 | Avg:     $-1.35 | Closed: 207  
+  ✓ 1h|TREND CONTINUATION
+      WR:  38.0% | P&L:     $-25.48 | Avg:     $-0.20 | Closed: 129  
+  ✓ 15min|AMBIGUOUS
+      WR:  33.3% | P&L:     $-11.19 | Avg:     $-1.24 | Closed:   9  
+  ✓ 2h|TREND CONTINUATION
+      WR:  33.3% | P&L:      $-1.24 | Avg:     $-0.41 | Closed:   3  
+  ✓ 1h|LONG|AMBIGUOUS
+      WR:  33.3% | P&L:      $-2.09 | Avg:     $-0.70 | Closed:   3  
+  ✓ 4h|TREND CONTINUATION
+      WR:  33.3% | P&L:      $-2.72 | Avg:     $-0.91 | Closed:   3  
+  ✓ 30min|LONG|TREND CONTINUATION
+      WR:  31.9% | P&L:  $-1,317.98 | Avg:     $-7.12 | Closed: 185  
+  ✓ 15min|TREND CONTINUATION
+      WR:  31.8% | P&L:    $-130.62 | Avg:     $-0.23 | Closed: 566  
+  ✓ 1h|LONG|REVERSAL
+      WR:  30.0% | P&L:     $-18.15 | Avg:     $-1.82 | Closed:  10  
+  ✓ 15min|TREND_CONTINUATION
+      WR:  28.9% | P&L:     $-42.86 | Avg:     $-0.52 | Closed:  83  
+  ✓ 1h|TREND CONTINUATION
+      WR:  28.5% | P&L:     $405.53 | Avg:     $+1.68 | Closed: 242  
+  ✓ 1h|LONG|TREND CONTINUATION
+      WR:  28.3% | P&L:    $-276.23 | Avg:     $-4.60 | Closed:  60  
+  ✓ 30min|TREND CONTINUATION
+      WR:  27.1% | P&L:   $1,168.58 | Avg:     $+2.03 | Closed: 575  
+  ✓ 15min|SHORT|TREND CONTINUATION
+      WR:  25.0% | P&L:     $-65.34 | Avg:     $-8.17 | Closed:   8  
+  ✓ 1h|TREND_CONTINUATION
+      WR:  25.0% | P&L:     $-24.44 | Avg:     $-3.05 | Closed:   8  
+  ✓ 30min|REVERSAL
+      WR:  25.0% | P&L:      $-2.50 | Avg:     $-0.62 | Closed:   4  
+  ✓ 1h|TREND_CONTINUATION
+      WR:  25.0% | P&L:     $-10.68 | Avg:     $-0.89 | Closed:  12  
+  ✓ 15min|NONE
+      WR:  24.1% | P&L:     $-51.53 | Avg:     $-1.78 | Closed:  29  
+  ✓ 1h|TREND CONTINUATION
+      WR:  24.0% | P&L:     $-17.82 | Avg:     $-0.71 | Closed:  25  
+  ✓ 15min|TREND CONTINUATION
+      WR:  23.9% | P&L:  $-1,321.03 | Avg:     $-1.58 | Closed: 836  
+  ✓ 30min|LONG|REVERSAL
+      WR:  22.5% | P&L:    $-265.29 | Avg:     $-6.63 | Closed:  40  
+  ✓ 30min|TREND_CONTINUATION
+      WR:  21.9% | P&L:     $-64.11 | Avg:     $-2.00 | Closed:  32  
+  ✓ 15min|TREND_CONTINUATION
+      WR:  21.6% | P&L:    $-300.50 | Avg:     $-5.89 | Closed:  51  
+  ✓ 30min|LONG|AMBIGUOUS
+      WR:  18.2% | P&L:    $-105.38 | Avg:     $-9.58 | Closed:  11  
+  ✓ 15min|LONG|REVERSAL
+      WR:  16.7% | P&L:     $-39.89 | Avg:     $-6.65 | Closed:   6  
+  ✓ 15min|LONG|NONE
+      WR:  10.0% | P&L:     $-91.11 | Avg:     $-9.11 | Closed:  10  
+  ✓ 30min|LONG|NONE
+      WR:   8.7% | P&L:    $-368.80 | Avg:    $-16.03 | Closed:  23  
+  ✓ 15min|LONG|AMBIGUOUS
+      WR:   6.7% | P&L:    $-250.29 | Avg:    $-16.69 | Closed:  15  
+  ✓ 30min|AMBIGUOUS
+      WR:   4.8% | P&L:    $-262.14 | Avg:    $-12.48 | Closed:  21  
+  ✓ 30min|SHORT|REVERSAL
+      WR:   0.0% | P&L:     $-78.91 | Avg:    $-15.78 | Closed:   5  
+  ✓ 15min|SHORT|REVERSAL
+      WR:   0.0% | P&L:     $-14.96 | Avg:    $-14.96 | Closed:   1  
+  ✓ 1h|SHORT|TREND CONTINUATION
+      WR:   0.0% | P&L:     $-72.43 | Avg:    $-14.49 | Closed:   5  
+  ✓ 1h|LONG|NONE
+      WR:   0.0% | P&L:    $-104.78 | Avg:    $-17.46 | Closed:   6  
+  ✓ 15min|LONG|TREND_CONTINUATION
+      WR:   0.0% | P&L:      $-6.41 | Avg:     $-6.41 | Closed:   1  
+  ✓ 30min|NONE
+      WR:   0.0% | P&L:      $-3.65 | Avg:     $-1.22 | Closed:   3  
+  ✓ 15min|REVERSAL
+      WR:   0.0% | P&L:     $-22.67 | Avg:     $-1.42 | Closed:  16  
+  ✓ 4h|NONE
+      WR:   0.0% | P&L:     $-15.50 | Avg:     $-1.72 | Closed:   9  
+  ✓ 1h|LONG|TREND CONTINUATION
+      WR:   0.0% | P&L:     $-51.44 | Avg:    $-17.15 | Closed:   3  
+  ✓ 1h|SHORT|TREND CONTINUATION
+      WR:   0.0% | P&L:     $-18.55 | Avg:     $-9.27 | Closed:   2  
+  ✓ 15min|SHORT|REVERSAL
+      WR:   0.0% | P&L:      $-5.32 | Avg:     $-5.32 | Closed:   1  
+  ✓ 30min|REVERSAL
+      WR:   0.0% | P&L:      $-1.59 | Avg:     $-0.40 | Closed:   4  
+  ✓ 4h|NONE
+      WR:   0.0% | P&L:      $-1.99 | Avg:     $-1.99 | Closed:   1  
+  ✓ 1h|TREND_CONTINUATION
+      WR:   0.0% | P&L:      $-2.89 | Avg:     $-0.96 | Closed:   3  
+  (64 combos)
+
+════════════════════════════════════════════════════════════════════════════════
+📈 PERFORMANCE DELTA ANALYSIS
+════════════════════════════════════════════════════════════════════════════════
+
+1️⃣ TIERING EFFECT (Before 3/4 Normalization): GROUP C vs GROUP A
+────────────────────────────────────────────────────────────────────────────────
+  WR Delta: +8.41% (C: 35.96% vs A: 27.54%)
+  Avg P&L per Signal Delta: $+3.07 (C: $2.24 vs A: $-0.82)
+  ✅ Tiering improved performance (pre-3/4)
+
+2️⃣ TIERING EFFECT (After 3/4 Normalization): GROUP D vs GROUP B
+────────────────────────────────────────────────────────────────────────────────
+  WR Delta: +34.05% (D: 71.43% vs B: 37.37%)
+  Avg P&L per Signal Delta: $+0.56 (D: $0.43 vs B: $-0.13)
+  ✅ Tiering improved performance (post-3/4)
+
+3️⃣ 3/4 NORMALIZATION EFFECT (Non-Tiered): GROUP B vs GROUP A
+────────────────────────────────────────────────────────────────────────────────
+  WR Delta: +9.83% (B: 37.37% vs A: 27.54%)
+  Avg P&L per Signal Delta: $+0.69 (B: $-0.13 vs A: $-0.82)
+  ✅ 3/4 normalization improved non-tiered
+
+4️⃣ 3/4 NORMALIZATION EFFECT (Tiered): GROUP D vs GROUP C
+────────────────────────────────────────────────────────────────────────────────
+  WR Delta: +35.47% (D: 71.43% vs C: 35.96%)
+  Avg P&L per Signal Delta: $-1.81 (D: $0.43 vs C: $2.24)
+  ❌ 3/4 normalization worsened or mixed tiered
+
+════════════════════════════════════════════════════════════════════════════════
+🎯 HYPOTHESIS VALIDATION
+════════════════════════════════════════════════════════════════════════════════
+
+THEORY: 'Tiered signals have better performance than non-tiered'
+
+EVIDENCE (Both WR and Avg P&L must improve for ✅):
+  ✅ C > A in WR? YES (35.96% vs 27.54%)
+  ✅ C > A in Avg P&L? YES ($2.24 vs $-0.82)
+  ✅ D > B in WR? YES (71.43% vs 37.37%)
+  ✅ D > B in Avg P&L? YES ($0.43 vs $-0.13)
+
+VERDICT: ✅ THEORY STRONGLY SUPPORTED
+REASON: Tiering shows consistent improvement in both pre and post 3/4 normalization
+
+RECOMMENDATION FOR TIER CONFIG UPDATE:
+  ✅ Aggressive tier config is JUSTIFIED - tiering demonstrably improves performance
+  → Consider implementing the proposed Tier-1: ≥61%, Tier-2: ≥56%, Tier-3: ≥51%
+
+════════════════════════════════════════════════════════════════════════════════

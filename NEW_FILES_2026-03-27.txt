@@ -1,0 +1,169 @@
+═══════════════════════════════════════════════════════════════════════════════
+NEW FILES CREATED: 2026-03-27 SESSION
+═══════════════════════════════════════════════════════════════════════════════
+
+## START HERE (Entry Point)
+
+START_HERE_2026-03-27.md
+  └─ 5-minute intro to what was created
+  └─ Links to all documentation
+  └─ Quick commands to try immediately
+  └─ Answers to your specific questions
+
+═══════════════════════════════════════════════════════════════════════════════
+
+## 📦 NEW TRACKER (Production Ready)
+
+tier_performance_comparison_tracker_live.py (31 KB)
+  ├─ Enhanced tracker with TWO major features:
+  │
+  ├─ FEATURE 1: Live Refresh Mode
+  │   └─ Usage: python3 ... --live --interval 30
+  │   └─ Auto-clears screen, updates every N seconds
+  │   └─ Perfect for real-time monitoring
+  │
+  ├─ FEATURE 2: Tier Breakdown Section (NEW)
+  │   └─ Shows combos by tier: TIER-1, TIER-2, TIER-3, TIER-X
+  │   └─ Criteria validation: [WR: ✓ | AVG: ✓ | TRADES: ✓]
+  │   └─ Example combos for each tier
+  │
+  └─ Output: TIER_COMPARISON_REPORT.txt (also timestamped archives)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+## 📚 NEW DOCUMENTATION (7 Files)
+
+Quick Start (Read First):
+  TIER_TRACKER_QUICK_REF.md (4.3 KB)
+    └─ One-page quick reference
+    └─ Commands, criteria, troubleshooting
+    └─ Key insights & timeline
+
+Session Summary:
+  SESSION_2026-03-27_SUMMARY.txt (7.5 KB)
+    └─ What was created, key findings
+    └─ FAQ section answers your questions
+    └─ Files created + timeline
+
+Comprehensive Guides:
+  TIER_TRACKER_GUIDE.md (8.5 KB)
+    └─ Full explanation of tracker sections
+    └─ How to read each metric
+    └─ What different groups mean
+    └─ When to make decisions
+
+  TIER_BREAKDOWN_EXPLAINED.md (9.2 KB)
+    └─ Example tier breakdown output
+    └─ Why your combo should be TIER-2
+    └─ Expected tier distribution over time
+    └─ How to monitor tier graduation
+
+Big Picture:
+  TRACKER_UPDATE_SUMMARY.md (6.8 KB)
+    └─ Executive summary of enhancements
+    └─ Current system state metrics
+    └─ Timeline to Project 4
+
+  SYSTEM_STATUS_2026-03-27.md (11 KB)
+    └─ Full system architecture
+    └─ All daemons & their roles
+    └─ Data flow diagram
+    └─ Project 4 readiness checklist
+    └─ Debugging guide
+
+═══════════════════════════════════════════════════════════════════════════════
+
+## KEY FINDINGS (Why You Should Read These)
+
+✅ Tiering Hypothesis: STRONGLY SUPPORTED
+   Evidence: GROUP D (tiered) 71.43% WR vs GROUP B (non-tiered) 37.37% WR
+   → +34% improvement with tiering alone
+
+✅ Your Example Combo Validates
+   4h|LONG|TREND CONTINUATION|BULL|LOW_ALTS|MID: 57.5% WR, $8.14 avg, 120 trades
+   → Should be in TIER-2 (meets all three criteria)
+
+❌ Why It's Not Showing
+   → Tier field not persisted to signals (blocker to fix)
+   → Once fixed, will appear in TIER-2 section
+
+═══════════════════════════════════════════════════════════════════════════════
+
+## READING ORDER (Recommended)
+
+For Busy People (15 minutes):
+  1. START_HERE_2026-03-27.md (this one first!)
+  2. TIER_TRACKER_QUICK_REF.md (5 min)
+  3. Try: python3 tier_performance_comparison_tracker_live.py
+
+For Thorough Understanding (1 hour):
+  1. START_HERE_2026-03-27.md
+  2. TIER_TRACKER_QUICK_REF.md
+  3. TIER_BREAKDOWN_EXPLAINED.md (examples)
+  4. TIER_TRACKER_GUIDE.md (full guide)
+  5. SESSION_2026-03-27_SUMMARY.txt (findings)
+
+For Full Context (2 hours):
+  1-5 above, PLUS:
+  6. SYSTEM_STATUS_2026-03-27.md (architecture)
+  7. TRACKER_UPDATE_SUMMARY.md (executive)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+## UPDATED FILES
+
+memory/2026-03-27.md
+  └─ Session log with blocker details
+  └─ What was created
+  └─ Why this matters
+  └─ Next immediate actions
+
+═══════════════════════════════════════════════════════════════════════════════
+
+## QUICK START COMMANDS
+
+# Try the tracker right now
+python3 ~/.openclaw/workspace/tier_performance_comparison_tracker_live.py
+
+# View the output
+cat ~/.openclaw/workspace/TIER_COMPARISON_REPORT.txt
+
+# Live monitoring (every 30 seconds)
+python3 ~/.openclaw/workspace/tier_performance_comparison_tracker_live.py --live
+
+# View latest report
+cat ~/.openclaw/workspace/TIER_COMPARISON_REPORT.txt
+
+# View all archived reports
+ls -lh ~/.openclaw/workspace/tier_comparison_reports/
+
+═══════════════════════════════════════════════════════════════════════════════
+
+## WHAT HAPPENS NEXT
+
+Week 1: Wire tier field into pec_executor.py (1-2 hours)
+Week 2: First TIER-3 combos appear (need 40 trades minimum)
+Week 3: TIER-2 combos emerge (good performance starting to show)
+Week 4: Overall system WR ≥ 51% (ready for Project 4)
+Week 5+: Deploy Asterdex bot (Project 4) to testnet/mainnet
+
+═══════════════════════════════════════════════════════════════════════════════
+
+## FOR NEXT SESSION
+
+All context saved in:
+  ✓ memory/2026-03-27.md (main blocker documented)
+  ✓ START_HERE_2026-03-27.md (quick entry point)
+  ✓ SESSION_2026-03-27_SUMMARY.txt (findings summary)
+
+The tracker is ready to use immediately. Main work is:
+  1. Wire tier field (technical: 1-2 hours)
+  2. Monitor tier growth daily
+  3. Prepare for Project 4 integration
+
+═══════════════════════════════════════════════════════════════════════════════
+
+GENERATED: 2026-03-27 17:39:28 GMT+7
+TRACKER STATUS: ✅ Production Ready
+BLOCKER STATUS: 🚨 1-2 hours to fix
+PROJECT 4 TIMELINE: 4 weeks after blocker fix

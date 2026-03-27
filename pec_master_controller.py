@@ -23,7 +23,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-# Import tier assignment validator
+# Import tier assignment validator and sync
 import sys
 sys.path.insert(0, "/Users/geniustarigan/.openclaw/workspace")
 try:
@@ -32,6 +32,13 @@ try:
 except ImportError as e:
     print(f"Warning: TierAssignmentValidator not available: {e}")
     HAS_TIER_VALIDATOR = False
+
+try:
+    from sync_tier_patterns import sync_tiers
+    HAS_TIER_SYNC = True
+except ImportError as e:
+    print(f"Warning: Tier sync not available: {e}")
+    HAS_TIER_SYNC = False
 
 class ProcessManager:
     def __init__(self):
@@ -68,6 +75,10 @@ class ProcessManager:
         self.tier_validator = TierAssignmentValidator() if HAS_TIER_VALIDATOR else None
         self.tier_check_interval = 60  # Check tier assignments every 60 seconds
         self.last_tier_check = 0
+        
+        # Tier pattern synchronization (self-healing quality loop)
+        self.tier_sync_interval = 300  # Sync every 5 minutes (300s)
+        self.last_tier_sync = 0
     
     def log(self, msg: str, level: str = "INFO"):
         """Write to supervisor log"""
@@ -161,6 +172,37 @@ class ProcessManager:
                 level="TIER_HEAL"
             )
     
+    def tier_sync_check(self):
+        """Sync SIGNAL_TIERS.json with proven combos (self-healing quality loop) - runs every 5min"""
+        if not HAS_TIER_SYNC:
+            return
+        
+        current_time = time.time()
+        if current_time - self.last_tier_sync < self.tier_sync_interval:
+            return  # Not time yet
+        
+        self.last_tier_sync = current_time
+        
+        # Run sync (CRITICAL: Keep quality loop synchronized)
+        try:
+            synced, changed = sync_tiers()
+            
+            if changed:
+                self.log(
+                    f"✅ TIER PATTERNS SYNCED - Quality loop synchronized (proven combos updated)",
+                    level="TIER_SYNC"
+                )
+            else:
+                self.log(
+                    f"✓ Tier patterns verified - no divergence detected",
+                    level="TIER_CHECK"
+                )
+        except Exception as e:
+            self.log(
+                f"⚠️  Tier sync check failed: {e}",
+                level="TIER_WARN"
+            )
+    
     def stop_all(self):
         """Stop both processes gracefully"""
         self.log("Stopping all processes...", level="STOP")
@@ -196,6 +238,12 @@ class ProcessManager:
         else:
             self.log(f"⚠️  Tier Assignment Validator DISABLED (module not available)", level="START")
         
+        # Log tier sync status
+        if HAS_TIER_SYNC:
+            self.log(f"✅ Tier Pattern Sync ENABLED (self-healing quality loop, syncs every {self.tier_sync_interval}s)", level="START")
+        else:
+            self.log(f"⚠️  Tier Pattern Sync DISABLED (module not available)", level="START")
+        
         # Main loop
         try:
             while True:
@@ -212,6 +260,9 @@ class ProcessManager:
                 
                 # Check tier assignment health (every 60s)
                 self.tier_assignment_check()
+                
+                # Sync tier patterns with proven combos (self-healing quality loop, every 5min)
+                self.tier_sync_check()
         
         except KeyboardInterrupt:
             self.log("Interrupt signal received", level="STOP")
