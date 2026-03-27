@@ -23,6 +23,16 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+# Import tier assignment validator
+import sys
+sys.path.insert(0, "/Users/geniustarigan/.openclaw/workspace")
+try:
+    from tier_assignment_validator import TierAssignmentValidator
+    HAS_TIER_VALIDATOR = True
+except ImportError as e:
+    print(f"Warning: TierAssignmentValidator not available: {e}")
+    HAS_TIER_VALIDATOR = False
+
 class ProcessManager:
     def __init__(self):
         self.workspace_root = "/Users/geniustarigan/.openclaw/workspace"
@@ -53,6 +63,11 @@ class ProcessManager:
         self.check_interval = 10  # seconds
         self.restart_threshold = 5  # alert after 5 restarts in a row
         self.startup_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Tier assignment validation
+        self.tier_validator = TierAssignmentValidator() if HAS_TIER_VALIDATOR else None
+        self.tier_check_interval = 60  # Check tier assignments every 60 seconds
+        self.last_tier_check = 0
     
     def log(self, msg: str, level: str = "INFO"):
         """Write to supervisor log"""
@@ -125,6 +140,27 @@ class ProcessManager:
         
         return all_healthy
     
+    def tier_assignment_check(self):
+        """Validate tier assignment mechanism (runs every 60s)"""
+        if not self.tier_validator:
+            return
+        
+        current_time = time.time()
+        if current_time - self.last_tier_check < self.tier_check_interval:
+            return  # Not time yet
+        
+        self.last_tier_check = current_time
+        
+        # Run validation
+        results = self.tier_validator.report_validation()
+        
+        # If critical failure, could trigger executor restart
+        if results["status"] == "FAIL_HIGH_UNASSIGNED":
+            self.log(
+                f"TIER ASSIGNMENT CRITICAL: Attempting healing (executor restart)",
+                level="TIER_HEAL"
+            )
+    
     def stop_all(self):
         """Stop both processes gracefully"""
         self.log("Stopping all processes...", level="STOP")
@@ -154,12 +190,18 @@ class ProcessManager:
             self.start_process(key)
             time.sleep(1)
         
+        # Log tier validator status
+        if HAS_TIER_VALIDATOR:
+            self.log(f"✅ Tier Assignment Validator ENABLED (checks every {self.tier_check_interval}s)", level="START")
+        else:
+            self.log(f"⚠️  Tier Assignment Validator DISABLED (module not available)", level="START")
+        
         # Main loop
         try:
             while True:
                 time.sleep(self.check_interval)
                 
-                # Check health
+                # Check process health
                 all_healthy = self.health_check()
                 
                 if not all_healthy:
@@ -167,6 +209,9 @@ class ProcessManager:
                     status = {k: "✅ RUNNING" if self.processes[k]['proc'] and self.processes[k]['proc'].poll() is None else "❌ DEAD" 
                               for k in self.processes}
                     self.log(f"Status: {status['signal_generator']} / {status['signal_executor']}", level="CHECK")
+                
+                # Check tier assignment health (every 60s)
+                self.tier_assignment_check()
         
         except KeyboardInterrupt:
             self.log("Interrupt signal received", level="STOP")

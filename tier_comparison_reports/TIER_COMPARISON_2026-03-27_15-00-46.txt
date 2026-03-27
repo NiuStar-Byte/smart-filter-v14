@@ -1,0 +1,195 @@
+════════════════════════════════════════════════════════════════════════════════
+📊 TIER PERFORMANCE COMPARISON ANALYSIS
+════════════════════════════════════════════════════════════════════════════════
+Report Generated: 2026-03-27 15:00:46 GMT+7
+Cutoff Timestamp: 2026-03-25 17:54:00 UTC (3/4 Normalization Implementation)
+
+
+GROUP A: FOUNDATION (Pre-3/4 Norm) - NON-TIERED
+────────────────────────────────────────────────────────────────────────────────
+Total Signals: 7338
+
+SIGNAL BREAKDOWN:
+  • TP_HIT: 704
+  • SL_HIT: 1852
+  • TIMEOUT_WIN: 0
+  • TIMEOUT_LOSS: 0
+  • OPEN: 135
+
+CLOSED TRADES ANALYSIS:
+  Closed Trades: 2556
+  Overall WR: 27.54%
+  Calculation: (704 TP + 0 TIMEOUT_WIN) / 2556 Closed = 704 / 2556
+  WR (TP & SL ONLY): 27.54%
+  Calculation: (704 TP) / (704 TP + 1852 SL) = 704 / 2556
+
+P&L ANALYSIS:
+  Total P&L: $-6,041.28
+  Avg per Signal: $-0.82
+  Avg per Closed Trade: $-2.36
+  Avg per TP: $17.49
+  Avg per SL: $-8.58
+
+P&L BREAKDOWN:
+  • TP_HIT: $12,310.72
+  • SL_HIT: $-15,885.18
+  • TIMEOUT: $0.00
+
+RISK:REWARD (RR) METRICS:
+  Highest RR: 3.00
+  Avg RR: 1.82
+  Lowest RR: 1.50
+
+GROUP B: FRESH (Post-3/4 Norm) - NON-TIERED
+────────────────────────────────────────────────────────────────────────────────
+Total Signals: 2529
+
+SIGNAL BREAKDOWN:
+  • TP_HIT: 418
+  • SL_HIT: 708
+  • TIMEOUT_WIN: 0
+  • TIMEOUT_LOSS: 0
+  • OPEN: 209
+
+CLOSED TRADES ANALYSIS:
+  Closed Trades: 1126
+  Overall WR: 37.12%
+  Calculation: (418 TP + 0 TIMEOUT_WIN) / 1126 Closed = 418 / 1126
+  WR (TP & SL ONLY): 37.12%
+  Calculation: (418 TP) / (418 TP + 708 SL) = 418 / 1126
+
+P&L ANALYSIS:
+  Total P&L: $-540.16
+  Avg per Signal: $-0.21
+  Avg per Closed Trade: $-0.48
+  Avg per TP: $1.10
+  Avg per SL: $-1.06
+
+P&L BREAKDOWN:
+  • TP_HIT: $458.43
+  • SL_HIT: $-746.96
+  • TIMEOUT: $0.00
+
+RISK:REWARD (RR) METRICS:
+  Highest RR: N/A
+  Avg RR: N/A
+  Lowest RR: N/A
+
+GROUP C: FOUNDATION (Pre-3/4 Norm) - TIERED (1,2,3)
+────────────────────────────────────────────────────────────────────────────────
+Total Signals: 158
+
+SIGNAL BREAKDOWN:
+  • TP_HIT: 32
+  • SL_HIT: 57
+  • TIMEOUT_WIN: 0
+  • TIMEOUT_LOSS: 0
+  • OPEN: 1
+
+CLOSED TRADES ANALYSIS:
+  Closed Trades: 89
+  Overall WR: 35.96%
+  Calculation: (32 TP + 0 TIMEOUT_WIN) / 89 Closed = 32 / 89
+  WR (TP & SL ONLY): 35.96%
+  Calculation: (32 TP) / (32 TP + 57 SL) = 32 / 89
+
+P&L ANALYSIS:
+  Total P&L: $354.30
+  Avg per Signal: $2.24
+  Avg per Closed Trade: $3.98
+  Avg per TP: $22.04
+  Avg per SL: $-5.85
+
+P&L BREAKDOWN:
+  • TP_HIT: $705.44
+  • SL_HIT: $-333.43
+  • TIMEOUT: $0.00
+
+RISK:REWARD (RR) METRICS:
+  Highest RR: 3.00
+  Avg RR: 2.96
+  Lowest RR: 2.00
+
+GROUP D: FRESH (Post-3/4 Norm) - TIERED (1,2,3)
+────────────────────────────────────────────────────────────────────────────────
+Total Signals: 52
+
+SIGNAL BREAKDOWN:
+  • TP_HIT: 10
+  • SL_HIT: 3
+  • TIMEOUT_WIN: 0
+  • TIMEOUT_LOSS: 0
+  • OPEN: 3
+
+CLOSED TRADES ANALYSIS:
+  Closed Trades: 13
+  Overall WR: 76.92%
+  Calculation: (10 TP + 0 TIMEOUT_WIN) / 13 Closed = 10 / 13
+  WR (TP & SL ONLY): 76.92%
+  Calculation: (10 TP) / (10 TP + 3 SL) = 10 / 13
+
+P&L ANALYSIS:
+  Total P&L: $38.82
+  Avg per Signal: $0.75
+  Avg per Closed Trade: $2.99
+  Avg per TP: $1.20
+  Avg per SL: $-1.26
+
+P&L BREAKDOWN:
+  • TP_HIT: $12.00
+  • SL_HIT: $-3.79
+  • TIMEOUT: $0.00
+
+RISK:REWARD (RR) METRICS:
+  Highest RR: N/A
+  Avg RR: N/A
+  Lowest RR: N/A
+
+════════════════════════════════════════════════════════════════════════════════
+📈 PERFORMANCE DELTA ANALYSIS
+════════════════════════════════════════════════════════════════════════════════
+
+1️⃣ TIERING EFFECT (Before 3/4 Normalization): GROUP C vs GROUP A
+────────────────────────────────────────────────────────────────────────────────
+  WR Delta: +8.41% (C: 35.96% vs A: 27.54%)
+  Avg P&L per Signal Delta: $+3.07 (C: $2.24 vs A: $-0.82)
+  ✅ Tiering improved performance (pre-3/4)
+
+2️⃣ TIERING EFFECT (After 3/4 Normalization): GROUP D vs GROUP B
+────────────────────────────────────────────────────────────────────────────────
+  WR Delta: +39.80% (D: 76.92% vs B: 37.12%)
+  Avg P&L per Signal Delta: $+0.96 (D: $0.75 vs B: $-0.21)
+  ✅ Tiering improved performance (post-3/4)
+
+3️⃣ 3/4 NORMALIZATION EFFECT (Non-Tiered): GROUP B vs GROUP A
+────────────────────────────────────────────────────────────────────────────────
+  WR Delta: +9.58% (B: 37.12% vs A: 27.54%)
+  Avg P&L per Signal Delta: $+0.61 (B: $-0.21 vs A: $-0.82)
+  ✅ 3/4 normalization improved non-tiered
+
+4️⃣ 3/4 NORMALIZATION EFFECT (Tiered): GROUP D vs GROUP C
+────────────────────────────────────────────────────────────────────────────────
+  WR Delta: +40.97% (D: 76.92% vs C: 35.96%)
+  Avg P&L per Signal Delta: $-1.50 (D: $0.75 vs C: $2.24)
+  ❌ 3/4 normalization worsened or mixed tiered
+
+════════════════════════════════════════════════════════════════════════════════
+🎯 HYPOTHESIS VALIDATION
+════════════════════════════════════════════════════════════════════════════════
+
+THEORY: 'Tiered signals have better performance than non-tiered'
+
+EVIDENCE (Both WR and Avg P&L must improve for ✅):
+  ✅ C > A in WR? YES (35.96% vs 27.54%)
+  ✅ C > A in Avg P&L? YES ($2.24 vs $-0.82)
+  ✅ D > B in WR? YES (76.92% vs 37.12%)
+  ✅ D > B in Avg P&L? YES ($0.75 vs $-0.21)
+
+VERDICT: ✅ THEORY STRONGLY SUPPORTED
+REASON: Tiering shows consistent improvement in both pre and post 3/4 normalization
+
+RECOMMENDATION FOR TIER CONFIG UPDATE:
+  ✅ Aggressive tier config is JUSTIFIED - tiering demonstrably improves performance
+  → Consider implementing the proposed Tier-1: ≥61%, Tier-2: ≥56%, Tier-3: ≥51%
+
+════════════════════════════════════════════════════════════════════════════════

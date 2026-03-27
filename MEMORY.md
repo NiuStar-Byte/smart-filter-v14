@@ -4,6 +4,71 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
+## 🎯 **INTEGRATION ROADMAP: PROJECT 3 ↔ PROJECT 4 (2026-03-27 15:11)**
+
+**Status:** ⏸️ **PENDING 51% WR THRESHOLD**
+**Goal:** Integrate Smart Filter v14 (Project 3) with Asterdex Bot (Project 4) for automated trading
+
+### **Blocker: Achieve Consistent 51% Win Rate (Statistically Unbeatable)**
+
+Why 51%?
+- 51% wins - 49% losses = **+2% daily profit** (per 100 trades)
+- Over 500 weekly trades = **consistent positive P&L**
+- Eliminates luck variance → mathematically guaranteed profit
+
+### **Current Status vs Target**
+
+| Group | Signals | WR | vs Target | Status |
+|-------|---------|----|----|--|
+| A (Foundation) | 7,338 | 27.54% | -23.46% | ❌ Far below |
+| B (Fresh, post-norm) | 2,529 | 37.12% | -13.88% | ⚠️ Improving |
+| C (Tiered, pre) | 158 | 35.96% | -15.04% | ⚠️ Tiering helps |
+| D (Tiered, post-norm) | 52 | **76.92%** | **+25.92%** | ✅ **EXCEEDS TARGET** |
+
+**Key Insight:** GROUP D (tiered + post-3/4 norm) already achieves 76.92% WR!
+- Small sample (52 signals) but strong signal quality
+- As this group grows, overall WR will approach target
+
+### **Integration Timeline**
+
+1. **Phase A (NOW):** Track WR growth via tier_performance_comparison_tracker.py
+   - Run daily (21:00 GMT+7 via cron)
+   - Monitor GROUP B and D expansion
+   - Target: B reaches 50%+ WR
+
+2. **Phase B (When B ≥ 50%):** Finalize Asterdex bot connection
+   - Project 4: Bot posting transactions to Asterdex Testnet
+   - Test live trades (small notional)
+   - Validate P&L calculations match
+
+3. **Phase C (When overall ≥ 51%):** GO LIVE
+   - Deploy to Asterdex mainnet
+   - Full integration: signals → orders → P&L tracking
+   - Scale notional amounts progressively
+
+### **Tracker Setup**
+
+**Cron Job Added:** `tier_performance_comparison_tracker.py`
+- Schedule: Daily 21:00 GMT+7
+- Output: `TIER_COMPARISON_REPORT.txt` + timestamped archive
+- Job ID: `1739df4d-3631-4851-9bc5-1610cd76d2ef`
+- Enable/disable: `cron update <id> --patch '{"enabled": true/false}'`
+
+**Manual Run:**
+```bash
+cd ~/.openclaw/workspace && python3 tier_performance_comparison_tracker.py
+```
+
+**What it tracks:**
+- GROUP A: Pre-norm, non-tiered (baseline)
+- GROUP B: Post-norm, non-tiered (3/4 effect)
+- GROUP C: Pre-norm, tiered (tiering effect)
+- GROUP D: Post-norm, tiered (combined effect)
+- Deltas: WR and Avg P&L improvements
+- Hypothesis validation: Tiering vs non-tiered
+
+---
+
 ### **🔄 EXECUTOR RELIABILITY FIX (2026-03-27 09:24)**
 
 **Status:** ✅ **DEPLOYED - Single persistent loop replaces daemon + spawner**

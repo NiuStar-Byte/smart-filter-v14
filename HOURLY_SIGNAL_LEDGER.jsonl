@@ -278,3 +278,9 @@
 {"hour_key": "2026-03-26_23", "hour_utc": "2026-03-26T23:00:00+00:00", "signal_count": 32, "locked_at_utc": "2026-03-27T00:12:04.709838", "status": "IMMUTABLE"}
 {"hour_key": "2026-03-27_00", "hour_utc": "2026-03-27T00:00:00+00:00", "signal_count": 684, "locked_at_utc": "2026-03-27T01:00:13.971127", "status": "IMMUTABLE"}
 {"hour_key": "2026-03-27_01", "hour_utc": "2026-03-27T01:00:00+00:00", "signal_count": 313, "locked_at_utc": "2026-03-27T02:00:06.176920", "status": "IMMUTABLE"}
+{"hour_key": "2026-03-27_02", "hour_utc": "2026-03-27T02:00:00+00:00", "signal_count": 546, "locked_at_utc": "2026-03-27T03:00:05.242937", "status": "IMMUTABLE"}
+{"hour_key": "2026-03-27_03", "hour_utc": "2026-03-27T03:00:00+00:00", "signal_count": 977, "locked_at_utc": "2026-03-27T04:00:05.186152", "status": "IMMUTABLE"}
+{"hour_key": "2026-03-27_04", "hour_utc": "2026-03-27T04:00:00+00:00", "signal_count": 625, "locked_at_utc": "2026-03-27T05:05:05.238957", "status": "IMMUTABLE"}
+{"hour_key": "2026-03-27_05", "hour_utc": "2026-03-27T05:00:00+00:00", "signal_count": 89, "locked_at_utc": "2026-03-27T06:01:56.052439", "status": "IMMUTABLE"}
+{"hour_key": "2026-03-27_06", "hour_utc": "2026-03-27T06:00:00+00:00", "signal_count": 230, "locked_at_utc": "2026-03-27T07:00:06.028488", "status": "IMMUTABLE"}
+{"hour_key": "2026-03-27_07", "hour_utc": "2026-03-27T07:00:00+00:00", "signal_count": 1064, "locked_at_utc": "2026-03-27T08:00:04.593814", "status": "IMMUTABLE"}
