@@ -28,6 +28,11 @@ def extract_section1_summary(output):
     """Extract and format Section 1 summary"""
     msg = "📊 SECTION 1: TOTAL SIGNALS (Foundation + New)\n"
     
+    # Report generated timestamp
+    match = re.search(r'Report Generated:\s*([\d\-\s:]+GMT\+\d+)', output)
+    if match:
+        msg += f"Report Generated: {match.group(1)}\n"
+    
     # Total Signals Loaded
     match = re.search(r'Total Signals Loaded:\s*(\d+)', output)
     if match:
@@ -170,15 +175,6 @@ def extract_section1_summary(output):
     if match:
         msg += f"Lowest RR: {match.group(1)}\n"
     
-    msg += "\nActual Max Timeout Duration by Timeframe:\n"
-    
-    # Timeout durations
-    for tf in ['15min', '30min', '1h', '2h', '4h']:
-        pattern = rf'{tf}:\s*([\dhmn\s]+)'
-        match = re.search(pattern, output)
-        if match:
-            msg += f"{tf}: {match.group(1)}\n"
-    
     return msg.strip()
 
 def extract_post_deployment_summary(output):
@@ -273,25 +269,25 @@ def extract_post_deployment_summary(output):
     
     msg += "\n💰 P&L BREAKDOWN\n"
     
-    # P&L by type
-    pattern = r'•\s*TP_HIT:\s*\$?\s*([-+\d,.]+)'
-    match = re.search(pattern, output)
+    # P&L by type - look for INCLUDED IN TOTAL P&L section with dollar amounts
+    pattern = r'INCLUDED IN TOTAL P&L.*?•\s*TP_HIT:\s*\$?\s*([-+\d,.]+)'
+    match = re.search(pattern, output, re.DOTALL)
     if match:
-        msg += f"TP_HIT: ${match.group(1)}\n"
+        msg += f"• TP_HIT: ${match.group(1)}\n"
     
-    pattern = r'•\s*SL_HIT:\s*\$?\s*([-+\d,.]+)'
-    match = re.search(pattern, output)
+    pattern = r'INCLUDED IN TOTAL P&L.*?•\s*SL_HIT:\s*\$?\s*([-+\d,.]+)'
+    match = re.search(pattern, output, re.DOTALL)
     if match:
-        msg += f"SL_HIT: ${match.group(1)}\n"
+        msg += f"• SL_HIT: ${match.group(1)}\n"
     
-    pattern = r'•\s*TIMEOUT:\s*\$?\s*([-+\d,.]+)'
-    match = re.search(pattern, output)
+    pattern = r'INCLUDED IN TOTAL P&L.*?•\s*TIMEOUT:\s*\$?\s*([-+\d,.]+)'
+    match = re.search(pattern, output, re.DOTALL)
     if match:
-        msg += f"TIMEOUT: ${match.group(1)}\n"
+        msg += f"• TIMEOUT: ${match.group(1)}\n"
     
     msg += "\nAverage P&L:\n"
     
-    # Averages - reorder: Signal, Closed Trade, TP, SL
+    # Averages - order: Signal, Closed Trade, SL, TP
     pattern = r'Average P&L per Signal \(Included\):\s*\$?([-\d,.]+)'
     match = re.search(pattern, output)
     if match:
@@ -302,15 +298,15 @@ def extract_post_deployment_summary(output):
     if match:
         msg += f"Avg per Closed Trade: ${match.group(1)}\n"
     
-    pattern = r'Average P&L per TP_HIT:\s*\$?([-\d,.]+)'
-    match = re.search(pattern, output)
-    if match:
-        msg += f"Avg per TP: ${match.group(1)}\n"
-    
     pattern = r'Average P&L per SL_HIT:\s*\$?([-\d,.]+)'
     match = re.search(pattern, output)
     if match:
         msg += f"Avg per SL: ${match.group(1)}\n"
+    
+    pattern = r'Average P&L per TP_HIT:\s*\$?([-+\d,.]+)'
+    match = re.search(pattern, output)
+    if match:
+        msg += f"Avg per TP: ${match.group(1)}\n"
     
     msg += "\n📊 OVERALL RISK:REWARD (RR) METRICS\n"
     
