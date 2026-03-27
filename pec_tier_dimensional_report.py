@@ -295,38 +295,123 @@ def generate_report(signals):
             report.append(f"  {tier_name}: {count:,} signals")
     report.append("")
     
-    # HIERARCHY TRACKING BY TIER
+    # HIERARCHY TRACKING - MATCH PEC_ENHANCED_REPORTER FORMAT WITH TIER SPLIT
     report.append("=" * 90)
-    report.append("SECTION 3: 6D/5D/4D/3D/2D HIERARCHY BY TIER STATUS")
+    report.append("🎯 HIERARCHY RANKING - 6D / 5D / 4D / 3D / 2D PERFORMANCE TRACKING BY TIER")
     report.append("=" * 90)
     report.append("")
     
-    report.append("6D COMBOS WITH TIER (Tier-2 + Tier-3 only)")
-    tier_2_3_signals = tier_breakdown.get('Tier-2', []) + tier_breakdown.get('Tier-3', [])
-    tier_2_3_6d = defaultdict(int)
-    for signal in tier_2_3_signals:
-        combo = extract_combo_6d(signal)
-        tier_2_3_6d[combo] += 1
+    # Helper to calculate metrics for combo group
+    def calc_combo_metrics(signals_list, combo_key):
+        total = 0
+        closed = 0
+        tp_hit = 0
+        sl_hit = 0
+        timeout_win = 0
+        timeout_loss = 0
+        total_pnl = 0.0
+        
+        for signal in signals_list:
+            if extract_combo_6d(signal) if combo_key == 'full' else (
+                signal.get('timeframe', '') + '|' + signal.get('direction', '') + '|' + 
+                signal.get('route', '') + '|' + signal.get('regime', '')
+            ) == combo_key:
+                total += 1
+                status = signal.get('status')
+                pnl = signal.get('pnl_usd', 0.0)
+                
+                if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                    closed += 1
+                    total_pnl += pnl
+                    
+                    if status == 'TP_HIT':
+                        tp_hit += 1
+                    elif status == 'SL_HIT':
+                        sl_hit += 1
+                    elif status == 'TIMEOUT':
+                        if pnl >= 0:
+                            timeout_win += 1
+                        else:
+                            timeout_loss += 1
+        
+        if closed == 0:
+            return None
+        
+        wr = (tp_hit + timeout_win) / (tp_hit + sl_hit + timeout_win + timeout_loss) * 100
+        avg = total_pnl / closed
+        return {'closed': closed, 'wr': wr, 'pnl': total_pnl, 'avg': avg}
     
-    top_with_tier = sorted(tier_2_3_6d.items(), key=lambda x: x[1], reverse=True)[:15]
-    if top_with_tier:
-        for i, (combo, count) in enumerate(top_with_tier, 1):
-            report.append(f"  {i:2d}. {combo} ({count} signals)")
-    else:
-        report.append("  (None - all signals are Tier-X)")
-    report.append("")
+    # 6D COMBOS by WR (Part 1: Tier-X, Part 2: Tier-2/3)
+    report.append("📊 6-DIMENSIONAL COMBOS (TimeFrame × Direction × Route × Regime × Symbol_Group × Confidence)")
+    report.append("─" * 90)
     
-    report.append("6D COMBOS WITHOUT TIER (Tier-X only)")
+    report.append("\nPart 1: Tier-X Combos (Baseline)")
     tier_x_signals = tier_breakdown.get('Tier-X', [])
-    tier_x_6d = defaultdict(int)
-    for signal in tier_x_signals:
-        combo = extract_combo_6d(signal)
-        tier_x_6d[combo] += 1
+    tier_x_combos = defaultdict(lambda: {'closed': 0, 'wr': 0, 'pnl': 0.0, 'avg': 0.0, 'tp': 0, 'sl': 0, 'tw': 0, 'tl': 0})
     
-    top_without_tier = sorted(tier_x_6d.items(), key=lambda x: x[1], reverse=True)[:15]
-    if top_without_tier:
-        for i, (combo, count) in enumerate(top_without_tier, 1):
-            report.append(f"  {i:2d}. {combo} ({count} signals)")
+    for signal in tier_x_signals:
+        status = signal.get('status')
+        pnl = signal.get('pnl_usd', 0.0)
+        combo = extract_combo_6d(signal)
+        
+        if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+            tier_x_combos[combo]['closed'] += 1
+            tier_x_combos[combo]['pnl'] += pnl
+            
+            if status == 'TP_HIT':
+                tier_x_combos[combo]['tp'] += 1
+            elif status == 'SL_HIT':
+                tier_x_combos[combo]['sl'] += 1
+            elif status == 'TIMEOUT' and pnl >= 0:
+                tier_x_combos[combo]['tw'] += 1
+            elif status == 'TIMEOUT' and pnl < 0:
+                tier_x_combos[combo]['tl'] += 1
+    
+    # Calculate WR for each
+    for combo in tier_x_combos:
+        total_trades = tier_x_combos[combo]['tp'] + tier_x_combos[combo]['sl'] + tier_x_combos[combo]['tw'] + tier_x_combos[combo]['tl']
+        if total_trades > 0:
+            tier_x_combos[combo]['wr'] = (tier_x_combos[combo]['tp'] + tier_x_combos[combo]['tw']) / total_trades * 100
+            tier_x_combos[combo]['avg'] = tier_x_combos[combo]['pnl'] / tier_x_combos[combo]['closed']
+    
+    tier_x_sorted = sorted(tier_x_combos.items(), key=lambda x: x[1]['wr'], reverse=True)[:10]
+    for i, (combo, metrics) in enumerate(tier_x_sorted, 1):
+        report.append(f"  ✓ {combo} | WR: {metrics['wr']:.1f}% | P&L: ${metrics['pnl']:>9,.2f} | Avg: ${metrics['avg']:>+6.2f} | Closed: {metrics['closed']}")
+    
+    report.append("\nPart 2: Tier-2/3 Combos (High Quality)")
+    tier_2_3_signals = tier_breakdown.get('Tier-2', []) + tier_breakdown.get('Tier-3', [])
+    tier_2_3_combos = defaultdict(lambda: {'closed': 0, 'wr': 0, 'pnl': 0.0, 'avg': 0.0, 'tp': 0, 'sl': 0, 'tw': 0, 'tl': 0})
+    
+    for signal in tier_2_3_signals:
+        status = signal.get('status')
+        pnl = signal.get('pnl_usd', 0.0)
+        combo = extract_combo_6d(signal)
+        
+        if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+            tier_2_3_combos[combo]['closed'] += 1
+            tier_2_3_combos[combo]['pnl'] += pnl
+            
+            if status == 'TP_HIT':
+                tier_2_3_combos[combo]['tp'] += 1
+            elif status == 'SL_HIT':
+                tier_2_3_combos[combo]['sl'] += 1
+            elif status == 'TIMEOUT' and pnl >= 0:
+                tier_2_3_combos[combo]['tw'] += 1
+            elif status == 'TIMEOUT' and pnl < 0:
+                tier_2_3_combos[combo]['tl'] += 1
+    
+    for combo in tier_2_3_combos:
+        total_trades = tier_2_3_combos[combo]['tp'] + tier_2_3_combos[combo]['sl'] + tier_2_3_combos[combo]['tw'] + tier_2_3_combos[combo]['tl']
+        if total_trades > 0:
+            tier_2_3_combos[combo]['wr'] = (tier_2_3_combos[combo]['tp'] + tier_2_3_combos[combo]['tw']) / total_trades * 100
+            tier_2_3_combos[combo]['avg'] = tier_2_3_combos[combo]['pnl'] / tier_2_3_combos[combo]['closed']
+    
+    tier_2_3_sorted = sorted(tier_2_3_combos.items(), key=lambda x: x[1]['wr'], reverse=True)[:10]
+    if tier_2_3_sorted:
+        for i, (combo, metrics) in enumerate(tier_2_3_sorted, 1):
+            report.append(f"  ✓ {combo} | WR: {metrics['wr']:.1f}% | P&L: ${metrics['pnl']:>9,.2f} | Avg: ${metrics['avg']:>+6.2f} | Closed: {metrics['closed']}")
+    else:
+        report.append("  (No closed trades for Tier-2/3 combos yet)")
     report.append("")
     
     report.append("=" * 90)
