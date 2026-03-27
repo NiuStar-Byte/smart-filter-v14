@@ -27,3 +27,34 @@ persistent.py) (PID 22168)
 [2026-03-27 21:09:03] [TIER_CRITICAL]    ACTION: Tier assignment mechanism may be broken. Check pec_executor.py and tier_lookup.py
 [2026-03-27 21:09:03] [TIER_HEAL] TIER ASSIGNMENT CRITICAL: Attempting healing (executor restart)
 [2026-03-27 21:09:03] [TIER_CHECK] ✓ Tier patterns verified - no divergence detected
+[2026-03-27 21:10:03] [TIER_CRITICAL] 🚨 TIER ASSIGNMENT FAILURE: Only 0.0% assigned (threshold: 70%) | 
+[2026-03-27 21:10:03] [TIER_CRITICAL]    ACTION: Tier assignment mechanism may be broken. Check pec_executor.py and tier_lookup.py
+[2026-03-27 21:10:03] [TIER_HEAL] TIER ASSIGNMENT CRITICAL: Attempting healing (executor restart)
+[2026-03-27 21:11:04] [TIER_CRITICAL] 🚨 TIER ASSIGNMENT FAILURE: Only 0.0% assigned (threshold: 70%) | 
+[2026-03-27 21:11:04] [TIER_CRITICAL]    ACTION: Tier assignment mechanism may be broken. Check pec_executor.py and tier_lookup.py
+[2026-03-27 21:11:04] [TIER_HEAL] TIER ASSIGNMENT CRITICAL: Attempting healing (executor restart)
+[2026-03-27 21:12:04] [TIER_CRITICAL] 🚨 TIER ASSIGNMENT FAILURE: Only 0.0% assigned (threshold: 70%) | 
+[2026-03-27 21:12:04] [TIER_CRITICAL]    ACTION: Tier assignment mechanism may be broken. Check pec_executor.py and tier_lookup.py
+[2026-03-27 21:12:04] [TIER_HEAL] TIER ASSIGNMENT CRITICAL: Attempting healing (executor restart)
+[2026-03-27 21:13:04] [TIER_CRITICAL] 🚨 TIER ASSIGNMENT FAILURE: Only 0.0% assigned (threshold: 70%) | 
+[2026-03-27 21:13:04] [TIER_CRITICAL]    ACTION: Tier assignment mechanism may be broken. Check pec_executor.py and tier_lookup.py
+[2026-03-27 21:13:04] [TIER_HEAL] TIER ASSIGNMENT CRITICAL: Attempting healing (executor restart)
+[2026-03-27 21:14:05] [TIER_CRITICAL] 🚨 TIER ASSIGNMENT FAILURE: Only 0.0% assigned (threshold: 70%) | 
+[2026-03-27 21:14:05] [TIER_CRITICAL]    ACTION: Tier assignment mechanism may be broken. Check pec_executor.py and tier_lookup.py
+[2026-03-27 21:14:05] [TIER_HEAL] TIER ASSIGNMENT CRITICAL: Attempting healing (executor restart)
+[2026-03-27 21:14:05] [TIER_CHECK] ✓ Tier patterns verified - no divergence detected
+[2026-03-27 21:15:05] [TIER_CRITICAL] 🚨 TIER ASSIGNMENT FAILURE: Only 0.0% assigned (threshold: 70%) | 
+[2026-03-27 21:15:05] [TIER_CRITICAL]    ACTION: Tier assignment mechanism may be broken. Check pec_executor.py and tier_lookup.py
+[2026-03-27 21:15:05] [TIER_HEAL] TIER ASSIGNMENT CRITICAL: Attempting healing (executor restart)
+[2026-03-27 21:16:06] [TIER_CRITICAL] 🚨 TIER ASSIGNMENT FAILURE: Only 0.0% assigned (threshold: 70%) | 
+[2026-03-27 21:16:06] [TIER_CRITICAL]    ACTION: Tier assignment mechanism may be broken. Check pec_executor.py and tier_lookup.py
+[2026-03-27 21:16:06] [TIER_HEAL] TIER ASSIGNMENT CRITICAL: Attempting healing (executor restart)
+[2026-03-27 21:17:06] [TIER_CRITICAL] 🚨 TIER ASSIGNMENT FAILURE: Only 0.0% assigned (threshold: 70%) | 
+[2026-03-27 21:17:06] [TIER_CRITICAL]    ACTION: Tier assignment mechanism may be broken. Check pec_executor.py and tier_lookup.py
+[2026-03-27 21:17:06] [TIER_HEAL] TIER ASSIGNMENT CRITICAL: Attempting healing (executor restart)
+[2026-03-27 21:18:07] [TIER_CRITICAL] 🚨 TIER ASSIGNMENT FAILURE: Only 0.0% assigned (threshold: 70%) | 
+[2026-03-27 21:18:07] [TIER_CRITICAL]    ACTION: Tier assignment mechanism may be broken. Check pec_executor.py and tier_lookup.py
+[2026-03-27 21:18:07] [TIER_HEAL] TIER ASSIGNMENT CRITICAL: Attempting healing (executor restart)
+[2026-03-27 21:19:07] [TIER_CRITICAL] 🚨 TIER ASSIGNMENT FAILURE: Only 0.0% assigned (threshold: 70%) | 
+[2026-03-27 21:19:07] [TIER_CRITICAL]    ACTION: Tier assignment mechanism may be broken. Check pec_executor.py and tier_lookup.py
+[2026-03-27 21:19:07] [TIER_HEAL] TIER ASSIGNMENT CRITICAL: Attempting healing (executor restart)

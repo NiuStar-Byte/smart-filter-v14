@@ -1,0 +1,125 @@
+================================================================================
+TIER vs NON-TIER PERFORMANCE TRACKER
+Report Generated: 2026-03-27 16:33:25 UTC
+================================================================================
+
+================================================================================
+SECTION 1: SIGNALS WITH TIER ASSIGNMENT
+================================================================================
+
+Total Loaded Signals: 3,172
+Total Closed Signals: 0
+
+CLOSED SIGNAL BREAKDOWN:
+  TP_HIT:         0 signals
+  SL_HIT:         0 signals
+  TIMEOUT_WIN:    0 signals
+  TIMEOUT_LOSS:   0 signals
+  STALE_TIMEOUT:  0 signals
+
+Overall Win Rate: 0.00%
+
+P&L BREAKDOWN:
+  Total P&L:               $0.00
+  TP P&L:                  $0.00
+  SL P&L:                  $0.00
+  TIMEOUT_WIN P&L:         $0.00
+  TIMEOUT_LOSS P&L:        $0.00
+
+
+================================================================================
+SECTION 2: SIGNALS WITHOUT TIER ASSIGNMENT
+================================================================================
+
+Total Loaded Signals: 10,172
+Total Closed Signals: 9,270
+
+CLOSED SIGNAL BREAKDOWN:
+  TP_HIT:         1,190 signals
+  SL_HIT:         2,657 signals
+  TIMEOUT_WIN:    1,232 signals
+  TIMEOUT_LOSS:   1,380 signals
+  STALE_TIMEOUT:  2,811 signals
+
+Overall Win Rate: 37.50%
+
+P&L BREAKDOWN:
+  Total P&L:               $-6,186.88
+  TP P&L:                  $13,509.58
+  SL P&L:                  $-16,994.28
+  TIMEOUT_WIN P&L:         $2,035.76
+  TIMEOUT_LOSS P&L:        $-4,737.94
+
+AVERAGES:
+  Avg P&L per Signal:      $-0.61
+  Avg P&L per Closed:      $-0.67
+  Avg TP:                  $11.35
+  Avg SL:                  $-6.40
+
+================================================================================
+SECTION 3: TIER vs NON-TIER COMPARISON
+================================================================================
+
+WIN RATE COMPARISON:
+  WITH TIER:             0.00%
+  WITHOUT TIER:         37.50%
+  DELTA (Tier Adv):    -37.50% ✗ TIER WORSE
+
+TOTAL P&L COMPARISON:
+  WITH TIER:                     $0.00
+  WITHOUT TIER:             $-6,186.88
+  DELTA (Tier Adv):          $6,186.88 ✓ TIER BETTER
+
+================================================================================
+SECTION 4: DYNAMIC COMBOS BY TIER STATUS
+================================================================================
+
+6D COMBOS WITH TIER (Top 10 by closed trades):
+
+6D COMBOS WITHOUT TIER (Top 10 by closed trades):
+  1. 15min|?|?|BEAR|?|?
+     Closed: 2234, WR: 33.4%, Avg P&L: $-0.30
+  2. 15min|?|?|BULL|?|?
+     Closed: 1365, WR: 29.9%, Avg P&L: $-1.12
+  3. 30min|?|?|BEAR|?|?
+     Closed: 1094, WR: 38.7%, Avg P&L: $1.34
+  4. 30min|?|?|BULL|?|?
+     Closed: 713, WR: 37.0%, Avg P&L: $-1.06
+  5. 1h|?|?|BEAR|?|?
+     Closed: 675, WR: 40.5%, Avg P&L: $0.33
+  6. 4h|?|?|BULL|?|?
+     Closed: 493, WR: 49.6%, Avg P&L: $0.05
+  7. 1h|?|?|BULL|?|?
+     Closed: 367, WR: 41.5%, Avg P&L: $0.88
+  8. 4h|?|?|BEAR|?|?
+     Closed: 336, WR: 43.6%, Avg P&L: $-0.29
+  9. 30min|LONG|?|BULL|?|?
+     Closed: 332, WR: 23.4%, Avg P&L: $-8.76
+  10. 2h|?|?|BEAR|?|?
+     Closed: 250, WR: 50.5%, Avg P&L: $-0.08
+
+================================================================================
+SECTION 5: INTERPRETATION & NEXT STEPS
+================================================================================
+
+CURRENT STATE:
+  Tier-Assigned Signals:       3,172 (all OPEN - not closed yet)
+  Non-Tier Signals (Closed):   9,270 closed (WR 37.50%)
+
+KEY INSIGHT:
+  Tier assignments are RECENT and signals are still in flight.
+  Performance comparison will be meaningful once tier-assigned signals accumulate
+  sufficient closed trades (target: 40+ closed signals per group).
+
+WAIT FOR:
+  - Tier-2 signals: ~50 closed trades at ≥50% WR
+  - Tier-3 signals: ~40 closed trades at ≥40% WR
+  - Tier-X signals: Performance baseline as they close
+
+HYPOTHESIS:
+  IF tiering works: WITH_TIER WR% > WITHOUT_TIER WR% when tier signals close
+  Current non-tier baseline: 37.50% WR
+
+================================================================================
+END OF REPORT
+================================================================================
