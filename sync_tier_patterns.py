@@ -101,11 +101,24 @@ def sync_tiers():
     """
     Sync SIGNAL_TIERS.json with proven combos
     Returns: (synced, changes_made)
+    VALIDATION CHECKPOINTS:
+    1. Extract + validate not empty
+    2. Write
+    3. READ BACK + audit
+    4. Auto-heal on mismatch
     """
     log("[SYNC] Starting tier pattern synchronization...")
     
-    # Extract proven combos
+    # CHECKPOINT 1: Extract proven combos + validate
     new_tier_1, new_tier_2, new_tier_3 = extract_qualifying_combos()
+    
+    # Validate extraction: at least some combos should exist
+    if not (new_tier_1 or new_tier_2 or new_tier_3):
+        log("[SYNC] ❌ VALIDATION FAILED: No combos extracted (empty extraction)")
+        log("[SYNC] → Auto-healing: Keeping current SIGNAL_TIERS.json")
+        return False, False
+    
+    log(f"[SYNC] ✓ Extraction validated: {len(new_tier_1)} tier1, {len(new_tier_2)} tier2, {len(new_tier_3)} tier3")
     
     # Load current tiers
     old_tier_1, old_tier_2, old_tier_3 = load_current_tiers()
@@ -138,6 +151,9 @@ def sync_tiers():
         if not isinstance(tiers_data, list):
             tiers_data = [tiers_data]
         
+        # Backup last known good state
+        backup_data = json.loads(json.dumps(tiers_data))
+        
         # Get latest entry or create new
         if tiers_data and isinstance(tiers_data[-1], dict):
             latest_entry = tiers_data[-1].copy()
@@ -154,12 +170,42 @@ def sync_tiers():
         if not tiers_data or tiers_data[-1] != latest_entry:
             tiers_data.append(latest_entry)
         
-        # Write back
+        # CHECKPOINT 2: Write to file
         with open(TIERS_FILE, 'w') as f:
             json.dump(tiers_data, f, indent=2)
         
-        log("[SYNC] ✅ SIGNAL_TIERS.json updated with proven patterns")
-        log(f"[SYNC] New tier composition:")
+        # CHECKPOINT 3: READ BACK + AUDIT the write
+        with open(TIERS_FILE, 'r') as f:
+            audit_data = json.load(f)
+        
+        if not audit_data or not isinstance(audit_data[-1], dict):
+            raise ValueError("Audit failed: SIGNAL_TIERS.json structure invalid after write")
+        
+        audit_latest = audit_data[-1]
+        audit_t1 = set(audit_latest.get('tier1', []))
+        audit_t2 = set(audit_latest.get('tier2', []))
+        audit_t3 = set(audit_latest.get('tier3', []))
+        
+        expected_t1 = set(new_tier_1)
+        expected_t2 = set(new_tier_2)
+        expected_t3 = set(new_tier_3)
+        
+        # Validate audit matches expectations
+        if audit_t1 != expected_t1 or audit_t2 != expected_t2 or audit_t3 != expected_t3:
+            log("[SYNC] ❌ AUDIT FAILED: Written data does not match extracted data")
+            log(f"[SYNC]   Expected T1: {len(expected_t1)}, Got: {len(audit_t1)}")
+            log(f"[SYNC]   Expected T2: {len(expected_t2)}, Got: {len(audit_t2)}")
+            log(f"[SYNC]   Expected T3: {len(expected_t3)}, Got: {len(audit_t3)}")
+            
+            # CHECKPOINT 4: AUTO-HEAL - Revert to backup
+            log("[SYNC] → Auto-healing: Reverting to last known good state")
+            with open(TIERS_FILE, 'w') as f:
+                json.dump(backup_data, f, indent=2)
+            return False, False
+        
+        log("[SYNC] ✓ Audit passed: Written data verified")
+        log("[SYNC] ✅ SIGNAL_TIERS.json updated with proven patterns (validated)")
+        log(f"[SYNC] New tier composition (VERIFIED):")
         log(f"[SYNC]   Tier-1: {len(new_tier_1)} combos")
         log(f"[SYNC]   Tier-2: {len(new_tier_2)} combos")
         log(f"[SYNC]   Tier-3: {len(new_tier_3)} combos")
@@ -168,6 +214,7 @@ def sync_tiers():
     
     except Exception as e:
         log(f"[SYNC] ❌ Failed to update SIGNAL_TIERS.json: {e}")
+        log(f"[SYNC] → Auto-healing: Keeping current state")
         return False, False
 
 
