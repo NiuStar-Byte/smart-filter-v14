@@ -6631,3 +6631,32 @@ Currently monitoring for Tier-1 qualification in 6D combos.
 - Or confirmation they're working as designed (gatekeepers)
 
 Data quality isn't just "does it exist" — it's also "can I find it?" Same TP/SL values existed in MASTER but under different field names, making them invisible to the reporter. Cross-validation of schema assumptions is critical. ✅
+
+### **SIGNAL GENERATOR DAEMON RESTART (2026-03-27 09:28)**
+
+**Issue:** Zero signals fired during 09:00-10:00 hour (normally 100-300/hour)
+**Root Cause:** main.py (signal generation daemon) crashed/stopped on Mar 26
+**Evidence:** Last log entry: Mar 26 00:54 UTC (40+ hours of silence)
+**Fix Applied:** Restarted main.py at 09:28 GMT+7
+**Verification:** XLM-USDT 30min signal fired at 09:28:49 GMT+7
+
+**Both Daemons Now Active:**
+1. ✅ main.py (PID 5028) - generates new signals
+2. ✅ pec_executor_persistent.py (PID 4829) - processes signals
+
+**Key Learning:** After Mac restarts, both daemons need manual restart (no auto-startup)
+- They're not cron jobs, not watchdog-monitored
+- Just simple persistent Python loops
+- Restart when needed, leave running indefinitely
+
+**Restart Commands:**
+```bash
+# Signal generator
+pkill -f "^.*main.py"
+cd /workspace && python3 smart-filter-v14-main/main.py > main_daemon.log 2>&1 &
+
+# Signal processor
+pkill -f pec_executor_persistent
+cd /workspace && python3 pec_executor_persistent.py > pec_persistent.log 2>&1 &
+```
+
