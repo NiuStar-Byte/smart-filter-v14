@@ -8,3 +8,52 @@
 [2026-03-27 09:24:55] [INFO] Running update cycle...
 [2026-03-27 09:26:46] [UPDATE] Update complete: no status changes
 [2026-03-27 09:26:46] [DEBUG] Sleeping for 300s until next cycle...
+[2026-03-27 09:31:46] [INFO] Running update cycle...
+[PEC-TIMEOUT-HIT] BTC-USDT 1h: 4 bars >= 4 max, actual_timeout=2026-03-27T02:26:17.064254 [CHALLENGER]
+[PEC-TIMEOUT-HIT] ETH-USDT 1h: 4 bars >= 4 max, actual_timeout=2026-03-27T02:31:56.850345 [CHALLENGER]
+[PEC-TIMEOUT-HIT] ETH-USDT 1h: 4 bars >= 4 max, actual_timeout=2026-03-27T02:32:03.222131 [CHALLENGER]
+[PEC-TIMEOUT-HIT] RAY-USDT 1h: 4 bars >= 4 max, actual_timeout=2026-03-27T02:32:49.092696 [CHALLENGER]
+[PEC-TIMEOUT-HIT] EPT-USDT 15min: 8 bars >= 8 max, actual_timeout=2026-03-27T02:28:00.360338 [CHALLENGER]
+[PEC-TIMEOUT-HIT] VINE-USDT 15min: 8 bars >= 8 max, actual_timeout=2026-03-27T02:29:01.977737 [CHALLENGER]
+[PEC-TIMEOUT-HIT] DYDX-USDT 15min: 8 bars >= 8 max, actual_timeout=2026-03-27T02:31:10.391749 [CHALLENGER]
+[PEC-TIMEOUT-HIT] DYDX-USDT 15min: 8 bars >= 8 max, actual_timeout=2026-03-27T02:31:10.226201 [CHALLENGER]
+[PEC-TIMEOUT-HIT] WIF-USDT 15min: 8 bars >= 8 max, actual_timeout=2026-03-27T02:31:14.699019 [CHALLENGER]
+[PEC-TIMEOUT-HIT] ORDER-USDT 15min: 8 bars >= 8 max, actual_timeout=2026-03-27T02:31:54.922926 [CHALLENGER]
+[PEC-TIMEOUT-HIT] AGLD-USDT 15min: 8 bars >= 8 max, actual_timeout=2026-03-27T02:32:06.596701 [CHALLENGER]
+[2026-03-27 09:33:39] [UPDATE] Update complete: 3x TP, 2x SL, 11x TIMEOUT, 0x STALE
+[2026-03-27 09:33:39] [DEBUG] Sleeping for 300s until next cycle...
+/Users/geniustarigan/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+[2026-03-27 09:35:36] [START] PEC Persistent Executor started
+[2026-03-27 09:35:36] [START] Workspace: /Users/geniustarigan/.openclaw/workspace
+[2026-03-27 09:35:36] [START] Update interval: 300s (5 minutes)
+[2026-03-27 09:35:36] [START] Source: /Users/geniustarigan/.openclaw/workspace/SIGNALS_MASTER.jsonl
+[2026-03-27 09:35:36] [START] Stop with: pkill -f pec_executor_persistent.py
+[2026-03-27 09:35:36] [INFO] Running update cycle...
+[PEC-TIMEOUT-HIT] ETH-USDT 1h: 4 bars >= 4 max, actual_timeout=2026-03-27T02:31:56.850345 [CHALLENGER]
+[PEC-TIMEOUT-HIT] RAY-USDT 1h: 4 bars >= 4 max, actual_timeout=2026-03-27T02:32:49.092696 [CHALLENGER]
+/Users/geniustarigan/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+[2026-03-27 09:37:00] [START] PEC Persistent Executor started
+[2026-03-27 09:37:00] [START] Workspace: /Users/geniustarigan/.openclaw/workspace
+[2026-03-27 09:37:00] [START] Update interval: 300s (5 minutes)
+[2026-03-27 09:37:00] [START] Source: /Users/geniustarigan/.openclaw/workspace/SIGNALS_MASTER.jsonl
+[2026-03-27 09:37:00] [START] Stop with: pkill -f pec_executor_persistent.py
+[2026-03-27 09:37:00] [INFO] Running update cycle...
+[PEC-TIMEOUT-HIT] ZORA-USDT 15min: 8 bars >= 8 max, actual_timeout=2026-03-27T02:35:03.644659 [CHALLENGER]
+[PEC-TIMEOUT-HIT] ZORA-USDT 15min: 8 bars >= 8 max, actual_timeout=2026-03-27T02:35:10.795405 [CHALLENGER]
+/Users/geniustarigan/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+[2026-03-27 09:37:14] [START] PEC Persistent Executor started
+[2026-03-27 09:37:14] [START] Workspace: /Users/geniustarigan/.openclaw/workspace
+[2026-03-27 09:37:14] [START] Update interval: 300s (5 minutes)
+[2026-03-27 09:37:14] [START] Source: /Users/geniustarigan/.openclaw/workspace/SIGNALS_MASTER.jsonl
+[2026-03-27 09:37:14] [START] Stop with: pkill -f pec_executor_persistent.py
+[2026-03-27 09:37:14] [INFO] Running update cycle...
+[2026-03-27 09:37:30] [UPDATE] Update complete: 0x TP, 0x SL, 4x TIMEOUT, 0x STALE
+[2026-03-27 09:37:30] [DEBUG] Sleeping for 300s until next cycle...
+[PEC-TIMEOUT-HIT] BTC-USDT 1h: 4 bars >= 4 max, actual_timeout=2026-03-27T02:26:17.064254 [CHALLENGER]
+[PEC-TIMEOUT-HIT] SOL-USDT 1h: 4 bars >= 4 max, actual_timeout=2026-03-27T02:26:23.633139 [CHALLENGER]
+[PEC-TIMEOUT-HIT] TAO-USDT 15min: 8 bars >= 8 max, actual_timeout=2026-03-27T02:38:35.779204 [CHALLENGER]
+[2026-03-27 09:39:01] [UPDATE] Update complete: 3x TP, 0x SL, 3x TIMEOUT, 0x STALE
+[2026-03-27 09:39:01] [DEBUG] Sleeping for 300s until next cycle...

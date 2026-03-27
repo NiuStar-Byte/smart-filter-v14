@@ -1,0 +1,32 @@
+[2026-03-27 09:35:35] [START   ] ================================================================================
+[2026-03-27 09:35:35] [START   ] PEC UNIFIED SUPERVISOR started
+[2026-03-27 09:35:35] [START   ] Managing: Signal Generator (main.py) + Signal Executor (pec_executor_persistent.py)
+[2026-03-27 09:35:35] [START   ] Health check interval: 10s
+[2026-03-27 09:35:35] [START   ] Critical restart threshold: 5x
+[2026-03-27 09:35:35] [START   ] Stop with: pkill -f pec_unified_supervisor
+[2026-03-27 09:35:35] [START   ] ================================================================================
+[2026-03-27 09:35:35] [START   ] ✅ Started Signal Generator (main.py) (PID 5390)
+[2026-03-27 09:35:36] [START   ] ✅ Started Signal Executor (pec_executor_persistent.py) (PID 5391)
+[2026-03-27 09:36:59] [START   ] ================================================================================
+[2026-03-27 09:36:59] [START   ] PEC UNIFIED SUPERVISOR started
+[2026-03-27 09:36:59] [START   ] Managing: Signal Generator (main.py) + Signal Executor (pec_executor_persistent.py)
+[2026-03-27 09:36:59] [START   ] Health check interval: 10s
+[2026-03-27 09:36:59] [START   ] Critical restart threshold: 5x
+[2026-03-27 09:36:59] [START   ] Stop with: pkill -f pec_unified_supervisor
+[2026-03-27 09:36:59] [START   ] ================================================================================
+[2026-03-27 09:36:59] [START   ] ✅ Started Signal Generator (main.py) (PID 5466)
+[2026-03-27 09:37:00] [START   ] ✅ Started Signal Executor (pec_executor_persistent.py) (PID 5467)
+[2026-03-27 09:37:08] [STOP    ] Interrupt signal received
+[2026-03-27 09:37:08] [STOP    ] Stopping all processes...
+[2026-03-27 09:37:08] [STOP    ] ✅ Stopped Signal Generator (main.py)
+[2026-03-27 09:37:08] [STOP    ] ✅ Stopped Signal Executor (pec_executor_persistent.py)
+[2026-03-27 09:37:08] [STOP    ] Supervisor exiting
+[2026-03-27 09:37:13] [START   ] ================================================================================
+[2026-03-27 09:37:13] [START   ] PEC UNIFIED SUPERVISOR started
+[2026-03-27 09:37:13] [START   ] Managing: Signal Generator (main.py) + Signal Executor (pec_executor_persistent.py)
+[2026-03-27 09:37:13] [START   ] Health check interval: 10s
+[2026-03-27 09:37:13] [START   ] Critical restart threshold: 5x
+[2026-03-27 09:37:13] [START   ] Stop with: pkill -f pec_unified_supervisor
+[2026-03-27 09:37:13] [START   ] ================================================================================
+[2026-03-27 09:37:13] [START   ] ✅ Started Signal Generator (main.py) (PID 5483)
+[2026-03-27 09:37:14] [START   ] ✅ Started Signal Executor (pec_executor_persistent.py) (PID 5484)
