@@ -1,0 +1,1077 @@
+[INFO] main.py script started.
+/Users/geniustarigan/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+[INFO] main.py script started.
+[INFO] main.py script started.
+[PEC_CONFIG] RR ENFORCEMENT: MIN = 1.25:1, MAX = 2.75:1
+[PEC_CONFIG] WARNING: MAX_BARS for 4h is very low (2)
+[PEC_CONFIG] Validation complete
+[INIT] Signal store ready: /Users/geniustarigan/.openclaw/workspace/SENT_SIGNALS.jsonl
+[INIT] Sent signal tracker ready: /Users/geniustarigan/.openclaw/workspace/SENT_SIGNALS.jsonl
+[INIT] Signals Master writer ready: /Users/geniustarigan/.openclaw/workspace/SIGNALS_MASTER.jsonl
+[WARN] Dual-write verifier init failed: name 'VERBOSE_LOGGING' is not defined. Verification disabled.
+[INIT] Signal tracker ready: /Users/geniustarigan/.openclaw/workspace/signal_status.jsonl
+>>> ENTERED main.py - LIVE SIGNAL MODE
+>>> For PEC backtesting, run: python3 run_pec_backtest.py
+>>> For historical backtest, run: python3 backtest_real.py
+[INFO] Starting Smart Filter engine (LIVE MODE)...
+
+[CYCLE] START at 2026-03-27T02:28:31.182584 (wall: 2026-03-27T09:28:31.182951)
+[INFO] Starting Smart Filter cycle (single pass)...
+[DEDUP] Loaded 46317 signals into cache (instead of reading file 603 times!)
+[LOAD] BTC-USDT: df2h loaded - 100 candles
+[DEBUG-TF4h] BTC-USDT: df4h loaded - 100 candles
+[CRITICAL-DEBUG] SmartFilter.__init__ BTC-USDT 15min: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: RANGE
+[BTC-USDT] analyze() start @ 2026-03-27T02:28:32.973466
+[SUMMARY] Reversal decision: NONE
+[BTC-USDT] [MACD ENHANCED] Signal: LONG | long_met=4/3, short_met=1
+[BTC-USDT] [Momentum ENHANCED] Signal: SHORT | short_met=4/3, long_met=1
+[BTC-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=3/5, vwap_distance=0.0047, divergence_bars=5, crossover=True
+[BTC-USDT] [Chop Zone Check] Signal: LONG | long_met=2, short_met=0, chop_zone=55.464180179750215, ema9=68936.7117522947, ema21=68893.93658998182, adx=14.546957996936769
+[BTC-USDT] [Wick Dominance] lower=55.7000 upper=0.0000 ratio=1.30 exhaust_long=3 exhaust_short=2 | SHORT (3/4)
+[BTC-USDT] [Absorption] price_low=True vol=False pressure_long=0.0007 pressure_short=-0.0007 | LONG (3/2)
+[BTC-USDT] [S/R SIMPLIFIED] Signal: LONG | close=69011.9000 within margin of support=68532.3000
+[BTC-USDT] [Smart Money] vol_ratio=0.43 above_vwap=True below_vwap=True | SHORT (2/3)
+[BTC-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.42 | SHORT (1/2)
+[BTC-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=3/4, spread_ratio=0.57, spread_pct=0.0014, slippage_ok=True
+[BTC-USDT] [Volatility Squeeze ENHANCED] Signal: SHORT | short_met=3/6, squeeze_bars=4, bb_tightening=0, momentum=0, volume_buildup=False
+[BTC-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] BTC-USDT: direction=SHORT | score=6>=10? False | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=False
+[BTC-USDT] [FILTERS_OK_DEBUG] direction=True | score_ok=False | passes_ok=True | soft_gk_ok=True | route_veto_ok=True(TREND CONTINUATION)
+[SUMMARY] Market regime detected: RANGE
+[CRITICAL-DEBUG] SmartFilter.__init__ BTC-USDT 30min: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: BEAR
+[BTC-USDT] analyze() start @ 2026-03-27T02:28:33.013827
+[SUMMARY] Reversal decision: NONE
+[BTC-USDT] [MACD ENHANCED] Signal: LONG | long_met=5/3, short_met=1
+[BTC-USDT] [Momentum ENHANCED] Signal: SHORT | short_met=4/3, long_met=0
+[TF-PARAMS] BTC-USDT 30min: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[BTC-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=3/5, vwap_distance=0.0168, divergence_bars=5, crossover=False
+[BTC-USDT] [Chop Zone Check] No signal fired | long_met=2, short_met=2, chop_zone=59.817483434436106, ema9=68898.50549749692, ema21=68961.57576034617, adx=23.384290071473743
+[BTC-USDT] [Wick Dominance] lower=55.7000 upper=120.7000 ratio=1.30 exhaust_long=3 exhaust_short=2 | SHORT (3/4)
+[BTC-USDT] [Absorption] price_low=True vol=False pressure_long=0.0005 pressure_short=-0.0005 | LONG (3/2)
+[TF-PARAMS] BTC-USDT 30min: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[BTC-USDT] [S/R SIMPLIFIED] Signal: LONG | close=69011.9000 within margin of support=68157.2000
+[BTC-USDT] [Smart Money] vol_ratio=0.48 above_vwap=False below_vwap=True | SHORT (1/3)
+[BTC-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.44 | SHORT (1/2)
+[BTC-USDT] [Spread Filter ENHANCED] Signal: SHORT | short_met=3/4, spread_ratio=0.64, spread_pct=0.0032, slippage_ok=True
+[BTC-USDT] [ATR Momentum Burst SIMPLIFIED] Signal: SHORT | atr expanding, move=0.000510 (> 0.000096)
+[TF-PARAMS] BTC-USDT 30min: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[BTC-USDT] [Volatility Squeeze ENHANCED] Signal: SHORT | short_met=2/6, squeeze_bars=1, bb_tightening=0, momentum=0, volume_buildup=False
+[BTC-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] BTC-USDT: direction=SHORT | score=8>=10? False | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=False
+[BTC-USDT] [FILTERS_OK_DEBUG] direction=True | score_ok=False | passes_ok=True | soft_gk_ok=True | route_veto_ok=True(TREND CONTINUATION)
+[SUMMARY] Market regime detected: BEAR
+[CRITICAL-DEBUG] SmartFilter.__init__ BTC-USDT 1h: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: BEAR
+[BTC-USDT] analyze() start @ 2026-03-27T02:28:33.040660
+[SUMMARY] Reversal decision: NONE
+[BTC-USDT] [TREND ENHANCED] Signal: SHORT | short_met=8/7, long_met=1
+[BTC-USDT] [MACD ENHANCED] Signal: LONG | long_met=5/3, short_met=1
+[BTC-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=3/5, vwap_distance=0.0154, divergence_bars=5, crossover=False
+[BTC-USDT] [Chop Zone Check] No signal fired | long_met=2, short_met=2, chop_zone=52.248416451480374, ema9=68948.28000863918, ema21=69278.22536933048, adx=27.610262185078568
+[BTC-USDT] [Wick Dominance] lower=55.7000 upper=120.7000 ratio=1.30 exhaust_long=4 exhaust_short=1 | SHORT (3/4)
+[BTC-USDT] [Absorption] price_low=True vol=False pressure_long=0.0005 pressure_short=-0.0005 | LONG (3/1)
+[BTC-USDT] [S/R SIMPLIFIED] Signal: LONG | close=69011.9000 within margin of support=68157.2000
+[BTC-USDT] [Smart Money] vol_ratio=0.20 above_vwap=False below_vwap=True | SHORT (1/3)
+[BTC-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.21 | SHORT (1/2)
+[BTC-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=3/4, spread_ratio=0.46, spread_pct=0.0032, slippage_ok=True
+[BTC-USDT] [Volatility Model SIMPLIFIED] Signal: SHORT | atr=506.378571 > ma=459.897500, close=69011.9000 < ema20=69248.1916
+[BTC-USDT] [Volatility Squeeze ENHANCED] Signal: SHORT | short_met=3/6, squeeze_bars=0, bb_tightening=2, momentum=0, volume_buildup=False
+[BTC-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] BTC-USDT: direction=SHORT | score=7>=10? False | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=False
+[BTC-USDT] [FILTERS_OK_DEBUG] direction=True | score_ok=False | passes_ok=True | soft_gk_ok=True | route_veto_ok=True(TREND CONTINUATION)
+[SUMMARY] Market regime detected: BEAR
+[CRITICAL-DEBUG] SmartFilter.__init__ BTC-USDT 2h: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: BEAR
+[BTC-USDT] analyze() start @ 2026-03-27T02:28:33.066244
+[SUMMARY] Reversal decision: NONE
+[BTC-USDT] [TREND ENHANCED] Signal: SHORT | short_met=10/7, long_met=1
+[BTC-USDT] [MACD ENHANCED] Signal: SHORT | short_met=3/3, long_met=2
+[BTC-USDT] [Momentum ENHANCED] Signal: SHORT | short_met=3/3, long_met=0
+[TF-PARAMS] BTC-USDT 2h: MEDIUM VOLATILITY (981) → 2h thresholds
+[TF-PARAMS] BTC-USDT 2h: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[BTC-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=3/5, vwap_distance=0.0141, divergence_bars=5, crossover=False
+[BTC-USDT] [Chop Zone Check] Signal: SHORT | long_met=1, short_met=3, chop_zone=39.79133542556938, ema9=69143.26525644097, ema21=69650.29125057362, adx=20.57109247357746
+[BTC-USDT] [Wick Dominance] lower=55.7000 upper=120.7000 ratio=1.30 exhaust_long=3 exhaust_short=2 | SHORT (3/4)
+[BTC-USDT] [Absorption] price_low=True vol=False pressure_long=0.0005 pressure_short=-0.0005 | LONG (3/1)
+[TF-PARAMS] BTC-USDT 2h: MEDIUM VOLATILITY (981) → 2h thresholds
+[TF-PARAMS] BTC-USDT 2h: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[BTC-USDT] [S/R SIMPLIFIED] Signal: LONG | close=69011.9000 within margin of support=68157.2000
+[BTC-USDT] [Smart Money] vol_ratio=0.13 above_vwap=False below_vwap=True | SHORT (1/3)
+[BTC-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.11 | SHORT (1/2)
+[BTC-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=3/4, spread_ratio=0.32, spread_pct=0.0032, slippage_ok=True
+[TF-PARAMS] BTC-USDT 2h: MEDIUM VOLATILITY (981) → 2h thresholds
+[TF-PARAMS] BTC-USDT 2h: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[BTC-USDT] [Volatility Squeeze ENHANCED] Signal: SHORT | short_met=2/6, squeeze_bars=0, bb_tightening=0, momentum=0, volume_buildup=False
+[BTC-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] BTC-USDT: direction=SHORT | score=9>=10? False | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=False
+[BTC-USDT] [FILTERS_OK_DEBUG] direction=True | score_ok=False | passes_ok=True | soft_gk_ok=True | route_veto_ok=True(TREND CONTINUATION)
+[SUMMARY] Market regime detected: BEAR
+[DEBUG-2h] BTC-USDT: analyze() returned - filters_ok=False
+[DEBUG-2h] BTC-USDT: score=9/19, passes=1/1, bias=SHORT, filters_ok=False
+[DEBUG-2h] BTC-USDT: REJECTED - filters_ok=False (score=9, MIN_SCORE=10 from smart_filter.py)
+[MIN-SCORE-OVERRIDE] 2h BTC-USDT: score=9 >= MIN_SCORE_2h=8 → filters_ok=True (overridden from global MIN_SCORE=10)
+[CRITICAL-DEBUG] SmartFilter.__init__ BTC-USDT 4h: min_score=10 (source of truth for ALL timeframes)
+[BTC-USDT] analyze() start @ 2026-03-27T02:28:33.091967
+[SUMMARY] Reversal decision: NONE
+[BTC-USDT] [TREND ENHANCED] Signal: SHORT | short_met=9/7, long_met=0
+[BTC-USDT] [MACD ENHANCED] Signal: SHORT | short_met=4/3, long_met=1
+[BTC-USDT] [Momentum ENHANCED] Signal: LONG | long_met=3/3, short_met=2
+[TF-PARAMS] BTC-USDT 4h: HIGH VOLATILITY (1596) → 4h thresholds
+[BTC-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=4/5, vwap_distance=0.0285, divergence_bars=5, crossover=False
+[BTC-USDT] [Chop Zone Check] Signal: SHORT | long_met=0, short_met=2, chop_zone=53.99665968852084, ema9=69503.85402492425, ema21=69905.78499328319, adx=18.731795854201756
+[BTC-USDT] [Wick Dominance] lower=288.3000 upper=162.3000 ratio=1.31 exhaust_long=3 exhaust_short=2 | LONG (4/4)
+[BTC-USDT] [Absorption] price_low=True vol=False pressure_long=-0.0028 pressure_short=0.0028 | No signal (long=2 short=2, need 1)
+[TF-PARAMS] BTC-USDT 4h: HIGH VOLATILITY (1596) → 4h thresholds
+[BTC-USDT] [S/R SIMPLIFIED] Signal: LONG | close=69011.9000 within margin of support=68157.2000
+[BTC-USDT] [Smart Money] vol_ratio=0.42 above_vwap=False below_vwap=True | No signal (long=2 short=2, need 1)
+[BTC-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.39 | LONG (2/1)
+[BTC-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=4/4, spread_ratio=0.64, spread_pct=0.0093, slippage_ok=True
+[TF-PARAMS] BTC-USDT 4h: HIGH VOLATILITY (1596) → 4h thresholds
+[BTC-USDT] [Volatility Squeeze ENHANCED] Signal: LONG | long_met=2/6, squeeze_bars=1, bb_tightening=0, momentum=0, volume_buildup=False
+[BTC-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] BTC-USDT: direction=LONG | score=8>=10? False | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=False
+[BTC-USDT] [FILTERS_OK_DEBUG] direction=True | score_ok=False | passes_ok=True | soft_gk_ok=True | route_veto_ok=True(TREND CONTINUATION)
+[SUMMARY] Market regime detected: BEAR
+[MIN-SCORE-OVERRIDE] 4h BTC-USDT: score=8 >= MIN_SCORE_4h=8 → filters_ok=True (overridden from global MIN_SCORE=10)
+[LOAD] ETH-USDT: df2h loaded - 100 candles
+[DEBUG-TF4h] ETH-USDT: df4h loaded - 100 candles
+[CRITICAL-DEBUG] SmartFilter.__init__ ETH-USDT 15min: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: RANGE
+[ETH-USDT] analyze() start @ 2026-03-27T02:28:34.202763
+[SUMMARY] Reversal decision: NONE
+[ETH-USDT] [TREND ENHANCED] Signal: LONG | long_met=7/7, short_met=1
+[ETH-USDT] [MACD ENHANCED] Signal: LONG | long_met=4/3, short_met=1
+[ETH-USDT] [Momentum ENHANCED] Signal: SHORT | short_met=3/3, long_met=1
+[ETH-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=3/5, vwap_distance=0.0039, divergence_bars=5, crossover=True
+[ETH-USDT] [Chop Zone Check] Signal: LONG | long_met=2, short_met=0, chop_zone=59.62835121582263, ema9=2069.891312580969, ema21=2067.1031674950173, adx=14.737338026385398
+[ETH-USDT] [Wick Dominance] lower=1.9600 upper=0.1600 ratio=1.30 exhaust_long=4 exhaust_short=1 | SHORT (3/4)
+[ETH-USDT] [Absorption] price_low=True vol=False pressure_long=0.0004 pressure_short=-0.0004 | LONG (3/2)
+[ETH-USDT] [S/R SIMPLIFIED] Signal: LONG | close=2072.3400 within margin of support=2054.5900
+[ETH-USDT] [Smart Money] vol_ratio=0.37 above_vwap=True below_vwap=True | SHORT (2/3)
+[ETH-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.34 | SHORT (1/2)
+[ETH-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=3/4, spread_ratio=0.46, spread_pct=0.0014, slippage_ok=True
+[ETH-USDT] [Volatility Squeeze ENHANCED] Signal: SHORT | short_met=3/6, squeeze_bars=3, bb_tightening=0, momentum=0, volume_buildup=False
+[ETH-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] ETH-USDT: direction=SHORT | score=6>=10? False | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=False
+[ETH-USDT] [FILTERS_OK_DEBUG] direction=True | score_ok=False | passes_ok=True | soft_gk_ok=True | route_veto_ok=True(TREND CONTINUATION)
+[SUMMARY] Market regime detected: RANGE
+[CRITICAL-DEBUG] SmartFilter.__init__ ETH-USDT 30min: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: BEAR
+[ETH-USDT] analyze() start @ 2026-03-27T02:28:34.239436
+[SUMMARY] Reversal decision: NONE
+[ETH-USDT] [MACD ENHANCED] Signal: LONG | long_met=4/3, short_met=1
+[ETH-USDT] [Momentum ENHANCED] Signal: SHORT | short_met=4/3, long_met=0
+[TF-PARAMS] ETH-USDT 30min: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[ETH-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=3/5, vwap_distance=0.0217, divergence_bars=5, crossover=False
+[ETH-USDT] [Chop Zone Check] No signal fired | long_met=2, short_met=2, chop_zone=59.08854651556746, ema9=2067.5420395653696, ema21=2068.1552448023563, adx=26.01115472005246
+[ETH-USDT] [Wick Dominance] lower=1.9600 upper=2.9600 ratio=1.30 exhaust_long=3 exhaust_short=2 | SHORT (3/4)
+[ETH-USDT] [Absorption] price_low=True vol=False pressure_long=0.0008 pressure_short=-0.0008 | LONG (3/2)
+[TF-PARAMS] ETH-USDT 30min: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[ETH-USDT] [S/R SIMPLIFIED] Signal: LONG | close=2072.3400 within margin of support=2034.1400
+[ETH-USDT] [Smart Money] vol_ratio=0.39 above_vwap=False below_vwap=True | SHORT (1/3)
+[ETH-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.36 | SHORT (1/2)
+[ETH-USDT] [Spread Filter ENHANCED] Signal: SHORT | short_met=3/4, spread_ratio=0.54, spread_pct=0.0032, slippage_ok=True
+[TF-PARAMS] ETH-USDT 30min: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[ETH-USDT] [Volatility Squeeze ENHANCED] Signal: SHORT | short_met=2/6, squeeze_bars=0, bb_tightening=0, momentum=0, volume_buildup=False
+[ETH-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] ETH-USDT: direction=SHORT | score=7>=10? False | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=False
+[ETH-USDT] [FILTERS_OK_DEBUG] direction=True | score_ok=False | passes_ok=True | soft_gk_ok=True | route_veto_ok=True(TREND CONTINUATION)
+[SUMMARY] Market regime detected: BEAR
+[CRITICAL-DEBUG] SmartFilter.__init__ ETH-USDT 1h: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: BEAR
+[ETH-USDT] analyze() start @ 2026-03-27T02:28:34.265700
+[SUMMARY] Reversal decision: NONE
+[ETH-USDT] [TREND ENHANCED] Signal: SHORT | short_met=8/7, long_met=1
+[ETH-USDT] [MACD ENHANCED] Signal: LONG | long_met=5/3, short_met=1
+[ETH-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=3/5, vwap_distance=0.0239, divergence_bars=5, crossover=False
+[ETH-USDT] [Chop Zone Check] No signal fired | long_met=2, short_met=2, chop_zone=56.716846837452074, ema9=2067.8955005357493, ema21=2081.1050782563934, adx=32.04811049492921
+[ETH-USDT] [Wick Dominance] lower=1.9600 upper=2.9600 ratio=1.30 exhaust_long=4 exhaust_short=1 | SHORT (3/4)
+[ETH-USDT] [Absorption] price_low=True vol=False pressure_long=0.0008 pressure_short=-0.0008 | LONG (3/1)
+[ETH-USDT] [S/R SIMPLIFIED] Signal: LONG | close=2072.3400 within margin of support=2034.1400
+[ETH-USDT] [Smart Money] vol_ratio=0.17 above_vwap=False below_vwap=True | SHORT (1/3)
+[ETH-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.18 | SHORT (1/2)
+[ETH-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=3/4, spread_ratio=0.37, spread_pct=0.0032, slippage_ok=True
+[ETH-USDT] [Volatility Squeeze ENHANCED] Signal: SHORT | short_met=3/6, squeeze_bars=0, bb_tightening=2, momentum=0, volume_buildup=False
+[ETH-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] ETH-USDT: direction=SHORT | score=6>=10? False | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=False
+[ETH-USDT] [FILTERS_OK_DEBUG] direction=True | score_ok=False | passes_ok=True | soft_gk_ok=True | route_veto_ok=True(TREND CONTINUATION)
+[SUMMARY] Market regime detected: BEAR
+[CRITICAL-DEBUG] SmartFilter.__init__ ETH-USDT 2h: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: BEAR
+[ETH-USDT] analyze() start @ 2026-03-27T02:28:34.291926
+[SUMMARY] Reversal decision: NONE
+[ETH-USDT] [TREND ENHANCED] Signal: SHORT | short_met=10/7, long_met=1
+[ETH-USDT] [MACD ENHANCED] Signal: SHORT | short_met=3/3, long_met=2
+[ETH-USDT] [Momentum ENHANCED] Signal: SHORT | short_met=3/3, long_met=0
+[TF-PARAMS] ETH-USDT 2h: MEDIUM VOLATILITY (43) → 2h thresholds
+[TF-PARAMS] ETH-USDT 2h: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[ETH-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=3/5, vwap_distance=0.0266, divergence_bars=5, crossover=False
+[ETH-USDT] [Chop Zone Check] Signal: SHORT | long_met=1, short_met=3, chop_zone=35.32074721695601, ema9=2075.8781322560326, ema21=2099.844479201162, adx=25.206994545139306
+[ETH-USDT] [Wick Dominance] lower=1.9600 upper=2.9600 ratio=1.30 exhaust_long=3 exhaust_short=2 | SHORT (3/4)
+[ETH-USDT] [Absorption] price_low=True vol=False pressure_long=0.0008 pressure_short=-0.0008 | LONG (3/1)
+[TF-PARAMS] ETH-USDT 2h: MEDIUM VOLATILITY (43) → 2h thresholds
+[TF-PARAMS] ETH-USDT 2h: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[ETH-USDT] [S/R SIMPLIFIED] Signal: LONG | close=2072.3400 within margin of support=2034.1400
+[ETH-USDT] [Smart Money] vol_ratio=0.11 above_vwap=False below_vwap=True | SHORT (1/3)
+[ETH-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.10 | SHORT (1/2)
+[ETH-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=3/4, spread_ratio=0.26, spread_pct=0.0032, slippage_ok=True
+[TF-PARAMS] ETH-USDT 2h: MEDIUM VOLATILITY (43) → 2h thresholds
+[TF-PARAMS] ETH-USDT 2h: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[ETH-USDT] [Volatility Squeeze ENHANCED] Signal: SHORT | short_met=2/6, squeeze_bars=0, bb_tightening=0, momentum=0, volume_buildup=False
+[ETH-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] ETH-USDT: direction=SHORT | score=9>=10? False | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=False
+[ETH-USDT] [FILTERS_OK_DEBUG] direction=True | score_ok=False | passes_ok=True | soft_gk_ok=True | route_veto_ok=True(TREND CONTINUATION)
+[SUMMARY] Market regime detected: BEAR
+[DEBUG-2h] ETH-USDT: analyze() returned - filters_ok=False
+[DEBUG-2h] ETH-USDT: score=9/19, passes=1/1, bias=SHORT, filters_ok=False
+[DEBUG-2h] ETH-USDT: REJECTED - filters_ok=False (score=9, MIN_SCORE=10 from smart_filter.py)
+[MIN-SCORE-OVERRIDE] 2h ETH-USDT: score=9 >= MIN_SCORE_2h=8 → filters_ok=True (overridden from global MIN_SCORE=10)
+[CRITICAL-DEBUG] SmartFilter.__init__ ETH-USDT 4h: min_score=10 (source of truth for ALL timeframes)
+[ETH-USDT] analyze() start @ 2026-03-27T02:28:34.318404
+[SUMMARY] Reversal decision: NONE
+[ETH-USDT] [TREND ENHANCED] Signal: SHORT | short_met=10/7, long_met=1
+[ETH-USDT] [MACD ENHANCED] Signal: SHORT | short_met=4/3, long_met=1
+[ETH-USDT] [Momentum ENHANCED] Signal: LONG | long_met=3/3, short_met=2
+[TF-PARAMS] ETH-USDT 4h: HIGH VOLATILITY (84) → 4h thresholds
+[ETH-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=4/5, vwap_distance=0.0344, divergence_bars=5, crossover=False
+[ETH-USDT] [Chop Zone Check] Signal: SHORT | long_met=1, short_met=3, chop_zone=48.343559516504435, ema9=2093.095258639515, ema21=2115.2216209826147, adx=21.44541280394947
+[ETH-USDT] [Wick Dominance] lower=3.7700 upper=4.6500 ratio=1.31 exhaust_long=2 exhaust_short=3 | LONG (3/4)
+[ETH-USDT] [Absorption] price_low=True vol=False pressure_long=-0.0059 pressure_short=0.0059 | No signal (long=2 short=2, need 1)
+[TF-PARAMS] ETH-USDT 4h: HIGH VOLATILITY (84) → 4h thresholds
+[ETH-USDT] [S/R SIMPLIFIED] Signal: LONG | close=2072.3400 within margin of support=2034.1400
+[ETH-USDT] [Smart Money] vol_ratio=0.42 above_vwap=False below_vwap=True | No signal (long=2 short=2, need 1)
+[ETH-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.38 | LONG (2/1)
+[ETH-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=4/4, spread_ratio=0.57, spread_pct=0.0098, slippage_ok=True
+[TF-PARAMS] ETH-USDT 4h: HIGH VOLATILITY (84) → 4h thresholds
+[ETH-USDT] [Volatility Squeeze ENHANCED] Signal: LONG | long_met=2/6, squeeze_bars=0, bb_tightening=0, momentum=0, volume_buildup=False
+[ETH-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] ETH-USDT: direction=LONG | score=8>=10? False | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=False
+[ETH-USDT] [FILTERS_OK_DEBUG] direction=True | score_ok=False | passes_ok=True | soft_gk_ok=True | route_veto_ok=True(TREND CONTINUATION)
+[SUMMARY] Market regime detected: BEAR
+[MIN-SCORE-OVERRIDE] 4h ETH-USDT: score=8 >= MIN_SCORE_4h=8 → filters_ok=True (overridden from global MIN_SCORE=10)
+[LOAD] SOL-USDT: df2h loaded - 100 candles
+[DEBUG-TF4h] SOL-USDT: df4h loaded - 100 candles
+[CRITICAL-DEBUG] SmartFilter.__init__ SOL-USDT 15min: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: RANGE
+[SOL-USDT] analyze() start @ 2026-03-27T02:28:35.557278
+[SUMMARY] Reversal decision: BEARISH (Detectors: 2)
+[SOL-USDT] [MACD ENHANCED] Signal: LONG | long_met=4/3, short_met=1
+[SOL-USDT] [Momentum ENHANCED] Signal: SHORT | short_met=3/3, long_met=1
+[SOL-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=3/5, vwap_distance=0.0107, divergence_bars=5, crossover=False
+[SOL-USDT] [MTF Volume Agreement ENHANCED] Signal: SHORT | short_met=2/4, consensus=0, volume_ratio=1.40, buildup_bars=1, weakness_detected=True
+[SOL-USDT] [Chop Zone Check] Market too choppy (chop_zone=66.02 >= 60)
+[SOL-USDT] [Wick Dominance] lower=0.0700 upper=0.0200 ratio=1.30 exhaust_long=2 exhaust_short=3 | SHORT (3/4)
+[SOL-USDT] [Absorption] price_low=True vol=False pressure_long=0.0015 pressure_short=-0.0015 | LONG (3/2)
+[SOL-USDT] [S/R SIMPLIFIED] Signal: LONG | close=86.7400 within margin of support=86.1900
+[SOL-USDT] [Smart Money] vol_ratio=0.75 above_vwap=False below_vwap=True | SHORT (1/3)
+[SOL-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.79 | SHORT (1/2)
+[SOL-USDT] [Spread Filter ENHANCED] Signal: SHORT | short_met=3/4, spread_ratio=0.62, spread_pct=0.0021, slippage_ok=True
+[SOL-USDT] [Liquidity Awareness ENHANCED] Signal: SHORT | short_met=2/4, wall_delta=-1.0000, density_type=ASK_SIDE, spread=N/A, volume_ratio=1.40
+[SOL-USDT] [Volatility Squeeze ENHANCED] Signal: SHORT | short_met=4/6, squeeze_bars=4, bb_tightening=0, momentum=0, volume_buildup=True
+[SOL-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: BEARISH (Detectors: 2)
+[CRITICAL-FILTERS_OK] SOL-USDT: direction=SHORT | score=10>=10? True | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=True
+[SOL-USDT] ✅ FINAL SIGNAL (filters_ok): SHORT on SOL-USDT @ 86.740000 | Score: 10/19 | Passed GK: 1/1 | Confidence: 64.6% (Weighted: 54.6/84.5) | Route: REVERSAL
+[SUMMARY] Market regime detected: RANGE
+[GATEKEEPER-DISABLED] 15min SOL-USDT: DirectionAwareGatekeeper bypassed (code preserved)
+[OrderBookDeltaLog] SOL-USDT | ts=2026-03-27T02:28:35.569695 | source=main_log | buy_wall=1362.455 | sell_wall=332.451 | wall_delta=1030.004 | midprice=86.775
+[RestingOrderDensityLog] SOL-USDT | ts=2026-03-27T02:28:35.569695 | source=main_log | bid_density=20.69% | ask_density=5.15% | bid_top=1362.455 | ask_top=332.451 | bid_total=6585.517 | ask_total=6458.292999999999
+[SuperGK][MAIN] DISABLED (broken) - bypassing SuperGK for ALL signals
+[SuperGK][MAIN] Result -> bias=SHORT super_gk_ok=True (bypassed)
+[LOG] Sending 15min alert for SOL-USDT
+[DEBUG] entry_price_final=86.68323000 analyzer_price=86.74
+[SIGNAL] SOL-USDT        15min  SHORT  @        86.68 (Score: 10/19) | 2026-03-27 09:28:36
+[SUMMARY] Market regime detected: RANGE
+[PHASE3B-RQ] 15min SOL-USDT SHORT: detector_consensus=✓, momentum_alignment=✗, trend_strength=✗, direction_regime_match=✗ → Strength=0%
+[PHASE3B-FALLBACK] 15min SOL-USDT: REVERSAL rejected (Gate RQ4 failed: SHORT reversal in RANGE regime is counter-trend) → Routed to TREND_CONTINUATION
+[PHASE3B-SCORE] 15min SOL-USDT: ✅ TREND_CONT: SHORT_RANGE (always allowed as fallback) (score: 55.0)
+[tp_sl_retracement] MARKET_DRIVEN | direction=SHORT entry=86.68323000 tp=86.22000000 sl=86.97000000 rr=1.62 source=market_structure_short
+[DEBUG] calculate_tp_sl -> tp=86.22 sl=86.97 chosen_ratio=None achieved_rr=1.62
+[DEBUG] tp_sl full dict for SOL-USDT: {'tp': 86.22, 'sl': 86.97, 'achieved_rr': 1.62, 'source': 'market_structure_short', 'reward': 0.4645674000000068, 'risk': 0.2867700000000042, 'fib_levels': None, 'chosen_ratio': None, 'sl_capped': False}
+[FIRED] Logged: 57736b41-ff2a-4edf-825f-7a1e8d274c26, SOL-USDT, 15min, SHORT, 2026-03-27T02:28:36.543625, 99, SCORE: 10, MAX SCORE: 19, PASSED: 1, MAX PASSED: 1, WEIGHTS: 54.6, MAX WEIGHTS: 84.5, CONFIDENCE RATE: 64.6%
+[RR_ENFORCE] 15min SOL-USDT: VALID RR 1.620 (no adjustment)
+[RR_ENFORCE] 15min signal ACCEPTED: SOL-USDT - RR 1.620 (VALID)
+[SignalStore] Signal stored: 552c4ba4... (SOL-USDT 15min SHORT)
+[STORED] Signal captured: SOL-USDT 15min SHORT UUID=552c4ba4...
+[TIER] Loaded latest entry from SIGNAL_TIERS.json (timestamp: 2026-03-27 09:25:55 GMT+7)
+[TIER] Loaded latest entry from SIGNAL_TIERS.json (timestamp: 2026-03-27 09:25:55 GMT+7)
+[TIER] 15min SOL-USDT: Tier-X
+[DEBUG] 15min: Calling send_telegram_alert for SOL-USDT (tf=15min, Entry=86.68323)
+[Telegram][MSG] 3.A. SOL-USDT
+3.A. SOL-USDT (15min)
+🔎 Regime: RANGE
+🛩️ SHORT Signal
+❓ TREND_CONTINUATION
+💰 86.6832
+🏁 TP: 86.2200 (+0.53%)
+⛔ SL: 86.9700 (-0.33%)
+📊 Score: 10/19
+🎯 Passed: 1/1
+🔴 Confidence: 64.6%
+🏋️‍♀️ Weighted: 54.6/84.5
+⛓️ Consensus: 🪙 POS
+📊 R:R: 1.62:1 | ATR-Based 1.6:1 RR
+⛓️‍💥 MAIN_BLOCKCHAIN
+📨 Telegram alert sent: SOL-USDT SHORT TREND_CONTINUATION message_id=370148
+[DEBUG] 15min: send_telegram_alert returned True for SOL-USDT
+[✅ SENT]  SOL-USDT        15min  → Telegram (ID: 552c4ba4...) | 2026-03-27 09:28:38
+[✅ PEC SENT] SOL-USDT        15min  to SENT_SIGNALS.jsonl | 2026-03-27 09:28:38
+[EXECUTOR] Event-triggered backtest for SOL-USDT 15min (UUID: 552c4ba4-d38)
+[CRITICAL-DEBUG] SmartFilter.__init__ SOL-USDT 30min: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: BEAR
+[SOL-USDT] analyze() start @ 2026-03-27T02:28:38.586381
+[SUMMARY] Reversal decision: NONE
+[SOL-USDT] [TREND ENHANCED] Signal: SHORT | short_met=8/7, long_met=1
+[SOL-USDT] [MACD ENHANCED] Signal: LONG | long_met=4/3, short_met=1
+[SOL-USDT] [Momentum ENHANCED] Signal: SHORT | short_met=4/3, long_met=0
+[TF-PARAMS] SOL-USDT 30min: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[SOL-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=3/5, vwap_distance=0.0318, divergence_bars=5, crossover=False
+[SOL-USDT] [MTF Volume Agreement ENHANCED] Signal: SHORT | short_met=2/4, consensus=0, volume_ratio=0.55, buildup_bars=0, weakness_detected=True
+[SOL-USDT] [Chop Zone Check] Market too choppy (chop_zone=62.16 >= 60)
+[SOL-USDT] [Wick Dominance] lower=0.0700 upper=0.1300 ratio=1.30 exhaust_long=3 exhaust_short=2 | SHORT (4/4)
+[SOL-USDT] [Absorption] price_low=True vol=False pressure_long=0.0016 pressure_short=-0.0016 | LONG (3/2)
+[TF-PARAMS] SOL-USDT 30min: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[SOL-USDT] [S/R SIMPLIFIED] Signal: LONG | close=86.7400 within margin of support=85.4600
+[SOL-USDT] [Smart Money] vol_ratio=0.46 above_vwap=False below_vwap=True | SHORT (1/3)
+[SOL-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.48 | SHORT (1/2)
+[SOL-USDT] [Spread Filter ENHANCED] Signal: SHORT | short_met=3/4, spread_ratio=0.65, spread_pct=0.0041, slippage_ok=True
+[SOL-USDT] [Liquidity Awareness ENHANCED] Signal: SHORT | short_met=2/4, wall_delta=-1.0000, density_type=ASK_SIDE, spread=N/A, volume_ratio=0.55
+[TF-PARAMS] SOL-USDT 30min: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[SOL-USDT] [Volatility Squeeze ENHANCED] Signal: SHORT | short_met=3/6, squeeze_bars=0, bb_tightening=2, momentum=0, volume_buildup=False
+[SOL-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] SOL-USDT: direction=SHORT | score=11>=10? True | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=True
+[SOL-USDT] ✅ FINAL SIGNAL (filters_ok): SHORT on SOL-USDT @ 86.740000 | Score: 11/19 | Passed GK: 1/1 | Confidence: 70.7% (Weighted: 59.7/84.5) | Route: TREND CONTINUATION
+[SUMMARY] Market regime detected: BEAR
+[GATEKEEPER-DISABLED] 30min SOL-USDT: DirectionAwareGatekeeper bypassed (code preserved)
+[OrderBookDeltaLog] SOL-USDT | ts=2026-03-27T02:28:38.606540 | source=main_log | buy_wall=1362.455 | sell_wall=345.454 | wall_delta=1017.001 | midprice=86.775
+[RestingOrderDensityLog] SOL-USDT | ts=2026-03-27T02:28:38.606540 | source=main_log | bid_density=20.69% | ask_density=5.34% | bid_top=1362.455 | ask_top=345.454 | bid_total=6585.511 | ask_total=6471.295999999999
+[SuperGK][MAIN] DISABLED (broken) - bypassing SuperGK for ALL signals
+[SuperGK][MAIN] Result -> bias=SHORT super_gk_ok=True (bypassed)
+[LOG] Sending 30min alert for SOL-USDT
+[DEBUG] entry_price_final=86.68323000 analyzer_price=86.74
+[SIGNAL] SOL-USDT        30min  SHORT  @        86.68 (Score: 11/19) | 2026-03-27 09:28:39
+[SUMMARY] Market regime detected: BEAR
+[PHASE3B-SCORE] 30min SOL-USDT: ✅ TREND_CONT: SHORT trend continuation in BEAR (favorable) (score: 62.5)
+[tp_sl_retracement] MARKET_DRIVEN | direction=SHORT entry=86.68323000 tp=85.56000000 sl=87.43000000 rr=1.5 source=market_structure_short
+[DEBUG] calculate_tp_sl -> tp=85.56 sl=87.43 chosen_ratio=None achieved_rr=1.5
+[DEBUG] tp_sl full dict for SOL-USDT: {'tp': 85.56, 'sl': 87.43, 'achieved_rr': 1.5, 'source': 'market_structure_short', 'reward': 1.1201550000000182, 'risk': 0.7467700000000121, 'fib_levels': None, 'chosen_ratio': None, 'sl_capped': False}
+[FIRED] Logged: 576d2b1f-51b4-42b0-8a96-66074d49f55c, SOL-USDT, 30min, SHORT, 2026-03-27T02:28:39.468591, 99, SCORE: 11, MAX SCORE: 19, PASSED: 1, MAX PASSED: 1, WEIGHTS: 59.7, MAX WEIGHTS: 84.5, CONFIDENCE RATE: 70.7%
+[RR_ENFORCE] 30min SOL-USDT: VALID RR 1.500 (no adjustment)
+[RR_ENFORCE] 30min signal ACCEPTED: SOL-USDT - RR 1.500 (VALID)
+[SignalStore] Signal stored: 5345ac44... (SOL-USDT 30min SHORT)
+[STORED] Signal captured: SOL-USDT 30min SHORT UUID=5345ac44...
+[PHASE4A-S4] 30min SOL-USDT: [PHASE4A-S4] ❌ Misaligned: 30min=LONG, 1h=SHORT (FILTERED)
+[PHASE4A-S4-FILTERED] 30min SOL-USDT SHORT: Rejected by 30min+1h filter
+[LOAD] XRP-USDT: df2h loaded - 100 candles
+[DEBUG-TF4h] XRP-USDT: df4h loaded - 100 candles
+[CRITICAL-DEBUG] SmartFilter.__init__ XRP-USDT 15min: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: BEAR
+[XRP-USDT] analyze() start @ 2026-03-27T02:28:41.159097
+[SUMMARY] Reversal decision: NONE
+[XRP-USDT] [TREND ENHANCED] Signal: LONG | long_met=7/7, short_met=1
+[XRP-USDT] [MACD ENHANCED] Signal: LONG | long_met=5/3, short_met=0
+[XRP-USDT] [Momentum ENHANCED] Signal: SHORT | short_met=4/3, long_met=2
+[XRP-USDT] [VWAP Divergence ENHANCED] Signal: SHORT | short_met=3/5, vwap_distance=0.0017, divergence_bars=3, crossover=True
+[XRP-USDT] [Chop Zone Check] Market too choppy (chop_zone=60.61 >= 60)
+[XRP-USDT] [Wick Dominance] lower=0.0012 upper=0.0000 ratio=1.30 exhaust_long=2 exhaust_short=3 | LONG (3/4)
+[XRP-USDT] [Absorption] price_low=True vol=False pressure_long=-0.0003 pressure_short=0.0003 | SHORT (2/3)
+[XRP-USDT] [S/R SIMPLIFIED] Signal: LONG | close=1.3688 within margin of support=1.3582
+[XRP-USDT] [Smart Money] vol_ratio=0.28 above_vwap=True below_vwap=True | LONG (3/2)
+[XRP-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.08 | LONG (2/1)
+[XRP-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=4/4, spread_ratio=0.48, spread_pct=0.0013, slippage_ok=True
+[XRP-USDT] [Volatility Squeeze ENHANCED] Signal: LONG | long_met=2/6, squeeze_bars=0, bb_tightening=0, momentum=1, volume_buildup=False
+[XRP-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] XRP-USDT: direction=LONG | score=8>=10? False | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=False
+[XRP-USDT] [FILTERS_OK_DEBUG] direction=True | score_ok=False | passes_ok=True | soft_gk_ok=True | route_veto_ok=True(TREND CONTINUATION)
+[SUMMARY] Market regime detected: BEAR
+[CRITICAL-DEBUG] SmartFilter.__init__ XRP-USDT 30min: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: BEAR
+[XRP-USDT] analyze() start @ 2026-03-27T02:28:41.191577
+[SUMMARY] Reversal decision: NONE
+[XRP-USDT] [MACD ENHANCED] Signal: LONG | long_met=5/3, short_met=1
+[XRP-USDT] [Momentum ENHANCED] Signal: SHORT | short_met=5/3, long_met=0
+[TF-PARAMS] XRP-USDT 30min: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[XRP-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=3/5, vwap_distance=0.0107, divergence_bars=5, crossover=False
+[XRP-USDT] [Chop Zone Check] Signal: LONG | long_met=3, short_met=1, chop_zone=56.79434875068907, ema9=1.3643882550591655, ema21=1.3638735830437663, adx=24.806121669118134
+[XRP-USDT] [Wick Dominance] lower=0.0018 upper=0.0010 ratio=1.30 exhaust_long=3 exhaust_short=2 | LONG (3/4)
+[XRP-USDT] [Absorption] price_low=True vol=False pressure_long=0.0004 pressure_short=-0.0004 | LONG (3/2)
+[TF-PARAMS] XRP-USDT 30min: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[XRP-USDT] [S/R SIMPLIFIED] Signal: LONG | close=1.3688 within margin of support=1.3364
+[XRP-USDT] [Smart Money] vol_ratio=0.15 above_vwap=False below_vwap=True | SHORT (1/3)
+[XRP-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.17 | SHORT (1/2)
+[XRP-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=3/4, spread_ratio=0.43, spread_pct=0.0023, slippage_ok=True
+[TF-PARAMS] XRP-USDT 30min: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[XRP-USDT] [Volatility Squeeze ENHANCED] Signal: SHORT | short_met=2/6, squeeze_bars=0, bb_tightening=0, momentum=0, volume_buildup=False
+[XRP-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] XRP-USDT: direction=NEUTRAL | score=7>=10? False | passes=0>=0? True | soft_passed=False | route_veto=✓ → filters_ok=False
+[XRP-USDT] [FILTERS_OK_DEBUG] direction=False | score_ok=False | passes_ok=True | soft_gk_ok=False | route_veto_ok=True(TREND CONTINUATION)
+[SUMMARY] Market regime detected: BEAR
+[CRITICAL-DEBUG] SmartFilter.__init__ XRP-USDT 1h: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: BEAR
+[XRP-USDT] analyze() start @ 2026-03-27T02:28:41.219750
+[SUMMARY] Reversal decision: NONE
+[XRP-USDT] [TREND ENHANCED] Signal: SHORT | short_met=8/7, long_met=1
+[XRP-USDT] [MACD ENHANCED] Signal: LONG | long_met=5/3, short_met=1
+[XRP-USDT] [Momentum ENHANCED] Signal: SHORT | short_met=3/3, long_met=1
+[XRP-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=3/5, vwap_distance=0.0246, divergence_bars=5, crossover=False
+[XRP-USDT] [Chop Zone Check] No signal fired | long_met=2, short_met=2, chop_zone=44.405964276668946, ema9=1.364333323753434, ema21=1.3705316192762818, adx=33.307167602214605
+[XRP-USDT] [Wick Dominance] lower=0.0015 upper=0.0010 ratio=1.30 exhaust_long=5 exhaust_short=0 | LONG (3/4)
+[XRP-USDT] [Absorption] price_low=True vol=False pressure_long=0.0006 pressure_short=-0.0006 | LONG (3/1)
+[XRP-USDT] [S/R SIMPLIFIED] Signal: LONG | close=1.3685 within margin of support=1.3364
+[XRP-USDT] [Smart Money] vol_ratio=0.10 above_vwap=False below_vwap=True | SHORT (1/3)
+[XRP-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.12 | SHORT (1/2)
+[XRP-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=3/4, spread_ratio=0.31, spread_pct=0.0023, slippage_ok=True
+[XRP-USDT] [Volatility Model SIMPLIFIED] Signal: SHORT | atr=0.011204 > ma=0.009923, close=1.3685 < ema20=1.3699
+[XRP-USDT] [Volatility Squeeze ENHANCED] Signal: SHORT | short_met=3/6, squeeze_bars=0, bb_tightening=2, momentum=0, volume_buildup=False
+[XRP-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] XRP-USDT: direction=SHORT | score=7>=10? False | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=False
+[XRP-USDT] [FILTERS_OK_DEBUG] direction=True | score_ok=False | passes_ok=True | soft_gk_ok=True | route_veto_ok=True(TREND CONTINUATION)
+[SUMMARY] Market regime detected: BEAR
+[CRITICAL-DEBUG] SmartFilter.__init__ XRP-USDT 2h: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: BEAR
+[XRP-USDT] analyze() start @ 2026-03-27T02:28:41.247230
+[SUMMARY] Reversal decision: NONE
+[XRP-USDT] [TREND ENHANCED] Signal: SHORT | short_met=10/7, long_met=1
+[XRP-USDT] [MACD ENHANCED] Signal: SHORT | short_met=3/3, long_met=2
+[TF-PARAMS] XRP-USDT 2h: MEDIUM VOLATILITY (0) → 2h thresholds
+[TF-PARAMS] XRP-USDT 2h: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[XRP-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=3/5, vwap_distance=0.0348, divergence_bars=5, crossover=False
+[XRP-USDT] [Chop Zone Check] Signal: SHORT | long_met=1, short_met=3, chop_zone=33.71230202604944, ema9=1.3684515075062615, ema21=1.381246942150657, adx=24.28903758125717
+[XRP-USDT] [Wick Dominance] lower=0.0014 upper=0.0010 ratio=1.30 exhaust_long=4 exhaust_short=1 | LONG (3/4)
+[XRP-USDT] [Absorption] price_low=True vol=False pressure_long=0.0006 pressure_short=-0.0006 | LONG (3/1)
+[TF-PARAMS] XRP-USDT 2h: MEDIUM VOLATILITY (0) → 2h thresholds
+[TF-PARAMS] XRP-USDT 2h: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[XRP-USDT] [S/R SIMPLIFIED] Signal: LONG | close=1.3684 within margin of support=1.3364
+[XRP-USDT] [Smart Money] vol_ratio=0.08 above_vwap=False below_vwap=True | SHORT (1/3)
+[XRP-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.08 | SHORT (1/2)
+[XRP-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=3/4, spread_ratio=0.22, spread_pct=0.0023, slippage_ok=True
+[XRP-USDT] [Volatility Model SIMPLIFIED] Signal: SHORT | atr=0.014574 > ma=0.014144, close=1.3684 < ema20=1.3804
+[TF-PARAMS] XRP-USDT 2h: MEDIUM VOLATILITY (0) → 2h thresholds
+[TF-PARAMS] XRP-USDT 2h: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[XRP-USDT] [Volatility Squeeze ENHANCED] Signal: SHORT | short_met=2/6, squeeze_bars=0, bb_tightening=0, momentum=0, volume_buildup=False
+[XRP-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] XRP-USDT: direction=SHORT | score=8>=10? False | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=False
+[XRP-USDT] [FILTERS_OK_DEBUG] direction=True | score_ok=False | passes_ok=True | soft_gk_ok=True | route_veto_ok=True(TREND CONTINUATION)
+[SUMMARY] Market regime detected: BEAR
+[DEBUG-2h] XRP-USDT: analyze() returned - filters_ok=False
+[DEBUG-2h] XRP-USDT: score=8/19, passes=1/1, bias=SHORT, filters_ok=False
+[DEBUG-2h] XRP-USDT: REJECTED - filters_ok=False (score=8, MIN_SCORE=10 from smart_filter.py)
+[MIN-SCORE-OVERRIDE] 2h XRP-USDT: score=8 >= MIN_SCORE_2h=8 → filters_ok=True (overridden from global MIN_SCORE=10)
+[CRITICAL-DEBUG] SmartFilter.__init__ XRP-USDT 4h: min_score=10 (source of truth for ALL timeframes)
+[XRP-USDT] analyze() start @ 2026-03-27T02:28:41.279159
+[SUMMARY] Reversal decision: NONE
+[XRP-USDT] [TREND ENHANCED] Signal: SHORT | short_met=10/7, long_met=1
+[XRP-USDT] [MACD ENHANCED] Signal: SHORT | short_met=4/3, long_met=1
+[TF-PARAMS] XRP-USDT 4h: HIGH VOLATILITY (0) → 4h thresholds
+[XRP-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=4/5, vwap_distance=0.0450, divergence_bars=5, crossover=False
+[XRP-USDT] [Chop Zone Check] Signal: SHORT | long_met=1, short_met=3, chop_zone=47.54947490249214, ema9=1.3760510141802254, ema21=1.3926969657721424, adx=24.616337800956885
+[XRP-USDT] [Wick Dominance] lower=0.0027 upper=0.0018 ratio=1.31 exhaust_long=3 exhaust_short=2 | LONG (4/4)
+[XRP-USDT] [Absorption] price_low=True vol=False pressure_long=-0.0057 pressure_short=0.0057 | No signal (long=2 short=2, need 1)
+[TF-PARAMS] XRP-USDT 4h: HIGH VOLATILITY (0) → 4h thresholds
+[XRP-USDT] [S/R SIMPLIFIED] Signal: LONG | close=1.3684 within margin of support=1.3364
+[XRP-USDT] [Smart Money] vol_ratio=0.42 above_vwap=False below_vwap=True | No signal (long=2 short=2, need 1)
+[XRP-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.40 | LONG (2/1)
+[XRP-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=4/4, spread_ratio=0.54, spread_pct=0.0088, slippage_ok=True
+[TF-PARAMS] XRP-USDT 4h: HIGH VOLATILITY (0) → 4h thresholds
+[XRP-USDT] [Volatility Squeeze ENHANCED] Signal: LONG | long_met=2/6, squeeze_bars=0, bb_tightening=0, momentum=0, volume_buildup=False
+[XRP-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] XRP-USDT: direction=LONG | score=7>=10? False | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=False
+[XRP-USDT] [FILTERS_OK_DEBUG] direction=True | score_ok=False | passes_ok=True | soft_gk_ok=True | route_veto_ok=True(TREND CONTINUATION)
+[SUMMARY] Market regime detected: BEAR
+[LOAD] ADA-USDT: df2h loaded - 100 candles
+[DEBUG-TF4h] ADA-USDT: df4h loaded - 100 candles
+[CRITICAL-DEBUG] SmartFilter.__init__ ADA-USDT 15min: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: BEAR
+[ADA-USDT] analyze() start @ 2026-03-27T02:28:42.435504
+[SUMMARY] Reversal decision: NONE
+[ADA-USDT] [MACD ENHANCED] Signal: LONG | long_met=3/3, short_met=1
+[ADA-USDT] [Momentum ENHANCED] Signal: SHORT | short_met=3/3, long_met=1
+[ADA-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=3/5, vwap_distance=0.0123, divergence_bars=5, crossover=False
+[ADA-USDT] [Chop Zone Check] Market too choppy (chop_zone=64.06 >= 60)
+[ADA-USDT] [Wick Dominance] lower=0.0000 upper=0.0000 ratio=1.30 exhaust_long=2 exhaust_short=1 | SHORT (3/4)
+[ADA-USDT] [Absorption] price_low=True vol=False pressure_long=0.0023 pressure_short=-0.0023 | LONG (3/2)
+[ADA-USDT] [S/R SIMPLIFIED] Signal: LONG | close=0.2551 within margin of support=0.2535
+[ADA-USDT] [Smart Money] vol_ratio=0.18 above_vwap=False below_vwap=True | SHORT (1/3)
+[ADA-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.13 | SHORT (1/2)
+[ADA-USDT] [Spread Filter ENHANCED] Signal: SHORT | short_met=3/4, spread_ratio=0.62, spread_pct=0.0020, slippage_ok=True
+[ADA-USDT] [ATR Momentum Burst SIMPLIFIED] Signal: SHORT | atr expanding, move=0.002346 (> 0.000061)
+[ADA-USDT] [Volatility Squeeze ENHANCED] Signal: SHORT | short_met=3/6, squeeze_bars=0, bb_tightening=1, momentum=0, volume_buildup=False
+[ADA-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] ADA-USDT: direction=SHORT | score=8>=10? False | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=False
+[ADA-USDT] [FILTERS_OK_DEBUG] direction=True | score_ok=False | passes_ok=True | soft_gk_ok=True | route_veto_ok=True(NONE)
+[SUMMARY] Market regime detected: BEAR
+[CRITICAL-DEBUG] SmartFilter.__init__ ADA-USDT 30min: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: BEAR
+[ADA-USDT] analyze() start @ 2026-03-27T02:28:42.472286
+[SUMMARY] Reversal decision: NONE
+[ADA-USDT] [TREND ENHANCED] Signal: SHORT | short_met=8/7, long_met=1
+[ADA-USDT] [MACD ENHANCED] Signal: LONG | long_met=4/3, short_met=1
+[ADA-USDT] [Momentum ENHANCED] Signal: SHORT | short_met=4/3, long_met=0
+[TF-PARAMS] ADA-USDT 30min: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[ADA-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=3/5, vwap_distance=0.0356, divergence_bars=5, crossover=False
+[ADA-USDT] [Chop Zone Check] No signal fired | long_met=2, short_met=2, chop_zone=58.06998496938872, ema9=0.2550079011581472, ema21=0.2555510413157895, adx=29.825746472052863
+[ADA-USDT] [Wick Dominance] lower=0.0000 upper=0.0001 ratio=1.30 exhaust_long=2 exhaust_short=2 | SHORT (4/4)
+[ADA-USDT] [Absorption] price_low=True vol=False pressure_long=0.0027 pressure_short=-0.0027 | LONG (3/2)
+[TF-PARAMS] ADA-USDT 30min: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[ADA-USDT] [S/R SIMPLIFIED] Signal: LONG | close=0.2551 within margin of support=0.2527
+[ADA-USDT] [Smart Money] vol_ratio=0.12 above_vwap=False below_vwap=True | SHORT (1/3)
+[ADA-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.13 | SHORT (1/2)
+[ADA-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=3/4, spread_ratio=0.54, spread_pct=0.0031, slippage_ok=True
+[ADA-USDT] [Volatility Model SIMPLIFIED] Signal: SHORT | atr=0.001607 > ma=0.001556, close=0.2551 < ema20=0.2555
+[TF-PARAMS] ADA-USDT 30min: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[ADA-USDT] [Volatility Squeeze ENHANCED] Signal: SHORT | short_met=4/6, squeeze_bars=4, bb_tightening=1, momentum=0, volume_buildup=False
+[ADA-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] ADA-USDT: direction=SHORT | score=8>=10? False | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=False
+[ADA-USDT] [FILTERS_OK_DEBUG] direction=True | score_ok=False | passes_ok=True | soft_gk_ok=True | route_veto_ok=True(TREND CONTINUATION)
+[SUMMARY] Market regime detected: BEAR
+[CRITICAL-DEBUG] SmartFilter.__init__ ADA-USDT 1h: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: BEAR
+[ADA-USDT] analyze() start @ 2026-03-27T02:28:42.498508
+[SUMMARY] Reversal decision: NONE
+[ADA-USDT] [TREND ENHANCED] Signal: SHORT | short_met=10/7, long_met=1
+[ADA-USDT] [MACD ENHANCED] Signal: LONG | long_met=5/3, short_met=1
+[ADA-USDT] [Momentum ENHANCED] Signal: SHORT | short_met=4/3, long_met=0
+[ADA-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=3/5, vwap_distance=0.0229, divergence_bars=5, crossover=False
+[ADA-USDT] [Chop Zone Check] Signal: SHORT | long_met=1, short_met=3, chop_zone=54.75426211368743, ema9=0.25536654082409244, ema21=0.2574897358000713, adx=35.016499937258125
+[ADA-USDT] [Wick Dominance] lower=0.0000 upper=0.0001 ratio=1.30 exhaust_long=4 exhaust_short=1 | SHORT (3/4)
+[ADA-USDT] [Absorption] price_low=True vol=False pressure_long=0.0027 pressure_short=-0.0027 | LONG (3/1)
+[ADA-USDT] [S/R SIMPLIFIED] Signal: LONG | close=0.2551 within margin of support=0.2527
+[ADA-USDT] [Smart Money] vol_ratio=0.06 above_vwap=False below_vwap=True | SHORT (1/3)
+[ADA-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.06 | SHORT (1/2)
+[ADA-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=3/4, spread_ratio=0.39, spread_pct=0.0031, slippage_ok=True
+[ADA-USDT] [Volatility Model SIMPLIFIED] Signal: SHORT | atr=0.002093 > ma=0.002061, close=0.2551 < ema20=0.2573
+[ADA-USDT] [Volatility Squeeze ENHANCED] Signal: SHORT | short_met=3/6, squeeze_bars=0, bb_tightening=2, momentum=0, volume_buildup=False
+[ADA-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] ADA-USDT: direction=SHORT | score=9>=10? False | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=False
+[ADA-USDT] [FILTERS_OK_DEBUG] direction=True | score_ok=False | passes_ok=True | soft_gk_ok=True | route_veto_ok=True(TREND CONTINUATION)
+[SUMMARY] Market regime detected: BEAR
+[CRITICAL-DEBUG] SmartFilter.__init__ ADA-USDT 2h: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: BEAR
+[ADA-USDT] analyze() start @ 2026-03-27T02:28:42.524698
+[SUMMARY] Reversal decision: NONE
+[ADA-USDT] [TREND ENHANCED] Signal: SHORT | short_met=10/7, long_met=1
+[ADA-USDT] [MACD ENHANCED] Signal: SHORT | short_met=4/3, long_met=0
+[ADA-USDT] [Momentum ENHANCED] Signal: SHORT | short_met=3/3, long_met=1
+[TF-PARAMS] ADA-USDT 2h: MEDIUM VOLATILITY (0) → 2h thresholds
+[TF-PARAMS] ADA-USDT 2h: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[ADA-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=3/5, vwap_distance=0.0286, divergence_bars=5, crossover=False
+[ADA-USDT] [Chop Zone Check] Signal: SHORT | long_met=1, short_met=3, chop_zone=33.25490096775432, ema9=0.256671183197386, ema21=0.2599176815761846, adx=24.99172441904213
+[ADA-USDT] [Wick Dominance] lower=0.0000 upper=0.0001 ratio=1.30 exhaust_long=3 exhaust_short=2 | SHORT (3/4)
+[ADA-USDT] [Absorption] price_low=True vol=False pressure_long=0.0027 pressure_short=-0.0027 | LONG (3/1)
+[TF-PARAMS] ADA-USDT 2h: MEDIUM VOLATILITY (0) → 2h thresholds
+[TF-PARAMS] ADA-USDT 2h: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[ADA-USDT] [S/R SIMPLIFIED] Signal: LONG | close=0.2551 within margin of support=0.2527
+[ADA-USDT] [Smart Money] vol_ratio=0.04 above_vwap=False below_vwap=True | SHORT (1/3)
+[ADA-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.04 | SHORT (1/2)
+[ADA-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=3/4, spread_ratio=0.27, spread_pct=0.0031, slippage_ok=True
+[TF-PARAMS] ADA-USDT 2h: MEDIUM VOLATILITY (0) → 2h thresholds
+[TF-PARAMS] ADA-USDT 2h: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[ADA-USDT] [Volatility Squeeze ENHANCED] Signal: SHORT | short_met=2/6, squeeze_bars=0, bb_tightening=0, momentum=0, volume_buildup=False
+[ADA-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] ADA-USDT: direction=SHORT | score=9>=10? False | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=False
+[ADA-USDT] [FILTERS_OK_DEBUG] direction=True | score_ok=False | passes_ok=True | soft_gk_ok=True | route_veto_ok=True(TREND CONTINUATION)
+[SUMMARY] Market regime detected: BEAR
+[DEBUG-2h] ADA-USDT: analyze() returned - filters_ok=False
+[DEBUG-2h] ADA-USDT: score=9/19, passes=1/1, bias=SHORT, filters_ok=False
+[DEBUG-2h] ADA-USDT: REJECTED - filters_ok=False (score=9, MIN_SCORE=10 from smart_filter.py)
+[MIN-SCORE-OVERRIDE] 2h ADA-USDT: score=9 >= MIN_SCORE_2h=8 → filters_ok=True (overridden from global MIN_SCORE=10)
+[CRITICAL-DEBUG] SmartFilter.__init__ ADA-USDT 4h: min_score=10 (source of truth for ALL timeframes)
+[ADA-USDT] analyze() start @ 2026-03-27T02:28:42.550449
+[SUMMARY] Reversal decision: NONE
+[ADA-USDT] [TREND ENHANCED] Signal: SHORT | short_met=10/7, long_met=1
+[ADA-USDT] [MACD ENHANCED] Signal: SHORT | short_met=4/3, long_met=1
+[ADA-USDT] [Momentum ENHANCED] Signal: LONG | long_met=4/3, short_met=2
+[TF-PARAMS] ADA-USDT 4h: HIGH VOLATILITY (0) → 4h thresholds
+[ADA-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=4/5, vwap_distance=0.0470, divergence_bars=5, crossover=False
+[ADA-USDT] [HH/LL Trend] Signal: SHORT | LH=2, LL=2 (lookback=3, range=0.9800%)
+[ADA-USDT] [Chop Zone Check] Signal: SHORT | long_met=1, short_met=3, chop_zone=43.60997339652627, ema9=0.25894378682710456, ema21=0.26140036666777783, adx=20.780119377605327
+[ADA-USDT] [Wick Dominance] lower=0.0012 upper=0.0009 ratio=1.31 exhaust_long=2 exhaust_short=3 | LONG (4/4)
+[ADA-USDT] [Absorption] price_low=True vol=False pressure_long=-0.0016 pressure_short=0.0016 | No signal (long=2 short=2, need 1)
+[TF-PARAMS] ADA-USDT 4h: HIGH VOLATILITY (0) → 4h thresholds
+[ADA-USDT] [S/R SIMPLIFIED] Signal: LONG | close=0.2551 within margin of support=0.2527
+[ADA-USDT] [Smart Money] vol_ratio=0.29 above_vwap=False below_vwap=True | No signal (long=2 short=2, need 1)
+[ADA-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.27 | LONG (2/1)
+[ADA-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=4/4, spread_ratio=0.52, spread_pct=0.0098, slippage_ok=True
+[TF-PARAMS] ADA-USDT 4h: HIGH VOLATILITY (0) → 4h thresholds
+[ADA-USDT] [Volatility Squeeze ENHANCED] Signal: LONG | long_met=2/6, squeeze_bars=0, bb_tightening=0, momentum=0, volume_buildup=False
+[ADA-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] ADA-USDT: direction=LONG | score=8>=10? False | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=False
+[ADA-USDT] [FILTERS_OK_DEBUG] direction=True | score_ok=False | passes_ok=True | soft_gk_ok=True | route_veto_ok=True(TREND CONTINUATION)
+[SUMMARY] Market regime detected: BEAR
+[MIN-SCORE-OVERRIDE] 4h ADA-USDT: score=8 >= MIN_SCORE_4h=8 → filters_ok=True (overridden from global MIN_SCORE=10)
+[LOAD] AVAX-USDT: df2h loaded - 100 candles
+[DEBUG-TF4h] AVAX-USDT: df4h loaded - 100 candles
+[CRITICAL-DEBUG] SmartFilter.__init__ AVAX-USDT 15min: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: BEAR
+[AVAX-USDT] analyze() start @ 2026-03-27T02:28:43.860779
+[SUMMARY] Reversal decision: BEARISH (Detectors: 2)
+[AVAX-USDT] [MACD ENHANCED] Signal: LONG | long_met=4/3, short_met=1
+[AVAX-USDT] [Momentum ENHANCED] Signal: SHORT | short_met=3/3, long_met=1
+[AVAX-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=3/5, vwap_distance=0.0125, divergence_bars=5, crossover=False
+[AVAX-USDT] [Chop Zone Check] Market too choppy (chop_zone=69.07 >= 60)
+[AVAX-USDT] [Wick Dominance] lower=0.0000 upper=0.0000 ratio=1.30 exhaust_long=4 exhaust_short=0 | SHORT (2/4)
+[AVAX-USDT] [Absorption] price_low=True vol=False pressure_long=0.0023 pressure_short=-0.0023 | LONG (3/2)
+[AVAX-USDT] [S/R SIMPLIFIED] Signal: LONG | close=9.1170 within margin of support=9.0700
+[AVAX-USDT] [Smart Money] vol_ratio=0.03 above_vwap=False below_vwap=True | SHORT (1/3)
+[AVAX-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.01 | SHORT (1/2)
+[AVAX-USDT] [Volatility Squeeze ENHANCED] Signal: SHORT | short_met=3/6, squeeze_bars=4, bb_tightening=0, momentum=0, volume_buildup=False
+[AVAX-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: BEARISH (Detectors: 2)
+[CRITICAL-FILTERS_OK] AVAX-USDT: direction=SHORT | score=6>=10? False | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=False
+[AVAX-USDT] [FILTERS_OK_DEBUG] direction=True | score_ok=False | passes_ok=True | soft_gk_ok=True | route_veto_ok=True(REVERSAL)
+[SUMMARY] Market regime detected: BEAR
+[CRITICAL-DEBUG] SmartFilter.__init__ AVAX-USDT 30min: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: BEAR
+[AVAX-USDT] analyze() start @ 2026-03-27T02:28:43.898487
+[SUMMARY] Reversal decision: NONE
+[AVAX-USDT] [TREND ENHANCED] Signal: SHORT | short_met=8/7, long_met=1
+[AVAX-USDT] [MACD ENHANCED] Signal: LONG | long_met=4/3, short_met=1
+[AVAX-USDT] [Momentum ENHANCED] Signal: SHORT | short_met=5/3, long_met=0
+[TF-PARAMS] AVAX-USDT 30min: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[AVAX-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=3/5, vwap_distance=0.0349, divergence_bars=5, crossover=False
+[AVAX-USDT] [Chop Zone Check] Market too choppy (chop_zone=62.20 >= 60)
+[AVAX-USDT] [Wick Dominance] lower=0.0000 upper=0.0040 ratio=1.30 exhaust_long=4 exhaust_short=1 | SHORT (3/4)
+[AVAX-USDT] [Absorption] price_low=True vol=False pressure_long=0.0018 pressure_short=-0.0018 | LONG (3/2)
+[TF-PARAMS] AVAX-USDT 30min: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[AVAX-USDT] [S/R SIMPLIFIED] Signal: LONG | close=9.1170 within margin of support=8.9910
+[AVAX-USDT] [Smart Money] vol_ratio=0.03 above_vwap=False below_vwap=True | SHORT (1/3)
+[AVAX-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.03 | SHORT (1/2)
+[AVAX-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=3/4, spread_ratio=0.42, spread_pct=0.0023, slippage_ok=True
+[TF-PARAMS] AVAX-USDT 30min: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[AVAX-USDT] [Volatility Squeeze ENHANCED] Signal: SHORT | short_met=3/6, squeeze_bars=0, bb_tightening=2, momentum=0, volume_buildup=False
+[AVAX-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] AVAX-USDT: direction=SHORT | score=7>=10? False | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=False
+[AVAX-USDT] [FILTERS_OK_DEBUG] direction=True | score_ok=False | passes_ok=True | soft_gk_ok=True | route_veto_ok=True(TREND CONTINUATION)
+[SUMMARY] Market regime detected: BEAR
+[CRITICAL-DEBUG] SmartFilter.__init__ AVAX-USDT 1h: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: BEAR
+[AVAX-USDT] analyze() start @ 2026-03-27T02:28:43.925295
+[SUMMARY] Reversal decision: NONE
+[AVAX-USDT] [TREND ENHANCED] Signal: SHORT | short_met=10/7, long_met=1
+[AVAX-USDT] [MACD ENHANCED] Signal: LONG | long_met=5/3, short_met=1
+[AVAX-USDT] [Momentum ENHANCED] Signal: SHORT | short_met=3/3, long_met=1
+[AVAX-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=3/5, vwap_distance=0.0319, divergence_bars=5, crossover=False
+[AVAX-USDT] [Chop Zone Check] Signal: SHORT | long_met=1, short_met=3, chop_zone=42.431087060501085, ema9=9.123190777300543, ema21=9.210119017949635, adx=37.1842143067458
+[AVAX-USDT] [Wick Dominance] lower=0.0000 upper=0.0040 ratio=1.30 exhaust_long=4 exhaust_short=1 | SHORT (3/4)
+[AVAX-USDT] [Absorption] price_low=True vol=False pressure_long=0.0018 pressure_short=-0.0018 | LONG (3/1)
+[AVAX-USDT] [S/R SIMPLIFIED] Signal: LONG | close=9.1170 within margin of support=8.9910
+[AVAX-USDT] [Smart Money] vol_ratio=0.02 above_vwap=False below_vwap=True | SHORT (1/3)
+[AVAX-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.02 | SHORT (1/2)
+[AVAX-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=3/4, spread_ratio=0.30, spread_pct=0.0023, slippage_ok=True
+[AVAX-USDT] [Volatility Model SIMPLIFIED] Signal: SHORT | atr=0.074500 > ma=0.070875, close=9.1170 < ema20=9.2024
+[AVAX-USDT] [Volatility Squeeze ENHANCED] Signal: SHORT | short_met=3/6, squeeze_bars=0, bb_tightening=2, momentum=0, volume_buildup=False
+[AVAX-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] AVAX-USDT: direction=SHORT | score=9>=10? False | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=False
+[AVAX-USDT] [FILTERS_OK_DEBUG] direction=True | score_ok=False | passes_ok=True | soft_gk_ok=True | route_veto_ok=True(TREND CONTINUATION)
+[SUMMARY] Market regime detected: BEAR
+[CRITICAL-DEBUG] SmartFilter.__init__ AVAX-USDT 2h: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: BEAR
+[AVAX-USDT] analyze() start @ 2026-03-27T02:28:43.951473
+[SUMMARY] Reversal decision: NONE
+[AVAX-USDT] [TREND ENHANCED] Signal: SHORT | short_met=10/7, long_met=1
+[AVAX-USDT] [MACD ENHANCED] Signal: SHORT | short_met=4/3, long_met=0
+[AVAX-USDT] [Momentum ENHANCED] Signal: SHORT | short_met=3/3, long_met=1
+[TF-PARAMS] AVAX-USDT 2h: MEDIUM VOLATILITY (0) → 2h thresholds
+[TF-PARAMS] AVAX-USDT 2h: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[AVAX-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=3/5, vwap_distance=0.0342, divergence_bars=5, crossover=False
+[AVAX-USDT] [Chop Zone Check] Signal: SHORT | long_met=1, short_met=3, chop_zone=25.895477019434438, ema9=9.173578622396388, ema21=9.308575811992778, adx=29.10400067203528
+[AVAX-USDT] [Wick Dominance] lower=0.0000 upper=0.0040 ratio=1.30 exhaust_long=3 exhaust_short=2 | SHORT (3/4)
+[AVAX-USDT] [Absorption] price_low=True vol=False pressure_long=0.0018 pressure_short=-0.0018 | LONG (3/1)
+[TF-PARAMS] AVAX-USDT 2h: MEDIUM VOLATILITY (0) → 2h thresholds
+[TF-PARAMS] AVAX-USDT 2h: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[AVAX-USDT] [S/R SIMPLIFIED] Signal: LONG | close=9.1170 within margin of support=8.9910
+[AVAX-USDT] [Smart Money] vol_ratio=0.01 above_vwap=False below_vwap=True | SHORT (1/3)
+[AVAX-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.01 | SHORT (1/2)
+[AVAX-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=3/4, spread_ratio=0.21, spread_pct=0.0023, slippage_ok=True
+[AVAX-USDT] [Volatility Model SIMPLIFIED] Signal: SHORT | atr=0.101714 > ma=0.099911, close=9.1170 < ema20=9.3011
+[TF-PARAMS] AVAX-USDT 2h: MEDIUM VOLATILITY (0) → 2h thresholds
+[TF-PARAMS] AVAX-USDT 2h: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[AVAX-USDT] [Volatility Squeeze ENHANCED] Signal: SHORT | short_met=2/6, squeeze_bars=0, bb_tightening=0, momentum=0, volume_buildup=False
+[AVAX-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] AVAX-USDT: direction=SHORT | score=10>=10? True | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=True
+[AVAX-USDT] ✅ FINAL SIGNAL (filters_ok): SHORT on AVAX-USDT @ 9.117000 | Score: 10/19 | Passed GK: 1/1 | Confidence: 58.9% (Weighted: 49.8/84.5) | Route: TREND CONTINUATION
+[SUMMARY] Market regime detected: BEAR
+[DEBUG-2h] AVAX-USDT: analyze() returned - filters_ok=True
+[DEBUG-2h] AVAX-USDT: score=10/19, passes=1/1, bias=SHORT, filters_ok=True
+[GATEKEEPER-DISABLED] 2h AVAX-USDT: DirectionAwareGatekeeper bypassed (code preserved)
+[OrderBookDeltaLog] AVAX-USDT | ts=2026-03-27T02:28:43.962943 | source=main_log | buy_wall=1125.4801 | sell_wall=840.1012999999999 | wall_delta=285.37880000000007 | midprice=9.1235
+[RestingOrderDensityLog] AVAX-USDT | ts=2026-03-27T02:28:43.962943 | source=main_log | bid_density=10.87% | ask_density=13.03% | bid_top=1180.3223 | ask_top=840.1012999999999 | bid_total=10860.985600000002 | ask_total=6445.8357
+[SuperGK][MAIN] DISABLED (broken) - bypassing SuperGK for ALL signals
+[SuperGK][MAIN] Result -> bias=SHORT super_gk_ok=True (bypassed)
+[LOG] Sending 2h alert for AVAX-USDT
+[DEBUG] 2h entry_price_final=9.11387700 analyzer_price=9.117
+[SIGNAL] AVAX-USDT       2h     SHORT  @         9.11 (Score: 10/19) | 2026-03-27 09:28:45
+[SUMMARY] Market regime detected: BEAR
+[PHASE3B-SCORE] 2h AVAX-USDT: ✅ TREND_CONT: SHORT trend continuation in BEAR (favorable) (score: 62.5)
+[MARKET_DRIVEN] REJECTED SHORT: RR 0.13 outside bounds (0.5-4.0)
+[tp_sl_retracement] MARKET_DRIVEN returned None, falling back to ATR (regime=BEAR)
+[FIX1-ACTIVE] dir=SHORT entry=9.11387700 tp=8.98673414 sl=9.21559129 → reward=0.12714286 risk=0.10171429 rr=1.25
+[tp_sl_retracement] ATR_FALLBACK_REGIME_AWARE | direction=SHORT entry=9.11387700 atr=0.10171429 tp=8.98673414 sl=9.21559129 rr=1.25 regime=BEAR
+[DEBUG] calculate_tp_sl -> tp=8.98673414 sl=9.21559129 chosen_ratio=None achieved_rr=1.25
+[DEBUG] tp_sl full dict for AVAX-USDT: {'tp': 8.98673414, 'sl': 9.21559129, 'achieved_rr': 1.25, 'atr_value': 0.10171428571428567, 'source': 'atr_1_25_to_1_short', 'fib_levels': None, 'chosen_ratio': None, 'sl_capped': False}
+[FIRED] Logged: 938be41c-13ca-47db-a75a-f7468e8a4839, AVAX-USDT, 2h, SHORT, 2026-03-27T02:28:44.886932, 99, SCORE: 10, MAX SCORE: 19, PASSED: 1, MAX PASSED: 1, WEIGHTS: 49.8, MAX WEIGHTS: 84.5, CONFIDENCE RATE: 58.9%
+[RR_ENFORCE] 2h AVAX-USDT: VALID RR 1.250 (no adjustment)
+[RR_ENFORCE] 2h signal ACCEPTED: AVAX-USDT - RR 1.250 (VALID)
+[SignalStore] Signal stored: 72650285... (AVAX-USDT 2h SHORT)
+[STORED] Signal captured: AVAX-USDT 2h SHORT UUID=72650285...
+[TIER] Loaded latest entry from SIGNAL_TIERS.json (timestamp: 2026-03-27 09:25:55 GMT+7)
+[TIER] 2h AVAX-USDT: Tier-3
+[DEBUG] 2h: Calling send_telegram_alert for AVAX-USDT (tf=2h, Entry=9.113876999999999)
+[Telegram][MSG] 6.D. AVAX-USDT
+6.D. AVAX-USDT (2h) 🥉 Tier-3
+📉 Regime: BEAR
+🛩️ SHORT Signal
+↘️➡️ Bearish Continuation
+💰 9.1139
+🏁 TP: 8.9867 (+1.40%)
+⛔ SL: 9.2156 (-1.12%)
+📊 Score: 10/19
+🎯 Passed: 1/1
+🔴 Confidence: 58.9%
+🏋️‍♀️ Weighted: 49.8/84.5
+⛓️ Consensus: 🪙 POS
+📊 R:R: 1.25:1 | ATR-Based 1.2:1 RR
+⛓️‍💥 MAIN_BLOCKCHAIN
+📨 Telegram alert sent: AVAX-USDT SHORT TREND CONTINUATION message_id=370149
+[DEBUG] 2h: send_telegram_alert returned True for AVAX-USDT
+[✅ SENT]  AVAX-USDT       2h     → Telegram (ID: 72650285...) | 2026-03-27 09:28:46
+[✅ PEC SENT] AVAX-USDT       2h     to SENT_SIGNALS.jsonl | 2026-03-27 09:28:46
+[EXECUTOR] Event-triggered backtest for AVAX-USDT 2h (UUID: 72650285-609)
+[CRITICAL-DEBUG] SmartFilter.__init__ AVAX-USDT 4h: min_score=10 (source of truth for ALL timeframes)
+[AVAX-USDT] analyze() start @ 2026-03-27T02:28:46.563596
+[SUMMARY] Reversal decision: NONE
+[AVAX-USDT] [TREND ENHANCED] Signal: SHORT | short_met=10/7, long_met=1
+[AVAX-USDT] [MACD ENHANCED] Signal: SHORT | short_met=4/3, long_met=1
+[AVAX-USDT] [Momentum ENHANCED] Signal: LONG | long_met=4/3, short_met=2
+[TF-PARAMS] AVAX-USDT 4h: HIGH VOLATILITY (0) → 4h thresholds
+[AVAX-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=4/5, vwap_distance=0.0561, divergence_bars=5, crossover=False
+[AVAX-USDT] [Chop Zone Check] Signal: SHORT | long_met=1, short_met=3, chop_zone=42.69158349774196, ema9=9.27019083309295, ema21=9.378569259287394, adx=24.819198112984264
+[AVAX-USDT] [Wick Dominance] lower=0.0280 upper=0.0210 ratio=1.31 exhaust_long=3 exhaust_short=2 | LONG (4/4)
+[AVAX-USDT] [Absorption] price_low=True vol=False pressure_long=-0.0013 pressure_short=0.0013 | No signal (long=2 short=2, need 1)
+[TF-PARAMS] AVAX-USDT 4h: HIGH VOLATILITY (0) → 4h thresholds
+[AVAX-USDT] [S/R SIMPLIFIED] Signal: LONG | close=9.1170 within margin of support=8.9910
+[AVAX-USDT] [Smart Money] vol_ratio=0.32 above_vwap=False below_vwap=True | No signal (long=2 short=2, need 1)
+[AVAX-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.29 | LONG (2/1)
+[AVAX-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=4/4, spread_ratio=0.42, spread_pct=0.0069, slippage_ok=True
+[TF-PARAMS] AVAX-USDT 4h: HIGH VOLATILITY (0) → 4h thresholds
+[AVAX-USDT] [Volatility Squeeze ENHANCED] Signal: LONG | long_met=2/6, squeeze_bars=0, bb_tightening=0, momentum=0, volume_buildup=False
+[AVAX-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] AVAX-USDT: direction=LONG | score=8>=10? False | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=False
+[AVAX-USDT] [FILTERS_OK_DEBUG] direction=True | score_ok=False | passes_ok=True | soft_gk_ok=True | route_veto_ok=True(TREND CONTINUATION)
+[SUMMARY] Market regime detected: BEAR
+[MIN-SCORE-OVERRIDE] 4h AVAX-USDT: score=8 >= MIN_SCORE_4h=8 → filters_ok=True (overridden from global MIN_SCORE=10)
+[LOAD] XLM-USDT: df2h loaded - 100 candles
+[DEBUG-TF4h] XLM-USDT: df4h loaded - 100 candles
+[CRITICAL-DEBUG] SmartFilter.__init__ XLM-USDT 15min: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: BULL
+[XLM-USDT] analyze() start @ 2026-03-27T02:28:47.915295
+[SUMMARY] Reversal decision: NONE
+[XLM-USDT] [TREND ENHANCED] Signal: LONG | long_met=10/7, short_met=1
+[XLM-USDT] [MACD ENHANCED] Signal: LONG | long_met=4/3, short_met=1
+[XLM-USDT] [Momentum ENHANCED] Signal: SHORT | short_met=4/3, long_met=2
+[XLM-USDT] [VWAP Divergence ENHANCED] Signal: SHORT | short_met=5/5, vwap_distance=0.0082, divergence_bars=5, crossover=True
+[XLM-USDT] [MTF Volume Agreement ENHANCED] Signal: SHORT | short_met=3/4, consensus=0, volume_ratio=3.13, buildup_bars=3, weakness_detected=True
+[XLM-USDT] [Chop Zone Check] Signal: LONG | long_met=3, short_met=1, chop_zone=41.98813796834774, ema9=0.17441160610367082, ema21=0.17400497941517135, adx=20.637359880292458
+[XLM-USDT] [Wick Dominance] lower=0.0003 upper=0.0000 ratio=1.30 exhaust_long=3 exhaust_short=2 | LONG (3/4)
+[XLM-USDT] [Absorption] price_low=True vol=True pressure_long=0.0006 pressure_short=-0.0006 | LONG (4/3)
+[XLM-USDT] [S/R SIMPLIFIED] Signal: LONG | close=0.1751 within margin of support=0.1729
+[XLM-USDT] [Smart Money] vol_ratio=2.64 above_vwap=True below_vwap=False | No signal (long=3 short=3, need 1)
+[XLM-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=2.61 | SHORT (2/3)
+[XLM-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=3/4, spread_ratio=0.85, spread_pct=0.0023, slippage_ok=True
+[XLM-USDT] [Liquidity Awareness ENHANCED] Signal: SHORT | short_met=2/4, wall_delta=-1.0000, density_type=ASK_SIDE, spread=N/A, volume_ratio=3.13
+[XLM-USDT] [Volatility Squeeze ENHANCED] Signal: SHORT | short_met=3/6, squeeze_bars=0, bb_tightening=0, momentum=0, volume_buildup=True
+[XLM-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] XLM-USDT: direction=SHORT | score=7>=10? False | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=False
+[XLM-USDT] [FILTERS_OK_DEBUG] direction=True | score_ok=False | passes_ok=True | soft_gk_ok=True | route_veto_ok=True(TREND CONTINUATION)
+[SUMMARY] Market regime detected: BULL
+[CRITICAL-DEBUG] SmartFilter.__init__ XLM-USDT 30min: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: BEAR
+[XLM-USDT] analyze() start @ 2026-03-27T02:28:47.952563
+[SUMMARY] Reversal decision: NONE
+[XLM-USDT] [TREND ENHANCED] Signal: LONG | long_met=7/7, short_met=1
+[XLM-USDT] [MACD ENHANCED] Signal: LONG | long_met=4/3, short_met=0
+[XLM-USDT] [Momentum ENHANCED] Signal: SHORT | short_met=4/3, long_met=2
+[TF-PARAMS] XLM-USDT 30min: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[XLM-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=5/5, vwap_distance=0.0060, divergence_bars=5, crossover=True
+[XLM-USDT] [MTF Volume Agreement ENHANCED] Signal: LONG | long_met=2/4, consensus=0, volume_ratio=1.93, buildup_bars=1, temporal_align=True
+[XLM-USDT] [Chop Zone Check] Signal: LONG | long_met=2, short_met=0, chop_zone=49.8105457675384, ema9=0.1740796979808401, ema21=0.17371557323807302, adx=15.14462262717878
+[XLM-USDT] [Wick Dominance] lower=0.0000 upper=0.0003 ratio=1.30 exhaust_long=3 exhaust_short=2 | LONG (3/4)
+[XLM-USDT] [Absorption] price_low=True vol=True pressure_long=-0.0040 pressure_short=0.0040 | SHORT (3/4)
+[TF-PARAMS] XLM-USDT 30min: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[XLM-USDT] [S/R SIMPLIFIED] Signal: LONG | close=0.1751 within margin of support=0.1712
+[XLM-USDT] [Smart Money] vol_ratio=1.78 above_vwap=False below_vwap=True | No signal (long=3 short=3, need 1)
+[XLM-USDT] [Liquidity Pool] breakout_long=True breakout_short=False vol_ratio=1.88 | LONG (4/2)
+[XLM-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=3/4, spread_ratio=0.88, spread_pct=0.0046, slippage_ok=True
+[XLM-USDT] [Liquidity Awareness ENHANCED] Signal: SHORT | short_met=2/4, wall_delta=-1.0000, density_type=ASK_SIDE, spread=N/A, volume_ratio=1.93
+[XLM-USDT] [ATR Momentum Burst SIMPLIFIED] Signal: LONG | atr expanding, move=0.004014 (> 0.000107)
+[TF-PARAMS] XLM-USDT 30min: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[XLM-USDT] [Volatility Squeeze ENHANCED] Signal: LONG | long_met=3/6, squeeze_bars=0, bb_tightening=0, momentum=1, volume_buildup=True
+[XLM-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] XLM-USDT: direction=LONG | score=12>=10? True | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=True
+[XLM-USDT] ✅ FINAL SIGNAL (filters_ok): LONG on XLM-USDT @ 0.175100 | Score: 12/19 | Passed GK: 1/1 | Confidence: 65.0% (Weighted: 54.9/84.5) | Route: TREND CONTINUATION
+[SUMMARY] Market regime detected: BEAR
+[GATEKEEPER-DISABLED] 30min XLM-USDT: DirectionAwareGatekeeper bypassed (code preserved)
+[OrderBookDeltaLog] XLM-USDT | ts=2026-03-27T02:28:47.964784 | source=main_log | buy_wall=251268.67 | sell_wall=281726.02 | wall_delta=-30457.350000000006 | midprice=0.17504999999999998
+[RestingOrderDensityLog] XLM-USDT | ts=2026-03-27T02:28:47.964784 | source=main_log | bid_density=25.85% | ask_density=31.22% | bid_top=251268.67 | ask_top=281726.02 | bid_total=971997.5400000002 | ask_total=902414.17
+[SuperGK][MAIN] DISABLED (broken) - bypassing SuperGK for ALL signals
+[SuperGK][MAIN] Result -> bias=LONG super_gk_ok=True (bypassed)
+[LOG] Sending 30min alert for XLM-USDT
+[DEBUG] entry_price_final=0.17527510 analyzer_price=0.1751
+[SIGNAL] XLM-USDT        30min  LONG   @         0.18 (Score: 12/19) | 2026-03-27 09:28:49
+[SUMMARY] Market regime detected: BEAR
+[PHASE3B-SCORE] 30min XLM-USDT: ✅ TREND_CONT: LONG_BEAR (always allowed as fallback) (score: 37.5)
+[MARKET_DRIVEN] REJECTED LONG: RR 0.03 outside bounds (0.5-4.0)
+[tp_sl_retracement] MARKET_DRIVEN returned None, falling back to ATR (regime=BEAR)
+[FIX1-ACTIVE] dir=LONG entry=0.17527510 tp=0.17644474 sl=0.17433939 → reward=0.00116964 risk=0.00093571 rr=1.25
+[tp_sl_retracement] ATR_FALLBACK_REGIME_AWARE | direction=LONG entry=0.17527510 atr=0.00093571 tp=0.17644474 sl=0.17433939 rr=1.25 regime=BEAR
+[DEBUG] calculate_tp_sl -> tp=0.17644474 sl=0.17433939 chosen_ratio=None achieved_rr=1.25
+[DEBUG] tp_sl full dict for XLM-USDT: {'tp': 0.17644474, 'sl': 0.17433939, 'achieved_rr': 1.25, 'atr_value': 0.0009357142857142838, 'source': 'atr_1_25_to_1_long', 'fib_levels': None, 'chosen_ratio': None, 'sl_capped': False}
+[FIRED] Logged: 47beb110-6ba7-42eb-9be1-2fb0750ff875, XLM-USDT, 30min, LONG, 2026-03-27T02:28:48.938459, 99, SCORE: 12, MAX SCORE: 19, PASSED: 1, MAX PASSED: 1, WEIGHTS: 54.9, MAX WEIGHTS: 84.5, CONFIDENCE RATE: 65.0%
+[RR_ENFORCE] 30min XLM-USDT: VALID RR 1.250 (no adjustment)
+[RR_ENFORCE] 30min signal ACCEPTED: XLM-USDT - RR 1.250 (VALID)
+[SignalStore] Signal stored: 7cbcac81... (XLM-USDT 30min LONG)
+[STORED] Signal captured: XLM-USDT 30min LONG UUID=7cbcac81...
+[PHASE4A-S4] 30min XLM-USDT: [PHASE4A-S4] ✅ Aligned: 30min=LONG, 1h=LONG
+[GATE-ENTRY] 30min XLM-USDT signal reached gate block
+[EMA100-DEBUG] 30min XLM-USDT: has_col=True, close=0.1751, ema100=0.17496689650717212
+[EMA100-PASS] 30min XLM-USDT: LONG above EMA100 ✓
+[TIER] Loaded latest entry from SIGNAL_TIERS.json (timestamp: 2026-03-27 09:25:55 GMT+7)
+[TIER] 30min XLM-USDT: Tier-X
+[DEBUG] 30min: Calling send_telegram_alert for XLM-USDT (tf=30min, Entry=0.1752751)
+[Telegram][MSG] 7.B. XLM-USDT
+7.B. XLM-USDT (30min)
+📉 Regime: BEAR
+✈️ LONG Signal
+↗️➡️ Bullish Continuation
+💰 0.175275
+🏁 TP: 0.176445 (+0.67%)
+⛔ SL: 0.174339 (-0.53%)
+📊 Score: 12/19
+🎯 Passed: 1/1
+🔴 Confidence: 65.0%
+🏋️‍♀️ Weighted: 54.9/84.5
+⚡ 15min Early Breakout: LONG @ 0.1751
+⛓️ Consensus: 🌐 FEDERATED
+📊 R:R: 1.25:1 | ATR-Based 1.2:1 RR
+⛓️‍💥 TOP_ALTS
+📨 Telegram alert sent: XLM-USDT LONG TREND CONTINUATION message_id=370150
+[DEBUG] 30min: send_telegram_alert returned True for XLM-USDT
+[✅ SENT]  XLM-USDT        30min  → Telegram (ID: 7cbcac81...) | 2026-03-27 09:28:50
+[✅ PEC SENT] XLM-USDT        30min  to SENT_SIGNALS.jsonl | 2026-03-27 09:28:50
+[EXECUTOR] Event-triggered backtest for XLM-USDT 30min (UUID: 7cbcac81-025)
+[CRITICAL-DEBUG] SmartFilter.__init__ XLM-USDT 1h: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: RANGE
+[XLM-USDT] analyze() start @ 2026-03-27T02:28:50.775115
+[SUMMARY] Reversal decision: NONE
+[XLM-USDT] [TREND ENHANCED] Signal: LONG | long_met=7/7, short_met=1
+[XLM-USDT] [MACD ENHANCED] Signal: LONG | long_met=4/3, short_met=0
+[XLM-USDT] [Momentum ENHANCED] Signal: LONG | long_met=3/3, short_met=2
+[XLM-USDT] [VWAP Divergence ENHANCED] Signal: SHORT | short_met=3/5, vwap_distance=0.0327, divergence_bars=5, crossover=False
+[XLM-USDT] [MTF Volume Agreement ENHANCED] Signal: LONG | long_met=2/4, consensus=0, volume_ratio=0.98, buildup_bars=0, temporal_align=True
+[XLM-USDT] [Chop Zone Check] No signal fired | long_met=1, short_met=1, chop_zone=56.25718298191025, ema9=0.17384710137640103, ema21=0.17388705726000986, adx=14.896916895755966
+[XLM-USDT] [Wick Dominance] lower=0.0000 upper=0.0003 ratio=1.30 exhaust_long=1 exhaust_short=4 | LONG (3/4)
+[XLM-USDT] [Absorption] price_low=True vol=False pressure_long=-0.0040 pressure_short=0.0040 | SHORT (2/3)
+[XLM-USDT] [S/R SIMPLIFIED] Signal: LONG | close=0.1751 within margin of support=0.1712
+[XLM-USDT] [Smart Money] vol_ratio=0.71 above_vwap=True below_vwap=False | LONG (3/1)
+[XLM-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.66 | LONG (2/1)
+[XLM-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=4/4, spread_ratio=0.53, spread_pct=0.0046, slippage_ok=True
+[XLM-USDT] [Liquidity Awareness ENHANCED] Signal: SHORT | short_met=2/4, wall_delta=-1.0000, density_type=ASK_SIDE, spread=N/A, volume_ratio=0.98
+[XLM-USDT] [Volatility Model SIMPLIFIED] Signal: LONG | atr=0.001629 > ma=0.001536, close=0.1751 > ema20=0.1739
+[XLM-USDT] [Volatility Squeeze ENHANCED] Signal: LONG | long_met=3/6, squeeze_bars=4, bb_tightening=0, momentum=1, volume_buildup=False
+[XLM-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] XLM-USDT: direction=LONG | score=13>=10? True | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=True
+[XLM-USDT] ✅ FINAL SIGNAL (filters_ok): LONG on XLM-USDT @ 0.175100 | Score: 13/19 | Passed GK: 1/1 | Confidence: 73.3% (Weighted: 61.9/84.5) | Route: NO ROUTE
+[SUMMARY] Market regime detected: RANGE
+[GATEKEEPER-DISABLED] 1h XLM-USDT: DirectionAwareGatekeeper bypassed (code preserved)
+[OrderBookDeltaLog] XLM-USDT | ts=2026-03-27T02:28:50.791542 | source=main_log | buy_wall=251278.14 | sell_wall=281726.02 | wall_delta=-30447.880000000005 | midprice=0.17504999999999998
+[RestingOrderDensityLog] XLM-USDT | ts=2026-03-27T02:28:50.791542 | source=main_log | bid_density=25.85% | ask_density=31.22% | bid_top=251278.14 | ask_top=281726.02 | bid_total=972007.0100000001 | ask_total=902414.17
+[SuperGK][MAIN] DISABLED (broken) - bypassing SuperGK for ALL signals
+[SuperGK][MAIN] Result -> bias=LONG super_gk_ok=True (bypassed)
+[LOG] Sending 1h alert for XLM-USDT
+[DEBUG] entry_price_final=0.17527510 analyzer_price=0.1751
+[SIGNAL] XLM-USDT        1h     LONG   @         0.18 (Score: 13/19) | 2026-03-27 09:28:51
+[SUMMARY] Market regime detected: RANGE
+[VETO-POST-3B] 1h XLM-USDT LONG: Route=NONE (changed by Phase 3B). REJECTING signal.
+[LOAD] LINK-USDT: df2h loaded - 100 candles
+[DEBUG-TF4h] LINK-USDT: df4h loaded - 100 candles
+[CRITICAL-DEBUG] SmartFilter.__init__ LINK-USDT 15min: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: RANGE
+[LINK-USDT] analyze() start @ 2026-03-27T02:28:53.141918
+[SUMMARY] Reversal decision: NONE
+[LINK-USDT] [TREND ENHANCED] Signal: LONG | long_met=7/7, short_met=1
+[LINK-USDT] [MACD ENHANCED] Signal: LONG | long_met=4/3, short_met=1
+[LINK-USDT] [Momentum ENHANCED] Signal: SHORT | short_met=4/3, long_met=1
+[LINK-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=3/5, vwap_distance=0.0058, divergence_bars=5, crossover=True
+[LINK-USDT] [Chop Zone Check] Signal: LONG | long_met=2, short_met=0, chop_zone=56.81734827983918, ema9=8.946090830527066, ema21=8.933521722981881, adx=13.804375484802653
+[LINK-USDT] [Wick Dominance] lower=0.0063 upper=0.0034 ratio=1.30 exhaust_long=4 exhaust_short=1 | SHORT (3/4)
+[LINK-USDT] [Absorption] price_low=True vol=False pressure_long=0.0005 pressure_short=-0.0005 | LONG (3/2)
+[LINK-USDT] [S/R SIMPLIFIED] Signal: LONG | close=8.9570 within margin of support=8.8868
+[LINK-USDT] [Smart Money] vol_ratio=0.76 above_vwap=False below_vwap=True | SHORT (1/3)
+[LINK-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.38 | SHORT (1/2)
+[LINK-USDT] [Spread Filter ENHANCED] Signal: SHORT | short_met=3/4, spread_ratio=0.52, spread_pct=0.0014, slippage_ok=True
+[LINK-USDT] [ATR Momentum Burst SIMPLIFIED] Signal: SHORT | atr expanding, move=0.000469 (> 0.000047)
+[LINK-USDT] [Volatility Squeeze ENHANCED] Signal: SHORT | short_met=2/6, squeeze_bars=0, bb_tightening=0, momentum=0, volume_buildup=False
+[LINK-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] LINK-USDT: direction=SHORT | score=8>=10? False | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=False
+[LINK-USDT] [FILTERS_OK_DEBUG] direction=True | score_ok=False | passes_ok=True | soft_gk_ok=True | route_veto_ok=True(TREND CONTINUATION)
+[SUMMARY] Market regime detected: RANGE
+[CRITICAL-DEBUG] SmartFilter.__init__ LINK-USDT 30min: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: BEAR
+[LINK-USDT] analyze() start @ 2026-03-27T02:28:53.175370
+[SUMMARY] Reversal decision: NONE
+[LINK-USDT] [MACD ENHANCED] Signal: LONG | long_met=4/3, short_met=1
+[LINK-USDT] [Momentum ENHANCED] Signal: SHORT | short_met=5/3, long_met=0
+[TF-PARAMS] LINK-USDT 30min: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[LINK-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=3/5, vwap_distance=0.0268, divergence_bars=5, crossover=False
+[LINK-USDT] [Chop Zone Check] Signal: LONG | long_met=3, short_met=1, chop_zone=56.74671975082031, ema9=8.93583610194729, ema21=8.935216512482944, adx=25.9690350900458
+[LINK-USDT] [Wick Dominance] lower=0.0063 upper=0.0024 ratio=1.30 exhaust_long=4 exhaust_short=1 | LONG (3/4)
+[LINK-USDT] [Absorption] price_low=True vol=False pressure_long=0.0008 pressure_short=-0.0008 | LONG (3/2)
+[TF-PARAMS] LINK-USDT 30min: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[LINK-USDT] [S/R SIMPLIFIED] Signal: LONG | close=8.9570 within margin of support=8.8112
+[LINK-USDT] [Smart Money] vol_ratio=0.40 above_vwap=False below_vwap=True | SHORT (1/3)
+[LINK-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.42 | SHORT (1/2)
+[LINK-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=3/4, spread_ratio=0.47, spread_pct=0.0025, slippage_ok=True
+[TF-PARAMS] LINK-USDT 30min: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[LINK-USDT] [Volatility Squeeze ENHANCED] Signal: SHORT | short_met=2/6, squeeze_bars=0, bb_tightening=0, momentum=0, volume_buildup=False
+[LINK-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] LINK-USDT: direction=NEUTRAL | score=7>=10? False | passes=0>=0? True | soft_passed=False | route_veto=✓ → filters_ok=False
+[LINK-USDT] [FILTERS_OK_DEBUG] direction=False | score_ok=False | passes_ok=True | soft_gk_ok=False | route_veto_ok=True(TREND CONTINUATION)
+[SUMMARY] Market regime detected: BEAR
+[CRITICAL-DEBUG] SmartFilter.__init__ LINK-USDT 1h: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: BULL
+[LINK-USDT] analyze() start @ 2026-03-27T02:28:53.207779
+[SUMMARY] Reversal decision: NONE
+[LINK-USDT] [TREND ENHANCED] Signal: SHORT | short_met=8/7, long_met=1
+[LINK-USDT] [MACD ENHANCED] Signal: LONG | long_met=5/3, short_met=1
+[LINK-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=3/5, vwap_distance=0.0160, divergence_bars=5, crossover=False
+[LINK-USDT] [Chop Zone Check] No signal fired | long_met=2, short_met=2, chop_zone=59.35998505775111, ema9=8.936260539332935, ema21=8.984684968002455, adx=26.786761960429608
+[LINK-USDT] [Wick Dominance] lower=0.0063 upper=0.0024 ratio=1.30 exhaust_long=4 exhaust_short=1 | LONG (3/4)
+[LINK-USDT] [Absorption] price_low=True vol=False pressure_long=0.0008 pressure_short=-0.0008 | LONG (3/1)
+[LINK-USDT] [S/R SIMPLIFIED] Signal: LONG | close=8.9570 within margin of support=8.8112
+[LINK-USDT] [Smart Money] vol_ratio=0.20 above_vwap=False below_vwap=True | SHORT (1/3)
+[LINK-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.21 | SHORT (1/2)
+[LINK-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=3/4, spread_ratio=0.32, spread_pct=0.0025, slippage_ok=True
+[LINK-USDT] [Volatility Model SIMPLIFIED] Signal: SHORT | atr=0.071964 > ma=0.071208, close=8.9570 < ema20=8.9796
+[LINK-USDT] [Volatility Squeeze ENHANCED] Signal: SHORT | short_met=3/6, squeeze_bars=0, bb_tightening=2, momentum=0, volume_buildup=False
+[LINK-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] LINK-USDT: direction=SHORT | score=6>=10? False | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=False
+[LINK-USDT] [FILTERS_OK_DEBUG] direction=True | score_ok=False | passes_ok=True | soft_gk_ok=True | route_veto_ok=True(TREND CONTINUATION)
+[SUMMARY] Market regime detected: BULL
+[CRITICAL-DEBUG] SmartFilter.__init__ LINK-USDT 2h: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: BEAR
+[LINK-USDT] analyze() start @ 2026-03-27T02:28:53.236172
+[SUMMARY] Reversal decision: NONE
+[LINK-USDT] [TREND ENHANCED] Signal: SHORT | short_met=10/7, long_met=1
+[LINK-USDT] [MACD ENHANCED] Signal: SHORT | short_met=3/3, long_met=2
+[LINK-USDT] [Momentum ENHANCED] Signal: SHORT | short_met=3/3, long_met=0
+[TF-PARAMS] LINK-USDT 2h: MEDIUM VOLATILITY (0) → 2h thresholds
+[TF-PARAMS] LINK-USDT 2h: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[LINK-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=3/5, vwap_distance=0.0115, divergence_bars=5, crossover=False
+[LINK-USDT] [Chop Zone Check] Signal: SHORT | long_met=1, short_met=3, chop_zone=35.81278852674088, ema9=8.96574256743406, ema21=9.050698424618034, adx=24.166784298817586
+[LINK-USDT] [Wick Dominance] lower=0.0063 upper=0.0024 ratio=1.30 exhaust_long=4 exhaust_short=1 | LONG (3/4)
+[LINK-USDT] [Absorption] price_low=True vol=False pressure_long=0.0008 pressure_short=-0.0008 | LONG (3/1)
+[TF-PARAMS] LINK-USDT 2h: MEDIUM VOLATILITY (0) → 2h thresholds
+[TF-PARAMS] LINK-USDT 2h: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[LINK-USDT] [S/R SIMPLIFIED] Signal: LONG | close=8.9570 within margin of support=8.8112
+[LINK-USDT] [Smart Money] vol_ratio=0.10 above_vwap=False below_vwap=True | SHORT (1/3)
+[LINK-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.09 | SHORT (1/2)
+[LINK-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=3/4, spread_ratio=0.22, spread_pct=0.0025, slippage_ok=True
+[TF-PARAMS] LINK-USDT 2h: MEDIUM VOLATILITY (0) → 2h thresholds
+[TF-PARAMS] LINK-USDT 2h: HIGH REVERSAL FREQUENCY → 5-bar confirmation
+[LINK-USDT] [Volatility Squeeze ENHANCED] Signal: SHORT | short_met=2/6, squeeze_bars=0, bb_tightening=0, momentum=0, volume_buildup=False
+[LINK-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] LINK-USDT: direction=SHORT | score=8>=10? False | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=False
+[LINK-USDT] [FILTERS_OK_DEBUG] direction=True | score_ok=False | passes_ok=True | soft_gk_ok=True | route_veto_ok=True(TREND CONTINUATION)
+[SUMMARY] Market regime detected: BEAR
+[DEBUG-2h] LINK-USDT: analyze() returned - filters_ok=False
+[DEBUG-2h] LINK-USDT: score=8/19, passes=1/1, bias=SHORT, filters_ok=False
+[DEBUG-2h] LINK-USDT: REJECTED - filters_ok=False (score=8, MIN_SCORE=10 from smart_filter.py)
+[MIN-SCORE-OVERRIDE] 2h LINK-USDT: score=8 >= MIN_SCORE_2h=8 → filters_ok=True (overridden from global MIN_SCORE=10)
+[CRITICAL-DEBUG] SmartFilter.__init__ LINK-USDT 4h: min_score=10 (source of truth for ALL timeframes)
+[LINK-USDT] analyze() start @ 2026-03-27T02:28:53.267647
+[SUMMARY] Reversal decision: NONE
+[LINK-USDT] [TREND ENHANCED] Signal: SHORT | short_met=10/7, long_met=1
+[LINK-USDT] [MACD ENHANCED] Signal: SHORT | short_met=4/3, long_met=1
+[LINK-USDT] [Momentum ENHANCED] Signal: LONG | long_met=3/3, short_met=2
+[TF-PARAMS] LINK-USDT 4h: HIGH VOLATILITY (0) → 4h thresholds
+[LINK-USDT] [VWAP Divergence ENHANCED] Signal: LONG | long_met=4/5, vwap_distance=0.0289, divergence_bars=5, crossover=False
+[LINK-USDT] [Chop Zone Check] Signal: SHORT | long_met=1, short_met=3, chop_zone=50.357442735101436, ema9=9.025316104655682, ema21=9.080845215487535, adx=20.131294805470542
+[LINK-USDT] [Wick Dominance] lower=0.0280 upper=0.0163 ratio=1.31 exhaust_long=3 exhaust_short=2 | LONG (4/4)
+[LINK-USDT] [Absorption] price_low=False vol=False pressure_long=-0.0049 pressure_short=0.0049 | SHORT (1/2)
+[TF-PARAMS] LINK-USDT 4h: HIGH VOLATILITY (0) → 4h thresholds
+[LINK-USDT] [S/R SIMPLIFIED] Signal: LONG | close=8.9570 within margin of support=8.8112
+[LINK-USDT] [Smart Money] vol_ratio=0.25 above_vwap=False below_vwap=True | No signal (long=2 short=2, need 1)
+[LINK-USDT] [Liquidity Pool] breakout_long=False breakout_short=False vol_ratio=0.25 | LONG (2/1)
+[LINK-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=4/4, spread_ratio=0.55, spread_pct=0.0097, slippage_ok=True
+[TF-PARAMS] LINK-USDT 4h: HIGH VOLATILITY (0) → 4h thresholds
+[LINK-USDT] [Volatility Squeeze ENHANCED] Signal: LONG | long_met=2/6, squeeze_bars=0, bb_tightening=0, momentum=0, volume_buildup=False
+[LINK-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] LINK-USDT: direction=LONG | score=8>=10? False | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=False
+[LINK-USDT] [FILTERS_OK_DEBUG] direction=True | score_ok=False | passes_ok=True | soft_gk_ok=True | route_veto_ok=True(TREND CONTINUATION)
+[SUMMARY] Market regime detected: BEAR
+[MIN-SCORE-OVERRIDE] 4h LINK-USDT: score=8 >= MIN_SCORE_4h=8 → filters_ok=True (overridden from global MIN_SCORE=10)
+[LOAD] POL-USDT: df2h loaded - 100 candles
+[DEBUG-TF4h] POL-USDT: df4h loaded - 100 candles
+[CRITICAL-DEBUG] SmartFilter.__init__ POL-USDT 15min: min_score=10 (source of truth for ALL timeframes)
+[SUMMARY] Market regime detected: BEAR
+[POL-USDT] analyze() start @ 2026-03-27T02:28:54.539643
+[SUMMARY] Reversal decision: NONE
+[POL-USDT] [TREND ENHANCED] Signal: LONG | long_met=10/7, short_met=1
+[POL-USDT] [MACD ENHANCED] Signal: LONG | long_met=4/3, short_met=0
+[POL-USDT] [Momentum ENHANCED] Signal: SHORT | short_met=5/3, long_met=2
+[POL-USDT] [VWAP Divergence ENHANCED] Signal: SHORT | short_met=3/5, vwap_distance=0.0084, divergence_bars=4, crossover=True
+[POL-USDT] [Chop Zone Check] Signal: LONG | long_met=3, short_met=1, chop_zone=41.47830090709154, ema9=0.09521107391027825, ema21=0.09488170143930486, adx=26.580684731835248
+[POL-USDT] [Wick Dominance] lower=0.0000 upper=0.0000 ratio=1.30 exhaust_long=1 exhaust_short=0 | LONG (3/4)
+[POL-USDT] [Absorption] price_low=True vol=False pressure_long=-0.0010 pressure_short=0.0010 | SHORT (2/3)
+[POL-USDT] [S/R SIMPLIFIED] Signal: LONG | close=0.0958 within margin of support=0.0943
+[POL-USDT] [Smart Money] vol_ratio=0.70 above_vwap=True below_vwap=False | LONG (3/1)
+[POL-USDT] [Liquidity Pool] breakout_long=True breakout_short=False vol_ratio=0.82 | LONG (3/1)
+[POL-USDT] [Spread Filter ENHANCED] Signal: LONG | long_met=4/4, spread_ratio=0.53, spread_pct=0.0010, slippage_ok=True
+[POL-USDT] [Volatility Squeeze ENHANCED] Signal: LONG | long_met=2/6, squeeze_bars=0, bb_tightening=0, momentum=1, volume_buildup=False
+[POL-USDT] [Diagnostic] Skipping SuperGK decision inside analyze(); main.py will perform canonical SuperGK.
+[SUMMARY] Reversal decision: NONE
+[CRITICAL-FILTERS_OK] POL-USDT: direction=LONG | score=10>=10? True | passes=1>=0? True | soft_passed=True | route_veto=✓ → filters_ok=True
+[POL-USDT] ✅ FINAL SIGNAL (filters_ok): LONG on POL-USDT @ 0.095800 | Score: 10/19 | Passed GK: 1/1 | Confidence: 58.0% (Weighted: 49.0/84.5) | Route: TREND CONTINUATION
+[SUMMARY] Market regime detected: BEAR
+[GATEKEEPER-DISABLED] 15min POL-USDT: DirectionAwareGatekeeper bypassed (code preserved)
+[OrderBookDeltaLog] POL-USDT | ts=2026-03-27T02:28:54.555743 | source=main_log | buy_wall=317965.632 | sell_wall=291294.8207 | wall_delta=26670.8113 | midprice=0.09575
+[RestingOrderDensityLog] POL-USDT | ts=2026-03-27T02:28:54.555743 | source=main_log | bid_density=32.53% | ask_density=32.27% | bid_top=317965.632 | ask_top=291294.8207 | bid_total=977576.365 | ask_total=902730.4123999999
+[SuperGK][MAIN] DISABLED (broken) - bypassing SuperGK for ALL signals
+[SuperGK][MAIN] Result -> bias=LONG super_gk_ok=True (bypassed)
+[LOG] Sending 15min alert for POL-USDT

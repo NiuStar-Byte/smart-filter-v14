@@ -4,6 +4,46 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
+### **🔄 EXECUTOR RELIABILITY FIX (2026-03-27 09:24)**
+
+**Status:** ✅ **DEPLOYED - Single persistent loop replaces daemon + spawner**
+**Issue Resolved:** 470 stale OPEN signals from Mar 1-6 (executor not running)
+**Root Cause:** Complex daemon → spawner → child process model caused crashes
+**Solution:** Single persistent executor loop (no spawning, self-healing)
+**Commit:** `2721f5a` (workspace)
+
+**What Changed:**
+- ❌ OLD: `pec_daemon.py` spawns executor processes (fragile, complex)
+- ✅ NEW: `pec_executor_persistent.py` single loop runs forever (simple, reliable)
+
+**How It Works:**
+1. Start once: `python3 pec_executor_persistent.py`
+2. Runs continuously in 5-minute cycles
+3. Catches errors internally, keeps running
+4. Never exits unless killed (`pkill -f pec_executor_persistent.py`)
+5. Logs to `pec_persistent.log`
+
+**Benefits:**
+- ✓ No spawning overhead (one process)
+- ✓ No child management (no zombies)
+- ✓ Self-healing error handling
+- ✓ Lower memory/CPU footprint
+- ✓ Easier to monitor (one PID)
+- ✓ Same 5-min update interval
+
+**Current Status:**
+- Process: Running (PID 4829, started 09:24)
+- First cycle: Processing 9830 signals
+- Tracker code: 100% locked (2427, 843, 1718 lines)
+- Tracker data: Dynamic (updates as signals close)
+
+**Remember:**
+- Cron + watchdog both failed before → don't use them
+- This persistent loop is the right architecture for this use case
+- If it dies, you'll see it in top/ps. Just restart manually or leave SSH session open
+
+---
+
 ### **pec_enhanced_reporter.py (2026-03-26 20:13)**
 
 **Status:** ✅ **COMPLETE - Enhanced SECTION 1 & SECTION 2 with WR v2 and TIMEOUT breakdown**
