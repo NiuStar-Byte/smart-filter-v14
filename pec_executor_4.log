@@ -1,0 +1,760 @@
+/Users/geniustarigan/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+[PEC-STALE-TIMEOUT] VOXEL-USDT 2h: 12 bars (7h overdue), actual_timeout=2026-03-26T18:19:00.347354
+[PEC-TIMEOUT-HIT] TAO-USDT 4h: 12 bars >= 12 max, actual_timeout=2026-03-27T01:20:52.117148 [CHALLENGER]
+[PEC-STALE-TIMEOUT] PROMPT-USDT 2h: 12 bars (7h overdue), actual_timeout=2026-03-26T18:28:30.636062
+[PEC-TIMEOUT-HIT] ERA-USDT 4h: 12 bars >= 12 max, actual_timeout=2026-03-27T01:34:19.189821 [CHALLENGER]
+[PEC-STALE-TIMEOUT] AAVE-USDT 2h: 12 bars (7h overdue), actual_timeout=2026-03-26T18:36:06.058929
+[PEC-STALE-TIMEOUT] ICNT-USDT 1h: 11 bars (7h overdue), actual_timeout=2026-03-26T18:07:07.360007
+[PEC-STALE-TIMEOUT] XLM-USDT 4h: 11 bars (6h overdue), actual_timeout=2026-03-26T19:13:08.242279
+[PEC-STALE-TIMEOUT] HBAR-USDT 1h: 11 bars (6h overdue), actual_timeout=2026-03-26T19:38:12.391958
+[PEC-STALE-TIMEOUT] FUN-USDT 1h: 10 bars (6h overdue), actual_timeout=2026-03-26T18:45:41.147460
+[PEC-STALE-TIMEOUT] UNI-USDT 2h: 10 bars (5h overdue), actual_timeout=2026-03-26T20:02:36.596912
+[PEC-STALE-TIMEOUT] UNI-USDT 2h: 10 bars (5h overdue), actual_timeout=2026-03-26T20:02:36.484729
+[PEC-STALE-TIMEOUT] UNI-USDT 2h: 10 bars (5h overdue), actual_timeout=2026-03-26T20:02:42.538813
+[PEC-STALE-TIMEOUT] BNB-USDT 2h: 10 bars (5h overdue), actual_timeout=2026-03-26T20:10:10.249644
+[PEC-STALE-TIMEOUT] IP-USDT 30min: 21 bars (5h overdue), actual_timeout=2026-03-26T20:10:27.495290
+[PEC-STALE-TIMEOUT] IP-USDT 2h: 10 bars (5h overdue), actual_timeout=2026-03-26T20:10:32.606240
+[PEC-STALE-TIMEOUT] IP-USDT 30min: 21 bars (5h overdue), actual_timeout=2026-03-26T20:10:38.050520
+[PEC-STALE-TIMEOUT] KNC-USDT 2h: 10 bars (5h overdue), actual_timeout=2026-03-26T20:12:54.330786
+[PEC-STALE-TIMEOUT] TUT-USDT 2h: 10 bars (5h overdue), actual_timeout=2026-03-26T20:15:06.880794
+[PEC-STALE-TIMEOUT] TUT-USDT 2h: 10 bars (5h overdue), actual_timeout=2026-03-26T20:15:13.867801
+[PEC-STALE-TIMEOUT] TUT-USDT 2h: 10 bars (5h overdue), actual_timeout=2026-03-26T20:15:14.454287
+[PEC-STALE-TIMEOUT] TUT-USDT 4h: 10 bars (5h overdue), actual_timeout=2026-03-26T20:15:18.025241
+[PEC-STALE-TIMEOUT] VOXEL-USDT 2h: 10 bars (5h overdue), actual_timeout=2026-03-26T20:15:21.037345
+[PEC-STALE-TIMEOUT] VOXEL-USDT 2h: 10 bars (5h overdue), actual_timeout=2026-03-26T20:15:28.036804
+[PEC-STALE-TIMEOUT] ALU-USDT 2h: 10 bars (5h overdue), actual_timeout=2026-03-26T20:15:32.783992
+[PEC-STALE-TIMEOUT] PEPE-USDT 30min: 20 bars (5h overdue), actual_timeout=2026-03-26T20:17:50.645097
+[PEC-STALE-TIMEOUT] PEPE-USDT 1h: 10 bars (5h overdue), actual_timeout=2026-03-26T20:17:55.154077
+[PEC-STALE-TIMEOUT] TON-USDT 1h: 10 bars (6h overdue), actual_timeout=2026-03-26T19:19:41.376295
+[PEC-STALE-TIMEOUT] VIRTUAL-USDT 1h: 10 bars (6h overdue), actual_timeout=2026-03-26T19:19:58.054127
+[PEC-STALE-TIMEOUT] VIRTUAL-USDT 2h: 10 bars (5h overdue), actual_timeout=2026-03-26T20:20:03.064529
+[PEC-STALE-TIMEOUT] VIRTUAL-USDT 1h: 10 bars (5h overdue), actual_timeout=2026-03-26T20:20:03.806580
+[PEC-STALE-TIMEOUT] KAITO-USDT 4h: 10 bars (5h overdue), actual_timeout=2026-03-26T20:22:00.390186
+[PEC-STALE-TIMEOUT] MAGIC-USDT 30min: 20 bars (5h overdue), actual_timeout=2026-03-26T20:31:15.109994
+[PEC-STALE-TIMEOUT] ACTSOL-USDT 1h: 10 bars (6h overdue), actual_timeout=2026-03-26T19:31:19.534837
+[PEC-STALE-TIMEOUT] ACTSOL-USDT 4h: 10 bars (5h overdue), actual_timeout=2026-03-26T20:31:25.114485
+[PEC-STALE-TIMEOUT] ACTSOL-USDT 30min: 20 bars (5h overdue), actual_timeout=2026-03-26T20:31:24.895726
+[PEC-STALE-TIMEOUT] ERA-USDT 30min: 20 bars (7h overdue), actual_timeout=2026-03-26T18:35:18.192013
+[PEC-STALE-TIMEOUT] TURBO-USDT 30min: 19 bars (6h overdue), actual_timeout=2026-03-26T19:00:36.027087
+[PEC-STALE-TIMEOUT] PORTAL-USDT 2h: 9 bars (4h overdue), actual_timeout=2026-03-26T21:07:51.958965
+[PEC-STALE-TIMEOUT] RAY-USDT 2h: 9 bars (4h overdue), actual_timeout=2026-03-26T21:14:51.160443
+[PEC-STALE-TIMEOUT] LA-USDT 2h: 9 bars (4h overdue), actual_timeout=2026-03-26T21:21:28.313981
+[PEC-STALE-TIMEOUT] SPK-USDT 15min: 37 bars (5h overdue), actual_timeout=2026-03-26T20:06:29.613503
+[PEC-STALE-TIMEOUT] SPK-USDT 30min: 18 bars (6h overdue), actual_timeout=2026-03-26T19:21:33.238932
+[PEC-STALE-TIMEOUT] ZKJ-USDT 2h: 9 bars (4h overdue), actual_timeout=2026-03-26T21:21:48.101713
+[PEC-STALE-TIMEOUT] TUT-USDT 4h: 9 bars (4h overdue), actual_timeout=2026-03-26T21:32:19.749410
+[PEC-STALE-TIMEOUT] DOT-USDT 15min: 36 bars (7h overdue), actual_timeout=2026-03-26T18:38:31.321539
+[PEC-STALE-TIMEOUT] DOT-USDT 15min: 36 bars (7h overdue), actual_timeout=2026-03-26T18:38:40.442470
+[PEC-STALE-TIMEOUT] PENGU-USDT 4h: 9 bars (4h overdue), actual_timeout=2026-03-26T21:38:50.438837
+[PEC-STALE-TIMEOUT] AERO-USDT 1h: 8 bars (3h overdue), actual_timeout=2026-03-26T21:42:21.983874
+[PEC-STALE-TIMEOUT] LQTY-USDT 15min: 35 bars (5h overdue), actual_timeout=2026-03-26T20:27:28.536817
+[PEC-STALE-TIMEOUT] AERO-USDT 1h: 8 bars (4h overdue), actual_timeout=2026-03-26T20:42:30.886053
+[PEC-STALE-TIMEOUT] LQTY-USDT 30min: 17 bars (3h overdue), actual_timeout=2026-03-26T21:42:32.739670
+[PEC-STALE-TIMEOUT] LQTY-USDT 1h: 8 bars (4h overdue), actual_timeout=2026-03-26T20:42:36.813249
+[PEC-STALE-TIMEOUT] LQTY-USDT 2h: 8 bars (3h overdue), actual_timeout=2026-03-26T21:42:41.622292
+[PEC-STALE-TIMEOUT] ALU-USDT 1h: 8 bars (3h overdue), actual_timeout=2026-03-26T21:44:45.702643
+[PEC-STALE-TIMEOUT] BERA-USDT 1h: 8 bars (4h overdue), actual_timeout=2026-03-26T20:46:11.505591
+[PEC-STALE-TIMEOUT] BERA-USDT 2h: 8 bars (3h overdue), actual_timeout=2026-03-26T21:46:15.263786
+[PEC-STALE-TIMEOUT] BERA-USDT 4h: 8 bars (3h overdue), actual_timeout=2026-03-26T21:46:17.808088
+[PEC-STALE-TIMEOUT] NEAR-USDT 1h: 8 bars (3h overdue), actual_timeout=2026-03-26T21:48:00.691464
+[PEC-STALE-TIMEOUT] PORTAL-USDT 15min: 35 bars (5h overdue), actual_timeout=2026-03-26T20:36:31.738636
+[PEC-STALE-TIMEOUT] AAVE-USDT 30min: 17 bars (5h overdue), actual_timeout=2026-03-26T19:54:51.407789
+[PEC-STALE-TIMEOUT] APT-USDT 15min: 35 bars (5h overdue), actual_timeout=2026-03-26T20:41:49.901650
+[PEC-STALE-TIMEOUT] NEWT-USDT 15min: 34 bars (6h overdue), actual_timeout=2026-03-26T19:02:32.059593
+[PEC-STALE-TIMEOUT] NEWT-USDT 15min: 34 bars (6h overdue), actual_timeout=2026-03-26T19:02:37.423940
+[PEC-STALE-TIMEOUT] NEWT-USDT 4h: 8 bars (3h overdue), actual_timeout=2026-03-26T22:02:49.388092
+[PEC-STALE-TIMEOUT] NEWT-USDT 15min: 34 bars (4h overdue), actual_timeout=2026-03-26T20:47:50.672053
+[PEC-STALE-TIMEOUT] NEWT-USDT 4h: 8 bars (3h overdue), actual_timeout=2026-03-26T22:03:00.652272
+[PEC-STALE-TIMEOUT] BIO-USDT 15min: 34 bars (6h overdue), actual_timeout=2026-03-26T19:05:09.936429
+[PEC-STALE-TIMEOUT] AVNT-USDT 2h: 8 bars (3h overdue), actual_timeout=2026-03-26T22:05:19.951883
+[PEC-STALE-TIMEOUT] XAUT-USDT 2h: 8 bars (3h overdue), actual_timeout=2026-03-26T22:05:30.973120
+[PEC-STALE-TIMEOUT] XAUT-USDT 4h: 8 bars (3h overdue), actual_timeout=2026-03-26T22:05:33.882146
+[PEC-STALE-TIMEOUT] XAUT-USDT 4h: 8 bars (3h overdue), actual_timeout=2026-03-26T22:05:34.705265
+[PEC-STALE-TIMEOUT] XAUT-USDT 2h: 8 bars (3h overdue), actual_timeout=2026-03-26T22:05:37.289168
+[PEC-STALE-TIMEOUT] AGLD-USDT 15min: 34 bars (4h overdue), actual_timeout=2026-03-26T20:50:42.788634
+[PEC-STALE-TIMEOUT] YFI-USDT 2h: 8 bars (3h overdue), actual_timeout=2026-03-26T22:07:51.785471
+[PEC-STALE-TIMEOUT] KNC-USDT 2h: 8 bars (3h overdue), actual_timeout=2026-03-26T22:09:58.118124
+[PEC-STALE-TIMEOUT] CROSS-USDT 30min: 17 bars (5h overdue), actual_timeout=2026-03-26T20:10:08.091553
+[PEC-STALE-TIMEOUT] TUT-USDT 1h: 8 bars (3h overdue), actual_timeout=2026-03-26T22:12:33.930274
+[PEC-STALE-TIMEOUT] TUT-USDT 2h: 8 bars (3h overdue), actual_timeout=2026-03-26T22:12:41.761593
+[PEC-STALE-TIMEOUT] VIRTUAL-USDT 4h: 8 bars (3h overdue), actual_timeout=2026-03-26T22:14:37.406362
+[PEC-STALE-TIMEOUT] XAUT-USDT 2h: 8 bars (3h overdue), actual_timeout=2026-03-26T22:16:26.693272
+[PEC-STALE-TIMEOUT] IP-USDT 2h: 8 bars (3h overdue), actual_timeout=2026-03-26T22:17:58.194459
+[PEC-STALE-TIMEOUT] X-USDT 15min: 33 bars (4h overdue), actual_timeout=2026-03-26T21:03:04.089961
+[PEC-STALE-TIMEOUT] SPK-USDT 2h: 8 bars (3h overdue), actual_timeout=2026-03-26T22:18:05.101645
+[PEC-STALE-TIMEOUT] X-USDT 30min: 16 bars (5h overdue), actual_timeout=2026-03-26T20:18:07.983420
+[PEC-STALE-TIMEOUT] LQTY-USDT 2h: 8 bars (3h overdue), actual_timeout=2026-03-26T22:18:09.095625
+[PEC-STALE-TIMEOUT] LQTY-USDT 4h: 8 bars (3h overdue), actual_timeout=2026-03-26T22:18:11.883526
+[PEC-STALE-TIMEOUT] X-USDT 1h: 8 bars (4h overdue), actual_timeout=2026-03-26T21:18:11.601556
+[PEC-STALE-TIMEOUT] RAY-USDT 15min: 33 bars (4h overdue), actual_timeout=2026-03-26T21:03:16.892475
+[PEC-STALE-TIMEOUT] IP-USDT 2h: 8 bars (3h overdue), actual_timeout=2026-03-26T22:18:17.848216
+[PEC-STALE-TIMEOUT] AUCTION-USDT 30min: 16 bars (3h overdue), actual_timeout=2026-03-26T22:20:02.565060
+[PEC-STALE-TIMEOUT] AUCTION-USDT 1h: 8 bars (3h overdue), actual_timeout=2026-03-26T22:20:06.563255
+[PEC-STALE-TIMEOUT] HBAR-USDT 2h: 8 bars (3h overdue), actual_timeout=2026-03-26T22:22:02.202063
+[PEC-STALE-TIMEOUT] DYDX-USDT 15min: 33 bars (4h overdue), actual_timeout=2026-03-26T21:07:30.006166
+[PEC-STALE-TIMEOUT] BNB-USDT 2h: 8 bars (3h overdue), actual_timeout=2026-03-26T22:26:52.538369
+[PEC-STALE-TIMEOUT] NMR-USDT 1h: 8 bars (4h overdue), actual_timeout=2026-03-26T21:32:14.678598
+[PEC-STALE-TIMEOUT] AGLD-USDT 15min: 32 bars (4h overdue), actual_timeout=2026-03-26T21:17:45.707036
+[PEC-STALE-TIMEOUT] AGLD-USDT 15min: 32 bars (6h overdue), actual_timeout=2026-03-26T19:32:48.657322
+[PEC-STALE-TIMEOUT] AVAX-USDT 2h: 8 bars (3h overdue), actual_timeout=2026-03-26T22:34:42.280138
+[PEC-STALE-TIMEOUT] AVAX-USDT 2h: 8 bars (3h overdue), actual_timeout=2026-03-26T22:34:46.980184
+[PEC-STALE-TIMEOUT] CROSS-USDT 15min: 32 bars (6h overdue), actual_timeout=2026-03-26T19:36:41.501261
+[PEC-STALE-TIMEOUT] ALU-USDT 2h: 8 bars (3h overdue), actual_timeout=2026-03-26T22:38:27.631847
+[PEC-STALE-TIMEOUT] PENGU-USDT 15min: 30 bars (3h overdue), actual_timeout=2026-03-26T21:43:09.581700
+[PEC-TIMEOUT-HIT] UNI-USDT 4h: 7 bars >= 5 max, actual_timeout=2026-03-26T22:59:57.255037 [CHAMPION]
+[PEC-TIMEOUT-HIT] TON-USDT 1h: 7 bars >= 5 max, actual_timeout=2026-03-26T22:59:59.232327 [CHAMPION]
+[PEC-TIMEOUT-HIT] TON-USDT 2h: 7 bars >= 5 max, actual_timeout=2026-03-26T23:00:08.168135 [CHAMPION]
+[PEC-STALE-TIMEOUT] KAITO-USDT 1h: 7 bars (3h overdue), actual_timeout=2026-03-26T22:01:56.631119
+[PEC-TIMEOUT-HIT] YFI-USDT 4h: 7 bars >= 5 max, actual_timeout=2026-03-26T23:05:23.192478 [CHAMPION]
+[PEC-STALE-TIMEOUT] BTC-USDT 15min: 30 bars (5h overdue), actual_timeout=2026-03-26T20:05:24.659021
+[PEC-STALE-TIMEOUT] YFI-USDT 30min: 15 bars (4h overdue), actual_timeout=2026-03-26T21:05:24.665906
+[PEC-STALE-TIMEOUT] BTC-USDT 1h: 7 bars (3h overdue), actual_timeout=2026-03-26T22:05:29.977668
+[PEC-STALE-TIMEOUT] YFI-USDT 1h: 7 bars (3h overdue), actual_timeout=2026-03-26T22:05:30.562638
+[PEC-STALE-TIMEOUT] SPK-USDT 15min: 30 bars (3h overdue), actual_timeout=2026-03-26T21:52:34.502297
+[PEC-STALE-TIMEOUT] AERO-USDT 15min: 30 bars (3h overdue), actual_timeout=2026-03-26T21:52:35.134538
+[PEC-STALE-TIMEOUT] AERO-USDT 30min: 15 bars (4h overdue), actual_timeout=2026-03-26T21:07:39.325805
+[PEC-STALE-TIMEOUT] SPK-USDT 15min: 30 bars (3h overdue), actual_timeout=2026-03-26T21:52:44.065703
+[PEC-TIMEOUT-HIT] AERO-USDT 1h: 7 bars >= 5 max, actual_timeout=2026-03-26T23:07:44.574467 [CHAMPION]
+[PEC-STALE-TIMEOUT] BMT-USDT 15min: 30 bars (3h overdue), actual_timeout=2026-03-26T21:52:51.568417
+[PEC-STALE-TIMEOUT] VOXEL-USDT 15min: 30 bars (5h overdue), actual_timeout=2026-03-26T20:11:28.794145
+[PEC-STALE-TIMEOUT] PUMP-USDT 30min: 14 bars (4h overdue), actual_timeout=2026-03-26T21:19:23.746729
+[PEC-TIMEOUT-HIT] ATOM-USDT 4h: 7 bars >= 5 max, actual_timeout=2026-03-26T23:35:18.944588 [CHAMPION]
+[PEC-STALE-TIMEOUT] KAITO-USDT 15min: 28 bars (5h overdue), actual_timeout=2026-03-26T20:35:19.131066
+[PEC-TIMEOUT-HIT] SEI-USDT 1h: 7 bars >= 5 max, actual_timeout=2026-03-26T23:35:44.126891 [CHAMPION]
+[PEC-STALE-TIMEOUT] APT-USDT 15min: 28 bars (3h overdue), actual_timeout=2026-03-26T22:21:02.647989
+[PEC-STALE-TIMEOUT] BLUR-USDT 15min: 28 bars (3h overdue), actual_timeout=2026-03-26T22:21:26.594309
+[PEC-STALE-TIMEOUT] ATH-USDT 15min: 28 bars (3h overdue), actual_timeout=2026-03-26T22:21:27.052154
+[PEC-TIMEOUT-HIT] APT-USDT 30min: 14 bars >= 10 max, actual_timeout=2026-03-26T23:42:14.099827 [CHAMPION]
+[PEC-STALE-TIMEOUT] APT-USDT 1h: 7 bars (3h overdue), actual_timeout=2026-03-26T22:42:22.005892
+[PEC-STALE-TIMEOUT] ATH-USDT 30min: 14 bars (4h overdue), actual_timeout=2026-03-26T21:42:22.293332
+[PEC-TIMEOUT-HIT] APT-USDT 2h: 7 bars >= 5 max, actual_timeout=2026-03-26T23:42:28.208902 [CHALLENGER]
+[PEC-STALE-TIMEOUT] NMR-USDT 15min: 28 bars (5h overdue), actual_timeout=2026-03-26T20:42:31.368339
+[PEC-STALE-TIMEOUT] NMR-USDT 30min: 14 bars (4h overdue), actual_timeout=2026-03-26T21:42:38.670244
+[PEC-STALE-TIMEOUT] NEAR-USDT 15min: 27 bars (4h overdue), actual_timeout=2026-03-26T20:42:42.859360
+[PEC-TIMEOUT-HIT] NEAR-USDT 1h: 6 bars >= 4 max, actual_timeout=2026-03-26T22:42:47.811638 [CHALLENGER]
+[PEC-STALE-TIMEOUT] YFI-USDT 15min: 27 bars (3h overdue), actual_timeout=2026-03-26T22:27:49.079857
+[PEC-STALE-TIMEOUT] ARB-USDT 15min: 27 bars (3h overdue), actual_timeout=2026-03-26T22:27:50.351676
+[PEC-STALE-TIMEOUT] ARB-USDT 30min: 13 bars (3h overdue), actual_timeout=2026-03-26T21:42:56.953686
+[PEC-STALE-TIMEOUT] ENS-USDT 15min: 27 bars (3h overdue), actual_timeout=2026-03-26T22:28:00.629338
+[PEC-TIMEOUT-HIT] ARB-USDT 1h: 6 bars >= 5 max, actual_timeout=2026-03-26T23:43:03.122224 [CHAMPION]
+[PEC-STALE-TIMEOUT] ENS-USDT 30min: 13 bars (3h overdue), actual_timeout=2026-03-26T21:43:05.758888
+[PEC-TIMEOUT-HIT] WLFI-USDT 1h: 6 bars >= 4 max, actual_timeout=2026-03-26T22:43:11.127897 [CHALLENGER]
+[PEC-TIMEOUT-HIT] WLFI-USDT 2h: 6 bars >= 5 max, actual_timeout=2026-03-26T23:43:16.202442 [CHAMPION]
+[PEC-TIMEOUT-HIT] ETH-USDT 1h: 6 bars >= 4 max, actual_timeout=2026-03-26T22:43:34.887864 [CHALLENGER]
+[PEC-TIMEOUT-HIT] SOL-USDT 1h: 6 bars >= 5 max, actual_timeout=2026-03-26T23:43:48.408919 [CHAMPION]
+[PEC-STALE-TIMEOUT] XAUT-USDT 15min: 27 bars (3h overdue), actual_timeout=2026-03-26T22:28:57.055184
+[PEC-TIMEOUT-HIT] XRP-USDT 1h: 6 bars >= 5 max, actual_timeout=2026-03-26T23:43:58.961793 [CHAMPION]
+[PEC-TIMEOUT-HIT] XAUT-USDT 1h: 6 bars >= 4 max, actual_timeout=2026-03-26T22:44:03.289075 [CHALLENGER]
+[PEC-TIMEOUT-HIT] SEI-USDT 1h: 6 bars >= 5 max, actual_timeout=2026-03-26T23:44:02.840286 [CHAMPION]
+[PEC-TIMEOUT-HIT] XRP-USDT 2h: 6 bars >= 5 max, actual_timeout=2026-03-26T23:44:04.846992 [CHALLENGER]
+[PEC-TIMEOUT-HIT] XAUT-USDT 4h: 6 bars >= 5 max, actual_timeout=2026-03-26T23:44:06.436448 [CHAMPION]
+[PEC-TIMEOUT-HIT] AGLD-USDT 30min: 13 bars >= 10 max, actual_timeout=2026-03-26T23:44:23.797687 [CHAMPION]
+[PEC-TIMEOUT-HIT] AGLD-USDT 1h: 6 bars >= 4 max, actual_timeout=2026-03-26T22:44:29.936845 [CHALLENGER]
+[PEC-STALE-TIMEOUT] XLM-USDT 15min: 27 bars (3h overdue), actual_timeout=2026-03-26T22:29:32.403733
+[PEC-TIMEOUT-HIT] APT-USDT 1h: 6 bars >= 5 max, actual_timeout=2026-03-26T23:44:41.028474 [CHAMPION]
+[PEC-TIMEOUT-HIT] LINK-USDT 1h: 6 bars >= 4 max, actual_timeout=2026-03-26T22:44:44.820325 [CHALLENGER]
+[PEC-TIMEOUT-HIT] APT-USDT 2h: 6 bars >= 5 max, actual_timeout=2026-03-26T23:44:47.392043 [CHALLENGER]
+[PEC-TIMEOUT-HIT] LINK-USDT 4h: 6 bars >= 5 max, actual_timeout=2026-03-26T23:44:49.322606 [CHAMPION]
+[PEC-STALE-TIMEOUT] YFI-USDT 15min: 27 bars (3h overdue), actual_timeout=2026-03-26T22:29:51.099007
+[PEC-TIMEOUT-HIT] NEAR-USDT 1h: 6 bars >= 4 max, actual_timeout=2026-03-26T22:45:04.964988 [CHALLENGER]
+[PEC-STALE-TIMEOUT] ENS-USDT 15min: 27 bars (3h overdue), actual_timeout=2026-03-26T22:30:05.057443
+[PEC-TIMEOUT-HIT] ENS-USDT 30min: 13 bars >= 10 max, actual_timeout=2026-03-26T23:45:10.703929 [CHAMPION]
+[PEC-STALE-TIMEOUT] LA-USDT 15min: 27 bars (4h overdue), actual_timeout=2026-03-26T20:45:18.333988
+[PEC-TIMEOUT-HIT] BTC-USDT 4h: 6 bars >= 5 max, actual_timeout=2026-03-27T00:00:35.087177 [CHAMPION]
+[PEC-STALE-TIMEOUT] SPK-USDT 15min: 27 bars (4h overdue), actual_timeout=2026-03-26T20:45:30.134796
+[PEC-TIMEOUT-HIT] SPK-USDT 30min: 13 bars >= 10 max, actual_timeout=2026-03-27T00:00:49.000290 [CHAMPION]
+[PEC-TIMEOUT-HIT] SPK-USDT 1h: 6 bars >= 5 max, actual_timeout=2026-03-27T00:01:00.463784 [CHAMPION]
+[PEC-TIMEOUT-HIT] SOL-USDT 2h: 6 bars >= 5 max, actual_timeout=2026-03-27T00:01:05.973911 [CHAMPION]
+[PEC-TIMEOUT-HIT] SOL-USDT 4h: 6 bars >= 5 max, actual_timeout=2026-03-27T00:01:12.320409 [CHAMPION]
+[PEC-TIMEOUT-HIT] OP-USDT 2h: 6 bars >= 5 max, actual_timeout=2026-03-27T00:01:14.829324 [CHALLENGER]
+[PEC-STALE-TIMEOUT] ZKJ-USDT 15min: 26 bars (4h overdue), actual_timeout=2026-03-26T21:01:15.802758
+[PEC-STALE-TIMEOUT] LQTY-USDT 30min: 12 bars (3h overdue), actual_timeout=2026-03-26T22:17:53.451299
+[PEC-TIMEOUT-HIT] YFI-USDT 1h: 6 bars >= 5 max, actual_timeout=2026-03-27T00:33:02.879060 [CHAMPION]
+[PEC-TIMEOUT-HIT] BNB-USDT 4h: 6 bars >= 5 max, actual_timeout=2026-03-27T00:33:20.293839 [CHAMPION]
+[PEC-STALE-TIMEOUT] ENS-USDT 15min: 24 bars (2h overdue), actual_timeout=2026-03-26T23:18:31.492985
+[PEC-STALE-TIMEOUT] RAY-USDT 15min: 24 bars (2h overdue), actual_timeout=2026-03-26T23:18:37.962596
+[PEC-STALE-TIMEOUT] SKATE-USDT 15min: 24 bars (4h overdue), actual_timeout=2026-03-26T21:33:38.525545
+[PEC-TIMEOUT-HIT] RAY-USDT 30min: 12 bars >= 10 max, actual_timeout=2026-03-27T00:33:48.896597 [CHAMPION]
+[PEC-STALE-TIMEOUT] LA-USDT 15min: 24 bars (4h overdue), actual_timeout=2026-03-26T21:33:55.173659
+[PEC-STALE-TIMEOUT] BONK-USDT 15min: 24 bars (2h overdue), actual_timeout=2026-03-26T23:19:00.235090
+[PEC-TIMEOUT-HIT] RAY-USDT 1h: 6 bars >= 5 max, actual_timeout=2026-03-27T00:34:05.075680 [CHAMPION]
+[PEC-TIMEOUT-HIT] RAY-USDT 2h: 5 bars >= 5 max, actual_timeout=2026-03-27T00:50:30.566100 [CHALLENGER]
+[PEC-TIMEOUT-HIT] BONK-USDT 1h: 5 bars >= 5 max, actual_timeout=2026-03-27T00:50:31.095274 [CHAMPION]
+[PEC-TIMEOUT-HIT] RAY-USDT 4h: 5 bars >= 5 max, actual_timeout=2026-03-27T00:50:59.284576 [CHAMPION]
+[PEC-TIMEOUT-HIT] BONK-USDT 4h: 5 bars >= 5 max, actual_timeout=2026-03-27T00:51:03.629002 [CHAMPION]
+[PEC-TIMEOUT-HIT] LA-USDT 4h: 5 bars >= 5 max, actual_timeout=2026-03-27T00:51:30.272621 [CHAMPION]
+[PEC-STALE-TIMEOUT] SPK-USDT 15min: 23 bars (2h overdue), actual_timeout=2026-03-26T23:37:07.059305
+[PEC-STALE-TIMEOUT] MAGIC-USDT 15min: 23 bars (3h overdue), actual_timeout=2026-03-26T21:52:08.338863
+[PEC-TIMEOUT-HIT] SPK-USDT 2h: 5 bars >= 5 max, actual_timeout=2026-03-27T00:53:07.777690 [CHALLENGER]
+[PEC-TIMEOUT-HIT] SPK-USDT 4h: 5 bars >= 5 max, actual_timeout=2026-03-27T00:53:13.050015 [CHAMPION]
+[PEC-STALE-TIMEOUT] ZKJ-USDT 15min: 23 bars (3h overdue), actual_timeout=2026-03-26T21:53:44.260959
+[PEC-TIMEOUT-HIT] MAGIC-USDT 1h: 5 bars >= 5 max, actual_timeout=2026-03-27T01:10:27.203353 [CHAMPION]
+[PEC-TIMEOUT-HIT] ZKJ-USDT 1h: 5 bars >= 4 max, actual_timeout=2026-03-27T00:10:33.273865 [CHALLENGER]
+[PEC-TIMEOUT-HIT] MAGIC-USDT 2h: 5 bars >= 5 max, actual_timeout=2026-03-27T01:10:39.900458 [CHALLENGER]
+[PEC-TIMEOUT-HIT] ADA-USDT 15min: 22 bars >= 15 max, actual_timeout=2026-03-26T23:55:41.166100 [CHAMPION]
+[PEC-TIMEOUT-HIT] ZKJ-USDT 2h: 5 bars >= 5 max, actual_timeout=2026-03-27T01:10:47.366517 [CHALLENGER]
+[PEC-TIMEOUT-HIT] ZKJ-USDT 4h: 5 bars >= 5 max, actual_timeout=2026-03-27T01:10:53.932263 [CHAMPION]
+[PEC-STALE-TIMEOUT] ACTSOL-USDT 15min: 22 bars (3h overdue), actual_timeout=2026-03-26T22:10:56.589986
+[PEC-STALE-TIMEOUT] XLM-USDT 15min: 22 bars (3h overdue), actual_timeout=2026-03-26T22:11:01.350209
+[PEC-STALE-TIMEOUT] IP-USDT 15min: 22 bars (3h overdue), actual_timeout=2026-03-26T22:11:02.115935
+[PEC-STALE-TIMEOUT] ACTSOL-USDT 30min: 11 bars (2h overdue), actual_timeout=2026-03-26T23:11:04.996242
+[PEC-STALE-TIMEOUT] IP-USDT 30min: 11 bars (2h overdue), actual_timeout=2026-03-26T23:11:09.337298
+[PEC-TIMEOUT-HIT] ACTSOL-USDT 1h: 5 bars >= 4 max, actual_timeout=2026-03-27T00:11:12.981117 [CHALLENGER]
+[PEC-TIMEOUT-HIT] IP-USDT 1h: 5 bars >= 5 max, actual_timeout=2026-03-27T01:11:17.166361 [CHAMPION]
+[PEC-TIMEOUT-HIT] ACTSOL-USDT 2h: 5 bars >= 5 max, actual_timeout=2026-03-27T01:11:19.181789 [CHAMPION]
+[PEC-TIMEOUT-HIT] SKATE-USDT 15min: 22 bars >= 15 max, actual_timeout=2026-03-26T23:56:20.437654 [CHAMPION]
+[PEC-TIMEOUT-HIT] IP-USDT 2h: 5 bars >= 5 max, actual_timeout=2026-03-27T01:11:26.335424 [CHALLENGER]
+[PEC-TIMEOUT-HIT] FUN-USDT 4h: 5 bars >= 5 max, actual_timeout=2026-03-27T01:11:29.273552 [CHAMPION]
+[PEC-TIMEOUT-HIT] LA-USDT 15min: 22 bars >= 15 max, actual_timeout=2026-03-26T23:56:32.782708 [CHAMPION]
+[PEC-TIMEOUT-HIT] BMT-USDT 15min: 22 bars >= 15 max, actual_timeout=2026-03-26T23:56:39.141842 [CHAMPION]
+[PEC-TIMEOUT-HIT] LA-USDT 2h: 5 bars >= 5 max, actual_timeout=2026-03-27T01:11:43.569782 [CHAMPION]
+[PEC-STALE-TIMEOUT] CROSS-USDT 15min: 22 bars (3h overdue), actual_timeout=2026-03-26T22:11:38.561531
+[PEC-TIMEOUT-HIT] LA-USDT 4h: 5 bars >= 5 max, actual_timeout=2026-03-27T01:11:51.564646 [CHAMPION]
+[PEC-STALE-TIMEOUT] BMT-USDT 30min: 11 bars (2h overdue), actual_timeout=2026-03-26T23:11:52.461386
+[PEC-TIMEOUT-HIT] CROSS-USDT 30min: 11 bars >= 10 max, actual_timeout=2026-03-27T01:11:55.257182 [CHAMPION]
+[PEC-TIMEOUT-HIT] SPK-USDT 15min: 20 bars >= 15 max, actual_timeout=2026-03-27T00:15:58.654031 [CHAMPION]
+[PEC-TIMEOUT-HIT] LQTY-USDT 1h: 5 bars >= 4 max, actual_timeout=2026-03-27T00:31:30.253491 [CHALLENGER]
+[PEC-STALE-TIMEOUT] KNC-USDT 15min: 20 bars (3h overdue), actual_timeout=2026-03-26T22:31:31.860797
+[PEC-TIMEOUT-HIT] ZKJ-USDT 15min: 20 bars >= 15 max, actual_timeout=2026-03-27T00:17:07.033824 [CHAMPION]
+[PEC-TIMEOUT-HIT] LQTY-USDT 2h: 5 bars >= 5 max, actual_timeout=2026-03-27T01:32:06.077923 [CHAMPION]
+[PEC-TIMEOUT-HIT] RAY-USDT 15min: 20 bars >= 15 max, actual_timeout=2026-03-27T00:18:09.181906 [CHAMPION]
+[PEC-TIMEOUT-HIT] BMT-USDT 30min: 9 bars >= 6 max, actual_timeout=2026-03-26T23:47:05.894752 [CHALLENGER]
+[PEC-STALE-TIMEOUT] ACTSOL-USDT 15min: 19 bars (2h overdue), actual_timeout=2026-03-26T22:47:40.104336
+[PEC-TIMEOUT-HIT] LQTY-USDT 1h: 4 bars >= 4 max, actual_timeout=2026-03-27T00:48:13.413688 [CHALLENGER]
+[PEC-TIMEOUT-HIT] ACTSOL-USDT 30min: 9 bars >= 6 max, actual_timeout=2026-03-26T23:48:12.880174 [CHALLENGER]
+[PEC-TIMEOUT-HIT] ACTSOL-USDT 1h: 4 bars >= 4 max, actual_timeout=2026-03-27T01:20:37.611200 [CHALLENGER]
+[PEC-STALE-TIMEOUT] RAY-USDT 15min: 17 bars (2h overdue), actual_timeout=2026-03-26T23:21:02.054001
+[PEC-TIMEOUT-HIT] FUN-USDT 30min: 8 bars >= 6 max, actual_timeout=2026-03-27T00:21:09.328724 [CHALLENGER]
+[PEC-TIMEOUT-HIT] FUN-USDT 1h: 4 bars >= 4 max, actual_timeout=2026-03-27T01:21:20.404601 [CHALLENGER]
+[PEC-STALE-TIMEOUT] ICNT-USDT 15min: 17 bars (2h overdue), actual_timeout=2026-03-26T23:21:15.644019
+[PEC-TIMEOUT-HIT] FUN-USDT 30min: 8 bars >= 6 max, actual_timeout=2026-03-27T00:21:32.877759 [CHALLENGER]
+[PEC-STALE-TIMEOUT] KNC-USDT 15min: 17 bars (2h overdue), actual_timeout=2026-03-26T23:21:34.009466
+[PEC-TIMEOUT-HIT] FUN-USDT 1h: 4 bars >= 4 max, actual_timeout=2026-03-27T01:39:58.467535 [CHALLENGER]
+[PEC-STALE-TIMEOUT] AIN-USDT 15min: 16 bars (2h overdue), actual_timeout=2026-03-26T23:41:06.297527
+[PEC-TIMEOUT-HIT] KNC-USDT 15min: 16 bars >= 15 max, actual_timeout=2026-03-27T01:26:34.822024 [CHAMPION]
+[PEC-STALE-TIMEOUT] VINE-USDT 15min: 14 bars (1h overdue), actual_timeout=2026-03-27T00:04:22.923809
+[PEC-STALE-TIMEOUT] NEWT-USDT 15min: 14 bars (1h overdue), actual_timeout=2026-03-27T00:11:10.222196
+[PEC-STALE-TIMEOUT] VOXEL-USDT 15min: 14 bars (1h overdue), actual_timeout=2026-03-27T00:11:10.401639
+[PEC-STALE-TIMEOUT] PEPE-USDT 15min: 14 bars (1h overdue), actual_timeout=2026-03-27T00:11:18.245372
+[PEC-STALE-TIMEOUT] NEWT-USDT 15min: 14 bars (1h overdue), actual_timeout=2026-03-27T00:11:21.923559
+[PEC-STALE-TIMEOUT] ERA-USDT 15min: 14 bars (1h overdue), actual_timeout=2026-03-27T00:11:24.675827
+[PEC-STALE-TIMEOUT] NEWT-USDT 15min: 14 bars (1h overdue), actual_timeout=2026-03-27T00:11:35.362080
+[PEC-STALE-TIMEOUT] PENGU-USDT 15min: 14 bars (1h overdue), actual_timeout=2026-03-27T00:11:35.286769
+[PEC-STALE-TIMEOUT] PENGU-USDT 15min: 14 bars (1h overdue), actual_timeout=2026-03-27T00:11:49.190796
+[PEC-STALE-TIMEOUT] WIF-USDT 15min: 14 bars (1h overdue), actual_timeout=2026-03-27T00:12:31.980687
+[PEC-STALE-TIMEOUT] ATH-USDT 15min: 14 bars (1h overdue), actual_timeout=2026-03-27T00:12:36.106045
+[PEC-STALE-TIMEOUT] ARKM-USDT 15min: 14 bars (1h overdue), actual_timeout=2026-03-27T00:12:38.959765
+[PEC-TIMEOUT-HIT] ATH-USDT 30min: 7 bars >= 6 max, actual_timeout=2026-03-27T01:12:48.444608 [CHALLENGER]
+[PEC-STALE-TIMEOUT] WLFI-USDT 15min: 14 bars (1h overdue), actual_timeout=2026-03-27T00:12:49.388907
+[PEC-STALE-TIMEOUT] XPL-USDT 15min: 14 bars (1h overdue), actual_timeout=2026-03-27T00:13:08.279332
+[PEC-STALE-TIMEOUT] AGLD-USDT 15min: 14 bars (1h overdue), actual_timeout=2026-03-27T00:13:23.482913
+[PEC-STALE-TIMEOUT] APT-USDT 15min: 14 bars (1h overdue), actual_timeout=2026-03-27T00:13:29.651002
+[PEC-STALE-TIMEOUT] APT-USDT 15min: 14 bars (1h overdue), actual_timeout=2026-03-27T00:13:34.543340
+[PEC-STALE-TIMEOUT] AGLD-USDT 15min: 14 bars (1h overdue), actual_timeout=2026-03-27T00:13:37.728238
+[PEC-STALE-TIMEOUT] APT-USDT 15min: 13 bars (1h overdue), actual_timeout=2026-03-27T00:13:44.480489
+[PEC-STALE-TIMEOUT] TAO-USDT 15min: 13 bars (1h overdue), actual_timeout=2026-03-27T00:14:13.383746
+[PEC-STALE-TIMEOUT] TAO-USDT 15min: 13 bars (1h overdue), actual_timeout=2026-03-27T00:14:16.802952
+[PEC-STALE-TIMEOUT] YFI-USDT 15min: 13 bars (1h overdue), actual_timeout=2026-03-27T00:14:39.073548
+[PEC-STALE-TIMEOUT] BTC-USDT 15min: 13 bars (1h overdue), actual_timeout=2026-03-27T00:14:48.669504
+[PEC-STALE-TIMEOUT] SOL-USDT 15min: 13 bars (1h overdue), actual_timeout=2026-03-27T00:14:54.945487
+[PEC-STALE-TIMEOUT] ETH-USDT 15min: 13 bars (1h overdue), actual_timeout=2026-03-27T00:14:58.987277
+[PEC-STALE-TIMEOUT] XLM-USDT 15min: 13 bars (1h overdue), actual_timeout=2026-03-27T00:15:03.827960
+[PEC-STALE-TIMEOUT] XRP-USDT 15min: 13 bars (1h overdue), actual_timeout=2026-03-27T00:15:10.775297
+[PEC-STALE-TIMEOUT] BNB-USDT 15min: 13 bars (1h overdue), actual_timeout=2026-03-27T00:15:26.046446
+[PEC-STALE-TIMEOUT] LINK-USDT 15min: 13 bars (1h overdue), actual_timeout=2026-03-27T00:15:30.205592
+[PEC-TIMEOUT-HIT] SKATE-USDT 30min: 6 bars >= 6 max, actual_timeout=2026-03-27T01:15:34.086321 [CHALLENGER]
+[PEC-STALE-TIMEOUT] SPK-USDT 15min: 13 bars (1h overdue), actual_timeout=2026-03-27T00:15:39.265161
+[PEC-STALE-TIMEOUT] ZKJ-USDT 15min: 13 bars (1h overdue), actual_timeout=2026-03-27T00:15:45.119267
+[PEC-STALE-TIMEOUT] ONDO-USDT 15min: 13 bars (1h overdue), actual_timeout=2026-03-27T00:18:52.446921
+[PEC-TIMEOUT-HIT] ONDO-USDT 30min: 6 bars >= 6 max, actual_timeout=2026-03-27T01:18:56.002255 [CHALLENGER]
+[PEC-STALE-TIMEOUT] LQTY-USDT 15min: 13 bars (1h overdue), actual_timeout=2026-03-27T00:21:30.569001
+[PEC-TIMEOUT-HIT] LQTY-USDT 30min: 6 bars >= 6 max, actual_timeout=2026-03-27T01:21:34.012548 [CHALLENGER]
+[PEC-STALE-TIMEOUT] KNC-USDT 15min: 13 bars (1h overdue), actual_timeout=2026-03-27T00:21:58.601306
+[PEC-TIMEOUT-HIT] KNC-USDT 30min: 6 bars >= 6 max, actual_timeout=2026-03-27T01:22:02.188963 [CHALLENGER]
+[PEC-STALE-TIMEOUT] TON-USDT 15min: 13 bars (1h overdue), actual_timeout=2026-03-27T00:23:46.497105
+[PEC-STALE-TIMEOUT] ARB-USDT 15min: 13 bars (1h overdue), actual_timeout=2026-03-27T00:24:37.741978
+[PEC-TIMEOUT-HIT] SOL-USDT 30min: 6 bars >= 6 max, actual_timeout=2026-03-27T01:26:22.360615 [CHALLENGER]
+[PEC-STALE-TIMEOUT] ICNT-USDT 15min: 13 bars (1h overdue), actual_timeout=2026-03-27T00:28:04.700808
+[PEC-TIMEOUT-HIT] PROMPT-USDT 30min: 6 bars >= 6 max, actual_timeout=2026-03-27T01:28:49.142911 [CHALLENGER]
+[PEC-STALE-TIMEOUT] DOGE-USDT 15min: 13 bars (1h overdue), actual_timeout=2026-03-27T00:28:54.853197
+[PEC-TIMEOUT-HIT] DOGE-USDT 30min: 6 bars >= 6 max, actual_timeout=2026-03-27T01:28:58.935867 [CHALLENGER]
+[PEC-TIMEOUT-HIT] SUI-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-27T00:29:21.259756 [CHALLENGER]
+[PEC-TIMEOUT-HIT] EIGEN-USDT 30min: 6 bars >= 6 max, actual_timeout=2026-03-27T01:29:26.136007 [CHALLENGER]
+[PEC-TIMEOUT-HIT] KAS-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-27T00:29:38.052529 [CHALLENGER]
+[PEC-TIMEOUT-HIT] KAS-USDT 30min: 6 bars >= 6 max, actual_timeout=2026-03-27T01:29:41.272798 [CHALLENGER]
+[PEC-TIMEOUT-HIT] KAITO-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-27T00:30:21.183165 [CHALLENGER]
+[PEC-TIMEOUT-HIT] RAY-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-27T00:32:43.211208 [CHALLENGER]
+[PEC-TIMEOUT-HIT] SUI-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-27T00:34:37.930233 [CHALLENGER]
+[PEC-TIMEOUT-HIT] SUI-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-27T00:34:38.976889 [CHALLENGER]
+[PEC-TIMEOUT-HIT] PUMP-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-27T00:35:26.997249 [CHALLENGER]
+[PEC-TIMEOUT-HIT] DYDX-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-27T00:35:34.800510 [CHALLENGER]
+[PEC-TIMEOUT-HIT] ARKM-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-27T00:35:40.612899 [CHALLENGER]
+[PEC-TIMEOUT-HIT] NMR-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-27T00:35:49.282100 [CHALLENGER]
+[PEC-TIMEOUT-HIT] ARB-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-27T00:35:52.461358 [CHALLENGER]
+[PEC-TIMEOUT-HIT] WLFI-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-27T00:35:55.730075 [CHALLENGER]
+[PEC-TIMEOUT-HIT] BNB-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-27T00:37:43.104166 [CHALLENGER]
+[PEC-TIMEOUT-HIT] BNB-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-27T00:37:43.691615 [CHALLENGER]
+[PEC-TIMEOUT-HIT] LA-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-27T00:37:50.142112 [CHALLENGER]
+[PEC-TIMEOUT-HIT] AERO-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-27T00:38:05.875616 [CHALLENGER]
+[PEC-TIMEOUT-HIT] BMT-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-27T00:38:10.904990 [CHALLENGER]
+[PEC-TIMEOUT-HIT] AERO-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-27T00:38:11.568602 [CHALLENGER]
+[PEC-TIMEOUT-HIT] AIN-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-27T00:38:45.979683 [CHALLENGER]
+[PEC-TIMEOUT-HIT] PARTI-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-27T00:39:07.429599 [CHALLENGER]
+[PEC-TIMEOUT-HIT] ONDO-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-27T00:40:23.926226 [CHALLENGER]
+[PEC-TIMEOUT-HIT] KAITO-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-27T00:40:50.312500 [CHALLENGER]
+[PEC-TIMEOUT-HIT] ASTER-USDT 30min: 6 bars >= 6 max, actual_timeout=2026-03-27T01:41:20.370863 [CHALLENGER]
+[PEC-TIMEOUT-HIT] XAUT-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-27T00:41:24.183769 [CHALLENGER]
+[PEC-TIMEOUT-HIT] XAUT-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-27T00:41:31.617431 [CHALLENGER]
+[PEC-TIMEOUT-HIT] XAUT-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-27T00:41:36.168105 [CHALLENGER]
+[PEC-TIMEOUT-HIT] YFI-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-27T00:42:22.241866 [CHALLENGER]
+[PEC-TIMEOUT-HIT] SOL-USDT 15min: 12 bars >= 8 max, actual_timeout=2026-03-27T00:42:45.574946 [CHALLENGER]
+[PEC-TIMEOUT-HIT] AGLD-USDT 15min: 11 bars >= 8 max, actual_timeout=2026-03-27T00:46:42.299391 [CHALLENGER]
+[PEC-TIMEOUT-HIT] AGLD-USDT 15min: 10 bars >= 8 max, actual_timeout=2026-03-27T01:02:56.749200 [CHALLENGER]
+[PEC-TIMEOUT-HIT] APT-USDT 15min: 10 bars >= 8 max, actual_timeout=2026-03-27T01:03:06.401748 [CHALLENGER]
+[PEC-TIMEOUT-HIT] ATOM-USDT 15min: 10 bars >= 8 max, actual_timeout=2026-03-27T01:03:09.813261 [CHALLENGER]
+
+================================================================================
+[PEC UPDATE] 2026-03-27 08:40:47
+================================================================================
+
+✅ TP HIT (38 signals):
+   ONDO-USDT    4h     | P&L: $    3.44 (+3.44%) | Fired: 05:11:49
+   ONDO-USDT    4h     | P&L: $    3.44 (+3.44%) | Fired: 05:11:57
+   ONDO-USDT    4h     | P&L: $    3.44 (+3.44%) | Fired: 05:12:11
+   ASTER-USDT   15min  | P&L: $    0.36 (+0.36%) | Fired: 05:13:04
+   ASTER-USDT   1h     | P&L: $    0.71 (+0.71%) | Fired: 05:13:08
+   ONDO-USDT    1h     | P&L: $    1.95 (+1.95%) | Fired: 05:18:53
+   ONDO-USDT    4h     | P&L: $    3.43 (+3.43%) | Fired: 05:18:57
+   ONDO-USDT    1h     | P&L: $    1.95 (+1.95%) | Fired: 05:18:59
+   ONDO-USDT    4h     | P&L: $    3.43 (+3.43%) | Fired: 05:19:02
+   TON-USDT     15min  | P&L: $    0.47 (+0.47%) | Fired: 05:23:45
+   TON-USDT     4h     | P&L: $    1.50 (+1.50%) | Fired: 05:23:48
+   ACTSOL-USDT  15min  | P&L: $    0.12 (+0.12%) | Fired: 05:27:28
+   ICNT-USDT    15min  | P&L: $    1.12 (+1.12%) | Fired: 05:28:00
+   ZORA-USDT    15min  | P&L: $    0.26 (+0.26%) | Fired: 05:28:24
+   TON-USDT     1h     | P&L: $    0.79 (+0.79%) | Fired: 05:34:50
+   TON-USDT     2h     | P&L: $    0.94 (+0.94%) | Fired: 05:34:53
+   ACTSOL-USDT  15min  | P&L: $    0.12 (+0.12%) | Fired: 07:28:09
+   TUT-USDT     15min  | P&L: $    0.34 (+0.34%) | Fired: 07:29:20
+   DOT-USDT     15min  | P&L: $    0.55 (+0.55%) | Fired: 07:29:52
+   DOT-USDT     15min  | P&L: $    0.55 (+0.55%) | Fired: 07:29:58
+   ONDO-USDT    1h     | P&L: $    1.93 (+1.93%) | Fired: 07:30:38
+   ONDO-USDT    1h     | P&L: $    1.93 (+1.93%) | Fired: 07:30:39
+   ONDO-USDT    1h     | P&L: $    1.93 (+1.93%) | Fired: 07:30:46
+   ASTER-USDT   15min  | P&L: $    0.28 (+0.28%) | Fired: 07:31:41
+   ASTER-USDT   30min  | P&L: $    0.47 (+0.47%) | Fired: 07:31:43
+   INJ-USDT     15min  | P&L: $    0.34 (+0.34%) | Fired: 07:32:15
+   ATH-USDT     15min  | P&L: $    0.97 (+0.97%) | Fired: 07:37:02
+   BIO-USDT     15min  | P&L: $    0.37 (+0.37%) | Fired: 07:42:56
+   ACTSOL-USDT  15min  | P&L: $    0.12 (+0.12%) | Fired: 07:52:00
+   TUT-USDT     15min  | P&L: $    0.34 (+0.34%) | Fired: 07:53:59
+   ONDO-USDT    30min  | P&L: $    1.38 (+1.38%) | Fired: 07:55:28
+   WLFI-USDT    15min  | P&L: $    0.52 (+0.52%) | Fired: 07:56:18
+   BLUR-USDT    15min  | P&L: $    0.18 (+0.18%) | Fired: 07:57:37
+   XAUT-USDT    15min  | P&L: $    0.52 (+0.52%) | Fired: 08:02:59
+   TURBO-USDT   15min  | P&L: $    0.29 (+0.29%) | Fired: 08:06:23
+   ONDO-USDT    15min  | P&L: $    0.90 (+0.90%) | Fired: 08:07:05
+   ONDO-USDT    15min  | P&L: $    0.90 (+0.90%) | Fired: 08:07:12
+   ACTSOL-USDT  15min  | P&L: $    0.12 (+0.12%) | Fired: 08:16:32
+
+❌ SL HIT (76 signals):
+   LDO-USDT     4h     | P&L: $   -1.64 (-1.64%) | Fired: 01:42:28
+   ATOM-USDT    4h     | P&L: $   -1.36 (-1.36%) | Fired: 01:44:13
+   LDO-USDT     4h     | P&L: $   -1.64 (-1.64%) | Fired: 01:44:28
+   HIPPO-USDT   15min  | P&L: $   -0.50 (-0.50%) | Fired: 05:10:52
+   ONDO-USDT    15min  | P&L: $   -0.84 (-0.84%) | Fired: 05:11:47
+   ONDO-USDT    15min  | P&L: $   -0.84 (-0.84%) | Fired: 05:11:55
+   ONDO-USDT    15min  | P&L: $   -0.84 (-0.84%) | Fired: 05:12:07
+   DYDX-USDT    15min  | P&L: $   -0.59 (-0.59%) | Fired: 05:12:19
+   DYDX-USDT    30min  | P&L: $   -0.86 (-0.86%) | Fired: 05:12:23
+   DYDX-USDT    1h     | P&L: $   -1.21 (-1.21%) | Fired: 05:12:26
+   ATH-USDT     30min  | P&L: $   -0.97 (-0.97%) | Fired: 05:12:39
+   ATH-USDT     15min  | P&L: $   -0.65 (-0.65%) | Fired: 05:12:45
+   ATOM-USDT    15min  | P&L: $   -0.44 (-0.44%) | Fired: 05:13:22
+   ATOM-USDT    1h     | P&L: $   -0.73 (-0.73%) | Fired: 05:13:25
+   ATOM-USDT    15min  | P&L: $   -0.45 (-0.44%) | Fired: 05:13:27
+   ATOM-USDT    1h     | P&L: $   -0.74 (-0.74%) | Fired: 05:13:32
+   TAO-USDT     15min  | P&L: $   -1.17 (-1.17%) | Fired: 05:14:24
+   POL-USDT     15min  | P&L: $   -0.31 (-0.31%) | Fired: 05:15:13
+   SKATE-USDT   15min  | P&L: $   -3.89 (-3.89%) | Fired: 05:15:30
+   LA-USDT      15min  | P&L: $   -0.38 (-0.38%) | Fired: 05:15:34
+   BERA-USDT    15min  | P&L: $   -0.45 (-0.45%) | Fired: 05:24:14
+   BERA-USDT    15min  | P&L: $   -0.45 (-0.45%) | Fired: 05:24:14
+   BERA-USDT    15min  | P&L: $   -0.45 (-0.45%) | Fired: 05:24:15
+   BERA-USDT    1h     | P&L: $   -1.09 (-1.09%) | Fired: 05:24:19
+   CVX-USDT     15min  | P&L: $   -0.30 (-0.30%) | Fired: 05:25:49
+   AAVE-USDT    1h     | P&L: $   -1.00 (-1.00%) | Fired: 05:35:08
+   AIN-USDT     15min  | P&L: $   -0.21 (-0.21%) | Fired: 05:38:39
+   HYPE-USDT    15min  | P&L: $   -0.64 (-0.64%) | Fired: 05:40:04
+   KAITO-USDT   1h     | P&L: $   -1.01 (-1.01%) | Fired: 05:40:53
+   ARKM-USDT    1h     | P&L: $   -0.97 (-0.97%) | Fired: 05:40:55
+   KAITO-USDT   15min  | P&L: $   -0.25 (-0.25%) | Fired: 05:41:01
+   ENS-USDT     15min  | P&L: $   -0.36 (-0.36%) | Fired: 05:42:27
+   KNC-USDT     15min  | P&L: $   -0.17 (-0.17%) | Fired: 07:28:24
+   KNC-USDT     30min  | P&L: $   -0.36 (-0.36%) | Fired: 07:28:27
+   FUEL-USDT    15min  | P&L: $   -0.13 (-0.13%) | Fired: 07:29:15
+   TURBO-USDT   30min  | P&L: $   -0.67 (-0.67%) | Fired: 07:29:35
+   TURBO-USDT   1h     | P&L: $   -0.97 (-0.97%) | Fired: 07:29:39
+   ALGO-USDT    15min  | P&L: $   -0.25 (-0.25%) | Fired: 07:29:49
+   SAHARA-USDT  15min  | P&L: $   -0.89 (-0.89%) | Fired: 07:29:59
+   CFX-USDT     30min  | P&L: $   -0.87 (-0.87%) | Fired: 07:30:10
+   CFX-USDT     30min  | P&L: $   -0.87 (-0.87%) | Fired: 07:30:15
+   KAITO-USDT   15min  | P&L: $   -0.41 (-0.41%) | Fired: 07:31:16
+   KAITO-USDT   30min  | P&L: $   -0.58 (-0.58%) | Fired: 07:31:21
+   YFI-USDT     15min  | P&L: $   -0.27 (-0.27%) | Fired: 07:32:58
+   YFI-USDT     15min  | P&L: $   -0.27 (-0.27%) | Fired: 07:32:59
+   ENS-USDT     15min  | P&L: $   -0.33 (-0.33%) | Fired: 07:33:03
+   SAHARA-USDT  30min  | P&L: $   -0.95 (-0.95%) | Fired: 07:35:50
+   BTC-USDT     15min  | P&L: $   -0.29 (-0.29%) | Fired: 07:38:55
+   RAY-USDT     15min  | P&L: $   -0.18 (-0.18%) | Fired: 07:39:45
+   TURBO-USDT   15min  | P&L: $   -0.24 (-0.24%) | Fired: 07:41:06
+   ENA-USDT     15min  | P&L: $   -0.51 (-0.51%) | Fired: 07:41:43
+   ONDO-USDT    15min  | P&L: $   -0.72 (-0.72%) | Fired: 07:42:07
+   ONDO-USDT    15min  | P&L: $   -0.72 (-0.72%) | Fired: 07:42:07
+   OP-USDT      15min  | P&L: $   -0.35 (-0.35%) | Fired: 07:43:44
+   ERA-USDT     15min  | P&L: $   -0.15 (-0.15%) | Fired: 07:47:21
+   BONK-USDT    15min  | P&L: $   -0.27 (-0.27%) | Fired: 07:50:30
+   BONK-USDT    15min  | P&L: $   -0.25 (-0.25%) | Fired: 07:50:34
+   ADA-USDT     30min  | P&L: $   -0.64 (-0.64%) | Fired: 07:50:59
+   BMT-USDT     15min  | P&L: $   -0.10 (-0.10%) | Fired: 07:51:40
+   FUEL-USDT    15min  | P&L: $   -0.13 (-0.13%) | Fired: 07:53:54
+   FUEL-USDT    15min  | P&L: $   -0.13 (-0.13%) | Fired: 07:53:59
+   NEWT-USDT    15min  | P&L: $   -0.17 (-0.17%) | Fired: 07:54:37
+   HBAR-USDT    30min  | P&L: $   -0.52 (-0.52%) | Fired: 07:55:26
+   KAITO-USDT   15min  | P&L: $   -0.47 (-0.47%) | Fired: 07:56:04
+   XAUT-USDT    15min  | P&L: $   -0.23 (-0.23%) | Fired: 07:56:35
+   XAUT-USDT    30min  | P&L: $   -0.50 (-0.50%) | Fired: 07:56:38
+   XAUT-USDT    15min  | P&L: $   -0.23 (-0.23%) | Fired: 07:56:43
+   XAUT-USDT    30min  | P&L: $   -0.50 (-0.50%) | Fired: 07:56:47
+   DUCK-USDT    15min  | P&L: $   -0.15 (-0.15%) | Fired: 08:06:05
+   ATH-USDT     15min  | P&L: $   -0.84 (-0.84%) | Fired: 08:13:31
+   XPL-USDT     15min  | P&L: $   -0.60 (-0.60%) | Fired: 08:13:52
+   XPL-USDT     15min  | P&L: $   -0.60 (-0.60%) | Fired: 08:13:52
+   IP-USDT      15min  | P&L: $   -0.18 (-0.18%) | Fired: 08:16:09
+   IP-USDT      15min  | P&L: $   -0.18 (-0.18%) | Fired: 08:16:11
+   EPT-USDT     15min  | P&L: $   -5.97 (-5.97%) | Fired: 08:16:24
+   EPT-USDT     30min  | P&L: $   -5.97 (-5.97%) | Fired: 08:16:26
+
+⏱️  TIMEOUT (120 signals):
+   TAO-USDT     4h     | P&L: $    0.01 (+0.00%) | Fired: 20:20:52 | Timeout: 2026-03-27T01:20
+   ERA-USDT     4h     | P&L: $   -0.34 (-0.34%) | Fired: 20:34:19 | Timeout: 2026-03-27T01:34
+   UNI-USDT     4h     | P&L: $   -1.33 (-1.33%) | Fired: 00:59:57 | Timeout: 2026-03-26T22:59
+   TON-USDT     1h     | P&L: $    2.46 (+2.46%) | Fired: 00:59:59 | Timeout: 2026-03-26T22:59
+   TON-USDT     2h     | P&L: $    2.54 (+2.54%) | Fired: 01:00:08 | Timeout: 2026-03-26T23:00
+   YFI-USDT     4h     | P&L: $   -1.43 (-1.43%) | Fired: 01:05:23 | Timeout: 2026-03-26T23:05
+   AERO-USDT    1h     | P&L: $   -2.00 (-2.00%) | Fired: 01:07:44 | Timeout: 2026-03-26T23:07
+   ATOM-USDT    4h     | P&L: $   -1.42 (-1.42%) | Fired: 01:35:18 | Timeout: 2026-03-26T23:35
+   SEI-USDT     1h     | P&L: $   -1.30 (-1.30%) | Fired: 01:35:44 | Timeout: 2026-03-26T23:35
+   APT-USDT     30min  | P&L: $   -0.26 (-0.26%) | Fired: 01:42:14 | Timeout: 2026-03-26T23:42
+   APT-USDT     2h     | P&L: $   -0.28 (-0.27%) | Fired: 01:42:28 | Timeout: 2026-03-26T23:42
+   NEAR-USDT    1h     | P&L: $   -2.31 (-2.31%) | Fired: 01:42:47 | Timeout: 2026-03-26T22:42
+   ARB-USDT     1h     | P&L: $   -1.93 (-1.93%) | Fired: 01:43:03 | Timeout: 2026-03-26T23:43
+   WLFI-USDT    1h     | P&L: $   -2.26 (-2.26%) | Fired: 01:43:11 | Timeout: 2026-03-26T22:43
+   WLFI-USDT    2h     | P&L: $   -2.26 (-2.26%) | Fired: 01:43:16 | Timeout: 2026-03-26T23:43
+   ETH-USDT     1h     | P&L: $   -1.51 (-1.51%) | Fired: 01:43:34 | Timeout: 2026-03-26T22:43
+   SOL-USDT     1h     | P&L: $   -0.95 (-0.95%) | Fired: 01:43:48 | Timeout: 2026-03-26T23:43
+   XRP-USDT     1h     | P&L: $   -1.59 (-1.60%) | Fired: 01:43:58 | Timeout: 2026-03-26T23:43
+   XAUT-USDT    1h     | P&L: $    0.40 (+0.40%) | Fired: 01:44:03 | Timeout: 2026-03-26T22:44
+   SEI-USDT     1h     | P&L: $   -1.30 (-1.30%) | Fired: 01:44:02 | Timeout: 2026-03-26T23:44
+   XRP-USDT     2h     | P&L: $   -1.60 (-1.60%) | Fired: 01:44:04 | Timeout: 2026-03-26T23:44
+   XAUT-USDT    4h     | P&L: $   -0.61 (-0.61%) | Fired: 01:44:06 | Timeout: 2026-03-26T23:44
+   AGLD-USDT    30min  | P&L: $   -2.36 (-2.36%) | Fired: 01:44:23 | Timeout: 2026-03-26T23:44
+   AGLD-USDT    1h     | P&L: $   -2.36 (-2.36%) | Fired: 01:44:29 | Timeout: 2026-03-26T22:44
+   APT-USDT     1h     | P&L: $   -0.25 (-0.25%) | Fired: 01:44:41 | Timeout: 2026-03-26T23:44
+   LINK-USDT    1h     | P&L: $   -1.31 (-1.31%) | Fired: 01:44:44 | Timeout: 2026-03-26T22:44
+   APT-USDT     2h     | P&L: $   -0.25 (-0.25%) | Fired: 01:44:47 | Timeout: 2026-03-26T23:44
+   LINK-USDT    4h     | P&L: $   -1.31 (-1.31%) | Fired: 01:44:49 | Timeout: 2026-03-26T23:44
+   NEAR-USDT    1h     | P&L: $   -2.32 (-2.32%) | Fired: 01:45:04 | Timeout: 2026-03-26T22:45
+   ENS-USDT     30min  | P&L: $   -1.07 (-1.07%) | Fired: 01:45:10 | Timeout: 2026-03-26T23:45
+   BTC-USDT     4h     | P&L: $   -0.71 (-0.71%) | Fired: 02:00:35 | Timeout: 2026-03-27T00:00
+   SPK-USDT     30min  | P&L: $   -2.99 (-2.99%) | Fired: 02:00:49 | Timeout: 2026-03-27T00:00
+   SPK-USDT     1h     | P&L: $   -2.99 (-2.99%) | Fired: 02:01:00 | Timeout: 2026-03-27T00:01
+   SOL-USDT     2h     | P&L: $   -0.89 (-0.89%) | Fired: 02:01:05 | Timeout: 2026-03-27T00:01
+   SOL-USDT     4h     | P&L: $   -0.89 (-0.89%) | Fired: 02:01:12 | Timeout: 2026-03-27T00:01
+   OP-USDT      2h     | P&L: $   -1.96 (-1.96%) | Fired: 02:01:14 | Timeout: 2026-03-27T00:01
+   YFI-USDT     1h     | P&L: $   -1.23 (-1.23%) | Fired: 02:33:02 | Timeout: 2026-03-27T00:33
+   BNB-USDT     4h     | P&L: $   -0.96 (-0.96%) | Fired: 02:33:20 | Timeout: 2026-03-27T00:33
+   RAY-USDT     30min  | P&L: $   -1.40 (-1.40%) | Fired: 02:33:48 | Timeout: 2026-03-27T00:33
+   RAY-USDT     1h     | P&L: $   -1.38 (-1.38%) | Fired: 02:34:05 | Timeout: 2026-03-27T00:34
+   RAY-USDT     2h     | P&L: $   -1.15 (-1.15%) | Fired: 02:50:30 | Timeout: 2026-03-27T00:50
+   BONK-USDT    1h     | P&L: $   -1.64 (-1.64%) | Fired: 02:50:31 | Timeout: 2026-03-27T00:50
+   RAY-USDT     4h     | P&L: $   -1.24 (-1.24%) | Fired: 02:50:59 | Timeout: 2026-03-27T00:50
+   BONK-USDT    4h     | P&L: $   -1.60 (-1.60%) | Fired: 02:51:03 | Timeout: 2026-03-27T00:51
+   LA-USDT      4h     | P&L: $   -0.70 (-0.70%) | Fired: 02:51:30 | Timeout: 2026-03-27T00:51
+   SPK-USDT     2h     | P&L: $   -2.94 (-2.94%) | Fired: 02:53:07 | Timeout: 2026-03-27T00:53
+   SPK-USDT     4h     | P&L: $   -2.94 (-2.94%) | Fired: 02:53:13 | Timeout: 2026-03-27T00:53
+   MAGIC-USDT   1h     | P&L: $   -2.17 (-2.17%) | Fired: 03:10:27 | Timeout: 2026-03-27T01:10
+   ZKJ-USDT     1h     | P&L: $   -2.70 (-2.70%) | Fired: 03:10:33 | Timeout: 2026-03-27T00:10
+   MAGIC-USDT   2h     | P&L: $   -2.00 (-2.00%) | Fired: 03:10:39 | Timeout: 2026-03-27T01:10
+   ADA-USDT     15min  | P&L: $   -0.97 (-0.97%) | Fired: 03:10:41 | Timeout: 2026-03-26T23:55
+   ZKJ-USDT     2h     | P&L: $   -2.70 (-2.70%) | Fired: 03:10:47 | Timeout: 2026-03-27T01:10
+   ZKJ-USDT     4h     | P&L: $   -2.70 (-2.70%) | Fired: 03:10:53 | Timeout: 2026-03-27T01:10
+   ACTSOL-USDT  1h     | P&L: $   -1.20 (-1.20%) | Fired: 03:11:12 | Timeout: 2026-03-27T00:11
+   IP-USDT      1h     | P&L: $   -1.06 (-1.06%) | Fired: 03:11:17 | Timeout: 2026-03-27T01:11
+   ACTSOL-USDT  2h     | P&L: $   -1.20 (-1.20%) | Fired: 03:11:19 | Timeout: 2026-03-27T01:11
+   SKATE-USDT   15min  | P&L: $    4.27 (+4.27%) | Fired: 03:11:20 | Timeout: 2026-03-26T23:56
+   IP-USDT      2h     | P&L: $   -1.08 (-1.08%) | Fired: 03:11:26 | Timeout: 2026-03-27T01:11
+   FUN-USDT     4h     | P&L: $   -2.41 (-2.41%) | Fired: 03:11:29 | Timeout: 2026-03-27T01:11
+   LA-USDT      15min  | P&L: $   -0.70 (-0.70%) | Fired: 03:11:32 | Timeout: 2026-03-26T23:56
+   BMT-USDT     15min  | P&L: $   -1.12 (-1.12%) | Fired: 03:11:39 | Timeout: 2026-03-26T23:56
+   LA-USDT      2h     | P&L: $   -0.58 (-0.58%) | Fired: 03:11:43 | Timeout: 2026-03-27T01:11
+   LA-USDT      4h     | P&L: $    0.28 (+0.28%) | Fired: 03:11:51 | Timeout: 2026-03-27T01:11
+   CROSS-USDT   30min  | P&L: $   -1.04 (-1.04%) | Fired: 03:11:55 | Timeout: 2026-03-27T01:11
+   SPK-USDT     15min  | P&L: $    1.35 (+1.35%) | Fired: 03:30:58 | Timeout: 2026-03-27T00:15
+   LQTY-USDT    1h     | P&L: $    0.01 (+0.01%) | Fired: 03:31:30 | Timeout: 2026-03-27T00:31
+   ZKJ-USDT     15min  | P&L: $    0.74 (+0.74%) | Fired: 03:32:07 | Timeout: 2026-03-27T00:17
+   LQTY-USDT    2h     | P&L: $    0.05 (+0.05%) | Fired: 03:32:06 | Timeout: 2026-03-27T01:32
+   RAY-USDT     15min  | P&L: $   -0.12 (-0.12%) | Fired: 03:33:09 | Timeout: 2026-03-27T00:18
+   BMT-USDT     30min  | P&L: $    0.30 (+0.30%) | Fired: 03:47:05 | Timeout: 2026-03-26T23:47
+   LQTY-USDT    1h     | P&L: $   -0.21 (-0.21%) | Fired: 03:48:13 | Timeout: 2026-03-27T00:48
+   ACTSOL-USDT  30min  | P&L: $    0.29 (+0.29%) | Fired: 03:48:12 | Timeout: 2026-03-26T23:48
+   ACTSOL-USDT  1h     | P&L: $    0.44 (+0.44%) | Fired: 04:20:37 | Timeout: 2026-03-27T01:20
+   FUN-USDT     30min  | P&L: $   -0.62 (-0.62%) | Fired: 04:21:09 | Timeout: 2026-03-27T00:21
+   FUN-USDT     1h     | P&L: $   -0.73 (-0.73%) | Fired: 04:21:20 | Timeout: 2026-03-27T01:21
+   FUN-USDT     30min  | P&L: $   -0.73 (-0.73%) | Fired: 04:21:32 | Timeout: 2026-03-27T00:21
+   FUN-USDT     1h     | P&L: $   -1.10 (-1.10%) | Fired: 04:39:58 | Timeout: 2026-03-27T01:39
+   KNC-USDT     15min  | P&L: $   -1.03 (-1.03%) | Fired: 04:41:34 | Timeout: 2026-03-27T01:26
+   ATH-USDT     30min  | P&L: $   -3.50 (-3.50%) | Fired: 05:12:48 | Timeout: 2026-03-27T01:12
+   SKATE-USDT   30min  | P&L: $   -9.01 (-9.00%) | Fired: 05:15:34 | Timeout: 2026-03-27T01:15
+   ONDO-USDT    30min  | P&L: $    5.03 (+5.03%) | Fired: 05:18:56 | Timeout: 2026-03-27T01:18
+   LQTY-USDT    30min  | P&L: $   -0.32 (-0.32%) | Fired: 05:21:34 | Timeout: 2026-03-27T01:21
+   KNC-USDT     30min  | P&L: $    0.69 (+0.69%) | Fired: 05:22:02 | Timeout: 2026-03-27T01:22
+   SOL-USDT     30min  | P&L: $   -0.48 (-0.48%) | Fired: 05:26:22 | Timeout: 2026-03-27T01:26
+   PROMPT-USDT  30min  | P&L: $   -0.59 (-0.59%) | Fired: 05:28:49 | Timeout: 2026-03-27T01:28
+   DOGE-USDT    30min  | P&L: $   -0.07 (-0.07%) | Fired: 05:28:58 | Timeout: 2026-03-27T01:28
+   SUI-USDT     15min  | P&L: $   -0.10 (-0.10%) | Fired: 05:29:21 | Timeout: 2026-03-27T00:29
+   EIGEN-USDT   30min  | P&L: $   -0.15 (-0.15%) | Fired: 05:29:26 | Timeout: 2026-03-27T01:29
+   KAS-USDT     15min  | P&L: $   -1.27 (-1.27%) | Fired: 05:29:38 | Timeout: 2026-03-27T00:29
+   KAS-USDT     30min  | P&L: $   -1.27 (-1.27%) | Fired: 05:29:41 | Timeout: 2026-03-27T01:29
+   KAITO-USDT   15min  | P&L: $    0.50 (+0.50%) | Fired: 05:30:21 | Timeout: 2026-03-27T00:30
+   RAY-USDT     15min  | P&L: $   -0.34 (-0.34%) | Fired: 05:32:43 | Timeout: 2026-03-27T00:32
+   SUI-USDT     15min  | P&L: $   -0.24 (-0.24%) | Fired: 05:34:37 | Timeout: 2026-03-27T00:34
+   SUI-USDT     15min  | P&L: $   -0.22 (-0.22%) | Fired: 05:34:38 | Timeout: 2026-03-27T00:34
+   PUMP-USDT    15min  | P&L: $   -0.99 (-0.99%) | Fired: 05:35:26 | Timeout: 2026-03-27T00:35
+   DYDX-USDT    15min  | P&L: $   -1.84 (-1.84%) | Fired: 05:35:34 | Timeout: 2026-03-27T00:35
+   ARKM-USDT    15min  | P&L: $    0.79 (+0.79%) | Fired: 05:35:40 | Timeout: 2026-03-27T00:35
+   NMR-USDT     15min  | P&L: $   -0.29 (-0.29%) | Fired: 05:35:49 | Timeout: 2026-03-27T00:35
+   ARB-USDT     15min  | P&L: $    0.32 (+0.32%) | Fired: 05:35:52 | Timeout: 2026-03-27T00:35
+   WLFI-USDT    15min  | P&L: $    0.71 (+0.71%) | Fired: 05:35:55 | Timeout: 2026-03-27T00:35
+   BNB-USDT     15min  | P&L: $    0.07 (+0.07%) | Fired: 05:37:43 | Timeout: 2026-03-27T00:37
+   BNB-USDT     15min  | P&L: $    0.07 (+0.07%) | Fired: 05:37:43 | Timeout: 2026-03-27T00:37
+   LA-USDT      15min  | P&L: $   -1.11 (-1.11%) | Fired: 05:37:50 | Timeout: 2026-03-27T00:37
+   AERO-USDT    15min  | P&L: $    0.38 (+0.38%) | Fired: 05:38:05 | Timeout: 2026-03-27T00:38
+   BMT-USDT     15min  | P&L: $   -0.03 (-0.03%) | Fired: 05:38:10 | Timeout: 2026-03-27T00:38
+   AERO-USDT    15min  | P&L: $    0.41 (+0.41%) | Fired: 05:38:11 | Timeout: 2026-03-27T00:38
+   AIN-USDT     15min  | P&L: $   -0.88 (-0.88%) | Fired: 05:38:45 | Timeout: 2026-03-27T00:38
+   PARTI-USDT   15min  | P&L: $   -3.80 (-3.80%) | Fired: 05:39:07 | Timeout: 2026-03-27T00:39
+   ONDO-USDT    15min  | P&L: $    5.04 (+5.04%) | Fired: 05:40:23 | Timeout: 2026-03-27T00:40
+   KAITO-USDT   15min  | P&L: $   -1.08 (-1.08%) | Fired: 05:40:50 | Timeout: 2026-03-27T00:40
+   ASTER-USDT   30min  | P&L: $    0.98 (+0.98%) | Fired: 05:41:20 | Timeout: 2026-03-27T01:41
+   XAUT-USDT    15min  | P&L: $    0.08 (+0.08%) | Fired: 05:41:24 | Timeout: 2026-03-27T00:41
+   XAUT-USDT    15min  | P&L: $    0.02 (+0.02%) | Fired: 05:41:31 | Timeout: 2026-03-27T00:41
+   XAUT-USDT    15min  | P&L: $    0.02 (+0.02%) | Fired: 05:41:36 | Timeout: 2026-03-27T00:41
+   YFI-USDT     15min  | P&L: $   -0.53 (-0.53%) | Fired: 05:42:22 | Timeout: 2026-03-27T00:42
+   SOL-USDT     15min  | P&L: $   -0.09 (-0.09%) | Fired: 05:42:45 | Timeout: 2026-03-27T00:42
+   AGLD-USDT    15min  | P&L: $    0.74 (+0.74%) | Fired: 05:46:42 | Timeout: 2026-03-27T00:46
+   AGLD-USDT    15min  | P&L: $    0.61 (+0.61%) | Fired: 06:02:56 | Timeout: 2026-03-27T01:02
+   APT-USDT     15min  | P&L: $   -0.60 (-0.60%) | Fired: 06:03:06 | Timeout: 2026-03-27T01:03
+   ATOM-USDT    15min  | P&L: $    0.44 (+0.44%) | Fired: 06:03:09 | Timeout: 2026-03-27T01:03
+
+⚠️  STALE_TIMEOUT (193 signals):
+   VOXEL-USDT   2h     | NO P&L (data quality issue) | 7h overdue | Fired: 20:19:00
+   PROMPT-USDT  2h     | NO P&L (data quality issue) | 7h overdue | Fired: 20:28:30
+   AAVE-USDT    2h     | NO P&L (data quality issue) | 7h overdue | Fired: 20:36:06
+   ICNT-USDT    1h     | NO P&L (data quality issue) | 7h overdue | Fired: 21:07:07
+   XLM-USDT     4h     | NO P&L (data quality issue) | 6h overdue | Fired: 21:13:08
+   HBAR-USDT    1h     | NO P&L (data quality issue) | 6h overdue | Fired: 21:38:12
+   FUN-USDT     1h     | NO P&L (data quality issue) | 6h overdue | Fired: 21:45:41
+   UNI-USDT     2h     | NO P&L (data quality issue) | 5h overdue | Fired: 22:02:36
+   UNI-USDT     2h     | NO P&L (data quality issue) | 5h overdue | Fired: 22:02:36
+   UNI-USDT     2h     | NO P&L (data quality issue) | 5h overdue | Fired: 22:02:42
+   BNB-USDT     2h     | NO P&L (data quality issue) | 5h overdue | Fired: 22:10:10
+   IP-USDT      30min  | NO P&L (data quality issue) | 5h overdue | Fired: 22:10:27
+   IP-USDT      2h     | NO P&L (data quality issue) | 5h overdue | Fired: 22:10:32
+   IP-USDT      30min  | NO P&L (data quality issue) | 5h overdue | Fired: 22:10:38
+   KNC-USDT     2h     | NO P&L (data quality issue) | 5h overdue | Fired: 22:12:54
+   TUT-USDT     2h     | NO P&L (data quality issue) | 5h overdue | Fired: 22:15:06
+   TUT-USDT     2h     | NO P&L (data quality issue) | 5h overdue | Fired: 22:15:13
+   TUT-USDT     2h     | NO P&L (data quality issue) | 5h overdue | Fired: 22:15:14
+   TUT-USDT     4h     | NO P&L (data quality issue) | 5h overdue | Fired: 22:15:18
+   VOXEL-USDT   2h     | NO P&L (data quality issue) | 5h overdue | Fired: 22:15:21
+   VOXEL-USDT   2h     | NO P&L (data quality issue) | 5h overdue | Fired: 22:15:28
+   ALU-USDT     2h     | NO P&L (data quality issue) | 5h overdue | Fired: 22:15:32
+   PEPE-USDT    30min  | NO P&L (data quality issue) | 5h overdue | Fired: 22:17:50
+   PEPE-USDT    1h     | NO P&L (data quality issue) | 5h overdue | Fired: 22:17:55
+   TON-USDT     1h     | NO P&L (data quality issue) | 6h overdue | Fired: 22:19:41
+   VIRTUAL-USDT 1h     | NO P&L (data quality issue) | 6h overdue | Fired: 22:19:58
+   VIRTUAL-USDT 2h     | NO P&L (data quality issue) | 5h overdue | Fired: 22:20:03
+   VIRTUAL-USDT 1h     | NO P&L (data quality issue) | 5h overdue | Fired: 22:20:03
+   KAITO-USDT   4h     | NO P&L (data quality issue) | 5h overdue | Fired: 22:22:00
+   MAGIC-USDT   30min  | NO P&L (data quality issue) | 5h overdue | Fired: 22:31:15
+   ACTSOL-USDT  1h     | NO P&L (data quality issue) | 6h overdue | Fired: 22:31:19
+   ACTSOL-USDT  4h     | NO P&L (data quality issue) | 5h overdue | Fired: 22:31:25
+   ACTSOL-USDT  30min  | NO P&L (data quality issue) | 5h overdue | Fired: 22:31:24
+   ERA-USDT     30min  | NO P&L (data quality issue) | 7h overdue | Fired: 22:35:18
+   TURBO-USDT   30min  | NO P&L (data quality issue) | 6h overdue | Fired: 23:00:36
+   PORTAL-USDT  2h     | NO P&L (data quality issue) | 4h overdue | Fired: 23:07:51
+   RAY-USDT     2h     | NO P&L (data quality issue) | 4h overdue | Fired: 23:14:51
+   LA-USDT      2h     | NO P&L (data quality issue) | 4h overdue | Fired: 23:21:28
+   SPK-USDT     15min  | NO P&L (data quality issue) | 5h overdue | Fired: 23:21:29
+   SPK-USDT     30min  | NO P&L (data quality issue) | 6h overdue | Fired: 23:21:33
+   ZKJ-USDT     2h     | NO P&L (data quality issue) | 4h overdue | Fired: 23:21:48
+   TUT-USDT     4h     | NO P&L (data quality issue) | 4h overdue | Fired: 23:32:19
+   DOT-USDT     15min  | NO P&L (data quality issue) | 7h overdue | Fired: 23:38:31
+   DOT-USDT     15min  | NO P&L (data quality issue) | 7h overdue | Fired: 23:38:40
+   PENGU-USDT   4h     | NO P&L (data quality issue) | 4h overdue | Fired: 23:38:50
+   AERO-USDT    1h     | NO P&L (data quality issue) | 3h overdue | Fired: 23:42:21
+   LQTY-USDT    15min  | NO P&L (data quality issue) | 5h overdue | Fired: 23:42:28
+   AERO-USDT    1h     | NO P&L (data quality issue) | 4h overdue | Fired: 23:42:30
+   LQTY-USDT    30min  | NO P&L (data quality issue) | 3h overdue | Fired: 23:42:32
+   LQTY-USDT    1h     | NO P&L (data quality issue) | 4h overdue | Fired: 23:42:36
+   LQTY-USDT    2h     | NO P&L (data quality issue) | 3h overdue | Fired: 23:42:41
+   ALU-USDT     1h     | NO P&L (data quality issue) | 3h overdue | Fired: 23:44:45
+   BERA-USDT    1h     | NO P&L (data quality issue) | 4h overdue | Fired: 23:46:11
+   BERA-USDT    2h     | NO P&L (data quality issue) | 3h overdue | Fired: 23:46:15
+   BERA-USDT    4h     | NO P&L (data quality issue) | 3h overdue | Fired: 23:46:17
+   NEAR-USDT    1h     | NO P&L (data quality issue) | 3h overdue | Fired: 23:48:00
+   PORTAL-USDT  15min  | NO P&L (data quality issue) | 5h overdue | Fired: 23:51:31
+   AAVE-USDT    30min  | NO P&L (data quality issue) | 5h overdue | Fired: 23:54:51
+   APT-USDT     15min  | NO P&L (data quality issue) | 5h overdue | Fired: 23:56:49
+   NEWT-USDT    15min  | NO P&L (data quality issue) | 6h overdue | Fired: 00:02:32
+   NEWT-USDT    15min  | NO P&L (data quality issue) | 6h overdue | Fired: 00:02:37
+   NEWT-USDT    4h     | NO P&L (data quality issue) | 3h overdue | Fired: 00:02:49
+   NEWT-USDT    15min  | NO P&L (data quality issue) | 4h overdue | Fired: 00:02:50
+   NEWT-USDT    4h     | NO P&L (data quality issue) | 3h overdue | Fired: 00:03:00
+   BIO-USDT     15min  | NO P&L (data quality issue) | 6h overdue | Fired: 00:05:09
+   AVNT-USDT    2h     | NO P&L (data quality issue) | 3h overdue | Fired: 00:05:19
+   XAUT-USDT    2h     | NO P&L (data quality issue) | 3h overdue | Fired: 00:05:30
+   XAUT-USDT    4h     | NO P&L (data quality issue) | 3h overdue | Fired: 00:05:33
+   XAUT-USDT    4h     | NO P&L (data quality issue) | 3h overdue | Fired: 00:05:34
+   XAUT-USDT    2h     | NO P&L (data quality issue) | 3h overdue | Fired: 00:05:37
+   AGLD-USDT    15min  | NO P&L (data quality issue) | 4h overdue | Fired: 00:05:42
+   YFI-USDT     2h     | NO P&L (data quality issue) | 3h overdue | Fired: 00:07:51
+   KNC-USDT     2h     | NO P&L (data quality issue) | 3h overdue | Fired: 00:09:58
+   CROSS-USDT   30min  | NO P&L (data quality issue) | 5h overdue | Fired: 00:10:08
+   TUT-USDT     1h     | NO P&L (data quality issue) | 3h overdue | Fired: 00:12:33
+   TUT-USDT     2h     | NO P&L (data quality issue) | 3h overdue | Fired: 00:12:41
+   VIRTUAL-USDT 4h     | NO P&L (data quality issue) | 3h overdue | Fired: 00:14:37
+   XAUT-USDT    2h     | NO P&L (data quality issue) | 3h overdue | Fired: 00:16:26
+   IP-USDT      2h     | NO P&L (data quality issue) | 3h overdue | Fired: 00:17:58
+   X-USDT       15min  | NO P&L (data quality issue) | 4h overdue | Fired: 00:18:04
+   SPK-USDT     2h     | NO P&L (data quality issue) | 3h overdue | Fired: 00:18:05
+   X-USDT       30min  | NO P&L (data quality issue) | 5h overdue | Fired: 00:18:07
+   LQTY-USDT    2h     | NO P&L (data quality issue) | 3h overdue | Fired: 00:18:09
+   LQTY-USDT    4h     | NO P&L (data quality issue) | 3h overdue | Fired: 00:18:11
+   X-USDT       1h     | NO P&L (data quality issue) | 4h overdue | Fired: 00:18:11
+   RAY-USDT     15min  | NO P&L (data quality issue) | 4h overdue | Fired: 00:18:16
+   IP-USDT      2h     | NO P&L (data quality issue) | 3h overdue | Fired: 00:18:17
+   AUCTION-USDT 30min  | NO P&L (data quality issue) | 3h overdue | Fired: 00:20:02
+   AUCTION-USDT 1h     | NO P&L (data quality issue) | 3h overdue | Fired: 00:20:06
+   HBAR-USDT    2h     | NO P&L (data quality issue) | 3h overdue | Fired: 00:22:02
+   DYDX-USDT    15min  | NO P&L (data quality issue) | 4h overdue | Fired: 00:22:30
+   BNB-USDT     2h     | NO P&L (data quality issue) | 3h overdue | Fired: 00:26:52
+   NMR-USDT     1h     | NO P&L (data quality issue) | 4h overdue | Fired: 00:32:14
+   AGLD-USDT    15min  | NO P&L (data quality issue) | 4h overdue | Fired: 00:32:45
+   AGLD-USDT    15min  | NO P&L (data quality issue) | 6h overdue | Fired: 00:32:48
+   AVAX-USDT    2h     | NO P&L (data quality issue) | 3h overdue | Fired: 00:34:42
+   AVAX-USDT    2h     | NO P&L (data quality issue) | 3h overdue | Fired: 00:34:46
+   CROSS-USDT   15min  | NO P&L (data quality issue) | 6h overdue | Fired: 00:36:41
+   ALU-USDT     2h     | NO P&L (data quality issue) | 3h overdue | Fired: 00:38:27
+   PENGU-USDT   15min  | NO P&L (data quality issue) | 3h overdue | Fired: 00:58:09
+   KAITO-USDT   1h     | NO P&L (data quality issue) | 3h overdue | Fired: 01:01:56
+   BTC-USDT     15min  | NO P&L (data quality issue) | 5h overdue | Fired: 01:05:24
+   YFI-USDT     30min  | NO P&L (data quality issue) | 4h overdue | Fired: 01:05:24
+   BTC-USDT     1h     | NO P&L (data quality issue) | 3h overdue | Fired: 01:05:29
+   YFI-USDT     1h     | NO P&L (data quality issue) | 3h overdue | Fired: 01:05:30
+   SPK-USDT     15min  | NO P&L (data quality issue) | 3h overdue | Fired: 01:07:34
+   AERO-USDT    15min  | NO P&L (data quality issue) | 3h overdue | Fired: 01:07:35
+   AERO-USDT    30min  | NO P&L (data quality issue) | 4h overdue | Fired: 01:07:39
+   SPK-USDT     15min  | NO P&L (data quality issue) | 3h overdue | Fired: 01:07:44
+   BMT-USDT     15min  | NO P&L (data quality issue) | 3h overdue | Fired: 01:07:51
+   VOXEL-USDT   15min  | NO P&L (data quality issue) | 5h overdue | Fired: 01:11:28
+   PUMP-USDT    30min  | NO P&L (data quality issue) | 4h overdue | Fired: 01:19:23
+   KAITO-USDT   15min  | NO P&L (data quality issue) | 5h overdue | Fired: 01:35:19
+   APT-USDT     15min  | NO P&L (data quality issue) | 3h overdue | Fired: 01:36:02
+   BLUR-USDT    15min  | NO P&L (data quality issue) | 3h overdue | Fired: 01:36:26
+   ATH-USDT     15min  | NO P&L (data quality issue) | 3h overdue | Fired: 01:36:27
+   APT-USDT     1h     | NO P&L (data quality issue) | 3h overdue | Fired: 01:42:22
+   ATH-USDT     30min  | NO P&L (data quality issue) | 4h overdue | Fired: 01:42:22
+   NMR-USDT     15min  | NO P&L (data quality issue) | 5h overdue | Fired: 01:42:31
+   NMR-USDT     30min  | NO P&L (data quality issue) | 4h overdue | Fired: 01:42:38
+   NEAR-USDT    15min  | NO P&L (data quality issue) | 4h overdue | Fired: 01:42:42
+   YFI-USDT     15min  | NO P&L (data quality issue) | 3h overdue | Fired: 01:42:49
+   ARB-USDT     15min  | NO P&L (data quality issue) | 3h overdue | Fired: 01:42:50
+   ARB-USDT     30min  | NO P&L (data quality issue) | 3h overdue | Fired: 01:42:56
+   ENS-USDT     15min  | NO P&L (data quality issue) | 3h overdue | Fired: 01:43:00
+   ENS-USDT     30min  | NO P&L (data quality issue) | 3h overdue | Fired: 01:43:05
+   XAUT-USDT    15min  | NO P&L (data quality issue) | 3h overdue | Fired: 01:43:57
+   XLM-USDT     15min  | NO P&L (data quality issue) | 3h overdue | Fired: 01:44:32
+   YFI-USDT     15min  | NO P&L (data quality issue) | 3h overdue | Fired: 01:44:51
+   ENS-USDT     15min  | NO P&L (data quality issue) | 3h overdue | Fired: 01:45:05
+   LA-USDT      15min  | NO P&L (data quality issue) | 4h overdue | Fired: 01:45:18
+   SPK-USDT     15min  | NO P&L (data quality issue) | 4h overdue | Fired: 01:45:30
+   ZKJ-USDT     15min  | NO P&L (data quality issue) | 4h overdue | Fired: 02:01:15
+   LQTY-USDT    30min  | NO P&L (data quality issue) | 3h overdue | Fired: 02:17:53
+   ENS-USDT     15min  | NO P&L (data quality issue) | 2h overdue | Fired: 02:33:31
+   RAY-USDT     15min  | NO P&L (data quality issue) | 2h overdue | Fired: 02:33:37
+   SKATE-USDT   15min  | NO P&L (data quality issue) | 4h overdue | Fired: 02:33:38
+   LA-USDT      15min  | NO P&L (data quality issue) | 4h overdue | Fired: 02:33:55
+   BONK-USDT    15min  | NO P&L (data quality issue) | 2h overdue | Fired: 02:34:00
+   SPK-USDT     15min  | NO P&L (data quality issue) | 2h overdue | Fired: 02:52:07
+   MAGIC-USDT   15min  | NO P&L (data quality issue) | 3h overdue | Fired: 02:52:08
+   ZKJ-USDT     15min  | NO P&L (data quality issue) | 3h overdue | Fired: 02:53:44
+   ACTSOL-USDT  15min  | NO P&L (data quality issue) | 3h overdue | Fired: 03:10:56
+   XLM-USDT     15min  | NO P&L (data quality issue) | 3h overdue | Fired: 03:11:01
+   IP-USDT      15min  | NO P&L (data quality issue) | 3h overdue | Fired: 03:11:02
+   ACTSOL-USDT  30min  | NO P&L (data quality issue) | 2h overdue | Fired: 03:11:04
+   IP-USDT      30min  | NO P&L (data quality issue) | 2h overdue | Fired: 03:11:09
+   CROSS-USDT   15min  | NO P&L (data quality issue) | 3h overdue | Fired: 03:11:38
+   BMT-USDT     30min  | NO P&L (data quality issue) | 2h overdue | Fired: 03:11:52
+   KNC-USDT     15min  | NO P&L (data quality issue) | 3h overdue | Fired: 03:31:31
+   ACTSOL-USDT  15min  | NO P&L (data quality issue) | 2h overdue | Fired: 03:47:40
+   RAY-USDT     15min  | NO P&L (data quality issue) | 2h overdue | Fired: 04:21:02
+   ICNT-USDT    15min  | NO P&L (data quality issue) | 2h overdue | Fired: 04:21:15
+   KNC-USDT     15min  | NO P&L (data quality issue) | 2h overdue | Fired: 04:21:34
+   AIN-USDT     15min  | NO P&L (data quality issue) | 2h overdue | Fired: 04:41:06
+   VINE-USDT    15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:04:22
+   NEWT-USDT    15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:11:10
+   VOXEL-USDT   15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:11:10
+   PEPE-USDT    15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:11:18
+   NEWT-USDT    15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:11:21
+   ERA-USDT     15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:11:24
+   NEWT-USDT    15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:11:35
+   PENGU-USDT   15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:11:35
+   PENGU-USDT   15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:11:49
+   WIF-USDT     15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:12:31
+   ATH-USDT     15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:12:36
+   ARKM-USDT    15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:12:38
+   WLFI-USDT    15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:12:49
+   XPL-USDT     15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:13:08
+   AGLD-USDT    15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:13:23
+   APT-USDT     15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:13:29
+   APT-USDT     15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:13:34
+   AGLD-USDT    15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:13:37
+   APT-USDT     15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:13:44
+   TAO-USDT     15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:14:13
+   TAO-USDT     15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:14:16
+   YFI-USDT     15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:14:39
+   BTC-USDT     15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:14:48
+   SOL-USDT     15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:14:54
+   ETH-USDT     15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:14:58
+   XLM-USDT     15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:15:03
+   XRP-USDT     15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:15:10
+   BNB-USDT     15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:15:26
+   LINK-USDT    15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:15:30
+   SPK-USDT     15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:15:39
+   ZKJ-USDT     15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:15:45
+   ONDO-USDT    15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:18:52
+   LQTY-USDT    15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:21:30
+   KNC-USDT     15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:21:58
+   TON-USDT     15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:23:46
+   ARB-USDT     15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:24:37
+   ICNT-USDT    15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:28:04
+   DOGE-USDT    15min  | NO P&L (data quality issue) | 1h overdue | Fired: 05:28:54
+
+📊 PEC STATS:
+   Total: 9830 | Open: 721 | TP: 1091 | SL: 2464 | TIMEOUT: 2268 (1092W/1171L) | STALE: 2737
+   Win Rate (TP/SL only): 30.7% | Total P&L: $-5878.45
+================================================================================
+
