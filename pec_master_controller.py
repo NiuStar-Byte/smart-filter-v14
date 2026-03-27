@@ -26,7 +26,7 @@ from pathlib import Path
 class ProcessManager:
     def __init__(self):
         self.workspace_root = "/Users/geniustarigan/.openclaw/workspace"
-        self.log_file = os.path.join(self.workspace_root, 'pec_supervisor.log')
+        self.log_file = os.path.join(self.workspace_root, 'pec_controller.log')
         
         # Process definitions
         self.processes = {
@@ -142,11 +142,11 @@ class ProcessManager:
     def run(self):
         """Main supervisor loop"""
         self.log("=" * 80, level="START")
-        self.log("PEC UNIFIED SUPERVISOR started", level="START")
+        self.log("PEC MASTER CONTROLLER started (unified daemon management)", level="START")
         self.log(f"Managing: Signal Generator (main.py) + Signal Executor (pec_executor_persistent.py)", level="START")
         self.log(f"Health check interval: {self.check_interval}s", level="START")
         self.log(f"Critical restart threshold: {self.restart_threshold}x", level="START")
-        self.log(f"Stop with: pkill -f pec_unified_supervisor", level="START")
+        self.log(f"Stop with: pkill -f pec_master_controller", level="START")
         self.log("=" * 80, level="START")
         
         # Start both processes
