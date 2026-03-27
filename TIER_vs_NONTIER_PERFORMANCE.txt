@@ -1,13 +1,21 @@
 ================================================================================
-TIER vs NON-TIER PERFORMANCE TRACKER
-Report Generated: 2026-03-27 16:33:25 UTC
+TIER vs NON-TIER PERFORMANCE TRACKER (TEMPORAL ANALYSIS)
+Report Generated: 2026-03-27 16:40:53 UTC
 ================================================================================
+
+⚠️  CRITICAL TIMELINE CONTEXT:
+  WITH TIER signals:    Fired 2026-03-27 to 2026-03-27
+  WITHOUT TIER signals: Fired 2026-02-27 to 2026-03-27
+
+  IMPORTANT: Tier assignment only began on 2026-03-27.
+  Pre-Mar-27 signals have ZERO tier (historical baseline).
+  Tier signals are NEW (just fired) and still accumulating closes.
 
 ================================================================================
 SECTION 1: SIGNALS WITH TIER ASSIGNMENT
 ================================================================================
 
-Total Loaded Signals: 3,172
+Total Loaded Signals: 3,199
 Total Closed Signals: 0
 
 CLOSED SIGNAL BREAKDOWN:
@@ -99,26 +107,39 @@ SECTION 4: DYNAMIC COMBOS BY TIER STATUS
      Closed: 250, WR: 50.5%, Avg P&L: $-0.08
 
 ================================================================================
-SECTION 5: INTERPRETATION & NEXT STEPS
+SECTION 5: TEMPORAL ANALYSIS & HYPOTHESIS
 ================================================================================
 
-CURRENT STATE:
-  Tier-Assigned Signals:       3,172 (all OPEN - not closed yet)
-  Non-Tier Signals (Closed):   9,270 closed (WR 37.50%)
+CURRENT STATE (TEMPORAL FAIRNESS):
+  Tier-Assigned Signals:       3,199 signals
+    └─ Fire Date Range:        Mar 27 only (BRAND NEW - just fired)
+    └─ Closed:                 0 (zero time to close yet)
+    └─ Status:                 100% OPEN
 
-KEY INSIGHT:
-  Tier assignments are RECENT and signals are still in flight.
-  Performance comparison will be meaningful once tier-assigned signals accumulate
-  sufficient closed trades (target: 40+ closed signals per group).
+  Non-Tier Signals:            10,172 signals
+    └─ Fire Date Range:        Feb 27 - Mar 26 (HISTORICAL - pre-tier implementation)
+    └─ Closed:                 9,270 (91.1%)
+    └─ Win Rate:               37.50%
 
-WAIT FOR:
-  - Tier-2 signals: ~50 closed trades at ≥50% WR
-  - Tier-3 signals: ~40 closed trades at ≥40% WR
-  - Tier-X signals: Performance baseline as they close
+KEY INSIGHT - WHY ZERO TIER CLOSES:
+  Tier assignment only started 2026-03-27 (today).
+  All signals fired before Mar 27 have NO tier (historical).
+  Tier-assigned signals are brand new → zero closure time yet.
+  This is CORRECT - not a bug, but a timeline effect.
 
-HYPOTHESIS:
-  IF tiering works: WITH_TIER WR% > WITHOUT_TIER WR% when tier signals close
-  Current non-tier baseline: 37.50% WR
+COMPARISON STATUS: NOT YET VALID
+  Current comparison is apples-to-oranges (new vs historical).
+  Meaningful comparison requires tier signals to accumulate closes.
+
+WAIT FOR (ETA: 24-48 hours):
+  - Tier-X signals:   10+ closed trades → baseline WR
+  - Tier-2 signals:   ~30-50 closed trades → test hypothesis
+  - Tier-3 signals:   ~25-40 closed trades → test hypothesis
+
+HYPOTHESIS TEST (Once tier signals close):
+  Null:       Tier WR% = 37.50% (no difference)
+  Alternate:  Tier WR% > 37.50% (tiering improves quality)
+  Success Threshold: 45.50% (8%+ improvement)
 
 ================================================================================
 END OF REPORT

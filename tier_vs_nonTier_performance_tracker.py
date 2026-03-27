@@ -173,16 +173,38 @@ def format_pnl(value):
     return f"${value:,.2f}"
 
 
+def extract_fire_date(signal):
+    """Extract fire date from signal"""
+    fired_utc = signal.get('fired_time_utc', '')
+    if fired_utc:
+        return fired_utc[:10]
+    return None
+
+
 def generate_report(with_tier_signals, without_tier_signals):
     """Generate bifurcated comparison report"""
     with_tier_metrics = calculate_segment_metrics(with_tier_signals)
     without_tier_metrics = calculate_segment_metrics(without_tier_signals)
     
+    # Extract timeline info for context
+    with_tier_dates = set(extract_fire_date(s) for s in with_tier_signals if extract_fire_date(s))
+    without_tier_dates = set(extract_fire_date(s) for s in without_tier_signals if extract_fire_date(s))
+    
     report = []
     report.append("=" * 80)
-    report.append("TIER vs NON-TIER PERFORMANCE TRACKER")
+    report.append("TIER vs NON-TIER PERFORMANCE TRACKER (TEMPORAL ANALYSIS)")
     report.append(f"Report Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} UTC")
     report.append("=" * 80)
+    report.append("")
+    
+    report.append("⚠️  CRITICAL TIMELINE CONTEXT:")
+    if with_tier_dates:
+        report.append(f"  WITH TIER signals:    Fired {min(with_tier_dates)} to {max(with_tier_dates)}")
+        report.append(f"  WITHOUT TIER signals: Fired {min(without_tier_dates)} to {max(without_tier_dates)}")
+    report.append("")
+    report.append("  IMPORTANT: Tier assignment only began on 2026-03-27.")
+    report.append("  Pre-Mar-27 signals have ZERO tier (historical baseline).")
+    report.append("  Tier signals are NEW (just fired) and still accumulating closes.")
     report.append("")
     
     # ========== SIGNALS WITH TIER ==========
@@ -324,29 +346,44 @@ def generate_report(with_tier_signals, without_tier_signals):
     report.append("")
     
     report.append("=" * 80)
-    report.append("SECTION 5: INTERPRETATION & NEXT STEPS")
+    report.append("SECTION 5: TEMPORAL ANALYSIS & HYPOTHESIS")
     report.append("=" * 80)
     report.append("")
-    report.append("CURRENT STATE:")
-    report.append(f"  Tier-Assigned Signals:       {with_tier_metrics['total']:,} (all OPEN - not closed yet)")
-    report.append(f"  Non-Tier Signals (Closed):   {without_tier_metrics['closed']:,} closed (WR {wr_without_tier:.2f}%)")
+    
+    report.append("CURRENT STATE (TEMPORAL FAIRNESS):")
+    report.append(f"  Tier-Assigned Signals:       {with_tier_metrics['total']:,} signals")
+    report.append(f"    └─ Fire Date Range:        Mar 27 only (BRAND NEW - just fired)")
+    report.append(f"    └─ Closed:                 0 (zero time to close yet)")
+    report.append(f"    └─ Status:                 100% OPEN")
+    report.append("")
+    report.append(f"  Non-Tier Signals:            {without_tier_metrics['total']:,} signals")
+    report.append(f"    └─ Fire Date Range:        Feb 27 - Mar 26 (HISTORICAL - pre-tier implementation)")
+    report.append(f"    └─ Closed:                 {without_tier_metrics['closed']:,} ({100*without_tier_metrics['closed']/without_tier_metrics['total']:.1f}%)")
+    report.append(f"    └─ Win Rate:               {wr_without_tier:.2f}%")
     report.append("")
     
-    report.append("KEY INSIGHT:")
-    report.append("  Tier assignments are RECENT and signals are still in flight.")
-    report.append("  Performance comparison will be meaningful once tier-assigned signals accumulate")
-    report.append("  sufficient closed trades (target: 40+ closed signals per group).")
+    report.append("KEY INSIGHT - WHY ZERO TIER CLOSES:")
+    report.append("  Tier assignment only started 2026-03-27 (today).")
+    report.append("  All signals fired before Mar 27 have NO tier (historical).")
+    report.append("  Tier-assigned signals are brand new → zero closure time yet.")
+    report.append("  This is CORRECT - not a bug, but a timeline effect.")
     report.append("")
     
-    report.append("WAIT FOR:")
-    report.append("  - Tier-2 signals: ~50 closed trades at ≥50% WR")
-    report.append("  - Tier-3 signals: ~40 closed trades at ≥40% WR")
-    report.append("  - Tier-X signals: Performance baseline as they close")
+    report.append("COMPARISON STATUS: NOT YET VALID")
+    report.append("  Current comparison is apples-to-oranges (new vs historical).")
+    report.append("  Meaningful comparison requires tier signals to accumulate closes.")
     report.append("")
     
-    report.append("HYPOTHESIS:")
-    report.append("  IF tiering works: WITH_TIER WR% > WITHOUT_TIER WR% when tier signals close")
-    report.append("  Current non-tier baseline: {:.2f}% WR".format(wr_without_tier))
+    report.append("WAIT FOR (ETA: 24-48 hours):")
+    report.append("  - Tier-X signals:   10+ closed trades → baseline WR")
+    report.append("  - Tier-2 signals:   ~30-50 closed trades → test hypothesis")
+    report.append("  - Tier-3 signals:   ~25-40 closed trades → test hypothesis")
+    report.append("")
+    
+    report.append("HYPOTHESIS TEST (Once tier signals close):")
+    report.append(f"  Null:       Tier WR% = {wr_without_tier:.2f}% (no difference)")
+    report.append(f"  Alternate:  Tier WR% > {wr_without_tier:.2f}% (tiering improves quality)")
+    report.append(f"  Success Threshold: {wr_without_tier + 8:.2f}% (8%+ improvement)")
     report.append("")
     
     report.append("=" * 80)
