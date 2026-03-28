@@ -4,6 +4,63 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
+## 🎯 **TIER SYSTEM COMPLETE (2026-03-28 11:35) - SIGNAL ENRICHMENT APPLIED**
+
+**Status:** ✅ **FIXED - Main.py NOW enriches all signals with symbol_group & confidence_level at creation**
+**Issue Resolved:** Signals created with `symbol_group: None` and `confidence_level: None`, blocking 5D/6D tier matching
+**Solution Applied:** Added enrichment functions to main.py - all new signals have full 6D dimensions
+**Commit:** `6ac330f` (FIX: Add symbol_group & confidence_level fields to all signals at creation)
+
+### **The CRITICAL FIX**
+
+**What Was Wrong:**
+- Signals were created with missing `symbol_group` and `confidence_level` fields (both None)
+- This prevented 5D/6D combo matching in tier_lookup.py
+- Signals cascaded to 4D combos instead, getting wrong tier assignments
+- **Example:** FUN-USDT signal (2h SHORT TREND CONTINUATION RANGE LOW_ALTS, 88.8% confidence)
+  - BEFORE: symbol_group=None → no 5D match → cascaded to 4D → got Tier-2 (wrong!)
+  - NOW: symbol_group=LOW_ALTS, confidence_level=HIGH → matches 5D combo → gets Tier-3 (correct!)
+
+**What's Fixed Now (Commit 6ac330f):**
+1. **Added two enrichment functions to main.py:**
+   ```python
+   def get_symbol_group(symbol: str) -> str:
+       # Returns: MAIN_BLOCKCHAIN, TOP_ALTS, MID_ALTS, or LOW_ALTS
+   
+   def get_confidence_level(confidence_pct: float) -> str:
+       # Returns: HIGH (≥73%), MID (≥66%), or LOW (<66%)
+   ```
+
+2. **Updated ALL write_signal() calls** (5 total: 15min, 30min, 1h, 2h, 4h):
+   ```python
+   _signals_master_writer.write_signal({
+       ...
+       'symbol_group': get_symbol_group(symbol_val),       # NOW ADDED
+       'confidence_level': get_confidence_level(confidence),# NOW ADDED
+       'tier': signal_tier
+   })
+   ```
+
+3. **Symbol Group Mapping:**
+   - MAIN_BLOCKCHAIN: BTC-USDT, ETH-USDT
+   - TOP_ALTS: SOL, ADA, DOGE, XRP, AVAX
+   - MID_ALTS: (empty, for future expansion)
+   - LOW_ALTS: default for unmapped (FUN-USDT, etc.)
+
+4. **Confidence Level Mapping:**
+   - HIGH: confidence ≥ 73%
+   - MID: confidence ≥ 66%
+   - LOW: confidence < 66%
+
+**Enables Full 6D Matching:**
+Now signals match on ALL 6 dimensions: `TF × Direction × Route × Regime × Symbol_Group × Confidence_Level`
+- Before fix: Only 4D matching available (cascades to wrong tier)
+- After fix: Full 5D/6D matching (signals get correct tier immediately)
+
+**Impact:** New signals fired after this commit will have correct tier assignment! ✅
+
+---
+
 ## 🎯 **TIER SYSTEM OPERATIONAL (2026-03-28 07:41 - COMPLETE) → 4D FORMAT FINAL (2026-03-28 10:27)**
 
 **Status:** ✅ **DEPLOYED & LOCKED IN 4D FORMAT**
