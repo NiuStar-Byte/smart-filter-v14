@@ -1,0 +1,41 @@
+====================================================================================================
+TIER COMBO ASSIGNMENT LIST
+====================================================================================================
+
+Thresholds:
+  Tier-1: 60% WR, $4.00+ avg, 30+ trades
+  Tier-2: 50% WR, $2.50+ avg, 25+ trades
+  Tier-3: 40% WR, $1.50+ avg, 20+ trades
+
+====================================================================================================
+🎯 TIER1 (5 combos)
+====================================================================================================
+✓ TF_DIR_ROUTE_REGIME_SG|2h|SHORT|TREND CONTINUATION|BEAR|MAIN_BLOCKCHAIN | WR: 74.3% | Avg P&L: $4.90 | Closed: 148
+✓ TF_DIR_ROUTE_REGIME_SG|4h|SHORT|TREND CONTINUATION|BEAR|MAIN_BLOCKCHAIN | WR: 74.1% | Avg P&L: $4.29 | Closed: 116
+✓ TF_DIR_ROUTE_REGIME_SG|4h|SHORT|TREND CONTINUATION|RANGE|LOW_ALTS | WR: 70.6% | Avg P&L: $5.64 | Closed: 68
+✓ TF_DIR_ROUTE_REGIME_SG|2h|SHORT|TREND CONTINUATION|BULL|LOW_ALTS | WR: 64.7% | Avg P&L: $6.15 | Closed: 68
+✓ TF_DIR_ROUTE_REGIME_SG|2h|SHORT|TREND CONTINUATION|RANGE|LOW_ALTS | WR: 61.7% | Avg P&L: $4.42 | Closed: 94
+
+====================================================================================================
+🎯 TIER2 (5 combos)
+====================================================================================================
+✓ TF_DIR_ROUTE_REGIME_SG|4h|SHORT|REVERSAL|BEAR|LOW_ALTS | WR: 76.9% | Avg P&L: $3.97 | Closed: 26
+✓ TF_DIR_ROUTE_REGIME_SG|4h|SHORT|TREND CONTINUATION|BEAR|MID_ALTS | WR: 69.4% | Avg P&L: $2.78 | Closed: 72
+✓ TF_DIR_ROUTE_REGIME_SG|4h|SHORT|TREND CONTINUATION|BEAR|LOW_ALTS | WR: 56.8% | Avg P&L: $2.54 | Closed: 588
+✓ 15min|LONG|TREND CONTINUATION|BULL|TOP_ALTS|HIGH | WR: 54.5% | Avg P&L: $3.65 | Closed: 44
+✓ TF_DIR_ROUTE_REGIME_SG|4h|LONG|TREND CONTINUATION|BULL|LOW_ALTS | WR: 50.3% | Avg P&L: $2.95 | Closed: 596
+
+====================================================================================================
+🎯 TIER3 (11 combos)
+====================================================================================================
+✓ TF_DIR_ROUTE_REGIME_SG|4h|SHORT|NONE|BEAR|LOW_ALTS | WR: 80.0% | Avg P&L: $4.99 | Closed: 20
+✓ 2h|SHORT|TREND CONTINUATION|BULL|LOW_ALTS|LOW | WR: 76.9% | Avg P&L: $1.56 | Closed: 26
+✓ TF_DIR_ROUTE_REGIME_SG|15min|LONG|TREND_CONTINUATION|BULL|MID_ALTS | WR: 70.0% | Avg P&L: $5.59 | Closed: 20
+✓ TF_DIR_ROUTE_REGIME_SG|2h|SHORT|TREND CONTINUATION|BEAR|LOW_ALTS | WR: 62.0% | Avg P&L: $2.40 | Closed: 606
+✓ 30min|SHORT|TREND CONTINUATION|BEAR|LOW_ALTS|HIGH | WR: 61.2% | Avg P&L: $1.79 | Closed: 412
+✓ TF_DIR_ROUTE_REGIME_SG|30min|SHORT|TREND CONTINUATION|BEAR|MAIN_BLOCKCHAIN | WR: 53.4% | Avg P&L: $1.80 | Closed: 232
+✓ 30min|LONG|TREND CONTINUATION|RANGE|LOW_ALTS|HIGH | WR: 50.0% | Avg P&L: $2.91 | Closed: 24
+✓ 30min|LONG|TREND CONTINUATION|BULL|MID_ALTS|HIGH | WR: 46.9% | Avg P&L: $2.10 | Closed: 64
+✓ TF_DIR_ROUTE_REGIME_SG|1h|SHORT|TREND CONTINUATION|BEAR|MID_ALTS | WR: 45.8% | Avg P&L: $1.77 | Closed: 96
+✓ TF_DIR_ROUTE_REGIME_SG|30min|SHORT|TREND CONTINUATION|RANGE|MAIN_BLOCKCHAIN | WR: 45.5% | Avg P&L: $1.66 | Closed: 22
+✓ 15min|LONG|TREND CONTINUATION|BEAR|MAIN_BLOCKCHAIN|HIGH | WR: 44.4% | Avg P&L: $2.23 | Closed: 54
