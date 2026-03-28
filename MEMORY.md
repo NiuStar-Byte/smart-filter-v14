@@ -81,26 +81,61 @@ SIGNAL_TIERS.json distribution:
 - Trade-off: More complexity, clearer confidence levels
 - Impact: 15min/30min get rated but labeled as "lower confidence"
 
-### **Implementation**
+### **Implementation & Results**
 
-File to modify: `/Users/geniustarigan/.openclaw/workspace/pec_enhanced_reporter.py`
+**Fix Applied:** Reduced min_trades in pec_enhanced_reporter.py (60→30, 50→25, 40→15)
+- Commit: `f183280`
+- Re-ran pec_enhanced_reporter.py to regenerate SIGNAL_TIERS.json
 
-Line 1943 in `_check_tier_qualification()`:
-```python
-# BEFORE (too strict):
-if closed_trades >= min_trades and wr >= min_wr and avg_pnl >= min_pnl:
-    return f"Tier-{tier_level}"
+**RESULT:** Still only 8 Tier-1, 12 Tier-2, 29 Tier-3 combos. NO 15min/30min added.
 
-# AFTER (OPTION A):
-if closed_trades >= (min_trades // 2) and wr >= min_wr and avg_pnl >= min_pnl:
-    return f"Tier-{tier_level}"
+**Why?** The issue was NEVER just trade volume. Testing revealed actual performance metrics:
+
+**Timeframe Performance (ALL signals combined):**
+```
+15min:  3214 closed | 33.67% WR | -$1.22 avg P&L | ❌ FAILS requirements
+30min:  1944 closed | 39.30% WR | -$1.18 avg P&L | ❌ FAILS requirements  
+1h:     1060 closed | 41.13% WR | +$0.10 avg P&L | ⚠️ Marginal
+2h:      639 closed | 52.90% WR | +$0.01 avg P&L | ❌ Poor P&L
+4h:     1077 closed | 52.46% WR | +$0.10 avg P&L | ❌ Poor P&L
 ```
 
-**Then:** Re-run pec_enhanced_reporter.py to regenerate SIGNAL_TIERS.json with new thresholds.
+**Tier requirements:**
+- Tier-3: ≥40% WR AND ≥$2.00 avg P&L
+- Tier-2: ≥50% WR AND ≥$3.50 avg P&L
+- Tier-1: ≥60% WR AND ≥$5.50 avg P&L
 
-### **NOT an Inversion Bug**
+**Verdict:** The tier system is working correctly. 15min/30min are legitimately underperforming (negative P&L!) and should NOT qualify.
 
-Clarification for MEMORY.md: The original "66.67% WR Tier-3" issue was a misunderstanding. The real blocker is that tier data simply doesn't exist for most timeframes, not that assignments are backwards.
+### **Root Cause Summary**
+
+**NOT a bug—this is correct behavior.**
+
+The original MEMORY.md issue was a misunderstanding:
+1. Suspected "inversion" → Actually missing tier data for 15min/30min
+2. Looked for minimum trade blocker → Found it but wasn't the real issue
+3. Reduced minimum trades → Didn't help because 15min/30min FAIL WR/P&L criteria
+4. **True root cause:** 15min/30min signals are underperforming (33-39% WR, negative P&L)
+
+### **Next Steps (NOT an emergency)**
+
+Options to improve 15min/30min tier qualification:
+
+**A (Do Nothing):** Accept that 15min/30min are low-quality and leave them Tier-X
+- Status: CURRENT behavior
+- Impact: 95% of signals are Tier-X (ok if quality-focused)
+
+**B (Improve Signal Quality):** Reweight filters or adjust parameters to boost 15min/30min WR/P&L
+- Status: RECOMMENDED
+- Action: Audit 15min/30min filter performance in smart-filter-v14-main
+
+**C (Relax Requirements):** Use relative-per-timeframe tiers instead of absolute thresholds
+- Status: Complex redesign
+- Example: "Top-performing 15min combos get Tier-3-ALT even if below $2.00 P&L"
+
+**D (Split by Quality Confidence):** Create separate tier tracks for coarse vs fine-grained
+- Status: Medium complexity
+- Benefit: Acknowledges different confidence levels by timeframe
 
 ---
 
