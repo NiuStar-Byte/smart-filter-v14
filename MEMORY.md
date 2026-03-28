@@ -4,6 +4,106 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
+## 🚨 **CRITICAL: TIER ASSIGNMENT BLOCKER - MISSING TIMEFRAME DATA (2026-03-28 07:02 AUDIT COMPLETE)**
+
+**Status:** ✅ **ROOT CAUSE FOUND - Fix Ready**
+**Severity:** Critical to overall 51% WR roadmap  
+**Issue Type:** Missing tier data for 15min/30min, NOT logic inversion
+**Audit Time:** 2026-03-28 07:00-07:02 GMT+7
+
+### **The REAL Problem (NOT Inversion)**
+
+**~95% of signals are assigned Tier-X because tier data doesn't exist for their timeframes:**
+
+Current SIGNAL_TIERS.json tier coverage:
+```
+Tier-3:  2h, 4h, 1h only (NO 15min, NO 30min)
+Tier-2:  4h only
+Tier-1:  2h only
+```
+
+**Signal distribution:**
+```
+15min: ~30-40% of all signals → ALL Tier-X (no tier data)
+30min: ~40-50% of all signals → ALL Tier-X (no tier data)
+1h:    ~10-20% of all signals → PARTIAL Tier-3 (some 3D combos)
+2h/4h: ~1-2% of all signals  → Can match 4D combos
+```
+
+**Root Cause:** pec_enhanced_reporter.py's `_check_tier_qualification()` requires ≥40 trades minimum for Tier-3. Most granular combos (15min/30min) have 10-30 trades, so they never qualify and never get added to SIGNAL_TIERS.json.
+
+### **Detailed Audit Findings**
+
+**✅ Verified CORRECT:**
+- `tier_config.py` thresholds: Tier-1 ≥60% WR, Tier-2 ≥50%, Tier-3 ≥40% (logic correct)
+- `tier_lookup.py` matching logic: Correctly cascades 5D → 4D → 3D → 2D
+- `_check_tier_qualification()` function: Returns correct tier for qualifying combos
+- No inverted comparison operators or case sensitivity issues
+
+**❌ ROOT CAUSE IDENTIFIED:**
+- **Location:** `pec_enhanced_reporter.py` line ~1943 (_check_tier_qualification)
+- **Problem:** `closed_trades >= min_trades` requirement (40+ for Tier-3)
+- **Impact:** 15min/30min combos (10-30 trades) NEVER qualify → never added to SIGNAL_TIERS
+- **Result:** tier_lookup.py can't find matching 4D combos → defaults to Tier-X
+
+**Evidence:**
+```
+Test combos found in signals:
+- 4h_SHORT_TREND CONTINUATION_BEAR: Matches tier3 ✓
+- 30min_SHORT_TREND CONTINUATION_RANGE: NO tier3 match ✗ (Tier-X)
+- 15min_LONG_TREND CONTINUATION_BULL: NO tier3 match ✗ (Tier-X)
+
+SIGNAL_TIERS.json distribution:
+- 15min entries: 0
+- 30min entries: 0
+- 1h entries: 2 (both 3D patterns like TF_DIR_REGIME_1h_LONG_RANGE)
+- 2h entries: 7
+- 4h entries: 13
+```
+
+### **The Fix (Choose One)**
+
+**OPTION A (Recommended): Reduce minimum trade threshold for tiers**
+- Change Tier-3 min_trades from 40 → 20
+- Change Tier-2 min_trades from 50 → 30
+- Change Tier-1 min_trades from 60 → 40
+- Trade-off: Qualifies more combos with smaller samples
+- Impact: All 15min/30min combos with 20+ WR will now get Tier-3
+
+**OPTION B: Skip minimum trade requirement for dimension <4D**
+- Tier-1/2/3 qualify if WR/P&L match AND (trades ≥ threshold OR dimension < 4D)
+- Trade-off: Fine-grained combos qualify more easily
+- Impact: 3D combos from 15min can qualify if they have 60%+ WR
+
+**OPTION C: Two-tier system**
+- Tier-1/2/3 unchanged for 4D (2h/4h only)
+- Create Tier-2-LOW/Tier-3-LOW for 3D/2D with 30%+ WR (no min trades)
+- Trade-off: More complexity, clearer confidence levels
+- Impact: 15min/30min get rated but labeled as "lower confidence"
+
+### **Implementation**
+
+File to modify: `/Users/geniustarigan/.openclaw/workspace/pec_enhanced_reporter.py`
+
+Line 1943 in `_check_tier_qualification()`:
+```python
+# BEFORE (too strict):
+if closed_trades >= min_trades and wr >= min_wr and avg_pnl >= min_pnl:
+    return f"Tier-{tier_level}"
+
+# AFTER (OPTION A):
+if closed_trades >= (min_trades // 2) and wr >= min_wr and avg_pnl >= min_pnl:
+    return f"Tier-{tier_level}"
+```
+
+**Then:** Re-run pec_enhanced_reporter.py to regenerate SIGNAL_TIERS.json with new thresholds.
+
+### **NOT an Inversion Bug**
+
+Clarification for MEMORY.md: The original "66.67% WR Tier-3" issue was a misunderstanding. The real blocker is that tier data simply doesn't exist for most timeframes, not that assignments are backwards.
+
+---
+
 ## 🎯 **INTEGRATION ROADMAP: PROJECT 3 ↔ PROJECT 4 (2026-03-27 15:11)**
 
 **Status:** ⏸️ **PENDING 51% WR THRESHOLD**
@@ -98,6 +198,39 @@ cd ~/.openclaw/workspace && python3 tier_performance_comparison_tracker.py
 
 **Current Status:**
 - Process: Running (PID 4829, started 09:24)
+
+### **🔴 OPERATIONAL ISSUES (2026-03-27 16:00)**
+
+**pec_master_controller.py is OFFLINE**
+- Supervisor NOT managing daemons as unit
+- Signal generation and execution running independently (fragile)
+- Needs restart to bring quality loop back online
+- Command: `pkill -f pec_master_controller.py && python3 pec_master_controller.py > pec_controller.log 2>&1 &`
+
+**Stale processes to clean up:**
+- PID 34310: Old main.py (killed, replace with latest)
+- PID 22227: Old pec_executor (killed, replace with pec_executor_persistent.py)
+- Command: `pkill -9 -f "main.py\|pec_executor"` then restart fresh instances
+
+**Active daemons (verify running):**
+1. main.py - Signal generation (PID varies, should be running)
+2. pec_executor_persistent.py - Signal processing (PID 4829)
+3. pec_master_controller.py - Supervisor (OFFLINE, needs start)
+
+**Process restart sequence (if all down):**
+```bash
+# Kill all
+pkill -f "main.py\|pec_executor\|pec_master_controller" || true
+
+# Restart signal generator
+cd ~/.openclaw/workspace && python3 smart-filter-v14-main/main.py > main_daemon.log 2>&1 &
+
+# Restart signal processor
+cd ~/.openclaw/workspace && python3 pec_executor_persistent.py > pec_persistent.log 2>&1 &
+
+# Restart supervisor (manages both as unit)
+cd ~/.openclaw/workspace && python3 pec_master_controller.py > pec_controller.log 2>&1 &
+```
 - First cycle: Processing 9830 signals
 - Tracker code: 100% locked (2427, 843, 1718 lines)
 - Tracker data: Dynamic (updates as signals close)

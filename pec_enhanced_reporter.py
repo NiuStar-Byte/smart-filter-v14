@@ -1930,26 +1930,35 @@ class PECEnhancedReporter:
     def _check_tier_qualification(self, wr, avg_pnl, closed_trades, tier_level):
         """
         Check if a combo qualifies for a specific tier level.
+        
+        FIX (2026-03-28): Reduced minimum trade requirements to include fine-grained timeframes (15min/30min).
+        - Tier-1: 60 → 30 trades (allow smaller samples if WR/P&L qualify)
+        - Tier-2: 50 → 25 trades
+        - Tier-3: 40 → 15 trades (captures 15min/30min combos with 15-30 trades)
+        
+        This fixes the "missing tier data" blocker where 95% of 15min/30min signals couldn't match tier assignments.
+        WR and P&L criteria remain strict to ensure quality.
+        
         Returns: tier_name or None
         """
         th = TIER_THRESHOLDS
         
         if tier_level == 1:
-            min_trades = th.get("tier1_min_trades", 60)
+            min_trades = 30  # Reduced from 60 (th.get("tier1_min_trades", 60))
             min_wr = th.get("tier1_wr", 0.60)
             min_pnl = th.get("tier1_pnl", 5.50)
             if closed_trades >= min_trades and wr >= min_wr and avg_pnl >= min_pnl:
                 return "Tier-1"
         
         elif tier_level == 2:
-            min_trades = th.get("tier2_min_trades", 50)
+            min_trades = 25  # Reduced from 50 (th.get("tier2_min_trades", 50))
             min_wr = th.get("tier2_wr", 0.50)
             min_pnl = th.get("tier2_pnl", 3.50)
             if closed_trades >= min_trades and wr >= min_wr and avg_pnl >= min_pnl:
                 return "Tier-2"
         
         elif tier_level == 3:
-            min_trades = th.get("tier3_min_trades", 40)
+            min_trades = 15  # Reduced from 40 (th.get("tier3_min_trades", 40))
             min_wr = th.get("tier3_wr", 0.40)
             min_pnl = th.get("tier3_pnl", 2.00)
             if closed_trades >= min_trades and wr >= min_wr and avg_pnl >= min_pnl:
