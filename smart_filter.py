@@ -178,15 +178,11 @@ class SmartFilter:
         self.filter_names = list(set(self.filter_weights_long.keys()) | set(self.filter_weights_short.keys()))
         
         # Separate gatekeepers for LONG and SHORT to avoid asymmetry
-        # LONG: Candle Confirmation + Support/Resistance (tight entry logic)
-        # SHORT: Candle Confirmation only (looser, Support/Resistance blocks SHORT)
-        self.gatekeepers_long = [
-            "Candle Confirmation" # LONG/SHORT deploy Support/Resistance at Filters not at Gatekeeper
-        ]
+        # LONG: No hard gatekeepers (Candle Confirmation moved to filter tier 2026-04-01)
+        # SHORT: No hard gatekeepers (Candle Confirmation moved to filter tier 2026-04-01)
+        self.gatekeepers_long = []  # FIXED (2026-04-01): Removed Candle Confirmation hard gatekeeper
         
-        self.gatekeepers_short = [
-            "Candle Confirmation"  # LONG/SHORT deploy Support/Resistance at Filters not at Gatekeeper
-        ]
+        self.gatekeepers_short = []  # FIXED (2026-04-01): Removed Candle Confirmation hard gatekeeper
         
         # Legacy gatekeepers (for backward compatibility in other methods)
         self.gatekeepers = self.gatekeepers_long
@@ -2124,7 +2120,7 @@ class SmartFilter:
         
         return signal
 
-    def _check_absorption(self, window=25, stall_pct=0.02, volume_threshold=1.2, debug=False):
+    def _check_absorption(self, window=20, stall_pct=0.04, volume_threshold=1.05, debug=False):
         """
         REWRITTEN Absorption - Real institutional accumulation detection (2026-04-01)
         Detects: Price stalls at level for 2+ bars, then HIGH volume breaks the stall
