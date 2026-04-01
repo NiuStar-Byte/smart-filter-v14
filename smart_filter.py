@@ -191,7 +191,7 @@ class SmartFilter:
         # Legacy gatekeepers (for backward compatibility in other methods)
         self.gatekeepers = self.gatekeepers_long
         
-        self.soft_gatekeepers = ["Candle Confirmation"]
+        self.soft_gatekeepers = []  # FIXED (2026-04-01): Removed Candle Confirmation (was blocking ALL signals)
 
     # ==== SHARED HELPERS ====
     @staticmethod
@@ -2124,125 +2124,40 @@ class SmartFilter:
         
         return signal
 
-    def _check_absorption(
-        self, 
-        window: int = 25,        # Loosened from 30
-        price_proximity_pct: float = 0.03,  # TUNED: 0.02 → 0.03 (3% acceptance, more lenient) [2026-03-23]
-        volume_threshold: float = 1.05,   # TUNED: 1.1 → 1.05 (5% above avg for real absorption) [2026-03-23]
-        momentum_threshold: float = 0.0,  # Loosened from 0.005 (any positive)
-        min_cond: int = 1,              # OPTIMIZATION: 2→1 (fire with 1+ conditions)
-        debug: bool = False
-    ) -> Optional[str]:
+    def _check_absorption(self, window=25, stall_pct=0.02, volume_threshold=1.2, debug=False):
         """
-        [Absorption ENHANCED - Phase 3 Wave 1]
-        Institutional-grade absorption detection with 5 enhancements:
-        
-        1. Volatility-Adaptive Proximity
-           - Calm market: 0.5% proximity OK
-           - Volatile market: 1.5% proximity accepted
-           - Better capture of valid absorptions
-        
-        2. Volume Accumulation (3-bar buildup)
-           - Tracks volume over multiple bars
-           - Distinguishes spike from sustained accumulation
-           - Institutional orders build position gradually
-        
-        3. Directional Pressure Detection
-           - Measures momentum into absorption level
-           - LONG absorption: price pushing down into level = reversal
-           - SHORT absorption: price pushing up into level = reversal
-           - Filters one-sided scenarios
-        
-        4. False Breakout Rejection
-           - High touches without volume = false signal
-           - Compares touch-bar volume to average
-           - Prevents whipsaws on thin liquidity
-        
-        5. Liquidity Depth Analysis
-           - Checks if orders concentrated at level
-           - Thin liquidity = rejected
-           - Dense orders = institutional setup confirmed
-        
-        Parameters (TUNED 2026-03-23):
-        - window: Rolling window for high/low (25)
-        - price_proximity_pct: Acceptance buffer (3%, TUNED from 2%) [2026-03-23]
-        - atr_multiplier: Volatility scaling (0.75)
-        - volume_threshold: Required volume ratio (1.05x, TUNED from 1.1x) [2026-03-23]
-        - volume_buildup_bars: Accumulation bars (3)
-        - directional_pressure: Check momentum (True)
-        - false_breakout_gate: Reject thin touches (True)
-        - liquidity_depth_check: Order concentration (True)
-        - min_cond: Gate conditions (1+ required, loosened for sensitivity)
+        REWRITTEN Absorption - Real institutional accumulation detection (2026-04-01)
+        Detects: Price stalls at level for 2+ bars, then HIGH volume breaks the stall
         """
-        import math
-        
-        if len(self.df) < window:
-            if not debug:
-                print(f"[{self.symbol}] [Absorption ENHANCED] Insufficient data: {len(self.df)} < {window}")
+        if len(self.df) < window + 2:
             return None
         
-        low = self.df['low'].rolling(window).min().iat[-1]
-        high = self.df['high'].rolling(window).max().iat[-1]
         close = self.df['close'].iat[-1]
         volume = self.df['volume'].iat[-1]
         avg_volume = self.df['volume'].rolling(window).mean().iat[-1]
         
-        # Safe division helper
-        def safe_divide(a, b):
-            try:
-                return a / b if b != 0 else 0.0
-            except:
-                return 0.0
+        recent_low = self.df['low'].rolling(window).min().iat[-1]
+        recent_high = self.df['high'].rolling(window).max().iat[-1]
         
-        # FEATURE #1: Price near support/resistance
-        price_near_low = close <= low * (1 + price_proximity_pct)
-        price_near_high = close >= high * (1 - price_proximity_pct)
+        recent_closes = self.df['close'].tail(4).values
+        price_range = (max(recent_closes) - min(recent_closes)) / min(recent_closes) if min(recent_closes) > 0 else 1.0
         
-        # FEATURE #2: Volume confirmation (loosened from 1.3x to 1.1x)
-        vol_spike = volume > (avg_volume * volume_threshold)
+        price_near_low = close >= recent_low and close <= recent_low * (1 + stall_pct)
+        price_near_high = close <= recent_high and close >= recent_high * (1 - stall_pct)
+        price_stalled = price_range <= stall_pct
+        vol_confirmed = volume > avg_volume * volume_threshold
         
-        # FEATURE #3: Directional pressure (any positive, not 0.5%+)
-        pressure_long = 0.0
-        pressure_short = 0.0
-        if len(self.df) >= 2:
-            try:
-                close_prev = self.df['close'].iat[-2]
-                close_now = self.df['close'].iat[-1]
-                if close_prev > 0:
-                    pressure_long = (close_prev - close_now) / close_prev  # Moving down
-                    pressure_short = (close_now - close_prev) / close_prev  # Moving up
-            except:
-                pressure_long = 0.0
-                pressure_short = 0.0
+        if price_near_low and price_stalled and vol_confirmed:
+            if debug:
+                print(f"[{self.symbol}] [Absorption REWRITTEN] LONG signal")
+            return "LONG"
         
-        # 4 Loose conditions
-        cond1_long = price_near_low
-        cond2_long = vol_spike
-        cond3_long = pressure_long >= momentum_threshold
-        cond4_long = True  # Always pass (placeholder for future enhancements)
+        if price_near_high and price_stalled and vol_confirmed:
+            if debug:
+                print(f"[{self.symbol}] [Absorption REWRITTEN] SHORT signal")
+            return "SHORT"
         
-        cond1_short = price_near_high
-        cond2_short = vol_spike
-        cond3_short = pressure_short >= momentum_threshold
-        cond4_short = True  # Always pass
-        
-        long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long])
-        short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short])
-        
-        signal = None
-        if long_met >= min_cond and long_met > short_met:
-            signal = "LONG"
-        elif short_met >= min_cond and short_met > long_met:
-            signal = "SHORT"
-        
-        log_info = f"[Absorption] price_low={cond1_long} vol={cond2_long} pressure_long={pressure_long:.4f} pressure_short={pressure_short:.4f}"
-        
-        if signal:
-            print(f"[{self.symbol}] {log_info} | {signal} ({long_met}/{short_met})")
-        else:
-            print(f"[{self.symbol}] {log_info} | No signal (long={long_met} short={short_met}, need {min_cond})")
-        
-        return signal
+        return None
 
     def _check_vwap_divergence(
         self,
@@ -2409,70 +2324,41 @@ class SmartFilter:
         else:
             return series.min().iat[-1], series.max().iat[-1]
     
-    def _check_support_resistance(self, window=20, margin_pct=None, debug=False):
+    def _check_support_resistance(self, window=20, margin_pct=0.015, debug=False):
         """
-        SIMPLIFIED Support/Resistance (2026-03-23, 2026-03-25 3-FACTOR NORMALIZATION)
-        Retail-level bounce detection off recent extremes.
-        
-        Logic:
-        LONG: close >= recent_support AND close < recent_support * (1 + margin)
-        SHORT: close <= recent_resistance AND close > recent_resistance * (1 - margin)
-        
-        Purpose: Simple bounce detection off recent extremes
-        Expected Pass Rate: ~30-40% of bars (TF-dependent due to candle size variation)
-        TF-SPECIFIC: Uses dynamic margin based on timeframe volatility (0.03 baseline, 0.06 for 4h)
+        IMPROVED Support/Resistance - Bounce confirmation required (2026-04-01)
+        Logic: Price touches support/resistance + price reverses (confirmation)
         """
-        try:
-            # TF-SPECIFIC NORMALIZATION: Use dynamic thresholds from get_tf_specific_params()
-            if margin_pct is None:
-                tf_params = self.get_tf_specific_params()
-                margin_pct = tf_params["price_proximity_pct"]
-            
-            if len(self.df) < window:
-                return None
-            
-            # Get recent extremes
-            recent_support = self.df['low'].rolling(window).min().iat[-1]
-            recent_resistance = self.df['high'].rolling(window).max().iat[-1]
-            close = self.df['close'].iat[-1]
-            
-            # Define acceptance margins (dynamically set based on TF volatility)
-            support_upper = recent_support * (1 + margin_pct)
-            resistance_lower = recent_resistance * (1 - margin_pct)
-            
-            # LONG: Price near support (bouncing up)
-            long_condition = close >= recent_support and close <= support_upper
-            
-            # SHORT: Price near resistance (bouncing down)
-            short_condition = close <= recent_resistance and close >= resistance_lower
-            
-            if debug:
-                print(
-                    f"[{self.symbol}] [S/R SIMPLIFIED] close={close:.4f}, support={recent_support:.4f}, "
-                    f"resistance={recent_resistance:.4f}, margin={margin_pct:.2%} | "
-                    f"long={long_condition}, short={short_condition}"
-                )
-            
-            if long_condition:
-                print(
-                    f"[{self.symbol}] [S/R SIMPLIFIED] Signal: LONG | "
-                    f"close={close:.4f} within margin of support={recent_support:.4f}"
-                )
-                return "LONG"
-            elif short_condition:
-                print(
-                    f"[{self.symbol}] [S/R SIMPLIFIED] Signal: SHORT | "
-                    f"close={close:.4f} within margin of resistance={recent_resistance:.4f}"
-                )
-                return "SHORT"
-            else:
-                if debug:
-                    print(f"[{self.symbol}] [S/R SIMPLIFIED] No signal (not near extremes)")
-                return None
-        
-        except Exception as e:
-            print(f"[{self.symbol}] [S/R SIMPLIFIED] Error: {e}")
+        if len(self.df) < window + 1:
             return None
+        
+        close = self.df['close'].iat[-1]
+        open_ = self.df['open'].iat[-1]
+        close_prev = self.df['close'].iat[-2]
+        
+        recent_support = self.df['low'].rolling(window).min().iat[-1]
+        recent_resistance = self.df['high'].rolling(window).max().iat[-1]
+        
+        support_upper = recent_support * (1 + margin_pct)
+        resistance_lower = recent_resistance * (1 - margin_pct)
+        
+        long_touch = close >= recent_support and close <= support_upper
+        long_reversal = close > open_ and close > close_prev
+        
+        short_touch = close <= recent_resistance and close >= resistance_lower
+        short_reversal = close < open_ and close < close_prev
+        
+        if long_touch and long_reversal:
+            if debug:
+                print(f"[{self.symbol}] [S/R Improved] LONG signal")
+            return "LONG"
+        
+        if short_touch and short_reversal:
+            if debug:
+                print(f"[{self.symbol}] [S/R Improved] SHORT signal")
+            return "SHORT"
+        
+        return None
 
     def _check_fractal_zone(self, window=50, min_atr_mult=0.5, min_conditions=2, range_volatility_filter=True, debug=False):
         """
@@ -3228,13 +3114,13 @@ class SmartFilter:
             print(f"[{self.symbol}] [Candle Confirmation] {log_info}")
             print(f"[{self.symbol}] [Candle Confirmation] conds_long={[cond1_long, cond2_long, cond3_long, cond4_long]}, conds_short={[cond1_short, cond2_short, cond3_short, cond4_short]}, long_met={long_met}, short_met={short_met}")
 
-        # Use a stricter decision rule to avoid one-off candles producing GKs:
-        # require at least 2 meaningful confirmations and a strict majority
-        if long_met >= 2 and long_met > short_met:
+        # FIXED (2026-04-01): Lowered from >=2 to >=1 condition (was blocking valid signals)
+        # Now fires with ANY 1 confirmation (engulfing, pin bar, bullish close, or volume)
+        if long_met >= 1 and long_met > short_met:
             if debug:
                 print(f"[{self.symbol}] [Candle Confirmation] Signal: LONG | {log_info}")
             return "LONG"
-        elif short_met >= 2 and short_met > long_met:
+        elif short_met >= 1 and short_met > long_met:
             if debug:
                 print(f"[{self.symbol}] [Candle Confirmation] Signal: SHORT | {log_info}")
             return "SHORT"

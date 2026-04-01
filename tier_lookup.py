@@ -15,9 +15,9 @@ class TierLookup:
         self.load_latest_tiers()
     
     def load_latest_tiers(self):
-        """Load the latest entry from SIGNAL_TIERS.json (append-only file)"""
+        """Load the latest entry from SIGNAL_TIERS_APPEND.jsonl (LOCKED daily combos)"""
         try:
-            filename = "SIGNAL_TIERS.json"
+            filename = "smart-filter-v14-main/SIGNAL_TIERS_APPEND.jsonl"
             
             if not os.path.exists(filename):
                 print(f"[TIER] {filename} not found. All signals will be Tier-X.", flush=True)
@@ -25,24 +25,27 @@ class TierLookup:
                 self.tier_file = None
                 return
             
+            # Read JSONL file (one entry per line)
+            entries = []
             with open(filename, 'r') as f:
-                data = json.load(f)
+                for line in f:
+                    if line.strip():
+                        try:
+                            entries.append(json.loads(line))
+                        except json.JSONDecodeError:
+                            continue
             
-            # Handle both old format (single dict) and new format (list)
-            if isinstance(data, list):
-                if not data:
-                    print(f"[TIER] {filename} is empty. All signals will be Tier-X.", flush=True)
-                    self.tier_data = {"tier1": [], "tier2": [], "tier3": [], "tierx": []}
-                else:
-                    # Get latest entry (last in list)
-                    latest_entry = data[-1]
-                    self.tier_data = latest_entry
-                    print(f"[TIER] Loaded latest entry from {filename} (timestamp: {latest_entry.get('timestamp', 'N/A')})", flush=True)
-            else:
-                # Old single-dict format
-                self.tier_data = data
-                print(f"[TIER] Loaded {filename} (legacy format)", flush=True)
+            if not entries:
+                print(f"[TIER] {filename} has no valid entries. All signals will be Tier-X.", flush=True)
+                self.tier_data = {"tier1": [], "tier2": [], "tier3": [], "tierx": []}
+                self.tier_file = None
+                return
             
+            # Get latest entry (last in file = today's locked combos)
+            latest_entry = entries[-1]
+            self.tier_data = latest_entry
+            valid_from = latest_entry.get('valid_from', 'N/A')
+            print(f"[TIER] Loaded latest entry from {filename} (valid_from: {valid_from})", flush=True)
             self.tier_file = filename
             
         except Exception as e:
@@ -52,14 +55,15 @@ class TierLookup:
     
     def get_tier(self, timeframe: str, direction: str, route: str = None, regime: str = None, symbol_group: str = None) -> str:
         """
-        Look up tier for a signal combo (ALL parent combos, most specific to least specific).
+        Look up tier for a signal combo with STRICT dimensional cascading rules:
         
-        Checks combinations in order (highest dimension first):
-        1. 5D: TF_DIR_ROUTE_REGIME_SG (if symbol_group provided)
-        2. 4D: TF_DIR_ROUTE_REGIME
-        3. 3D: TF_DIR_ROUTE, TF_DIR_REGIME, TF_ROUTE_REGIME, DIR_ROUTE_REGIME, DIR_ROUTE, DIR_REGIME, ROUTE_REGIME
-        4. 2D: TF_DIR, TF_ROUTE, TF_REGIME, DIR_ROUTE, DIR_REGIME, ROUTE_REGIME
-        5. Default to Tier-X if not found
+        TIER-1: 6D → 5D (STOP AT 5D, NO 4D/3D/2D)
+        TIER-2: 6D → 5D → 4D (STOP AT 4D, NO 3D/2D)
+        TIER-3: 6D → 5D → 4D → 3D (STOP AT 3D, NO 2D)
+        TIER-X: 2D, 1D, or no match (silent)
+        
+        This prevents loose 2D/3D patterns from catching unrelated signals.
+        Each tier level only uses combos specific enough to represent the performance criteria.
         
         Returns: "Tier-1", "Tier-2", "Tier-3", or "Tier-X"
         """
@@ -74,59 +78,129 @@ class TierLookup:
             regime_val = str(regime).strip() if regime else None
             symbol_group_val = str(symbol_group).strip() if symbol_group else None
             
-            # Build ALL possible combo names to search for (most specific to least)
-            # NOTE: SIGNAL_TIERS.json has MIXED format:
-            # - 5D/4D: NO label prefix (e.g., "30min_SHORT_TREND CONTINUATION_BEAR")
-            # - 3D/2D: WITH label prefix (e.g., "TF_DIR_REGIME_30min_SHORT_BEAR")
-            # Search for both formats to be robust!
-            combos_to_check = []
+            # ============================================================================
+            # TIER-1: 6D → 5D (STOP AT 5D, NO 4D/3D/2D)
+            # ============================================================================
             
-            # 5D combo (most specific, if symbol group available) - NO PREFIX
+            # 6D: TF_DIR_ROUTE_REGIME_SG_CONFIDENCE (if all params present)
+            # Note: confidence_level not passed, so we check 6D patterns with labels
+            combos_tier1_6d = [
+                f"6D_{tf}_{dir_val}_{route_val}_{regime_val}_{symbol_group_val}",  # Try labeled 6D
+            ]
             if symbol_group_val and route_val and regime_val:
-                combos_to_check.append(f"{tf}_{dir_val}_{route_val}_{regime_val}_{symbol_group_val}")
+                # Also try unlabeled 6D format
+                combos_tier1_6d.append(f"{tf}_{dir_val}_{route_val}_{regime_val}_{symbol_group_val}")
             
-            # 4D combo - NO PREFIX (matches file format for 5D/4D entries)
-            if route_val and regime_val:
-                combos_to_check.append(f"{tf}_{dir_val}_{route_val}_{regime_val}")
-            
-            # 3D combos - WITH label prefix (matches file format for 3D entries)
-            if route_val and regime_val:
-                combos_to_check.append(f"TF_ROUTE_REGIME_{tf}_{route_val}_{regime_val}")
-                combos_to_check.append(f"DIR_ROUTE_REGIME_{dir_val}_{route_val}_{regime_val}")
-            if route_val:
-                combos_to_check.append(f"TF_DIR_ROUTE_{tf}_{dir_val}_{route_val}")
-            if regime_val:
-                combos_to_check.append(f"TF_DIR_REGIME_{tf}_{dir_val}_{regime_val}")
-            if route_val:
-                combos_to_check.append(f"DIR_ROUTE_{dir_val}_{route_val}")
-            if regime_val:
-                combos_to_check.append(f"DIR_REGIME_{dir_val}_{regime_val}")
-            if route_val and regime_val:
-                combos_to_check.append(f"ROUTE_REGIME_{route_val}_{regime_val}")
-            
-            # 2D combos - WITH label prefix (matches file format for 2D entries)
-            combos_to_check.append(f"TF_DIR_{tf}_{dir_val}")
-            if route_val:
-                combos_to_check.append(f"TF_ROUTE_{tf}_{route_val}")
-            if regime_val:
-                combos_to_check.append(f"TF_REGIME_{tf}_{regime_val}")
-            if route_val:
-                combos_to_check.append(f"DIR_ROUTE_{dir_val}_{route_val}")
-            if regime_val:
-                combos_to_check.append(f"DIR_REGIME_{dir_val}_{regime_val}")
-            if route_val and regime_val:
-                combos_to_check.append(f"ROUTE_REGIME_{route_val}_{regime_val}")
-            
-            # Search for each combo in tier lists (stop at first match)
-            for combo in combos_to_check:
+            for combo in combos_tier1_6d:
                 if combo in self.tier_data.get("tier1", []):
                     return "Tier-1"
-                elif combo in self.tier_data.get("tier2", []):
+            
+            # 5D: TF_DIR_ROUTE_REGIME_SG (no confidence)
+            if symbol_group_val and route_val and regime_val:
+                combo_5d = f"{tf}_{dir_val}_{route_val}_{regime_val}_{symbol_group_val}"
+                if combo_5d in self.tier_data.get("tier1", []):
+                    return "Tier-1"
+            
+            # If no 6D or 5D match in Tier-1, continue to Tier-2 (do NOT check 4D/3D/2D)
+            
+            # ============================================================================
+            # TIER-2: 6D → 5D → 4D (STOP AT 4D, NO 3D OR 2D)
+            # ============================================================================
+            
+            # 6D with labels (for future support)
+            if symbol_group_val and route_val and regime_val:
+                combos_tier2_6d = [
+                    f"6D_{tf}_{dir_val}_{route_val}_{regime_val}_{symbol_group_val}",
+                ]
+                for combo in combos_tier2_6d:
+                    if combo in self.tier_data.get("tier2", []):
+                        return "Tier-2"
+                
+                # Unlabeled 6D
+                combo_6d = f"{tf}_{dir_val}_{route_val}_{regime_val}_{symbol_group_val}"
+                if combo_6d in self.tier_data.get("tier2", []):
                     return "Tier-2"
-                elif combo in self.tier_data.get("tier3", []):
+            
+            # 5D
+            if symbol_group_val and route_val and regime_val:
+                combo_5d = f"{tf}_{dir_val}_{route_val}_{regime_val}_{symbol_group_val}"
+                if combo_5d in self.tier_data.get("tier2", []):
+                    return "Tier-2"
+            
+            # 4D
+            if route_val and regime_val:
+                combo_4d = f"{tf}_{dir_val}_{route_val}_{regime_val}"
+                if combo_4d in self.tier_data.get("tier2", []):
+                    return "Tier-2"
+            
+            # If no 6D, 5D, or 4D match in Tier-2, continue to Tier-3 (do NOT check 3D/2D)
+            
+            # ============================================================================
+            # TIER-3: 6D → 5D → 4D → 3D (STOP AT 3D, NO 2D)
+            # ============================================================================
+            
+            # 6D with labels
+            if symbol_group_val and route_val and regime_val:
+                combos_tier3_6d = [
+                    f"6D_{tf}_{dir_val}_{route_val}_{regime_val}_{symbol_group_val}",
+                ]
+                for combo in combos_tier3_6d:
+                    if combo in self.tier_data.get("tier3", []):
+                        return "Tier-3"
+                
+                # Unlabeled 6D
+                combo_6d = f"{tf}_{dir_val}_{route_val}_{regime_val}_{symbol_group_val}"
+                if combo_6d in self.tier_data.get("tier3", []):
                     return "Tier-3"
             
-            # Not found in any tier = Tier-X
+            # 5D
+            if symbol_group_val and route_val and regime_val:
+                combo_5d = f"{tf}_{dir_val}_{route_val}_{regime_val}_{symbol_group_val}"
+                if combo_5d in self.tier_data.get("tier3", []):
+                    return "Tier-3"
+            
+            # 4D
+            if route_val and regime_val:
+                combo_4d = f"{tf}_{dir_val}_{route_val}_{regime_val}"
+                if combo_4d in self.tier_data.get("tier3", []):
+                    return "Tier-3"
+            
+            # 3D combos (WITH label prefix)
+            if route_val and regime_val:
+                combos_3d = [
+                    f"TF_ROUTE_REGIME_{tf}_{route_val}_{regime_val}",
+                    f"DIR_ROUTE_REGIME_{dir_val}_{route_val}_{regime_val}",
+                ]
+                for combo in combos_3d:
+                    if combo in self.tier_data.get("tier3", []):
+                        return "Tier-3"
+            
+            if route_val:
+                combo_3d = f"TF_DIR_ROUTE_{tf}_{dir_val}_{route_val}"
+                if combo_3d in self.tier_data.get("tier3", []):
+                    return "Tier-3"
+            
+            if regime_val:
+                combo_3d = f"TF_DIR_REGIME_{tf}_{dir_val}_{regime_val}"
+                if combo_3d in self.tier_data.get("tier3", []):
+                    return "Tier-3"
+            
+            if route_val:
+                combo_3d = f"DIR_ROUTE_{dir_val}_{route_val}"
+                if combo_3d in self.tier_data.get("tier3", []):
+                    return "Tier-3"
+            
+            if regime_val:
+                combo_3d = f"DIR_REGIME_{dir_val}_{regime_val}"
+                if combo_3d in self.tier_data.get("tier3", []):
+                    return "Tier-3"
+            
+            if route_val and regime_val:
+                combo_3d = f"ROUTE_REGIME_{route_val}_{regime_val}"
+                if combo_3d in self.tier_data.get("tier3", []):
+                    return "Tier-3"
+            
+            # If no 6D, 5D, 4D, or 3D match, return Tier-X (do NOT check 2D/1D)
             return "Tier-X"
         
         except Exception as e:

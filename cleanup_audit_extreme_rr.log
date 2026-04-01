@@ -1,0 +1,126 @@
+
+
+================================================================================
+RR CLEANUP RUN: 2026-03-25 09:49:48 GMT+7
+================================================================================
+
+Signals Processed: 5969
+Signals Flagged: 16
+Backup Location: /Users/geniustarigan/.openclaw/workspace/smart-filter-v14-main/SIGNALS_MASTER.jsonl.backup_before_rr_cleanup_20260325_094948
+
+FLAGGED SIGNALS (RR < 0.5 or > 4.0):
+--------------------------------------------------------------------------------
+
+VOXEL-USDT 15min LONG
+  Fired: 2026-03-24T00:03:50.908511
+  Entry: 0.00765765, TP: 0.00766500, SL: 0.00744000
+  Calculated RR: 0.03
+  Stored achieved_rr: 1.25
+  Status: TIMEOUT
+
+VOXEL-USDT 15min LONG
+  Fired: 2026-03-24T01:28:56.175844
+  Entry: 0.00764764, TP: 0.00766500, SL: 0.00744000
+  Calculated RR: 0.08
+  Stored achieved_rr: 1.25
+  Status: TIMEOUT
+
+VOXEL-USDT 30min LONG
+  Fired: 2026-03-24T03:40:43.907294
+  Entry: 0.00759759, TP: 0.00761500, SL: 0.00748000
+  Calculated RR: 0.15
+  Stored achieved_rr: 1.25
+  Status: TP_HIT
+
+ERA-USDT 15min LONG
+  Fired: 2026-03-20T21:51:41.939845
+  Entry: 0.13723710, TP: 0.13740000, SL: 0.13640000
+  Calculated RR: 0.19
+  Stored achieved_rr: 1.5
+  Status: TIMEOUT
+
+EPT-USDT 30min LONG
+  Fired: 2026-03-23T15:06:23.526696
+  Entry: 0.00089990, TP: 0.00093625, SL: 0.00070900
+  Calculated RR: 0.19
+  Stored achieved_rr: 1.25
+  Status: TIMEOUT
+
+ROAM-USDT 15min LONG
+  Fired: 2026-03-21T09:29:39.217801
+  Entry: 0.04182779, TP: 0.04225375, SL: 0.03970900
+  Calculated RR: 0.20
+  Stored achieved_rr: 1.25
+  Status: TP_HIT
+
+VOXEL-USDT 15min LONG
+  Fired: 2026-03-24T00:47:03.837504
+  Entry: 0.00761761, TP: 0.00766500, SL: 0.00744000
+  Calculated RR: 0.27
+  Stored achieved_rr: 1.25
+  Status: TIMEOUT
+
+VOXEL-USDT 15min LONG
+  Fired: 2026-03-24T01:08:35.821556
+  Entry: 0.00761761, TP: 0.00766500, SL: 0.00744000
+  Calculated RR: 0.27
+  Stored achieved_rr: 1.25
+  Status: TIMEOUT
+
+VOXEL-USDT 15min LONG
+  Fired: 2026-03-24T00:23:57.162786
+  Entry: 0.00760760, TP: 0.00766500, SL: 0.00744000
+  Calculated RR: 0.34
+  Stored achieved_rr: 1.25
+  Status: TIMEOUT
+
+AGLD-USDT 15min LONG
+  Fired: 2026-03-23T17:01:46.852461
+  Entry: 0.24774750, TP: 0.25220000, SL: 0.23690000
+  Calculated RR: 0.41
+  Stored achieved_rr: 1.25
+  Status: TIMEOUT
+
+SPK-USDT 15min LONG
+  Fired: 2026-03-23T21:38:55.662031
+  Entry: 0.02155153, TP: 0.02166250, SL: 0.02128000
+  Calculated RR: 0.41
+  Stored achieved_rr: 1.25
+  Status: TIMEOUT
+
+PORTAL-USDT 15min LONG
+  Fired: 2026-03-24T09:30:03.312026
+  Entry: 0.01048047, TP: 0.01080500, SL: 0.01040000
+  Calculated RR: 4.03
+  Stored achieved_rr: 1.25
+  Status: SL_HIT
+
+PROMPT-USDT 15min LONG
+  Fired: 2026-03-24T16:38:38.500223
+  Entry: 0.03348345, TP: 0.03395500, SL: 0.03337000
+  Calculated RR: 4.16
+  Stored achieved_rr: 1.25
+  Status: SL_HIT
+
+ACTSOL-USDT 30min LONG
+  Fired: 2026-03-24T04:08:41.014989
+  Entry: 0.01418417, TP: 0.01549750, SL: 0.01390000
+  Calculated RR: 4.62
+  Stored achieved_rr: 1.25
+  Status: TIMEOUT
+
+AUCTION-USDT 15min LONG
+  Fired: 2026-03-22T15:09:39.586937
+  Entry: 4.74474000, TP: 5.14250000, SL: 4.67000000
+  Calculated RR: 5.32
+  Stored achieved_rr: 1.25
+  Status: TIMEOUT
+
+AUCTION-USDT 30min LONG
+  Fired: 2026-03-22T14:48:05.346783
+  Entry: 4.73473000, TP: 5.14250000, SL: 4.67000000
+  Calculated RR: 6.30
+  Stored achieved_rr: 1.25
+  Status: SL_HIT
+
+CLEANUP COMPLETE
