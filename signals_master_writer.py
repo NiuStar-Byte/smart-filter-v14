@@ -42,6 +42,13 @@ class SignalsMasterWriter:
         
         Returns: True if written successfully, False otherwise
         """
+        # DEBUG: Log IMMEDIATELY at function entry
+        symbol = signal_dict.get('symbol', '?')
+        import sys
+        sys.stdout.flush()
+        sys.stderr.flush()
+        print(f"[🔴 WRITE_SIGNAL] START: {signal_dict.get('signal_type', '?')} {symbol}", flush=True)
+        sys.stdout.flush()
         try:
             # Normalize to canonical schema (includes instrumentation fields for filter analysis)
             # CRITICAL: main.py creates signals with 'uuid' field, so check both
@@ -61,13 +68,14 @@ class SignalsMasterWriter:
                 "sl_pct": float(signal_dict.get('sl_pct', 0)),
                 "achieved_rr": float(signal_dict.get('achieved_rr', 0)),
                 
-                # Signal Metadata (6)
+                # Signal Metadata (7)
                 "score": int(signal_dict.get('score', 0)),
                 "max_score": int(signal_dict.get('max_score', 19)),
                 "confidence": float(signal_dict.get('confidence', 0)),
                 "route": signal_dict.get('route', ''),
                 "regime": signal_dict.get('regime', ''),
                 "weighted_score": float(signal_dict.get('weighted_score', 0)),
+                "tier": signal_dict.get('tier', 'Tier-X'),
                 
                 # Telegram Delivery (2)
                 "telegram_msg_id": str(signal_dict.get('telegram_msg_id', '')),
@@ -96,20 +104,27 @@ class SignalsMasterWriter:
             }
             
             # Append to SIGNALS_MASTER.jsonl (primary)
+            print(f"[WRITE_DEBUG] Opening {self.master_path} in append mode", flush=True)
             with open(self.master_path, 'a') as f:
-                f.write(json.dumps(master_record) + '\n')
+                json_line = json.dumps(master_record) + '\n'
+                f.write(json_line)
+                print(f"[WRITE_DEBUG] Successfully wrote {symbol} to SIGNALS_MASTER.jsonl", flush=True)
             
             # Also append to SIGNALS_INDEPENDENT_AUDIT.txt (immutable audit trail)
             try:
                 with open(self.audit_path, 'a') as f:
                     f.write(json.dumps(master_record) + '\n')
+                print(f"[WRITE_DEBUG] Also wrote to audit trail", flush=True)
             except Exception as e:
                 print(f"[WARN] Failed to update audit trail: {e}", flush=True)
             
+            print(f"[WRITE_SUCCESS] {symbol} written to SIGNALS_MASTER.jsonl ✓", flush=True)
             return True
             
         except Exception as e:
+            import traceback
             print(f"[ERROR] Failed to write to SIGNALS_MASTER.jsonl: {e}", flush=True)
+            print(f"[ERROR-TRACE] {traceback.format_exc()}", flush=True)
             return False
 
 
