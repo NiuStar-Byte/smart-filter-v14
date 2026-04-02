@@ -61,13 +61,14 @@ class SignalsMasterWriter:
                 "sl_pct": float(signal_dict.get('sl_pct', 0)),
                 "achieved_rr": float(signal_dict.get('achieved_rr', 0)),
                 
-                # Signal Metadata (6)
+                # Signal Metadata (7)
                 "score": int(signal_dict.get('score', 0)),
                 "max_score": int(signal_dict.get('max_score', 19)),
                 "confidence": float(signal_dict.get('confidence', 0)),
                 "route": signal_dict.get('route', ''),
                 "regime": signal_dict.get('regime', ''),
                 "weighted_score": float(signal_dict.get('weighted_score', 0)),
+                "tier": signal_dict.get('tier', 'Tier-X'),
                 
                 # Telegram Delivery (2)
                 "telegram_msg_id": str(signal_dict.get('telegram_msg_id', '')),
