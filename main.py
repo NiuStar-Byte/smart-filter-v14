@@ -14,11 +14,16 @@ from datetime import datetime
 import uuid as uuid_lib
 import signal as signal_module
 import sys
+
+# === EARLY LOGGING CONTROL (must define before other imports/usage) ===
+os.environ.setdefault("VERBOSE_LOGGING", "0")  # Default to quiet mode
+VERBOSE_LOGGING = os.getenv("VERBOSE_LOGGING", "0") == "1"
 from kucoin_data import get_live_entry_price, DEFAULT_SLIPPAGE
 from kucoin_data import get_ohlcv
 from smart_filter import SmartFilter, MIN_SCORE
 from telegram_alert import send_telegram_alert, send_telegram_file
 from tier_lookup import get_signal_tier
+from symbol_classifier import classify_symbol
 from kucoin_orderbook import get_order_wall_delta
 from pec_engine import run_pec_check, export_pec_log
 from tp_sl_retracement import calculate_tp_sl
@@ -56,6 +61,49 @@ from signal_dual_write_verification import (
     send_ops_alert
 )
 # ===== END PHASE 1 IMPORTS =====
+
+# ===== SYMBOL BLACKLIST & WHITELIST (Dynamic Release System) =====
+try:
+    from SYMBOL_BLACKLIST import BLACKLIST_SYMBOLS
+    from SYMBOL_WHITELIST_OVERRIDES import is_symbol_whitelisted
+    BLACKLIST_READY = True
+except ImportError as e:
+    print(f"[WARN] Symbol blacklist/whitelist import failed: {e}. Blacklist disabled.", flush=True)
+    BLACKLIST_READY = False
+    BLACKLIST_SYMBOLS = set()
+    def is_symbol_whitelisted(s): return False
+
+def apply_blacklist_filter(symbol: str) -> bool:
+    """
+    Check if symbol should be blocked from trading.
+    
+    Logic:
+    1. Check whitelist first (override)
+    2. Then check blacklist
+    
+    Args:
+        symbol: Symbol string (e.g., 'EPT-USDT')
+    
+    Returns:
+        True if BLOCK (reject signal)
+        False if ALLOW (allow signal)
+    """
+    if not BLACKLIST_READY:
+        return False  # If blacklist system failed, allow all
+    
+    # Check whitelist first (overrides blacklist)
+    if is_symbol_whitelisted(symbol):
+        print(f"[WHITELIST] {symbol} RELEASED from blacklist (override active)", flush=True)
+        return False  # ALLOW this signal
+    
+    # Check blacklist
+    if symbol in BLACKLIST_SYMBOLS:
+        print(f"[BLACKLIST] {symbol} rejected (WR < 21%)", flush=True)
+        return True  # BLOCK this signal
+    
+    return False  # ALLOW (not in either list)
+
+# ===== END SYMBOL BLACKLIST & WHITELIST =====
 
 # ===== PHASE 4A FUNCTION: Multi-TF Alignment (Scenario 4: 30min + 1h) =====
 def check_multitf_alignment_30_1h(symbol, ohlcv_data):
@@ -208,7 +256,7 @@ last_sent = {}
 
 # === LOGGING CONTROL ===
 # Disable verbose analysis logs to reduce Railway rate limit issues (67 messages dropped)
-VERBOSE_LOGGING = os.getenv("VERBOSE_LOGGING", "0") == "1"
+# NOTE: VERBOSE_LOGGING is now defined at top of file (early definition)
 
 import contextlib
 
@@ -990,6 +1038,10 @@ def run_cycle():
                         # RR valid and enforced: Store signal + Fire
                         print(f"[RR_ENFORCE] 15min signal ACCEPTED: {symbol_val} - RR {enforced_rr:.3f} ({rr_action})", flush=True)
                         
+                        # BLACKLIST CHECK: Reject blacklisted symbols
+                        if apply_blacklist_filter(symbol_val):
+                            continue
+                        
                         # Store signal to JSONL
                         tp_pct_val = ((tp - entry_price) / entry_price * 100) if tp and entry_price else 0
                         sl_pct_val = ((sl - entry_price) / entry_price * 100) if sl and entry_price else 0
@@ -1068,8 +1120,9 @@ def run_cycle():
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
                                 # Get signal tier (dynamic - will be Tier-X initially, populates over time)
-                                signal_tier = get_signal_tier(tf_val, signal_type, Route, regime)
-                                print(f"[TIER] 15min {symbol_val}: {signal_tier}", flush=True)
+                                symbol_group = classify_symbol(symbol_val)
+                                signal_tier = get_signal_tier(tf_val, signal_type, Route, regime, symbol_group)
+                                print(f"[TIER] 15min {symbol_val} ({symbol_group}): {signal_tier}", flush=True)
                                 
                                 print(f"[DEBUG] 15min: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
                                 sent_ok = send_telegram_alert(
@@ -1472,6 +1525,10 @@ def run_cycle():
                         # RR valid and enforced: Store signal + Fire
                         print(f"[RR_ENFORCE] 30min signal ACCEPTED: {symbol_val} - RR {enforced_rr:.3f} ({rr_action})", flush=True)
                         
+                        # BLACKLIST CHECK: Reject blacklisted symbols
+                        if apply_blacklist_filter(symbol_val):
+                            continue
+                        
                         # Store signal to JSONL
                         tp_pct_val = ((tp - entry_price) / entry_price * 100) if tp and entry_price else 0
                         sl_pct_val = ((sl - entry_price) / entry_price * 100) if sl and entry_price else 0
@@ -1583,8 +1640,9 @@ def run_cycle():
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
                                 # Get signal tier (dynamic - will be Tier-X initially, populates over time)
-                                signal_tier = get_signal_tier(tf_val, signal_type, Route, regime)
-                                print(f"[TIER] 30min {symbol_val}: {signal_tier}", flush=True)
+                                symbol_group = classify_symbol(symbol_val)
+                                signal_tier = get_signal_tier(tf_val, signal_type, Route, regime, symbol_group)
+                                print(f"[TIER] 30min {symbol_val} ({symbol_group}): {signal_tier}", flush=True)
                                 
                                 print(f"[DEBUG] 30min: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
                                 sent_ok = send_telegram_alert(
@@ -1986,6 +2044,10 @@ def run_cycle():
                         # RR valid and enforced: Store signal + Fire
                         print(f"[RR_ENFORCE] 1h signal ACCEPTED: {symbol_val} - RR {enforced_rr:.3f} ({rr_action})", flush=True)
                         
+                        # BLACKLIST CHECK: Reject blacklisted symbols
+                        if apply_blacklist_filter(symbol_val):
+                            continue
+                        
                         # Store signal to JSONL
                         tp_pct_val = ((tp - entry_price) / entry_price * 100) if tp and entry_price else 0
                         sl_pct_val = ((sl - entry_price) / entry_price * 100) if sl and entry_price else 0
@@ -2066,8 +2128,9 @@ def run_cycle():
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
                                 # Get signal tier (dynamic - will be Tier-X initially, populates over time)
-                                signal_tier = get_signal_tier(tf_val, signal_type, Route, regime)
-                                print(f"[TIER] 1h {symbol_val}: {signal_tier}", flush=True)
+                                symbol_group = classify_symbol(symbol_val)
+                                signal_tier = get_signal_tier(tf_val, signal_type, Route, regime, symbol_group)
+                                print(f"[TIER] 1h {symbol_val} ({symbol_group}): {signal_tier}", flush=True)
                                 
                                 print(f"[DEBUG] 1h: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
                                 sent_ok = send_telegram_alert(
@@ -2487,8 +2550,9 @@ def run_cycle():
                         # Send trade alert to Telegram
                         if signal_uuid and os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
-                                signal_tier = get_signal_tier(tf_val, signal_type, Route, regime)
-                                print(f"[TIER] 2h {symbol_val}: {signal_tier}", flush=True)
+                                symbol_group = classify_symbol(symbol_val)
+                                signal_tier = get_signal_tier(tf_val, signal_type, Route, regime, symbol_group)
+                                print(f"[TIER] 2h {symbol_val} ({symbol_group}): {signal_tier}", flush=True)
                                 
                                 print(f"[DEBUG] 2h: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
                                 sent_ok = send_telegram_alert(
@@ -2743,8 +2807,9 @@ def run_cycle():
                             # Send trade alert to Telegram
                             if signal_uuid and os.getenv("DRY_RUN", "false").lower() != "true":
                                 try:
-                                    signal_tier = get_signal_tier(tf_val, signal_type, Route, regime)
-                                    print(f"[TIER] 4h {symbol_val}: {signal_tier}", flush=True)
+                                    symbol_group = classify_symbol(symbol_val)
+                                    signal_tier = get_signal_tier(tf_val, signal_type, Route, regime, symbol_group)
+                                    print(f"[TIER] 4h {symbol_val} ({symbol_group}): {signal_tier}", flush=True)
                                     
                                     print(f"[DEBUG] 4h: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
                                     sent_ok = send_telegram_alert(
