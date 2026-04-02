@@ -1207,7 +1207,8 @@ def run_cycle():
                                                 'failed_filter_count': failed_filter_count,
                                                 'status': 'OPEN',
                                                 'signal_origin': 'NEW_LIVE',
-                                                'weighted_score': confidence * score / 100 if score_max else 0
+                                                'weighted_score': confidence * score / 100 if score_max else 0,
+                                                'tier': signal_tier
                                             })
                                             
                                             # PHASE 1: Dual-Write Verification (Alert + Continue strategy)
@@ -1727,7 +1728,8 @@ def run_cycle():
                                                 'failed_filter_count': failed_filter_count,
                                                 'status': 'OPEN',
                                                 'signal_origin': 'NEW_LIVE',
-                                                'weighted_score': confidence * score / 100 if score_max else 0
+                                                'weighted_score': confidence * score / 100 if score_max else 0,
+                                                'tier': signal_tier
                                             })
                                             
                                             # PHASE 1: Dual-Write Verification (Alert + Continue strategy)
@@ -2215,7 +2217,8 @@ def run_cycle():
                                                 'failed_filter_count': failed_filter_count,
                                                 'status': 'OPEN',
                                                 'signal_origin': 'NEW_LIVE',
-                                                'weighted_score': confidence * score / 100 if score_max else 0
+                                                'weighted_score': confidence * score / 100 if score_max else 0,
+                                                'tier': signal_tier
                                             })
                                             
                                             # PHASE 1: Dual-Write Verification (Alert + Continue strategy)
@@ -2634,7 +2637,8 @@ def run_cycle():
                                                 'failed_filter_count': failed_filter_count,
                                                 'status': 'OPEN',
                                                 'signal_origin': 'NEW_LIVE',
-                                                'weighted_score': confidence * score / 100 if score_max else 0
+                                                'weighted_score': confidence * score / 100 if score_max else 0,
+                                                'tier': signal_tier
                                             })
                                             
                                             if _dual_write_ready:
@@ -2869,7 +2873,7 @@ def run_cycle():
                                             if _master_writer_ready:
                                                 _signals_master_writer.write_signal({
                                                     'signal_uuid': signal_uuid,
-                                                    'symbol': symbol_val,
+                                                    'symbol': signal_val,
                                                     'timeframe': '4h',
                                                     'signal_type': signal_type,
                                                     'entry_price': entry_price,
@@ -2892,7 +2896,8 @@ def run_cycle():
                                                     'failed_filter_count': failed_filter_count,
                                                     'status': 'OPEN',
                                                     'signal_origin': 'NEW_LIVE',
-                                                    'weighted_score': confidence * score / 100 if score_max else 0
+                                                    'weighted_score': confidence * score / 100 if score_max else 0,
+                                                    'tier': signal_tier
                                                 })
                                                 
                                                 if _dual_write_ready:
