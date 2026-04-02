@@ -104,75 +104,71 @@ class SmartFilter:
         # See: CORRECTED_WEIGHT_HIERARCHY_2026_03_24.md for detailed tier assignments
         
         self.filter_weights_long = {
-            # TIER 1: BEST (WR > 30%)
-            "Momentum": 6.0,                   # BEST tier | WR 30.3% | Primary direction filter
+            # TIER 1: ELITE (WR 43%+) — 2026-04-02 RECALIBRATION
+            "Candle Confirmation": 7.0,        # ELITE tier | WR 43.8% | 10.83% FA | Top performer
             
-            # TIER 2: GOOD (WR = 29-30%)
-            "Spread Filter": 5.7,              # GOOD tier | WR 29.9% | Liquidity validation
+            # TIER 2: PREMIUM (WR 30%+)
+            "Momentum": 6.0,                   # PREMIUM | WR 30.3% | Primary direction filter
+            "Spread Filter": 5.9,              # PREMIUM | WR 29.9% | Liquidity validation
             
-            # TIER 3: SOLID (WR = 27-29%) — All grouped at 5.4
-            "HH/LL Trend": 5.4,                # SOLID tier | WR 27.9% | Trend structure
-            "Liquidity Awareness": 5.4,        # SOLID tier | WR 27.4% | Risk control
-            "Fractal Zone": 5.4,               # SOLID tier | WR 27.4% | Pattern recognition
-            "Wick Dominance": 5.4,             # SOLID tier | WR 27.2% | Price action
-            "MTF Volume Agreement": 5.4,       # SOLID tier | WR 27.2% | Cross-TF confirmation
-            "Smart Money Bias": 5.4,           # SOLID tier | WR 27.3% | Institutional flow
-            "Liquidity Pool": 5.4,             # SOLID tier | WR 27.3% | Accumulation zones
-            "Volatility Squeeze": 5.4,         # SOLID tier | WR 27.3% | Mean-reversion
+            # TIER 3: STRONG (WR 27-29%) — Unique weights per filter
+            "HH/LL Trend": 5.5,                # STRONG | WR 27.9% | Trend structure
+            "Liquidity Awareness": 5.3,        # STRONG | WR 27.4% | Risk control
+            "Fractal Zone": 5.2,               # STRONG | WR 27.4% | Pattern recognition
+            "Wick Dominance": 5.1,             # STRONG | WR 27.2% | Price action
+            "MTF Volume Agreement": 5.0,       # STRONG | WR 27.2% | Cross-TF confirmation
+            "Smart Money Bias": 4.9,           # STRONG | WR 27.3% | Institutional flow
+            "Liquidity Pool": 4.8,             # STRONG | WR 27.3% | Accumulation zones
             
-            # TIER 4: BASELINE (WR = 26-27%) — All grouped at 5.1
-            "MACD": 5.1,                       # BASELINE tier | WR 26.8% | Momentum oscillator
-            "TREND": 5.1,                      # BASELINE tier | WR 26.6% | Trend direction
-            "Volume Spike": 5.1,               # BASELINE tier | WR 26.5% | Volume expansion
-            "Chop Zone": 5.1,                  # BASELINE tier | WR 26.2% | Ranging filter
+            # TIER 4: BASELINE (WR 26-27%) — Unique weights per filter
+            "MACD": 4.7,                       # BASELINE | WR 26.8% | Momentum oscillator
+            "TREND": 4.6,                      # BASELINE | WR 26.6% | Trend direction
+            "Volume Spike": 4.5,               # BASELINE | WR 26.5% | Volume expansion
+            "Chop Zone": 4.4,                  # BASELINE | WR 26.2% | Ranging filter
             
-            # TIER 5: WEAK (WR = 25-26%)
-            "VWAP Divergence": 4.2,            # WEAK tier | WR 25.8% | Divergence detection
+            # TIER 5: RECALIBRATED (2026-04-02) — Stricter logic + new thresholds
+            "Support/Resistance": 2.0,         # RECAL | Was 0% (zombie) → Now stricter + multiple touch requirement
+            "VWAP Divergence": 1.9,            # RECAL | Was 30.3% WR → Now tighter price range constraints
+            "Absorption": 1.5,                 # RECAL | Was 11.4% WR → Now stricter window (25→20) + stall (0.02→0.04)
+            "Volatility Squeeze": 0.9,         # RECAL | Was 100% FA → Now strict Bollinger Band mode (target 1-3% FA)
             
-            # TIER 6: DEAD (WR < 22%, severe underperformance) — User-specified weights
-            "ATR Momentum Burst": 2.0,         # DEAD tier | WR 20.4% | User spec: drawdown control
-            "Volatility Model": 1.5,           # DEAD tier | WR 14.8% | User spec: severe underperf
-            
-            # TIER 7: TOXIC (WR = 0%, zombie/broken filters) — Floor weight 0.5
-            "Support/Resistance": 1.0,         # TOXIC tier | WR 0.0% | User spec: zombie filter
-            "Absorption": 0.5,                 # TOXIC tier | WR 0.0% | User spec: zombie filter
-            "Candle Confirmation": 0.5         # TOXIC tier | WR 0.0% | ZOMBIE - INVESTIGATE: 0 passes, blocks all signals | 2026-03-24 disabled pending investigation
+            # TIER 6: DEAD (WR < 22%)
+            "ATR Momentum Burst": 2.0,         # DEAD | WR 20.4% | Drawdown control
+            "Volatility Model": 1.5,           # DEAD | WR 14.8% | Severe underperf
         }
         
         self.filter_weights_short = {
-            # TIER 1: BEST (WR > 30%)
-            "Momentum": 6.0,                   # BEST tier | WR 30.3% | Primary direction filter
+            # TIER 1: ELITE (WR 43%+) — 2026-04-02 RECALIBRATION
+            "Candle Confirmation": 7.0,        # ELITE tier | WR 43.8% | 10.83% FA | Top performer
             
-            # TIER 2: GOOD (WR = 29-30%)
-            "Spread Filter": 5.7,              # GOOD tier | WR 29.9% | Liquidity validation
+            # TIER 2: PREMIUM (WR 30%+)
+            "Momentum": 6.0,                   # PREMIUM | WR 30.3% | Primary direction filter
+            "Spread Filter": 5.9,              # PREMIUM | WR 29.9% | Liquidity validation
             
-            # TIER 3: SOLID (WR = 27-29%) — All grouped at 5.4
-            "HH/LL Trend": 5.4,                # SOLID tier | WR 27.9% | Trend structure
-            "Liquidity Awareness": 5.4,        # SOLID tier | WR 27.4% | Risk control
-            "Fractal Zone": 5.4,               # SOLID tier | WR 27.4% | Pattern recognition
-            "Wick Dominance": 5.4,             # SOLID tier | WR 27.2% | Price action
-            "MTF Volume Agreement": 5.4,       # SOLID tier | WR 27.2% | Cross-TF confirmation
-            "Smart Money Bias": 5.4,           # SOLID tier | WR 27.3% | Institutional flow
-            "Liquidity Pool": 5.4,             # SOLID tier | WR 27.3% | Accumulation zones
-            "Volatility Squeeze": 5.4,         # SOLID tier | WR 27.3% | Mean-reversion
+            # TIER 3: STRONG (WR 27-29%) — Unique weights per filter
+            "HH/LL Trend": 5.5,                # STRONG | WR 27.9% | Trend structure
+            "Liquidity Awareness": 5.3,        # STRONG | WR 27.4% | Risk control
+            "Fractal Zone": 5.2,               # STRONG | WR 27.4% | Pattern recognition
+            "Wick Dominance": 5.1,             # STRONG | WR 27.2% | Price action
+            "MTF Volume Agreement": 5.0,       # STRONG | WR 27.2% | Cross-TF confirmation
+            "Smart Money Bias": 4.9,           # STRONG | WR 27.3% | Institutional flow
+            "Liquidity Pool": 4.8,             # STRONG | WR 27.3% | Accumulation zones
             
-            # TIER 4: BASELINE (WR = 26-27%) — All grouped at 5.1
-            "MACD": 5.1,                       # BASELINE tier | WR 26.8% | Momentum oscillator
-            "TREND": 5.1,                      # BASELINE tier | WR 26.6% | Trend direction
-            "Volume Spike": 5.1,               # BASELINE tier | WR 26.5% | Volume expansion
-            "Chop Zone": 5.1,                  # BASELINE tier | WR 26.2% | Ranging filter
+            # TIER 4: BASELINE (WR 26-27%) — Unique weights per filter
+            "MACD": 4.7,                       # BASELINE | WR 26.8% | Momentum oscillator
+            "TREND": 4.6,                      # BASELINE | WR 26.6% | Trend direction
+            "Volume Spike": 4.5,               # BASELINE | WR 26.5% | Volume expansion
+            "Chop Zone": 4.4,                  # BASELINE | WR 26.2% | Ranging filter
             
-            # TIER 5: WEAK (WR = 25-26%)
-            "VWAP Divergence": 4.2,            # WEAK tier | WR 25.8% | Divergence detection
+            # TIER 5: RECALIBRATED (2026-04-02) — Stricter logic + new thresholds
+            "Support/Resistance": 2.0,         # RECAL | Was 0% (zombie) → Now stricter + multiple touch requirement
+            "VWAP Divergence": 1.9,            # RECAL | Was 30.3% WR → Now tighter price range constraints
+            "Absorption": 1.5,                 # RECAL | Was 11.4% WR → Now stricter window (25→20) + stall (0.02→0.04)
+            "Volatility Squeeze": 0.9,         # RECAL | Was 100% FA → Now strict Bollinger Band mode (target 1-3% FA)
             
-            # TIER 6: DEAD (WR < 22%, severe underperformance) — User-specified weights
-            "ATR Momentum Burst": 2.0,         # DEAD tier | WR 20.4% | User spec: drawdown control
-            "Volatility Model": 1.5,           # DEAD tier | WR 14.8% | User spec: severe underperf
-            
-            # TIER 7: TOXIC (WR = 0%, zombie/broken filters) — Floor weight 0.5
-            "Support/Resistance": 1.0,         # TOXIC tier | WR 0.0% | User spec: zombie filter
-            "Absorption": 0.5,                 # TOXIC tier | WR 0.0% | User spec: zombie filter
-            "Candle Confirmation": 0.5         # TOXIC tier | WR 0.0% | ZOMBIE - INVESTIGATE: 0 passes, blocks all signals | 2026-03-24 disabled pending investigation
+            # TIER 6: DEAD (WR < 22%)
+            "ATR Momentum Burst": 2.0,         # DEAD | WR 20.4% | Drawdown control
+            "Volatility Model": 1.5,           # DEAD | WR 14.8% | Severe underperf
         }
 
         self.filter_names = list(set(self.filter_weights_long.keys()) | set(self.filter_weights_short.keys()))
