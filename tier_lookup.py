@@ -290,9 +290,9 @@ def get_tier_lookup() -> TierLookup:
         _tier_lookup = TierLookup()
     return _tier_lookup
 
-def get_signal_tier(timeframe: str, direction: str, route: str = None, regime: str = None, symbol_group: str = None) -> str:
+def get_signal_tier(timeframe: str, direction: str, route: str = None, regime: str = None, symbol_group: str = None, confidence_level: str = None) -> str:
     """Convenience function to get tier for a signal (reloads latest tier file each time)
-    Optional symbol_group allows checking 5D combos for better tier matching"""
+    Supports 6D matching: tf|direction|route|regime|symbol_group|confidence_level"""
     lookup = get_tier_lookup()
     lookup.reload()  # Always reload latest tier data (SIGNAL_TIERS updates frequently)
-    return lookup.get_tier(timeframe, direction, route, regime, symbol_group)
+    return lookup.get_tier(timeframe, direction, route, regime, symbol_group, confidence_level)
