@@ -77,6 +77,10 @@ class SignalsMasterWriter:
                 "weighted_score": float(signal_dict.get('weighted_score', 0)),
                 "tier": signal_dict.get('tier', 'Tier-X'),
                 
+                # Tier Dimensions (2) - CRITICAL FOR TIER MATCHING
+                "symbol_group": signal_dict.get('symbol_group', 'UNKNOWN'),
+                "confidence_level": signal_dict.get('confidence_level', 'UNKNOWN'),
+                
                 # Telegram Delivery (2)
                 "telegram_msg_id": str(signal_dict.get('telegram_msg_id', '')),
                 "sent_time_utc": signal_dict.get('sent_time_utc') or datetime.utcnow().isoformat(),

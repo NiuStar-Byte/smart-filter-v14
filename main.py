@@ -1208,8 +1208,13 @@ def run_cycle():
                                                 'status': 'OPEN',
                                                 'signal_origin': 'NEW_LIVE',
                                                 'weighted_score': confidence * score / 100 if score_max else 0,
-                                                'tier': signal_tier
-                                            })
+                                                'tier': signal_tier,
+
+                                                'symbol_group': symbol_group,
+
+                                                'confidence_level': 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
+
+                                                })
                                             
                                             # PHASE 1: Dual-Write Verification (Alert + Continue strategy)
                                             dual_write_ok = True
@@ -1729,8 +1734,13 @@ def run_cycle():
                                                 'status': 'OPEN',
                                                 'signal_origin': 'NEW_LIVE',
                                                 'weighted_score': confidence * score / 100 if score_max else 0,
-                                                'tier': signal_tier
-                                            })
+                                                'tier': signal_tier,
+
+                                                'symbol_group': symbol_group,
+
+                                                'confidence_level': 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
+
+                                                })
                                             
                                             # PHASE 1: Dual-Write Verification (Alert + Continue strategy)
                                             dual_write_ok = True
@@ -2218,8 +2228,13 @@ def run_cycle():
                                                 'status': 'OPEN',
                                                 'signal_origin': 'NEW_LIVE',
                                                 'weighted_score': confidence * score / 100 if score_max else 0,
-                                                'tier': signal_tier
-                                            })
+                                                'tier': signal_tier,
+
+                                                'symbol_group': symbol_group,
+
+                                                'confidence_level': 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
+
+                                                })
                                             
                                             # PHASE 1: Dual-Write Verification (Alert + Continue strategy)
                                             dual_write_ok = True
@@ -2638,8 +2653,13 @@ def run_cycle():
                                                 'status': 'OPEN',
                                                 'signal_origin': 'NEW_LIVE',
                                                 'weighted_score': confidence * score / 100 if score_max else 0,
-                                                'tier': signal_tier
-                                            })
+                                                'tier': signal_tier,
+
+                                                'symbol_group': symbol_group,
+
+                                                'confidence_level': 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
+
+                                                })
                                             
                                             if _dual_write_ready:
                                                 try:
@@ -2897,8 +2917,13 @@ def run_cycle():
                                                     'status': 'OPEN',
                                                     'signal_origin': 'NEW_LIVE',
                                                     'weighted_score': confidence * score / 100 if score_max else 0,
-                                                    'tier': signal_tier
-                                                })
+                                                    'tier': signal_tier,
+
+                                                    'symbol_group': symbol_group,
+
+                                                    'confidence_level': 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
+
+                                                    })
                                                 
                                                 if _dual_write_ready:
                                                     try:
