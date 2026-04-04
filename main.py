@@ -1614,6 +1614,9 @@ def run_cycle():
                         # Mark as sent in this cycle
                         signals_sent_this_cycle.add(cycle_key)
                         
+                        # Define symbol_group early (for tier matching + write_signal)
+                        symbol_group = classify_symbol(symbol_val)
+                        
                         # TEMP DEBUG: Verify gate code is reached
                         print(f"[GATE-ENTRY] 30min {symbol_val} signal reached gate block", flush=True)
                         
@@ -2139,11 +2142,13 @@ def run_cycle():
                         # Mark as sent in this cycle
                         signals_sent_this_cycle.add(cycle_key)
                         
+                        # Define symbol_group early (for tier matching + write_signal)
+                        symbol_group = classify_symbol(symbol_val)
+                        
                         # Send trade alert to Telegram
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
                                 # Get signal tier (dynamic - will be Tier-X initially, populates over time)
-                                # symbol_group already defined above
                                 signal_tier = get_signal_tier(tf_val, signal_type, Route, regime, symbol_group)
                                 print(f"[TIER] 1h {symbol_val} ({symbol_group}): {signal_tier}", flush=True)
                                 
@@ -2384,6 +2389,9 @@ def run_cycle():
                             print(f"[BLOCKED] SuperGK not aligned: Signal={bias} — NO SIGNAL SENT", flush=True)
                             continue
 
+                        # Define symbol_group early (for tier matching + write_signal)
+                        symbol_group = classify_symbol(res2h.get('symbol'))
+                        
                         print(f"[LOG] Sending 2h alert for {res2h.get('symbol')}", flush=True)
                         fired_time_utc = datetime.utcnow()
 
@@ -2800,6 +2808,9 @@ def run_cycle():
                             fired_time_utc = datetime.utcnow()
                             telegram_msg_id = str(uuid_lib.uuid4())[:12]
                             
+                            # Define symbol_group early (for tier matching + write_signal)
+                            symbol_group = classify_symbol(symbol_val)
+                            
                             signal_uuid = create_and_store_signal(
                                 symbol=symbol_val,
                                 timeframe=tf_val,
@@ -2834,7 +2845,7 @@ def run_cycle():
                             # Send trade alert to Telegram
                             if signal_uuid and os.getenv("DRY_RUN", "false").lower() != "true":
                                 try:
-                                    symbol_group = classify_symbol(symbol_val)
+                                    # symbol_group already defined above
                                     signal_tier = get_signal_tier(tf_val, signal_type, Route, regime, symbol_group)
                                     print(f"[TIER] 4h {symbol_val} ({symbol_group}): {signal_tier}", flush=True)
                                     
