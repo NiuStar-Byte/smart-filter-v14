@@ -1645,11 +1645,13 @@ def run_cycle():
                         except Exception as e:
                             print(f"[EMA{ema_period_30m}-WARN] 30min {symbol_val}: Error checking gate: {e}", flush=True)
                         
+                        # Define symbol_group for tier matching + write_signal
+                        symbol_group = classify_symbol(symbol_val)
+                        
                         # Send trade alert to Telegram
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
                                 # Get signal tier (dynamic - will be Tier-X initially, populates over time)
-                                # symbol_group already defined above
                                 signal_tier = get_signal_tier(tf_val, signal_type, Route, regime, symbol_group)
                                 print(f"[TIER] 30min {symbol_val} ({symbol_group}): {signal_tier}", flush=True)
                                 
@@ -2139,11 +2141,13 @@ def run_cycle():
                         # Mark as sent in this cycle
                         signals_sent_this_cycle.add(cycle_key)
                         
+                        # Define symbol_group for tier matching + write_signal
+                        symbol_group = classify_symbol(symbol_val)
+                        
                         # Send trade alert to Telegram
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
                                 # Get signal tier (dynamic - will be Tier-X initially, populates over time)
-                                # symbol_group already defined above
                                 signal_tier = get_signal_tier(tf_val, signal_type, Route, regime, symbol_group)
                                 print(f"[TIER] 1h {symbol_val} ({symbol_group}): {signal_tier}", flush=True)
                                 
