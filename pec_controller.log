@@ -1,0 +1,60 @@
+[2026-03-27 17:22:22] [START   ] ================================================================================
+[2026-03-27 17:22:22] [START   ] PEC MASTER CONTROLLER started (unified daemon management)
+[2026-03-27 17:22:22] [START   ] Managing: Signal Generator (main.py) + Signal Executor (pec_executor_persistent.py)
+[2026-03-27 17:22:22] [START   ] Health check interval: 10s
+[2026-03-27 17:22:22] [START   ] Critical restart threshold: 5x
+[2026-03-27 17:22:22] [START   ] Stop with: pkill -f pec_master_controller
+[2026-03-27 17:22:22] [START   ] ================================================================================
+[2026-03-27 17:22:22] [START   ] ✅ Started Signal Generator (main.py) (PID 22167)
+[2026-03-27 17:22:23] [START   ] ✅ Started Signal Executor (pec_executor_persistent.py) (PID 22168)
+[2026-03-27 17:22:24] [START   ] ✅ Tier Assignment Validator ENABLED (checks every 60s)
+persistent.py) (PID 22168)
+[2026-03-27 17:22:24] [START   ] ✅ Tier Assignment Validator ENABLED (checks every 60s)
+[2026-03-27 17:23:59] [TIER_CRITICAL] 🚨 TIER ASSIGNMENT FAILURE: Only 0.0% assigned (threshold: 70%) | 
+[2026-03-27 17:23:59] [TIER_CRITICAL]    ACTION: Tier assignment mechanism may be broken. Check pec_executor.py and tier_lookup.py
+[2026-03-27 21:08:51] [START   ] ================================================================================
+[2026-03-27 21:08:51] [START   ] PEC MASTER CONTROLLER started (unified daemon management)
+[2026-03-27 21:08:51] [START   ] Managing: Signal Generator (main.py) + Signal Executor (pec_executor_persistent.py)
+[2026-03-27 21:08:51] [START   ] Health check interval: 10s
+[2026-03-27 21:08:51] [START   ] Critical restart threshold: 5x
+[2026-03-27 21:08:51] [START   ] Stop with: pkill -f pec_master_controller
+[2026-03-27 21:08:51] [START   ] ================================================================================
+[2026-03-27 21:08:51] [START   ] ✅ Started Signal Generator (main.py) (PID 34416)
+[2026-03-27 21:08:52] [START   ] ✅ Started Signal Executor (pec_executor_persistent.py) (PID 34417)
+[2026-03-27 21:08:53] [START   ] ✅ Tier Assignment Validator ENABLED (checks every 60s)
+[2026-03-27 21:08:53] [START   ] ✅ Tier Pattern Sync ENABLED (self-healing quality loop, syncs every 300s)
+[2026-03-27 21:09:03] [TIER_CRITICAL] 🚨 TIER ASSIGNMENT FAILURE: Only 0.0% assigned (threshold: 70%) | 
+[2026-03-27 21:09:03] [TIER_CRITICAL]    ACTION: Tier assignment mechanism may be broken. Check pec_executor.py and tier_lookup.py
+[2026-03-27 21:09:03] [TIER_HEAL] TIER ASSIGNMENT CRITICAL: Attempting healing (executor restart)
+[2026-03-27 21:09:03] [TIER_CHECK] ✓ Tier patterns verified - no divergence detected
+[2026-03-27 21:10:03] [TIER_CRITICAL] 🚨 TIER ASSIGNMENT FAILURE: Only 0.0% assigned (threshold: 70%) | 
+[2026-03-27 21:10:03] [TIER_CRITICAL]    ACTION: Tier assignment mechanism may be broken. Check pec_executor.py and tier_lookup.py
+[2026-03-27 21:10:03] [TIER_HEAL] TIER ASSIGNMENT CRITICAL: Attempting healing (executor restart)
+[2026-03-27 21:11:04] [TIER_CRITICAL] 🚨 TIER ASSIGNMENT FAILURE: Only 0.0% assigned (threshold: 70%) | 
+[2026-03-27 21:11:04] [TIER_CRITICAL]    ACTION: Tier assignment mechanism may be broken. Check pec_executor.py and tier_lookup.py
+[2026-03-27 21:11:04] [TIER_HEAL] TIER ASSIGNMENT CRITICAL: Attempting healing (executor restart)
+[2026-03-27 21:12:04] [TIER_CRITICAL] 🚨 TIER ASSIGNMENT FAILURE: Only 0.0% assigned (threshold: 70%) | 
+[2026-03-27 21:12:04] [TIER_CRITICAL]    ACTION: Tier assignment mechanism may be broken. Check pec_executor.py and tier_lookup.py
+[2026-03-27 21:12:04] [TIER_HEAL] TIER ASSIGNMENT CRITICAL: Attempting healing (executor restart)
+[2026-03-27 21:13:04] [TIER_CRITICAL] 🚨 TIER ASSIGNMENT FAILURE: Only 0.0% assigned (threshold: 70%) | 
+[2026-03-27 21:13:04] [TIER_CRITICAL]    ACTION: Tier assignment mechanism may be broken. Check pec_executor.py and tier_lookup.py
+[2026-03-27 21:13:04] [TIER_HEAL] TIER ASSIGNMENT CRITICAL: Attempting healing (executor restart)
+[2026-03-27 21:14:05] [TIER_CRITICAL] 🚨 TIER ASSIGNMENT FAILURE: Only 0.0% assigned (threshold: 70%) | 
+[2026-03-27 21:14:05] [TIER_CRITICAL]    ACTION: Tier assignment mechanism may be broken. Check pec_executor.py and tier_lookup.py
+[2026-03-27 21:14:05] [TIER_HEAL] TIER ASSIGNMENT CRITICAL: Attempting healing (executor restart)
+[2026-03-27 21:14:05] [TIER_CHECK] ✓ Tier patterns verified - no divergence detected
+[2026-03-27 21:15:05] [TIER_CRITICAL] 🚨 TIER ASSIGNMENT FAILURE: Only 0.0% assigned (threshold: 70%) | 
+[2026-03-27 21:15:05] [TIER_CRITICAL]    ACTION: Tier assignment mechanism may be broken. Check pec_executor.py and tier_lookup.py
+[2026-03-27 21:15:05] [TIER_HEAL] TIER ASSIGNMENT CRITICAL: Attempting healing (executor restart)
+[2026-03-27 21:16:06] [TIER_CRITICAL] 🚨 TIER ASSIGNMENT FAILURE: Only 0.0% assigned (threshold: 70%) | 
+[2026-03-27 21:16:06] [TIER_CRITICAL]    ACTION: Tier assignment mechanism may be broken. Check pec_executor.py and tier_lookup.py
+[2026-03-27 21:16:06] [TIER_HEAL] TIER ASSIGNMENT CRITICAL: Attempting healing (executor restart)
+[2026-03-27 21:17:06] [TIER_CRITICAL] 🚨 TIER ASSIGNMENT FAILURE: Only 0.0% assigned (threshold: 70%) | 
+[2026-03-27 21:17:06] [TIER_CRITICAL]    ACTION: Tier assignment mechanism may be broken. Check pec_executor.py and tier_lookup.py
+[2026-03-27 21:17:06] [TIER_HEAL] TIER ASSIGNMENT CRITICAL: Attempting healing (executor restart)
+[2026-03-27 21:18:07] [TIER_CRITICAL] 🚨 TIER ASSIGNMENT FAILURE: Only 0.0% assigned (threshold: 70%) | 
+[2026-03-27 21:18:07] [TIER_CRITICAL]    ACTION: Tier assignment mechanism may be broken. Check pec_executor.py and tier_lookup.py
+[2026-03-27 21:18:07] [TIER_HEAL] TIER ASSIGNMENT CRITICAL: Attempting healing (executor restart)
+[2026-03-27 21:19:07] [TIER_CRITICAL] 🚨 TIER ASSIGNMENT FAILURE: Only 0.0% assigned (threshold: 70%) | 
+[2026-03-27 21:19:07] [TIER_CRITICAL]    ACTION: Tier assignment mechanism may be broken. Check pec_executor.py and tier_lookup.py
+[2026-03-27 21:19:07] [TIER_HEAL] TIER ASSIGNMENT CRITICAL: Attempting healing (executor restart)

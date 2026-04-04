@@ -1,0 +1,146 @@
+================================================================================
+TIER vs NON-TIER PERFORMANCE TRACKER (TEMPORAL ANALYSIS)
+Report Generated: 2026-03-27 16:40:53 UTC
+================================================================================
+
+⚠️  CRITICAL TIMELINE CONTEXT:
+  WITH TIER signals:    Fired 2026-03-27 to 2026-03-27
+  WITHOUT TIER signals: Fired 2026-02-27 to 2026-03-27
+
+  IMPORTANT: Tier assignment only began on 2026-03-27.
+  Pre-Mar-27 signals have ZERO tier (historical baseline).
+  Tier signals are NEW (just fired) and still accumulating closes.
+
+================================================================================
+SECTION 1: SIGNALS WITH TIER ASSIGNMENT
+================================================================================
+
+Total Loaded Signals: 3,199
+Total Closed Signals: 0
+
+CLOSED SIGNAL BREAKDOWN:
+  TP_HIT:         0 signals
+  SL_HIT:         0 signals
+  TIMEOUT_WIN:    0 signals
+  TIMEOUT_LOSS:   0 signals
+  STALE_TIMEOUT:  0 signals
+
+Overall Win Rate: 0.00%
+
+P&L BREAKDOWN:
+  Total P&L:               $0.00
+  TP P&L:                  $0.00
+  SL P&L:                  $0.00
+  TIMEOUT_WIN P&L:         $0.00
+  TIMEOUT_LOSS P&L:        $0.00
+
+
+================================================================================
+SECTION 2: SIGNALS WITHOUT TIER ASSIGNMENT
+================================================================================
+
+Total Loaded Signals: 10,172
+Total Closed Signals: 9,270
+
+CLOSED SIGNAL BREAKDOWN:
+  TP_HIT:         1,190 signals
+  SL_HIT:         2,657 signals
+  TIMEOUT_WIN:    1,232 signals
+  TIMEOUT_LOSS:   1,380 signals
+  STALE_TIMEOUT:  2,811 signals
+
+Overall Win Rate: 37.50%
+
+P&L BREAKDOWN:
+  Total P&L:               $-6,186.88
+  TP P&L:                  $13,509.58
+  SL P&L:                  $-16,994.28
+  TIMEOUT_WIN P&L:         $2,035.76
+  TIMEOUT_LOSS P&L:        $-4,737.94
+
+AVERAGES:
+  Avg P&L per Signal:      $-0.61
+  Avg P&L per Closed:      $-0.67
+  Avg TP:                  $11.35
+  Avg SL:                  $-6.40
+
+================================================================================
+SECTION 3: TIER vs NON-TIER COMPARISON
+================================================================================
+
+WIN RATE COMPARISON:
+  WITH TIER:             0.00%
+  WITHOUT TIER:         37.50%
+  DELTA (Tier Adv):    -37.50% ✗ TIER WORSE
+
+TOTAL P&L COMPARISON:
+  WITH TIER:                     $0.00
+  WITHOUT TIER:             $-6,186.88
+  DELTA (Tier Adv):          $6,186.88 ✓ TIER BETTER
+
+================================================================================
+SECTION 4: DYNAMIC COMBOS BY TIER STATUS
+================================================================================
+
+6D COMBOS WITH TIER (Top 10 by closed trades):
+
+6D COMBOS WITHOUT TIER (Top 10 by closed trades):
+  1. 15min|?|?|BEAR|?|?
+     Closed: 2234, WR: 33.4%, Avg P&L: $-0.30
+  2. 15min|?|?|BULL|?|?
+     Closed: 1365, WR: 29.9%, Avg P&L: $-1.12
+  3. 30min|?|?|BEAR|?|?
+     Closed: 1094, WR: 38.7%, Avg P&L: $1.34
+  4. 30min|?|?|BULL|?|?
+     Closed: 713, WR: 37.0%, Avg P&L: $-1.06
+  5. 1h|?|?|BEAR|?|?
+     Closed: 675, WR: 40.5%, Avg P&L: $0.33
+  6. 4h|?|?|BULL|?|?
+     Closed: 493, WR: 49.6%, Avg P&L: $0.05
+  7. 1h|?|?|BULL|?|?
+     Closed: 367, WR: 41.5%, Avg P&L: $0.88
+  8. 4h|?|?|BEAR|?|?
+     Closed: 336, WR: 43.6%, Avg P&L: $-0.29
+  9. 30min|LONG|?|BULL|?|?
+     Closed: 332, WR: 23.4%, Avg P&L: $-8.76
+  10. 2h|?|?|BEAR|?|?
+     Closed: 250, WR: 50.5%, Avg P&L: $-0.08
+
+================================================================================
+SECTION 5: TEMPORAL ANALYSIS & HYPOTHESIS
+================================================================================
+
+CURRENT STATE (TEMPORAL FAIRNESS):
+  Tier-Assigned Signals:       3,199 signals
+    └─ Fire Date Range:        Mar 27 only (BRAND NEW - just fired)
+    └─ Closed:                 0 (zero time to close yet)
+    └─ Status:                 100% OPEN
+
+  Non-Tier Signals:            10,172 signals
+    └─ Fire Date Range:        Feb 27 - Mar 26 (HISTORICAL - pre-tier implementation)
+    └─ Closed:                 9,270 (91.1%)
+    └─ Win Rate:               37.50%
+
+KEY INSIGHT - WHY ZERO TIER CLOSES:
+  Tier assignment only started 2026-03-27 (today).
+  All signals fired before Mar 27 have NO tier (historical).
+  Tier-assigned signals are brand new → zero closure time yet.
+  This is CORRECT - not a bug, but a timeline effect.
+
+COMPARISON STATUS: NOT YET VALID
+  Current comparison is apples-to-oranges (new vs historical).
+  Meaningful comparison requires tier signals to accumulate closes.
+
+WAIT FOR (ETA: 24-48 hours):
+  - Tier-X signals:   10+ closed trades → baseline WR
+  - Tier-2 signals:   ~30-50 closed trades → test hypothesis
+  - Tier-3 signals:   ~25-40 closed trades → test hypothesis
+
+HYPOTHESIS TEST (Once tier signals close):
+  Null:       Tier WR% = 37.50% (no difference)
+  Alternate:  Tier WR% > 37.50% (tiering improves quality)
+  Success Threshold: 45.50% (8%+ improvement)
+
+================================================================================
+END OF REPORT
+================================================================================

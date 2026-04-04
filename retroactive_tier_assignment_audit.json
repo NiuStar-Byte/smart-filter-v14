@@ -1,0 +1,816 @@
+{
+  "timestamp": "2026-03-27T23:57:35.879012",
+  "total_signals": 13480,
+  "updated": 10172,
+  "skipped": 3308,
+  "sample_updates": [
+    {
+      "signal_uuid": "6c55f7fd-39f",
+      "fired_date": "2026-02-28",
+      "status": "SL_HIT",
+      "timeframe": "30min",
+      "direction": "LONG",
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "6333c77b-0c0",
+      "fired_date": "2026-02-28",
+      "status": "SL_HIT",
+      "timeframe": "30min",
+      "direction": "SHORT",
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "09c50d3b-2f1",
+      "fired_date": "2026-02-28",
+      "status": "TP_HIT",
+      "timeframe": "30min",
+      "direction": "LONG",
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "01cd0f98-349",
+      "fired_date": "2026-02-28",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "30min",
+      "direction": "LONG",
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "14d8442f-03d",
+      "fired_date": "2026-03-01",
+      "status": "TP_HIT",
+      "timeframe": "30min",
+      "direction": "LONG",
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "f60213af-3d6",
+      "fired_date": "2026-03-01",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "30min",
+      "direction": "LONG",
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "54b89a3f-919",
+      "fired_date": "2026-03-02",
+      "status": "TIMEOUT",
+      "timeframe": "30min",
+      "direction": "LONG",
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "887f76b7-f23",
+      "fired_date": "2026-03-02",
+      "status": "SL_HIT",
+      "timeframe": "30min",
+      "direction": "LONG",
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "11e50daf-739",
+      "fired_date": "2026-03-02",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "1h",
+      "direction": "LONG",
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "45bd8088-7c9",
+      "fired_date": "2026-03-06",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "1h",
+      "direction": "LONG",
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "80d62a3a-95b",
+      "fired_date": "2026-03-06",
+      "status": "REJECTED_NOT_SENT_TELEGRAM",
+      "timeframe": "1h",
+      "direction": "LONG",
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "f9d3b5a5-9a4",
+      "fired_date": "2026-03-06",
+      "status": "TIMEOUT",
+      "timeframe": "30min",
+      "direction": "LONG",
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "6a9078b9-fb0",
+      "fired_date": "2026-03-06",
+      "status": "REJECTED_NOT_SENT_TELEGRAM",
+      "timeframe": "30min",
+      "direction": "SHORT",
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "9c1fde82-a08",
+      "fired_date": "2026-03-06",
+      "status": "TP_HIT",
+      "timeframe": "15min",
+      "direction": "LONG",
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "15e8da18-e49",
+      "fired_date": "2026-03-06",
+      "status": "REJECTED_NOT_SENT_TELEGRAM",
+      "timeframe": "30min",
+      "direction": "LONG",
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "938e5109-b69",
+      "fired_date": "2026-03-06",
+      "status": "REJECTED_NOT_SENT_TELEGRAM",
+      "timeframe": "30min",
+      "direction": "LONG",
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "f0d00ead-dde",
+      "fired_date": "2026-03-06",
+      "status": "SL_HIT",
+      "timeframe": "30min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "8d620efe-a1d",
+      "fired_date": "2026-03-06",
+      "status": "SL_HIT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "9c44e216-a0b",
+      "fired_date": "2026-03-06",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "1h",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "f61b106d-916",
+      "fired_date": "2026-03-07",
+      "status": "SL_HIT",
+      "timeframe": "30min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "68e139cf-db4",
+      "fired_date": "2026-03-08",
+      "status": "SL_HIT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "28c03da3-a20",
+      "fired_date": "2026-03-09",
+      "status": "SL_HIT",
+      "timeframe": "1h",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "b9ce0b16-013",
+      "fired_date": "2026-03-23",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "30min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "510f4aa6-cf8",
+      "fired_date": "2026-03-23",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "30min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "305c6048-2f2",
+      "fired_date": "2026-03-23",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "30min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "4404b9ce-57c",
+      "fired_date": "2026-03-23",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "30min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "c8257f64-2ec",
+      "fired_date": "2026-03-23",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "1h",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "94e7f5b2-930",
+      "fired_date": "2026-03-23",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "30min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "67228aeb-9b8",
+      "fired_date": "2026-03-23",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "30min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "b7cb43e2-42e",
+      "fired_date": "2026-03-20",
+      "status": "TIMEOUT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "af232faf-4be",
+      "fired_date": "2026-03-20",
+      "status": "SL_HIT",
+      "timeframe": "30min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "e83cb7fe-38e",
+      "fired_date": "2026-03-21",
+      "status": "SL_HIT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "7a773b81-ef7",
+      "fired_date": "2026-03-21",
+      "status": "TIMEOUT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "02bfd01c-fc9",
+      "fired_date": "2026-03-21",
+      "status": "SL_HIT",
+      "timeframe": "30min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "fbc0b443-078",
+      "fired_date": "2026-03-21",
+      "status": "TP_HIT",
+      "timeframe": "30min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "7bb179b1-acf",
+      "fired_date": "2026-03-21",
+      "status": "SL_HIT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "c4a82fd6-3c3",
+      "fired_date": "2026-03-21",
+      "status": "TIMEOUT",
+      "timeframe": "30min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "e16d218c-3c1",
+      "fired_date": "2026-03-22",
+      "status": "TP_HIT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "3748d5f2-bb1",
+      "fired_date": "2026-03-22",
+      "status": "SL_HIT",
+      "timeframe": "30min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "9bc1e4c4-edf",
+      "fired_date": "2026-03-22",
+      "status": "TIMEOUT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "e4dbd8fb-188",
+      "fired_date": "2026-03-22",
+      "status": "TIMEOUT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "59f746ae-093",
+      "fired_date": "2026-03-22",
+      "status": "TIMEOUT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "fd14a2d6-830",
+      "fired_date": "2026-03-22",
+      "status": "SL_HIT",
+      "timeframe": "30min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "075b4638-bd7",
+      "fired_date": "2026-03-22",
+      "status": "TP_HIT",
+      "timeframe": "1h",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "679de409-d81",
+      "fired_date": "2026-03-23",
+      "status": "SL_HIT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "f9e0dfe1-3b1",
+      "fired_date": "2026-03-23",
+      "status": "SL_HIT",
+      "timeframe": "1h",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "b7b7540e-4d7",
+      "fired_date": "2026-03-23",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "30min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "407362ab-9a3",
+      "fired_date": "2026-03-23",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "1h",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "39b05415-238",
+      "fired_date": "2026-03-24",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "411b8c79-f0d",
+      "fired_date": "2026-03-24",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "30min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "74b1e91b-057",
+      "fired_date": "2026-03-24",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "b025bc65-5c7",
+      "fired_date": "2026-03-24",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "30min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "23b8bfbe-c59",
+      "fired_date": "2026-03-24",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "30min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "ed691ab7-124",
+      "fired_date": "2026-03-24",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "bf5bf92e-14d",
+      "fired_date": "2026-03-24",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "002ccffb-429",
+      "fired_date": "2026-03-24",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "30min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "acaef7ee-a38",
+      "fired_date": "2026-03-24",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "4h",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "0df648d6-eef",
+      "fired_date": "2026-03-24",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "a7566a3b-006",
+      "fired_date": "2026-03-25",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "4h",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "9afe8523-cb4",
+      "fired_date": "2026-03-25",
+      "status": "TIMEOUT",
+      "timeframe": "4h",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "9c25e479-6bc",
+      "fired_date": "2026-03-25",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "06dfac6c-bfc",
+      "fired_date": "2026-03-25",
+      "status": "TIMEOUT",
+      "timeframe": "4h",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "784afff0-73c",
+      "fired_date": "2026-03-25",
+      "status": "TIMEOUT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "1e24e050-75f",
+      "fired_date": "2026-03-25",
+      "status": "TIMEOUT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "225e2292-dca",
+      "fired_date": "2026-03-25",
+      "status": "TIMEOUT",
+      "timeframe": "30min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "8ecc07de-df6",
+      "fired_date": "2026-03-25",
+      "status": "OPEN",
+      "timeframe": "30min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "ca35638d-c7f",
+      "fired_date": "2026-03-25",
+      "status": "TIMEOUT",
+      "timeframe": "4h",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "a4ee93d4-503",
+      "fired_date": "2026-03-25",
+      "status": "TIMEOUT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "e9c141fd-9b4",
+      "fired_date": "2026-03-25",
+      "status": "TIMEOUT",
+      "timeframe": "4h",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "82217d8b-c29",
+      "fired_date": "2026-03-25",
+      "status": "SL_HIT",
+      "timeframe": "30min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "e8b1cedb-658",
+      "fired_date": "2026-03-25",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "4h",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "c3632c6c-417",
+      "fired_date": "2026-03-25",
+      "status": "TP_HIT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "85c14558-234",
+      "fired_date": "2026-03-25",
+      "status": "TIMEOUT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "3447de0d-7c8",
+      "fired_date": "2026-03-25",
+      "status": "TIMEOUT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "36d83f69-535",
+      "fired_date": "2026-03-25",
+      "status": "TIMEOUT",
+      "timeframe": "4h",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "55ed6879-227",
+      "fired_date": "2026-03-26",
+      "status": "SL_HIT",
+      "timeframe": "30min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "e437a56b-332",
+      "fired_date": "2026-03-26",
+      "status": "SL_HIT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "32c6d531-666",
+      "fired_date": "2026-03-26",
+      "status": "TP_HIT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "27612777-502",
+      "fired_date": "2026-03-26",
+      "status": "TP_HIT",
+      "timeframe": "30min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "ba97a16b-89f",
+      "fired_date": "2026-03-26",
+      "status": "TIMEOUT",
+      "timeframe": "30min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "6983ae58-682",
+      "fired_date": "2026-03-26",
+      "status": "OPEN",
+      "timeframe": "2h",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "6618f22e-34c",
+      "fired_date": "2026-03-26",
+      "status": "TIMEOUT",
+      "timeframe": "2h",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "1c7f380c-8d2",
+      "fired_date": "2026-03-26",
+      "status": "TIMEOUT",
+      "timeframe": "2h",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "d53d8f12-0c8",
+      "fired_date": "2026-03-26",
+      "status": "TIMEOUT",
+      "timeframe": "4h",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "ea3a332c-41f",
+      "fired_date": "2026-03-26",
+      "status": "TIMEOUT",
+      "timeframe": "4h",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "c4634729-f36",
+      "fired_date": "2026-03-26",
+      "status": "TIMEOUT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "94693df7-7df",
+      "fired_date": "2026-03-26",
+      "status": "SL_HIT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "59cd17d2-fc9",
+      "fired_date": "2026-03-26",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "2h",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "360b95c8-fbe",
+      "fired_date": "2026-03-26",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "4h",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "38ae4b10-bcd",
+      "fired_date": "2026-03-26",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "1h",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "cd41137b-019",
+      "fired_date": "2026-03-26",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "7c4a751f-7b8",
+      "fired_date": "2026-03-26",
+      "status": "OPEN",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "45f4e29d-f9b",
+      "fired_date": "2026-03-26",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "a8ac9bdb-179",
+      "fired_date": "2026-03-26",
+      "status": "STALE_TIMEOUT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "324a0184-7a5",
+      "fired_date": "2026-03-26",
+      "status": "OPEN",
+      "timeframe": "2h",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "4e30da2a-139",
+      "fired_date": "2026-03-27",
+      "status": "TP_HIT",
+      "timeframe": "30min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "4cbebac9-bcf",
+      "fired_date": "2026-03-27",
+      "status": "TP_HIT",
+      "timeframe": "30min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "5f609996-9aa",
+      "fired_date": "2026-03-27",
+      "status": "TIMEOUT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "e354d012-862",
+      "fired_date": "2026-03-27",
+      "status": "SL_HIT",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "896ac675-1ac",
+      "fired_date": "2026-03-27",
+      "status": "SL_HIT",
+      "timeframe": "4h",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    },
+    {
+      "signal_uuid": "4820e8e4-fe8",
+      "fired_date": "2026-03-27",
+      "status": "OPEN",
+      "timeframe": "15min",
+      "direction": null,
+      "assigned_tier": "Tier-X"
+    }
+  ]
+}

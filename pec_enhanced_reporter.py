@@ -1960,32 +1960,92 @@ class PECEnhancedReporter:
     def generate_signal_tiers(self):
         """
         Generate SIGNAL_TIERS.json using CONSENSUS CASCADE strategy:
-        1. Evaluate 5D first (finest granularity)
-        2. If 5D qualifies for ANY tier (1/2/3), assign and STOP
-        3. If 5D fails, try 4D
-        4. If 4D fails, try 3D
-        5. If 3D fails, try 2D
-        6. If all fail, assign Tier-X
+        1. Evaluate 6D first (finest granularity: TF × DIR × ROUTE × REGIME × SG × CONFIDENCE)
+        2. If 6D qualifies for ANY tier (1/2/3), assign and STOP
+        3. If 6D fails, try 5D (without confidence)
+        4. If 5D fails, try 4D
+        5. If 4D fails, try 3D
+        6. If 3D fails, try 2D
+        7. If all fail, assign Tier-X
         
         Within each tier check: verify Tier-1 first (hardest), then Tier-2, then Tier-3
+        
+        FIX (2026-03-28): Added 6D evaluation to catch high-confidence combos like
+        "2h|SHORT|TREND CONTINUATION|BEAR|LOW_ALTS|HIGH" that were being missed.
         """
         tiers = {'tier1': [], 'tier2': [], 'tier3': [], 'tierx': []}
         tier_details = {}  # Store which level each combo qualified at
         
         th = TIER_THRESHOLDS
-        print(f"[TIER-CONFIG] Consensus Cascade + Option B", flush=True)
+        print(f"[TIER-CONFIG] Consensus Cascade + Option B (with 6D confidence-based tiering)", flush=True)
         print(f"  Tier-1: {th.get('tier1_wr')*100:.0f}% WR, ${th.get('tier1_pnl'):.2f}+ avg, {th.get('tier1_min_trades')}+ trades", flush=True)
         print(f"  Tier-2: {th.get('tier2_wr')*100:.0f}% WR, ${th.get('tier2_pnl'):.2f}+ avg, {th.get('tier2_min_trades')}+ trades", flush=True)
         print(f"  Tier-3: {th.get('tier3_wr')*100:.0f}% WR, ${th.get('tier3_pnl'):.2f}+ avg, {th.get('tier3_min_trades')}+ trades", flush=True)
+        print(f"  Cascade: 6D (TF+DIR+ROUTE+REGIME+SG+CONFIDENCE) → 5D → 4D → 3D → 2D", flush=True)
         
         # ===== CONSENSUS CASCADE LOGIC =====
         # Build all combos with their stats at each dimension
         all_combos_by_dimension = {
+            '6D': {},  # NEW: Include 6D with confidence level
             '5D': {},
             '4D': {},
             '3D': {},
             '2D': {}
         }
+        
+        # Get 6D stats (TF × DIR × ROUTE × REGIME × SYMBOL_GROUP × CONFIDENCE_LEVEL)
+        def get_confidence_category(conf_value):
+            if conf_value >= 73:
+                return 'HIGH'
+            elif 66 <= conf_value < 73:
+                return 'MID'
+            else:
+                return 'LOW'
+        
+        stats_6d = {}
+        for signal in self.signals:
+            status = signal.get('status', 'OPEN')
+            if status in ['STALE_TIMEOUT', 'REJECTED_NOT_SENT_TELEGRAM']:
+                continue
+            
+            tf = signal.get('timeframe', 'N/A')
+            direction = signal.get('signal_type', 'N/A')
+            route = signal.get('route', 'N/A')
+            regime = signal.get('regime', 'N/A')
+            symbol = signal.get('symbol', 'UNKNOWN')
+            symbol_group = self.get_symbol_group(symbol)
+            confidence = signal.get('confidence', 0)
+            confidence_cat = get_confidence_category(confidence)
+            
+            key = (tf, direction, route, regime, symbol_group, confidence_cat)
+            
+            if key not in stats_6d:
+                stats_6d[key] = {'tp': 0, 'sl': 0, 'timeout_win': 0, 'timeout_loss': 0, 'pnl': 0.0}
+            
+            pnl = signal.get('pnl_usd', 0) or 0.0
+            stats_6d[key]['pnl'] += pnl
+            
+            if status == 'TP_HIT':
+                stats_6d[key]['tp'] += 1
+            elif status == 'SL_HIT':
+                stats_6d[key]['sl'] += 1
+            elif status == 'TIMEOUT':
+                if pnl >= 0:
+                    stats_6d[key]['timeout_win'] += 1
+                else:
+                    stats_6d[key]['timeout_loss'] += 1
+        
+        # Add to all_combos_by_dimension['6D']
+        for key, stat in stats_6d.items():
+            closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
+            win_count = stat['tp'] + stat['timeout_win']
+            wr = (win_count / closed) if closed > 0 else 0
+            avg_pnl = stat['pnl'] / closed if closed > 0 else 0
+            # Format: TF_DIR_ROUTE_REGIME_SG_CONFIDENCE (underscore-delimited for consistency with 5D)
+            combo_name = f"{key[0]}_{key[1]}_{key[2]}_{key[3]}_{key[4]}_{key[5]}"
+            all_combos_by_dimension['6D'][combo_name] = {
+                'wr': wr, 'avg_pnl': avg_pnl, 'pnl': stat['pnl'], 'closed': closed
+            }
         
         # Get 5D stats
         stats_5d = self._aggregate_by_dimensions_with_symbol(['timeframe', 'signal_type', 'route', 'regime'])
@@ -2052,6 +2112,7 @@ class PECEnhancedReporter:
         
         # ===== CONSENSUS CASCADE: Assign tiers =====
         all_combo_names = set()
+        all_combo_names.update(all_combos_by_dimension['6D'].keys())  # NEW: Include 6D
         all_combo_names.update(all_combos_by_dimension['5D'].keys())
         all_combo_names.update(all_combos_by_dimension['4D'].keys())
         all_combo_names.update(all_combos_by_dimension['3D'].keys())
@@ -2061,8 +2122,8 @@ class PECEnhancedReporter:
             assigned_tier = None
             assigned_level = None
             
-            # CASCADE: Check 5D → 4D → 3D → 2D
-            for dimension in ['5D', '4D', '3D', '2D']:
+            # CASCADE: Check 6D → 5D → 4D → 3D → 2D (NEW: 6D first)
+            for dimension in ['6D', '5D', '4D', '3D', '2D']:
                 if combo_name in all_combos_by_dimension[dimension]:
                     stats = all_combos_by_dimension[dimension][combo_name]
                     wr = stats['wr']
