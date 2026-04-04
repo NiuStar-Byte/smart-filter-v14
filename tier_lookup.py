@@ -92,21 +92,28 @@ class TierLookup:
             self.tier_data = {"tier1": [], "tier2": [], "tier3": [], "tierx": []}
             self.tier_file = None
     
-    def _check_combo_variants(self, tier_key: str, tf: str, dir_val: str, route_val: str = None, regime_val: str = None, symbol_group_val: str = None) -> bool:
+    def _check_combo_variants(self, tier_key: str, tf: str, dir_val: str, route_val: str = None, regime_val: str = None, symbol_group_val: str = None, confidence_level_val: str = None) -> bool:
         """Helper: Check if ANY combo variant exists in tier list
         
-        Checks both formats:
-        1. Without prefix: tf_DIR_ROUTE_REGIME_SG
-        2. With TF_DIR_ROUTE prefix: TF_DIR_ROUTE_REGIME_SG_tf_DIR_ROUTE_REGIME_SG
-        3. Pipe-separated: tf|DIR|ROUTE|REGIME|SG
+        Checks formats:
+        1. 6D with confidence: tf|DIR|ROUTE|REGIME|SG|CONF
+        2. 5D variants: tf|DIR|ROUTE|REGIME|SG
+        3. Underscore format: tf_DIR_ROUTE_REGIME_SG
         """
         tier_combos = self.tier_data.get(tier_key, [])
         
         # Build all possible combo variants
         variants = []
         
+        # 6D variants (with confidence_level)
+        if symbol_group_val and route_val and regime_val and confidence_level_val:
+            variants.extend([
+                f"{tf}|{dir_val}|{route_val}|{regime_val}|{symbol_group_val}|{confidence_level_val}",
+                f"{tf}_{dir_val}_{route_val}_{regime_val}_{symbol_group_val}_{confidence_level_val}",
+            ])
+        
         if symbol_group_val and route_val and regime_val:
-            # 6D variants
+            # 5D variants (without confidence, fallback)
             variants.extend([
                 f"{tf}_{dir_val}_{route_val}_{regime_val}_{symbol_group_val}",
                 f"TF_DIR_ROUTE_REGIME_SG_{tf}_{dir_val}_{route_val}_{regime_val}_{symbol_group_val}",
@@ -141,9 +148,11 @@ class TierLookup:
                 return True
         return False
     
-    def get_tier(self, timeframe: str, direction: str, route: str = None, regime: str = None, symbol_group: str = None) -> str:
+    def get_tier(self, timeframe: str, direction: str, route: str = None, regime: str = None, symbol_group: str = None, confidence_level: str = None) -> str:
         """
         Look up tier for a signal combo with STRICT dimensional cascading rules:
+        
+        Supports 6D combos: tf|direction|route|regime|symbol_group|confidence_level
         
         TIER-1: 6D → 5D (STOP AT 5D, NO 4D/3D/2D)
         TIER-2: 6D → 5D → 4D (STOP AT 4D, NO 3D/2D)
@@ -165,17 +174,18 @@ class TierLookup:
             route_val = str(route).strip() if route else None
             regime_val = str(regime).strip() if regime else None
             symbol_group_val = str(symbol_group).strip() if symbol_group else None
+            confidence_level_val = str(confidence_level).strip() if confidence_level else None
             
             # ============================================================================
             # TIER-1: 6D → 5D (STOP AT 5D, NO 4D/3D/2D)
             # ============================================================================
-            if self._check_combo_variants("tier1", tf, dir_val, route_val, regime_val, symbol_group_val):
+            if self._check_combo_variants("tier1", tf, dir_val, route_val, regime_val, symbol_group_val, confidence_level_val):
                 return "Tier-1"
             
             # ============================================================================
             # TIER-2: 6D → 5D → 4D (STOP AT 4D, NO 3D OR 2D)
             # ============================================================================
-            if self._check_combo_variants("tier2", tf, dir_val, route_val, regime_val, symbol_group_val):
+            if self._check_combo_variants("tier2", tf, dir_val, route_val, regime_val, symbol_group_val, confidence_level_val):
                 return "Tier-2"
             
             # 4D (both formats)
@@ -191,19 +201,25 @@ class TierLookup:
             # TIER-3: 6D → 5D → 4D → 3D (STOP AT 3D, NO 2D)
             # ============================================================================
             
-            # 6D with labels
-            if symbol_group_val and route_val and regime_val:
+            # 6D with confidence_level (most specific)
+            if symbol_group_val and route_val and regime_val and confidence_level_val:
                 combos_tier3_6d = [
-                    f"6D_{tf}_{dir_val}_{route_val}_{regime_val}_{symbol_group_val}",
+                    f"{tf}|{dir_val}|{route_val}|{regime_val}|{symbol_group_val}|{confidence_level_val}",
+                    f"{tf}_{dir_val}_{route_val}_{regime_val}_{symbol_group_val}_{confidence_level_val}",
                 ]
                 for combo in combos_tier3_6d:
                     if combo in self.tier_data.get("tier3", []):
                         return "Tier-3"
-                
-                # Unlabeled 6D
-                combo_6d = f"{tf}_{dir_val}_{route_val}_{regime_val}_{symbol_group_val}"
-                if combo_6d in self.tier_data.get("tier3", []):
-                    return "Tier-3"
+            
+            # 6D without confidence (fallback)
+            if symbol_group_val and route_val and regime_val:
+                combos_tier3_6d = [
+                    f"6D_{tf}_{dir_val}_{route_val}_{regime_val}_{symbol_group_val}",
+                    f"{tf}_{dir_val}_{route_val}_{regime_val}_{symbol_group_val}",
+                ]
+                for combo in combos_tier3_6d:
+                    if combo in self.tier_data.get("tier3", []):
+                        return "Tier-3"
             
             # 5D
             if symbol_group_val and route_val and regime_val:

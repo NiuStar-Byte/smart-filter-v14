@@ -1119,13 +1119,15 @@ def run_cycle():
                         # Define symbol_group early (for tier matching + write_signal)
                         symbol_group = classify_symbol(symbol_val)
                         
+                        # Calculate confidence_level for 6D tier matching
+                        confidence_level_cat = 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
+                        
                         # Send trade alert to Telegram
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
-                                # Get signal tier (dynamic - will be Tier-X initially, populates over time)
-                                # symbol_group already defined above
-                                signal_tier = get_signal_tier(tf_val, signal_type, Route, regime, symbol_group)
-                                print(f"[TIER] 15min {symbol_val} ({symbol_group}): {signal_tier}", flush=True)
+                                # Get signal tier (6D matching with confidence_level)
+                                signal_tier = get_signal_tier(tf_val, signal_type, Route, regime, symbol_group, confidence_level_cat)
+                                print(f"[TIER] 15min {symbol_val} ({symbol_group}|{confidence_level_cat}): {signal_tier}", flush=True)
                                 
                                 print(f"[DEBUG] 15min: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
                                 sent_ok = send_telegram_alert(
@@ -1648,12 +1650,15 @@ def run_cycle():
                         # Define symbol_group for tier matching + write_signal
                         symbol_group = classify_symbol(symbol_val)
                         
+                        # Calculate confidence_level for 6D tier matching
+                        confidence_level_cat = 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
+                        
                         # Send trade alert to Telegram
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
-                                # Get signal tier (dynamic - will be Tier-X initially, populates over time)
-                                signal_tier = get_signal_tier(tf_val, signal_type, Route, regime, symbol_group)
-                                print(f"[TIER] 30min {symbol_val} ({symbol_group}): {signal_tier}", flush=True)
+                                # Get signal tier (6D matching with confidence_level)
+                                signal_tier = get_signal_tier(tf_val, signal_type, Route, regime, symbol_group, confidence_level_cat)
+                                print(f"[TIER] 30min {symbol_val} ({symbol_group}|{confidence_level_cat}): {signal_tier}", flush=True)
                                 
                                 print(f"[DEBUG] 30min: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
                                 sent_ok = send_telegram_alert(
@@ -2144,12 +2149,15 @@ def run_cycle():
                         # Define symbol_group for tier matching + write_signal
                         symbol_group = classify_symbol(symbol_val)
                         
+                        # Calculate confidence_level for 6D tier matching
+                        confidence_level_cat = 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
+                        
                         # Send trade alert to Telegram
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
-                                # Get signal tier (dynamic - will be Tier-X initially, populates over time)
-                                signal_tier = get_signal_tier(tf_val, signal_type, Route, regime, symbol_group)
-                                print(f"[TIER] 1h {symbol_val} ({symbol_group}): {signal_tier}", flush=True)
+                                # Get signal tier (6D matching with confidence_level)
+                                signal_tier = get_signal_tier(tf_val, signal_type, Route, regime, symbol_group, confidence_level_cat)
+                                print(f"[TIER] 1h {symbol_val} ({symbol_group}|{confidence_level_cat}): {signal_tier}", flush=True)
                                 
                                 print(f"[DEBUG] 1h: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
                                 sent_ok = send_telegram_alert(
@@ -2576,8 +2584,10 @@ def run_cycle():
                         if signal_uuid and os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
                                 symbol_group = classify_symbol(symbol_val)
-                                signal_tier = get_signal_tier(tf_val, signal_type, Route, regime, symbol_group)
-                                print(f"[TIER] 2h {symbol_val} ({symbol_group}): {signal_tier}", flush=True)
+                                # Calculate confidence_level for 6D tier matching
+                                confidence_level_cat = 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
+                                signal_tier = get_signal_tier(tf_val, signal_type, Route, regime, symbol_group, confidence_level_cat)
+                                print(f"[TIER] 2h {symbol_val} ({symbol_group}|{confidence_level_cat}): {signal_tier}", flush=True)
                                 
                                 print(f"[DEBUG] 2h: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
                                 sent_ok = send_telegram_alert(
@@ -2839,8 +2849,10 @@ def run_cycle():
                             if signal_uuid and os.getenv("DRY_RUN", "false").lower() != "true":
                                 try:
                                     symbol_group = classify_symbol(symbol_val)
-                                    signal_tier = get_signal_tier(tf_val, signal_type, Route, regime, symbol_group)
-                                    print(f"[TIER] 4h {symbol_val} ({symbol_group}): {signal_tier}", flush=True)
+                                    # Calculate confidence_level for 6D tier matching
+                                    confidence_level_cat = 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
+                                    signal_tier = get_signal_tier(tf_val, signal_type, Route, regime, symbol_group, confidence_level_cat)
+                                    print(f"[TIER] 4h {symbol_val} ({symbol_group}|{confidence_level_cat}): {signal_tier}", flush=True)
                                     
                                     print(f"[DEBUG] 4h: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
                                     sent_ok = send_telegram_alert(
