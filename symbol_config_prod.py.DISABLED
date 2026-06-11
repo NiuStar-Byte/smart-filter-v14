@@ -1,0 +1,86 @@
+"""
+symbol_config_prod.py - Production Symbol Configuration
+Last updated: 2026-05-12 18:15 GMT+7 (FIXED BLACKLIST HANDLING)
+Total symbols: 102 active + 20 blacklisted = 122 total
+
+All 102 active symbols now properly scanned (20 May-new interspersed within positions #1-#102)
+All 20 blacklisted symbols included in PRODUCTION_SYMBOLS and filtered by SYMBOL_BLACKLIST
+"""
+
+# ============================================================================
+# TIMEFRAME CONFIGURATION - Toggle ON/OFF without deletion
+# ============================================================================
+
+TIMEFRAME_CONFIG = {
+    "15min": False,   # ❌ OFF (2026-05-12 13:57 GMT+7 - profitability optimization: remove worst-performing TF, save ~20% processing)
+    "30min": True,    # ✅ ON
+    "1h": True,       # ✅ ON
+    "2h": True,       # ✅ ON
+    "4h": True,       # ✅ ON
+}
+
+def get_active_timeframes():
+    """Return list of active timeframes based on TIMEFRAME_CONFIG
+    
+    Usage in main.py:
+        from symbol_config_prod import get_active_timeframes
+        TIMEFRAMES = get_active_timeframes()
+    
+    To disable 15min after validation:
+        Change "15min": True → "15min": False
+        Restart main.py
+        No code changes needed
+    """
+    return [tf for tf, enabled in TIMEFRAME_CONFIG.items() if enabled]
+
+# ============================================================================
+# PRODUCTION SYMBOLS - 122 TOTAL (102 ACTIVE + 20 BLACKLISTED)
+# Restructured May 12 15:02 GMT+7: 20 May-new symbols interspersed within first 102 positions
+# Critical: All interspersed symbols are within scanning window (#1-#102)
+# 20 blacklisted symbols are included and filtered out by SYMBOL_BLACKLIST
+# Source: main.py TOKENS list (authoritative) + 20 blacklisted symbols
+# ============================================================================
+
+PRODUCTION_SYMBOLS = [
+    # 102 ACTIVE symbols (synced from main.py TOKENS, verified 2026-05-12 19:14 GMT+7)
+    "BTC-USDT", "ETH-USDT", "SOL-USDT", "XRP-USDT", "ADA-USDT", "1INCH-USDT",
+    "XLM-USDT", "LINK-USDT", "POL-USDT", "BNB-USDT", "ACE-USDT", "LA-USDT",
+    "SPK-USDT", "ZKJ-USDT", "IP-USDT", "AERO-USDT", "ACH-USDT", "LQTY-USDT",
+    "AERGO-USDT", "RAY-USDT", "BIGTIME-USDT", "MAGIC-USDT", "ACTSOL-USDT",
+    "FUN-USDT", "CROSS-USDT", "KNC-USDT", "AIN-USDT", "AVAX-USDT", "PORTAL-USDT",
+    "ICNT-USDT", "CVX-USDT", "PARTI-USDT", "VINE-USDT", "ZORA-USDT", "BNT-USDT",
+    "BOME-USDT", "ROAM-USDT", "BRETT-USDT", "TUT-USDT", "CELO-USDT", "CELR-USDT",
+    "TURBO-USDT", "PROMPT-USDT", "YFI-USDT", "DOGE-USDT", "ALGO-USDT", "DOT-USDT",
+    "NEWT-USDT", "CHZ-USDT", "PEPE-USDT", "CKB-USDT", "PENGU-USDT", "CFX-USDT",
+    "ENA-USDT", "SUI-USDT", "EIGEN-USDT", "HBAR-USDT", "HYPE-USDT", "PUMP-USDT",
+    "KAS-USDT", "COW-USDT", "ONDO-USDT", "VIRTUAL-USDT", "AAVE-USDT", "XAUT-USDT",
+    "CYS-USDT", "WIF-USDT", "BERA-USDT", "DYDX-USDT", "KAITO-USDT", "ARKM-USDT",
+    "ATH-USDT", "DASH-USDT", "ARB-USDT", "WLFI-USDT", "BIO-USDT", "DOGS-USDT",
+    "XPL-USDT", "AVNT-USDT", "ORDER-USDT", "DRIFT-USDT", "LIDO-USDT", "SAND-USDT",
+    "SHIB-USDT", "STRK-USDT", "ATOM-USDT", "DUSK-USDT", "APT-USDT", "INJ-USDT",
+    "NEAR-USDT", "ASTER-USDT", "OP-USDT", "RNDR-USDT", "SEI-USDT", "TAO-USDT",
+    "BLUR-USDT", "LDO-USDT", "CRV-USDT", "EDU-USDT", "MERL-USDT", "ENS-USDT",
+    "BONK-USDT",
+    # 20 BLACKLISTED SYMBOLS (filtered by SYMBOL_BLACKLIST.py, not traded)
+    "UNI-USDT", "NMR-USDT", "TON-USDT", "HIPPO-USDT", "DUCK-USDT", "FUEL-USDT", "ALU-USDT", "SKATE-USDT", "ERA-USDT", "SAHARA-USDT",
+    "BMT-USDT", "X-USDT", "AUCTION-USDT", "AGLD-USDT", "OCEAN-USDT", "VOXEL-USDT", "ARK-USDT", "GALA-USDT", "EPT-USDT", "OMNI-USDT",
+]
+
+STAGING_SYMBOLS = [
+    # Monitor for next 2 weeks:
+    # "SAGA-USDT", "NOTIONAL-USDT", "MANTA-USDT"
+]
+
+def get_active_symbols():
+    """Return current active symbols (production + staging if enabled)"""
+    return PRODUCTION_SYMBOLS + STAGING_SYMBOLS
+
+def get_new_symbols_20():
+    """Return the 20 new symbols added (May 12 2026)"""
+    new_20 = ["1INCH-USDT", "ACE-USDT", "ACH-USDT", "AERGO-USDT", "BIGTIME-USDT", "BNT-USDT", "BOME-USDT", "BRETT-USDT", "CELO-USDT", "CELR-USDT", "CHZ-USDT", "CKB-USDT", "COW-USDT", "CYS-USDT", "DASH-USDT", "DOGS-USDT", "DRIFT-USDT", "DUSK-USDT", "EDU-USDT", "MERL-USDT"]
+    return new_20
+
+print(f"[SYMBOL_CONFIG] Production symbols: {len(PRODUCTION_SYMBOLS)}")
+print(f"[SYMBOL_CONFIG] Staging symbols: {len(STAGING_SYMBOLS)}")
+print(f"[SYMBOL_CONFIG] Total active: {len(PRODUCTION_SYMBOLS)} (122 total: 102 active + 20 blacklisted)")
+print(f"[SYMBOL_CONFIG] ✅ New 20 symbols interspersed at positions #6,11,17,19,21,36,37,39,41,43,48,50,63,67,74,80,84,91,99,102")

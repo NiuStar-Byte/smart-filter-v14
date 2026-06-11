@@ -1,0 +1,532 @@
+import os
+import requests
+from typing import Any, Optional
+
+# Import Telegram config
+from tg_config import BOT_TOKEN, CHAT_ID, TIER_BOT_TOKEN, TIER_CHAT_ID, TIER_GROUP_NAME
+
+# Check if Telegram is properly configured (not placeholder values)
+TELEGRAM_ENABLED = (
+    BOT_TOKEN and 
+    CHAT_ID and 
+    "YOUR_BOT_TOKEN" not in BOT_TOKEN and 
+    "YOUR_CHAT_ID" not in CHAT_ID
+)
+
+# Check if Tier group is configured
+TIER_GROUP_ENABLED = (
+    TIER_BOT_TOKEN and 
+    TIER_CHAT_ID and 
+    "YOUR_BOT_TOKEN" not in TIER_BOT_TOKEN and 
+    "YOUR_CHAT_ID" not in TIER_CHAT_ID
+)
+
+if not TELEGRAM_ENABLED:
+    print("[WARNING] Telegram not configured. Edit tg_config.py with your BOT_TOKEN and CHAT_ID from @BotFather and @userinfobot.", flush=True)
+
+if TIER_GROUP_ENABLED:
+    print(f"[INFO] Tier group '{TIER_GROUP_NAME}' configured. Will send Tier-1/2/3 signals to: {TIER_CHAT_ID}", flush=True)
+
+# Blockchain consensus mapping (static, no external API required)
+# POW = Proof of Work, POS = Proof of Stake, HYBRID = Mixed
+BLOCKCHAIN_CONSENSUS = {
+    # POW (Proof of Work)
+    "BTC": "POW", "DOGE": "POW", "LTC": "POW",
+    
+    # POS (Proof of Stake) - Major L1s
+    "ETH": "POS", "SOL": "POS", "ADA": "POS", "AVAX": "POS", "DOT": "POS",
+    "ATOM": "POS", "NEAR": "POS", "SUI": "POS", "APT": "POS", "TON": "POS",
+    
+    # DeFi/L2/Tokens
+    "UNI": "POS", "AAVE": "POS", "LINK": "POS", "ARB": "POS", "OP": "POS",
+    "CRV": "POS", "YFI": "POS", "CVX": "POS", "ENS": "POS", "LDO": "POS",
+    
+    # Other blockchain L1s
+    "XRP": "FEDERATED", "BNB": "POA", "ALGO": "POS", "HBAR": "PBFT",
+    "XLM": "FEDERATED", "POL": "POS",
+    
+    # Solana ecosystem (all on SOL)
+    "BONK": "SOL", "WIF": "SOL", "JTO": "SOL", "FIDA": "SOL",
+    
+    # Alt L1s & sidechains
+    "INJ": "POS", "OCEAN": "POS", "TAO": "POS", "BLUR": "POS",
+    "EIGEN": "POS", "ONDO": "POS", "VIRTUAL": "POS", "GALA": "POS",
+    "DYDX": "POS", "ARK": "POS", "ASTER": "POS", "HYPE": "POS",
+    
+    # Default for unmapped
+    "DEFAULT": "POS"
+}
+
+def get_token_blockchain_info(symbol: str):
+    """
+    Returns blockchain consensus for a symbol (static, no external API).
+    Maps symbol to consensus type (POW, POS, HYBRID, SOL, etc.)
+    """
+    try:
+        symbol_clean = str(symbol).split("-")[0].upper() if symbol else ""
+        consensus = BLOCKCHAIN_CONSENSUS.get(symbol_clean, BLOCKCHAIN_CONSENSUS["DEFAULT"])
+        return {"consensus": consensus, "blockchain": "KuCoin"}
+    except Exception:
+        return None
+
+# Primary group URLs (all signals)
+SEND_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+SEND_FILE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendDocument"
+
+# Tier group URLs (Tier-1/2/3 only)
+TIER_SEND_URL = f"https://api.telegram.org/bot{TIER_BOT_TOKEN}/sendMessage" if TIER_GROUP_ENABLED else None
+
+
+def _safe_float(v: Any, default: Optional[float] = None) -> Optional[float]:
+    try:
+        if v is None:
+            return default
+        return float(v)
+    except Exception:
+        try:
+            return float(str(v))
+        except Exception:
+            return default
+
+
+def _fmt_price(v: Any, precision: int = 6) -> str:
+    try:
+        f = float(v)
+        if f >= 100:
+            return f"{f:,.2f}"
+        if f >= 1:
+            return f"{f:,.4f}"
+        return f"{f:.{precision}f}"
+    except Exception:
+        return str(v)
+
+
+def _pct_for_tp(entry: float, tp: float, signal_type: str) -> str:
+    """
+    Percent shown for TP:
+      - SHORT: (entry - tp) / entry * 100 => positive if profitable
+      - LONG:  (tp - entry) / entry * 100 => positive if profitable
+    Returns formatted string like "+1.23%"
+    """
+    try:
+        if entry == 0:
+            return "0.00%"
+        st = str(signal_type).strip().upper()
+        if st == "SHORT":
+            pct = (entry - tp) / entry * 100.0
+        else:
+            pct = (tp - entry) / entry * 100.0
+        sign = "+" if pct >= 0 else ""
+        return f"{sign}{pct:.2f}%"
+    except Exception:
+        return "N/A"
+
+
+def _pct_for_sl(entry: float, sl: float, signal_type: str) -> str:
+    """
+    Percent shown for SL:
+      - SHORT: (entry - sl) / entry * 100 -> negative when SL is above entry (since entry - sl < 0)
+      - LONG:  (sl - entry) / entry * 100 -> negative when SL is below entry
+    Returns formatted string with sign, e.g. "-1.23%"
+    """
+    try:
+        if entry == 0:
+            return "0.00%"
+        st = str(signal_type).strip().upper()
+        if st == "SHORT":
+            pct = (entry - sl) / entry * 100.0
+        else:
+            pct = (sl - entry) / entry * 100.0
+        sign = "+" if pct >= 0 else ""
+        return f"{sign}{pct:.2f}%"
+    except Exception:
+        return "N/A"
+
+
+def send_telegram_alert(
+    numbered_signal: str,
+    symbol: str,
+    signal_type: str,      # 'LONG' or 'SHORT'
+    Route: str,            # route description
+    price: float,
+    tf: str,
+    score: int,
+    passed: int,
+    confidence: float,
+    weighted: float,
+    score_max: int,
+    gatekeepers_total: int,
+    total_weight: float,
+    reversal_side=None,
+    regime=None,
+    early_breakout_15m=None,
+    early_breakout_30m=None,
+    early_breakout_1h=None,
+    tp=None,
+    sl=None,
+    # optional rich data: either pass a dict via tp_sl or pass chosen_ratio/achieved_rr directly
+    tp_sl: Optional[dict] = None,
+    chosen_ratio: Optional[float] = None,
+    achieved_rr: Optional[float] = None,
+    tier: str = "Tier-X",  # Dynamic tier tag
+    signal_uuid: str = None,  # Unique signal identifier for validation
+    symbol_group: str = "LOW_ALTS",  # Symbol group (MAIN_BLOCKCHAIN, TOP_ALTS, MID_ALTS, LOW_ALTS) - from stored value, NOT recalculated
+    # MTF alignment parameters (NEW)
+    mtf_alignment_score: int = 50,
+    mtf_alignment_band: str = "partial",  # strong, partial, weak, conflict
+    mtf_alignment_label: str = "Partial Alignment",
+    mtf_alignment_icon: str = "⚡",  # DEPRECATED - will be auto-selected based on mtf_alignment_band
+    mtf_adjusted_confidence: float = None,
+    mtf_warning: str = None
+) -> bool:
+    """
+    Send a Telegram formatted alert message without extra blank lines.
+    Accepts optional tp_sl dict (as returned from calculate_tp_sl) or chosen_ratio/achieved_rr params.
+    """
+
+    # Skip if Telegram not enabled or not configured
+    if not TELEGRAM_ENABLED:
+        return False  # Silently skip if not configured
+
+    # Dynamic MTF alignment icon based on alignment band (V2 ENHANCED - HARMONIC ICONS)
+    mtf_icon_map = {
+        "strong": "🎶",      # V2: Strong alignment (harmonious - multiple notes together)
+        "partial": "🎵",     # V2: Maps to weak (partial removed in v2)
+        "weak": "🎵",        # V2: Weak alignment (single note - less harmony)
+        "conflict": "🎺",    # V2: Counter-trend risk (clashing trumpet - dissonance)
+        "neutral": "🎧"      # V2: Neutral alignment (listening neutrally - no directional bias)
+    }
+    mtf_alignment_icon = mtf_icon_map.get(mtf_alignment_band, "➖")
+
+    # Normalize numeric-like inputs
+    try:
+        confidence_val = float(confidence)
+    except Exception:
+        confidence_val = 0.0
+
+    try:
+        weighted_val = float(weighted)
+    except Exception:
+        weighted_val = _safe_float(weighted, 0.0) or 0.0
+
+    try:
+        total_weight_val = float(total_weight)
+    except Exception:
+        total_weight_val = _safe_float(total_weight, 0.0) or 0.0
+
+    weighted_str = f"{weighted_val:.1f}/{total_weight_val:.1f}" if total_weight_val else f"{weighted_val:.1f}/0.0"
+
+    # Confidence category
+    confidence_category = "HIGH" if confidence_val >= 73 else ("MID" if confidence_val >= 50 else "LOW")
+    confidence_icon = "🟢" if confidence_val >= 73 else ("🟡" if confidence_val >= 50 else "🔴")
+
+    stype = str(signal_type).upper() if signal_type is not None else "UNKNOWN"
+    if stype == "LONG":
+        signal_icon = "✈️"
+        signal_str = "LONG"
+    elif stype == "SHORT":
+        signal_icon = "🛩️"
+        signal_str = "SHORT"
+    else:
+        signal_icon = "❓"
+        signal_str = stype
+
+    # Route / reversal formatting (preserve semantics)
+    route_upper = str(Route).upper() if Route is not None else "NO ROUTE"
+    route_icon = "❓"
+    route_str = "NO ROUTE"
+
+    if route_upper == "REVERSAL":
+        if isinstance(reversal_side, (list, set)) and "BULLISH" in reversal_side and "BEARISH" in reversal_side:
+            route_icon = "🔃🔄"
+            route_str = "Ambiguous Reversal Trend"
+        elif reversal_side == "BULLISH":
+            route_icon = "↗️🔄"
+            route_str = "Bullish Reversal Trend"
+        elif reversal_side == "BEARISH":
+            route_icon = "↘️🔄"
+            route_str = "Bearish Reversal Trend"
+        else:
+            route_icon = "🔄🔄"
+            route_str = "Reversal Trend"
+    elif route_upper == "AMBIGUOUS":
+        route_icon = "🔃🔄"
+        route_str = "Ambiguous Reversal Trend"
+    elif route_upper in ["TREND CONTINUATION", "CONTINUATION"]:
+        if isinstance(reversal_side, str) and "BULLISH" in reversal_side:
+            route_icon = "↗️➡️"
+            route_str = "Bullish Continuation"
+        elif isinstance(reversal_side, str) and "BEARISH" in reversal_side:
+            route_icon = "↘️➡️"
+            route_str = "Bearish Continuation"
+        else:
+            route_icon = "➡️➡️"
+            route_str = "Continuation Trend"
+    elif route_upper in ["NONE", "NO ROUTE", "?", "", None]:
+        route_icon = "🚫"
+        route_str = "NO ROUTE"
+    else:
+        route_icon = "❓"
+        route_str = f"{Route if Route else 'NO ROUTE'}"
+
+    # Regime line (no trailing newline)
+    regime_display = regime if regime else "N/A"
+
+    # Price formatting
+    price_float = _safe_float(price, None)
+    price_display = _fmt_price(price_float) if price_float is not None else str(price)
+
+    # Early breakout info (single-line entries)
+    early_break_lines = []
+    if early_breakout_15m and isinstance(early_breakout_15m, dict) and early_breakout_15m.get("valid_signal"):
+        eb_bias = early_breakout_15m.get("bias", "N/A")
+        eb_price = early_breakout_15m.get("price", "N/A")
+        early_break_lines.append(f"⚡ 15min Early Breakout: {eb_bias} @ {eb_price}")
+    if early_breakout_30m and isinstance(early_breakout_30m, dict) and early_breakout_30m.get("valid_signal"):
+        eb_bias = early_breakout_30m.get("bias", "N/A")
+        eb_price = early_breakout_30m.get("price", "N/A")
+        early_break_lines.append(f"⚡ 30min Early Breakout: {eb_bias} @ {eb_price}")
+    if early_breakout_1h and isinstance(early_breakout_1h, dict) and early_breakout_1h.get("valid_signal"):
+        eb_bias = early_breakout_1h.get("bias", "N/A")
+        eb_price = early_breakout_1h.get("price", "N/A")
+        early_break_lines.append(f"⚡ 1h Early Breakout: {eb_bias} @ {eb_price}")
+
+    # Ensure TP/SL present and numeric; compute fallback if missing
+    tp_val = _safe_float(tp, None)
+    sl_val = _safe_float(sl, None)
+    fallback_used = False
+    if tp_sl and isinstance(tp_sl, dict):
+        # Prefer structured tp_sl if provided
+        tp_val = _safe_float(tp_sl.get("tp"), tp_val)
+        sl_val = _safe_float(tp_sl.get("sl"), sl_val)
+        if chosen_ratio is None:
+            chosen_ratio = tp_sl.get("chosen_ratio")
+        if achieved_rr is None:
+            achieved_rr = tp_sl.get("achieved_rr")
+
+    if tp_val is None or sl_val is None:
+        # compute conservative fallback; read env vars
+        try:
+            tp_pct = float(os.getenv("FALLBACK_TP_PCT", "0.02"))
+        except Exception:
+            tp_pct = 0.02
+        try:
+            sl_pct = float(os.getenv("FALLBACK_SL_PCT", "0.01"))
+        except Exception:
+            sl_pct = 0.01
+
+        entry = price_float if price_float is not None else 0.0
+        if stype == "SHORT":
+            if tp_val is None:
+                tp_val = entry * (1.0 - tp_pct)
+            if sl_val is None:
+                sl_val = entry * (1.0 + sl_pct)
+        else:
+            if tp_val is None:
+                tp_val = entry * (1.0 + tp_pct)
+            if sl_val is None:
+                sl_val = entry * (1.0 - sl_pct)
+        fallback_used = True
+        print(f"[Telegram] TP/SL missing or invalid for {symbol}. Using fallback TP/SL (tp_pct={tp_pct}, sl_pct={sl_pct}).", flush=True)
+
+    # Format TP/SL displays
+    tp_pct_display = _pct_for_tp(price_float if price_float is not None else 0.0, tp_val, stype)
+    sl_pct_display = _pct_for_sl(price_float if price_float is not None else 0.0, sl_val, stype)
+    tp_display = f"{_fmt_price(tp_val)} ({tp_pct_display})"
+    sl_display = f"{_fmt_price(sl_val)} ({sl_pct_display})"
+
+    # Token consensus info (single-line) - Static mapping, no external API
+    consensus_type = "Unknown"
+    consensus_icon_map = {
+        "POW": "⛏️",        # Proof of Work (mining)
+        "POS": "🪙",        # Proof of Stake
+        "POA": "✅",        # Proof of Authority
+        "PBFT": "🔗",       # Practical Byzantine Fault Tolerance
+        "FEDERATED": "🌐",  # Federated consensus
+        "SOL": "🌞",        # Solana (special)
+        "Unknown": "❓"
+    }
+    
+    try:
+        token_info = get_token_blockchain_info(symbol)
+        if token_info:
+            consensus_type = token_info.get('consensus', 'Unknown')
+    except Exception:
+        consensus_type = "Unknown"
+    
+    consensus_icon = consensus_icon_map.get(consensus_type, "❓")
+    consensus_display = f"⛓️ Consensus: {consensus_icon} {consensus_type}"
+
+    # RR and TP/SL source line (ATR-based, dynamic ratio)
+    rr_line = ""
+    if achieved_rr is not None:
+        rr_str = f"{achieved_rr:.2f}" if isinstance(achieved_rr, (int, float)) else "N/A"
+        # Source indicates method: ATR-based with dynamic RR (1.5:1, 2.0:1, etc.)
+        source_display = f"ATR-Based {achieved_rr:.1f}:1 RR" if isinstance(achieved_rr, (int, float)) else "ATR-Based RR"
+        rr_line = f"⚖️ R:R: {rr_str}:1 | {source_display}"
+
+    # Symbol Group categorization (at bottom of message)
+    # ⚠️ CRITICAL: Use the stored symbol_group from signal data, DO NOT recalculate
+    # Recalculating causes tier assignment mismatches (e.g., WIF classified differently in telegram vs tier_lookup)
+    # symbol_group parameter is passed from signal storage (SIGNALS_MASTER.jsonl)
+    symbol_group_icon = "🗂️"
+    symbol_group_display = f"{symbol_group_icon} Symbol Group: {symbol_group}"
+
+    # Build message lines WITHOUT any blank empty lines
+    lines = []
+    
+    # Tier tag display (production criteria only - VERSION B AGREED)
+    # Tags appear on Telegram only when signal combo meets thresholds
+    tier_icon_map = {
+        "Tier-1": "🥇",
+        "Tier-2": "🥈", 
+        "Tier-3": "🥉"
+    }
+    tier_icon = tier_icon_map.get(tier, "")
+    tier_display = f" {tier_icon} {tier}" if tier and tier != "Tier-X" else ""
+    
+    lines.append(f"{numbered_signal}. {symbol} ({tf}){tier_display}")
+    lines.append(f"{signal_icon} {signal_str} Signal")
+    lines.append(f"{'📉' if regime_display == 'BEAR' else ('📈' if regime_display == 'BULL' else '🔎')} Regime: {regime_display}")
+    lines.append(f"{route_icon} {route_str}")
+    lines.append(f"💰 {price_display}")
+    lines.append(f"🏁 TP: {tp_display}")
+    lines.append(f"⛔ SL: {sl_display}")
+    lines.append(f"📊 Score: {score}/{score_max}")
+    lines.append(f"🎯 Passed: {passed}/{gatekeepers_total}")
+    lines.append(f"🏋️‍♀️ Weighted: {weighted_str}")
+    lines.append(f"{confidence_icon} Confidence: {confidence_val:.1f}% ({confidence_category}) [Base]")
+    if rr_line:
+        lines.append(rr_line)
+    
+    # ============ ADD MTF ALIGNMENT INFO ============
+    # Show all valid bands (strong, weak, conflict, neutral) but hide unassigned
+    if mtf_alignment_band and mtf_alignment_band != "unassigned":
+        mtf_display = f"{mtf_alignment_icon} Multi-TF Alignment: {mtf_alignment_score}/100 ({mtf_alignment_label})"
+        lines.append(mtf_display)
+        # Only show confidence adjustment if it changed
+        if mtf_adjusted_confidence and mtf_adjusted_confidence != confidence_val:
+            lines.append(f"   Adjusted: {mtf_adjusted_confidence:.1f}%")
+        if mtf_warning:
+            lines.append(f"   {mtf_warning}")
+    # ============ END MTF ALIGNMENT INFO ============
+    
+    # consensus & fallback note
+    lines.append(consensus_display)
+    # append early breakout lines (each on its own single line)
+    for eb in early_break_lines:
+        lines.append(eb)
+    if fallback_used:
+        lines.append("⚠️ Note: TP/SL fallback used")
+    # Add signal UUID for validation (MANDATORY - every signal must have UUID reference)
+    lines.append(f"🆔 ID: {signal_uuid if signal_uuid else 'MISSING'}")
+    # Symbol group at the very bottom
+    lines.append(symbol_group_display)
+
+    # Join with single newline (no extra blank lines)
+    message = "\n".join(lines)
+
+    # Print the message locally for debugging
+    print(f"[Telegram][MSG] {numbered_signal}. {symbol}\n{message}", flush=True)
+
+    # Send to Telegram
+    payload = {
+        "chat_id": CHAT_ID,
+        "text": message,
+        "parse_mode": "HTML",
+        "disable_web_page_preview": True
+    }
+
+    try:
+        resp = requests.post(SEND_URL, json=payload, timeout=10)
+        resp.raise_for_status()
+        try:
+            rj = resp.json()
+            if rj.get("ok"):
+                mid = rj.get("result", {}).get("message_id")
+                print(f"📨 Telegram alert sent: {symbol} {signal_type} {Route} message_id={mid}", flush=True)
+            else:
+                print(f"📨 Telegram responded but ok=False: {rj}", flush=True)
+        except Exception:
+            print(f"📨 Telegram alert sent (no JSON result) for: {symbol} {signal_type} {Route}", flush=True)
+        
+        # Also send to Tier group if enabled and signal is Tier-assigned (not Tier-X)
+        if TIER_GROUP_ENABLED and tier != "Tier-X":
+            send_to_tier_group(message, symbol, signal_type, Route, tier)
+        
+        return True
+    except requests.RequestException as e:
+        resp_text = ""
+        try:
+            resp_text = resp.text if resp is not None else str(e)
+        except Exception:
+            resp_text = str(e)
+        print(f"❗ Telegram send error: {e} — response: {resp_text}", flush=True)
+        return False
+
+
+def send_to_tier_group(message: str, symbol: str, signal_type: str, route: str, tier: str) -> bool:
+    """
+    Send message to the Tier group (only Tier-1/2/3 signals, no Tier-X).
+    Used as secondary routing for tier-assigned signals.
+    """
+    if not TIER_GROUP_ENABLED or not TIER_SEND_URL:
+        return False  # Silently skip if not configured
+    
+    payload = {
+        "chat_id": TIER_CHAT_ID,
+        "text": message,
+        "parse_mode": "HTML",
+        "disable_web_page_preview": True
+    }
+    
+    try:
+        resp = requests.post(TIER_SEND_URL, json=payload, timeout=10)
+        resp.raise_for_status()
+        try:
+            rj = resp.json()
+            if rj.get("ok"):
+                mid = rj.get("result", {}).get("message_id")
+                print(f"📨 Tier group alert sent: {symbol} {signal_type} {route} [{tier}] message_id={mid}", flush=True)
+            else:
+                print(f"📨 Tier group responded but ok=False: {rj}", flush=True)
+        except Exception:
+            print(f"📨 Tier group alert sent (no JSON result) for: {symbol} {signal_type} {route}", flush=True)
+        return True
+    except requests.RequestException as e:
+        resp_text = ""
+        try:
+            resp_text = resp.text if resp is not None else str(e)
+        except Exception:
+            resp_text = str(e)
+        print(f"❗ Tier group send error: {e} — response: {resp_text}", flush=True)
+        return False
+
+
+def send_telegram_file(filepath: str, caption: Optional[str] = None) -> bool:
+    """
+    Send a local file to the Telegram group as a document. Returns True on success.
+    """
+    # Skip if Telegram not enabled
+    if not TELEGRAM_ENABLED:
+        return False  # Silently skip if not configured
+    
+    if not os.path.exists(filepath):
+        print(f"[ERROR] File not found: {filepath}", flush=True)
+        return False
+    with open(filepath, 'rb') as f:
+        files = {'document': f}
+        data = {
+            'chat_id': CHAT_ID,
+            'caption': caption or "Signal debug log"
+        }
+        resp = None
+        try:
+            resp = requests.post(SEND_FILE_URL, data=data, files=files, timeout=20)
+            resp.raise_for_status()
+            print(f"📄 File sent to Telegram: {filepath}", flush=True)
+            return True
+        except requests.RequestException as e:
+            resp_text = resp.text if resp is not None else ''
+            print(f"❗ Telegram file send error: {e} — response: {resp_text}", flush=True)
+            return False

@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# MAIN DAEMON WRAPPER - Keeps main.py running continuously
+# Restarts if it exits for any reason
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+LOG_FILE="/tmp/main_daemon.log"
+PID_FILE="/tmp/main_daemon.pid"
+
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting main.py daemon" >> "$LOG_FILE"
+echo $$ > "$PID_FILE"
+
+# Counter for consecutive failures
+FAILURES=0
+MAX_FAILURES=10
+
+while true; do
+    # Start main.py
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Launching main.py (cycle attempt $((FAILURES+1)))" >> "$LOG_FILE"
+    
+    cd "$SCRIPT_DIR" && python3 main.py >> "$LOG_FILE" 2>&1
+    EXIT_CODE=$?
+    
+    # Check for hard failures
+    if [ $EXIT_CODE -ne 0 ]; then
+        FAILURES=$((FAILURES+1))
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] ❌ main.py exited with code $EXIT_CODE (failures: $FAILURES/$MAX_FAILURES)" >> "$LOG_FILE"
+        
+        if [ $FAILURES -ge $MAX_FAILURES ]; then
+            echo "[$(date '+%Y-%m-%d %H:%M:%S')] 🔴 CRITICAL: $MAX_FAILURES consecutive failures - stopping daemon" >> "$LOG_FILE"
+            break
+        fi
+    else
+        # Successful run
+        FAILURES=0
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] ✅ main.py cycle completed successfully" >> "$LOG_FILE"
+    fi
+    
+    # Wait before retry (exponential backoff: 5s, 10s, 20s, etc.)
+    WAIT_TIME=$((5 * (2 ** (FAILURES - 1))))
+    [ $WAIT_TIME -gt 300 ] && WAIT_TIME=300  # Cap at 5 minutes
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] ⏳ Waiting ${WAIT_TIME}s before next cycle..." >> "$LOG_FILE"
+    sleep $WAIT_TIME
+done
+
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] main.py daemon stopped" >> "$LOG_FILE"
+rm "$PID_FILE"

@@ -1,0 +1,13 @@
+#!/bin/bash
+echo "[$(date +'%Y-%m-%d %H:%M:%S %Z')] Starting main.py..."
+nohup python main.py > /tmp/main_py.log 2>&1 &
+PID=$!
+echo "[$(date +'%Y-%m-%d %H:%M:%S %Z')] Started PID: $PID"
+sleep 2
+if kill -0 $PID 2>/dev/null; then
+    echo "✅ Process started successfully"
+else
+    echo "❌ Process failed to start"
+    echo "Error output:"
+    tail -20 /tmp/main_py.log
+fi
