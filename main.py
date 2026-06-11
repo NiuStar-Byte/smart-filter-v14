@@ -171,7 +171,8 @@ except Exception as e:
 
 # === INITIALIZE SIGNALS_MASTER WRITER (Single Source of Truth) ===
 try:
-    signals_master_path = "/Users/geniustarigan/.openclaw/workspace/SIGNALS_MASTER.jsonl"
+    # Use local SIGNALS_MASTER.jsonl (relative to script location)
+    signals_master_path = os.path.join(os.path.dirname(__file__), "SIGNALS_MASTER.jsonl")
     _signals_master_writer = get_signals_master_writer(signals_master_path)
     _master_writer_ready = True
     print(f"[INIT] Signals Master writer ready: {os.path.abspath(signals_master_path)}", flush=True)
