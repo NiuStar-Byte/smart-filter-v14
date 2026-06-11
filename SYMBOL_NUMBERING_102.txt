@@ -1,0 +1,155 @@
+═══════════════════════════════════════════════════════════════════════════════
+SYMBOL NUMBERING - 102 ACTIVE SYMBOLS (Scan Order #1 → #102)
+═══════════════════════════════════════════════════════════════════════════════
+
+SIGNAL NUMBERING FORMAT IN TELEGRAM:
+  #1.A = BTC-USDT 15min
+  #1.B = BTC-USDT 30min
+  #1.C = BTC-USDT 1h
+  #1.D = BTC-USDT 2h
+  #1.E = BTC-USDT 4h
+  #2.A = ETH-USDT 15min (15min OFF, so skipped in current config)
+  #2.B = ETH-USDT 30min
+  ... continues to ...
+  #102.E = BONK-USDT 4h
+
+COMPLETE SYMBOL LIST (NUMBERING ORDER):
+═══════════════════════════════════════════════════════════════════════════════
+
+#1    BTC-USDT
+#2    ETH-USDT
+#3    SOL-USDT
+#4    XRP-USDT
+#5    ADA-USDT
+#6    1INCH-USDT
+#7    XLM-USDT
+#8    LINK-USDT
+#9    POL-USDT
+#10   BNB-USDT
+#11   ACE-USDT
+#12   LA-USDT
+#13   SPK-USDT
+#14   ZKJ-USDT
+#15   IP-USDT
+#16   AERO-USDT
+#17   ACH-USDT
+#18   LQTY-USDT
+#19   AERGO-USDT
+#20   RAY-USDT
+#21   BIGTIME-USDT
+#22   MAGIC-USDT
+#23   ACTSOL-USDT
+#24   FUN-USDT
+#25   CROSS-USDT
+#26   KNC-USDT
+#27   AIN-USDT
+#28   AVAX-USDT
+#29   PORTAL-USDT
+#30   ICNT-USDT
+#31   CVX-USDT
+#32   PARTI-USDT
+#33   VINE-USDT
+#34   ZORA-USDT
+#35   BNT-USDT
+#36   BOME-USDT
+#37   ROAM-USDT
+#38   BRETT-USDT
+#39   TUT-USDT
+#40   CELO-USDT
+#41   CELR-USDT
+#42   TURBO-USDT
+#43   PROMPT-USDT
+#44   YFI-USDT
+#45   DOGE-USDT
+#46   ALGO-USDT
+#47   DOT-USDT
+#48   NEWT-USDT
+#49   CHZ-USDT
+#50   PEPE-USDT
+#51   CKB-USDT
+#52   PENGU-USDT
+#53   CFX-USDT
+#54   ENA-USDT
+#55   SUI-USDT
+#56   EIGEN-USDT
+#57   HBAR-USDT
+#58   HYPE-USDT
+#59   PUMP-USDT
+#60   KAS-USDT
+#61   COW-USDT
+#62   ONDO-USDT
+#63   VIRTUAL-USDT
+#64   AAVE-USDT
+#65   XAUT-USDT
+#66   CYS-USDT
+#67   WIF-USDT
+#68   BERA-USDT
+#69   DYDX-USDT
+#70   KAITO-USDT
+#71   ARKM-USDT
+#72   ATH-USDT
+#73   DASH-USDT
+#74   ARB-USDT
+#75   WLFI-USDT
+#76   BIO-USDT
+#77   DOGS-USDT
+#78   XPL-USDT
+#79   AVNT-USDT
+#80   ORDER-USDT
+#81   DRIFT-USDT
+#82   LIDO-USDT
+#83   SAND-USDT
+#84   SHIB-USDT
+#85   STRK-USDT
+#86   ATOM-USDT
+#87   DUSK-USDT
+#88   APT-USDT
+#89   INJ-USDT
+#90   NEAR-USDT
+#91   ASTER-USDT
+#92   OP-USDT
+#93   RNDR-USDT
+#94   SEI-USDT
+#95   TAO-USDT
+#96   BLUR-USDT
+#97   LDO-USDT
+#98   CRV-USDT
+#99   EDU-USDT
+#100  MERL-USDT
+#101  ENS-USDT
+#102  BONK-USDT
+
+═══════════════════════════════════════════════════════════════════════════════
+ANALYSIS CYCLE: 102 symbols × 4 TFs (30min, 1h, 2h, 4h) = 408 analyses/cycle
+(15min timeframe disabled - reduces cycle from 20-26 minutes to 13-17 minutes)
+═══════════════════════════════════════════════════════════════════════════════
+
+TELEGRAM SIGNAL EXAMPLE:
+
+  1. BTC-USDT (30min) 🥇 Tier-1
+  📈 Regime: BULL
+  ✈️ LONG Signal
+  ↗️➡️ Bullish Continuation
+  💰 42,850.00
+  🏁 TP: 43,100.00 (+0.58%)
+  ⛔ SL: 42,600.00 (-0.58%)
+  📊 Score: 14/12
+  🎯 Passed: 3/2
+  🟢 Confidence: 75.2%
+  🏋️‍♀️ Weighted: 62.1/77.4
+  🔗 Multi-TF Alignment: 78/100 (💪 Strong Alignment)
+  ⚡ 15min Early Breakout: BULLISH @ 42,865
+  🔐 Blockchain: POW
+  🎯 Symbol Group: MAIN_BLOCKCHAIN
+
+═══════════════════════════════════════════════════════════════════════════════
+VERIFICATION (June 11 2026 21:50 GMT+7)
+
+✓ BTC-USDT is Signal #1 (first to scan)
+✓ BONK-USDT is Signal #102 (last to scan)
+✓ All 102 symbols in exact sequential order
+✓ No duplicates
+✓ Numbering reflected in Telegram messages (example above)
+✓ Both ROOT and BACKUP deployments synchronized
+
+═══════════════════════════════════════════════════════════════════════════════
