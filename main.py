@@ -48,6 +48,7 @@ from signal_logger import SignalLogger
 from signal_sent_tracker import get_signal_sent_tracker  # PEC: Track SENT signals only
 from signals_master_writer import get_signals_master_writer  # Write to SIGNALS_MASTER.jsonl (single source of truth)
 from mtf_alignment_analyzer import MTFAlignmentAnalyzer  # MTF analysis for ALL timeframes
+from mtf_alignment_config import ALIGNMENT_LABELS  # MTF band labels for Telegram display
 from pathlib import Path
 
 # ===== PHASE 2 IMPORTS (Stage 2 - Direction-Aware Gatekeepers + Regime Adjustments) =====
@@ -454,6 +455,13 @@ def get_mtf_alignment_score(symbol, timeframe, signal_type, regime, route, confi
     except Exception as e:
         print(f"[WARN] MTF analysis failed for {symbol} {timeframe}: {e}", flush=True)
         return 0
+
+
+def get_mtf_alignment_label(band: str) -> str:
+    """Convert MTF band to display label for Telegram."""
+    if band and band in ALIGNMENT_LABELS:
+        return ALIGNMENT_LABELS[band].get('label', '')
+    return ''
 
 def create_and_store_signal(symbol, timeframe, signal_type, fired_time_utc, entry_price,
                            tp_target, sl_target, tp_pct, sl_pct, achieved_rr, fib_ratio,
@@ -1750,6 +1758,7 @@ def run_cycle():
                                 print(f"[TIER] 30min {symbol_val} ({symbol_group}|{confidence_level_cat}): {signal_tier}", flush=True)
                                 
                                 print(f"[DEBUG] 30min: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
+                                mtf_label = get_mtf_alignment_label(mtf_band)
                                 sent_ok = send_telegram_alert(
                                     numbered_signal=numbered_signal,
                                     symbol=symbol_val,
@@ -1774,8 +1783,8 @@ def run_cycle():
                                     achieved_rr=achieved_rr_value,
                                     tier=signal_tier,
                                     signal_uuid=signal_uuid,
-                                    mtf_alignment_score=None,
-                                    mtf_alignment_label=None,
+                                    mtf_alignment_score=mtf_score,
+                                    mtf_alignment_label=mtf_label,
                                     mtf_adjusted_confidence=None
                                 )
                                 print(f"[DEBUG] 30min: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
@@ -2261,6 +2270,7 @@ def run_cycle():
                                 print(f"[TIER] 1h {symbol_val} ({symbol_group}|{confidence_level_cat}): {signal_tier}", flush=True)
                                 
                                 print(f"[DEBUG] 1h: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
+                                mtf_label = get_mtf_alignment_label(mtf_band)
                                 sent_ok = send_telegram_alert(
                                     numbered_signal=numbered_signal,
                                     symbol=symbol_val,
@@ -2285,8 +2295,8 @@ def run_cycle():
                                     achieved_rr=achieved_rr_value,
                                     tier=signal_tier,
                                     signal_uuid=signal_uuid,
-                                    mtf_alignment_score=None,
-                                    mtf_alignment_label=None,
+                                    mtf_alignment_score=mtf_score,
+                                    mtf_alignment_label=mtf_label,
                                     mtf_adjusted_confidence=None
                                 )
                                 print(f"[DEBUG] 1h: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
@@ -2703,6 +2713,7 @@ def run_cycle():
                                 print(f"[TIER] 2h {symbol_val} ({symbol_group}|{confidence_level_cat}): {signal_tier}", flush=True)
                                 
                                 print(f"[DEBUG] 2h: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
+                                mtf_label = get_mtf_alignment_label(mtf_band)
                                 sent_ok = send_telegram_alert(
                                     numbered_signal=numbered_signal,
                                     symbol=symbol_val,
@@ -2727,8 +2738,8 @@ def run_cycle():
                                     achieved_rr=achieved_rr_value,
                                     tier=signal_tier,
                                     signal_uuid=signal_uuid,
-                                    mtf_alignment_score=None,
-                                    mtf_alignment_label=None,
+                                    mtf_alignment_score=mtf_score,
+                                    mtf_alignment_label=mtf_label,
                                     mtf_adjusted_confidence=None
                                 )
                                 print(f"[DEBUG] 2h: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
@@ -2980,6 +2991,7 @@ def run_cycle():
                                     print(f"[TIER] 4h {symbol_val} ({symbol_group}|{confidence_level_cat}): {signal_tier}", flush=True)
                                     
                                     print(f"[DEBUG] 4h: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
+                                    mtf_label = get_mtf_alignment_label(mtf_band)
                                     sent_ok = send_telegram_alert(
                                         numbered_signal=numbered_signal,
                                         symbol=symbol_val,
@@ -3004,8 +3016,8 @@ def run_cycle():
                                         achieved_rr=achieved_rr_value,
                                         tier=signal_tier,
                                         signal_uuid=signal_uuid,
-                                        mtf_alignment_score=None,
-                                        mtf_alignment_label=None,
+                                        mtf_alignment_score=mtf_score,
+                                        mtf_alignment_label=mtf_label,
                                         mtf_adjusted_confidence=None
                                     )
                                     print(f"[DEBUG] 4h: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
