@@ -198,6 +198,11 @@ def send_telegram_alert(
     # Skip if Telegram not enabled or not configured
     if not TELEGRAM_ENABLED:
         return False  # Silently skip if not configured
+    
+    # Skip if tier is Tier-X (not in today's locked combos - silent, no Telegram alert)
+    if tier == "Tier-X":
+        print(f"[TELEGRAM] SILENT: {numbered_signal}. {symbol} ({tf}) → {tier} (not in locked combos)", flush=True)
+        return False  # Silently skip (not an error, expected behavior)
 
     # Normalize numeric-like inputs
     try:

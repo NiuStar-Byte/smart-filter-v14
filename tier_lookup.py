@@ -28,13 +28,48 @@ class TierLookupComplete:
         self.load_latest_tiers()
     
     def load_latest_tiers(self):
-        """Load combos from SIGNAL_TIERS_APPEND.jsonl"""
+        """Load combos from LOCKED_COMBOS_TODAY.py (TODAY'S LOCKED COMBOS - PRIMARY SOURCE)"""
         try:
             workspace = "/Users/geniustarigan/.openclaw/workspace"
+            
+            # PRIMARY: Load TODAY's locked combos from LOCKED_COMBOS_TODAY.py
+            locked_combos_file = os.path.join(workspace, "LOCKED_COMBOS_TODAY.py")
+            
+            if os.path.exists(locked_combos_file):
+                # Import LOCKED_COMBOS_TODAY and get locked combos
+                import sys
+                sys.path.insert(0, workspace)
+                try:
+                    from LOCKED_COMBOS_TODAY import get_locked_combos
+                    locked_combos = get_locked_combos()
+                    
+                    # Build tier_combos from locked combos
+                    tier_combos = {"tier1": [], "tier2": [], "tier3": [], "tierx": []}
+                    
+                    for item in locked_combos:
+                        combo = item.get('combo', '')
+                        tier = item.get('tier', 'Tier-X')
+                        
+                        # Normalize tier name
+                        tier_key = tier.lower().replace('-', '')  # 'Tier-1' → 'tier1'
+                        if tier_key in tier_combos:
+                            tier_combos[tier_key].append(combo)
+                        else:
+                            tier_combos['tierx'].append(combo)
+                    
+                    self.tier_data = tier_combos
+                    total = sum(len(v) for v in tier_combos.values())
+                    print(f"[TIER] ✅ Loaded {total} TODAY's LOCKED combos from LOCKED_COMBOS_TODAY.py", flush=True)
+                    print(f"[TIER]    Tier-1: {len(tier_combos['tier1'])} | Tier-2: {len(tier_combos['tier2'])} | Tier-3: {len(tier_combos['tier3'])}", flush=True)
+                    return
+                except ImportError:
+                    print(f"[TIER-WARN] Could not import LOCKED_COMBOS_TODAY.py. Falling back to SIGNAL_TIERS_APPEND.jsonl", flush=True)
+            
+            # FALLBACK: Load from SIGNAL_TIERS_APPEND.jsonl (old historical data)
             filename = os.path.join(workspace, "smart-filter-v14-main/SIGNAL_TIERS_APPEND.jsonl")
             
             if not os.path.exists(filename):
-                print(f"[TIER] {filename} not found. All signals will be Tier-X.", flush=True)
+                print(f"[TIER-ERROR] {filename} not found. All signals will be Tier-X.", flush=True)
                 self.tier_data = {"tier1": [], "tier2": [], "tier3": [], "tierx": []}
                 return
             
@@ -60,8 +95,8 @@ class TierLookupComplete:
             
             self.tier_data = tier_combos
             total = sum(len(v) for v in tier_combos.values())
-            print(f"[TIER] Loaded {total} combos from {filename}", flush=True)
-            print(f"[TIER]   Tier-1: {len(tier_combos['tier1'])} | Tier-2: {len(tier_combos['tier2'])} | Tier-3: {len(tier_combos['tier3'])} | Tier-X: {len(tier_combos['tierx'])}", flush=True)
+            print(f"[TIER] ⚠️  Loaded {total} combos from FALLBACK: {filename}", flush=True)
+            print(f"[TIER]    Tier-1: {len(tier_combos['tier1'])} | Tier-2: {len(tier_combos['tier2'])} | Tier-3: {len(tier_combos['tier3'])} | Tier-X: {len(tier_combos['tierx'])}", flush=True)
             
         except Exception as e:
             print(f"[TIER-ERROR] Failed to load tier data: {e}. Defaulting to Tier-X.", flush=True)
