@@ -189,6 +189,10 @@ def send_telegram_alert(
     chosen_ratio: Optional[float] = None,
     achieved_rr: Optional[float] = None,
     tier: str = "Tier-X",  # Dynamic tier tag
+    signal_uuid: Optional[str] = None,  # Signal UUID for ID display
+    mtf_alignment_score: Optional[int] = None,  # MTF alignment score
+    mtf_alignment_label: Optional[str] = None,  # MTF alignment label (Strong/Weak/Conflict/Neutral)
+    mtf_adjusted_confidence: Optional[float] = None,  # MTF-adjusted confidence
 ) -> bool:
     """
     Send a Telegram formatted alert message without extra blank lines.

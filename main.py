@@ -1165,7 +1165,11 @@ def run_cycle():
                                         tp_sl=tp_sl,
                                         chosen_ratio=None,
                                         achieved_rr=achieved_rr_value,
-                                        tier=signal_tier
+                                        tier=signal_tier,
+                                        signal_uuid=signal_uuid,
+                                        mtf_alignment_score=mtf_score,
+                                        mtf_alignment_label=mtf_label,
+                                        mtf_adjusted_confidence=mtf_adj_conf
                                     )
                                     print(f"[DEBUG] 15min: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
                                     if sent_ok:
@@ -1696,7 +1700,11 @@ def run_cycle():
                                     tp_sl=tp_sl,
                                     chosen_ratio=None,
                                     achieved_rr=achieved_rr_value,
-                                    tier=signal_tier
+                                    tier=signal_tier,
+                                    signal_uuid=signal_uuid,
+                                    mtf_alignment_score=None,
+                                    mtf_alignment_label=None,
+                                    mtf_adjusted_confidence=None
                                 )
                                 print(f"[DEBUG] 30min: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
                                 if sent_ok:
@@ -2195,7 +2203,11 @@ def run_cycle():
                                     tp_sl=tp_sl,
                                     chosen_ratio=None,
                                     achieved_rr=achieved_rr_value,
-                                    tier=signal_tier
+                                    tier=signal_tier,
+                                    signal_uuid=signal_uuid,
+                                    mtf_alignment_score=None,
+                                    mtf_alignment_label=None,
+                                    mtf_adjusted_confidence=None
                                 )
                                 print(f"[DEBUG] 1h: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
                                 if sent_ok:
@@ -2625,7 +2637,11 @@ def run_cycle():
                                     tp_sl=tp_sl,
                                     chosen_ratio=None,
                                     achieved_rr=achieved_rr_value,
-                                    tier=signal_tier
+                                    tier=signal_tier,
+                                    signal_uuid=signal_uuid,
+                                    mtf_alignment_score=None,
+                                    mtf_alignment_label=None,
+                                    mtf_adjusted_confidence=None
                                 )
                                 print(f"[DEBUG] 2h: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
                                 if sent_ok:
@@ -2890,7 +2906,11 @@ def run_cycle():
                                         tp_sl=tp_sl,
                                         chosen_ratio=None,
                                         achieved_rr=achieved_rr_value,
-                                        tier=signal_tier
+                                        tier=signal_tier,
+                                        signal_uuid=signal_uuid,
+                                        mtf_alignment_score=None,
+                                        mtf_alignment_label=None,
+                                        mtf_adjusted_confidence=None
                                     )
                                     print(f"[DEBUG] 4h: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
                                     if sent_ok:
