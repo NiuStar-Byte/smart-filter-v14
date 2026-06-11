@@ -189,6 +189,8 @@ def send_telegram_alert(
     chosen_ratio: Optional[float] = None,
     achieved_rr: Optional[float] = None,
     tier: str = "Tier-X",  # Dynamic tier tag
+    signal_uuid: Optional[str] = None,  # NEW: Signal UUID
+    mtf_alignment_score: Optional[float] = None,  # NEW: Multi-TF Alignment score
 ) -> bool:
     """
     Send a Telegram formatted alert message without extra blank lines.
@@ -382,17 +384,25 @@ def send_telegram_alert(
     tier_icon = tier_icon_map.get(tier, "")
     tier_display = f" {tier_icon} {tier}" if tier and tier != "Tier-X" else ""
     
+    # NEW TEMPLATE ORDER (June 11 2026)
     lines.append(f"{numbered_signal}. {symbol} ({tf}){tier_display}")
-    lines.append(f"{'📉' if regime_display == 'BEAR' else ('📈' if regime_display == 'BULL' else '🔎')} Regime: {regime_display}")
     lines.append(f"{signal_icon} {signal_str} Signal")
+    lines.append(f"🔎 Regime: {regime_display}")
     lines.append(f"{route_icon} {route_str}")
     lines.append(f"💰 {price_display}")
     lines.append(f"🏁 TP: {tp_display}")
     lines.append(f"⛔ SL: {sl_display}")
     lines.append(f"📊 Score: {score}/{score_max}")
     lines.append(f"🎯 Passed: {passed}/{gatekeepers_total}")
-    lines.append(f"{confidence_icon} Confidence: {confidence_val:.1f}%")
+    # NEW: Confidence with [Base] tag and proper emoji
+    confidence_label = "[Base]" if confidence_val >= 50 else "[Low]"
+    conf_emoji = "🟢" if confidence_val >= 73 else ("🟡" if confidence_val >= 50 else "🔴")
+    lines.append(f"{conf_emoji} Confidence: {confidence_val:.1f}% ({confidence_label})")
     lines.append(f"🏋️‍♀️ Weighted: {weighted_str}")
+    # NEW: Multi-TF Alignment (placeholder - will be populated if available)
+    if mtf_alignment_score is not None:
+        mtf_strength = "Strong" if mtf_alignment_score >= 70 else ("Weak" if mtf_alignment_score >= 40 else "Very Weak")
+        lines.append(f"🎵 Multi-TF Alignment: {int(mtf_alignment_score)}/100 ({mtf_strength} Alignment)")
     # append early breakout lines (each on its own single line)
     for eb in early_break_lines:
         lines.append(eb)
@@ -402,8 +412,11 @@ def send_telegram_alert(
         lines.append(rr_line)
     if fallback_used:
         lines.append("⚠️ Note: TP/SL fallback used")
-    # Symbol group at the very bottom
-    lines.append(symbol_group_display)
+    # NEW: UUID field (signal_uuid if available)
+    if signal_uuid:
+        lines.append(f"🆔 ID: {signal_uuid}")
+    # NEW: Symbol group at the very bottom with proper emoji
+    lines.append(f"🗂️ Symbol Group: {symbol_group}")
 
     # Join with single newline (no extra blank lines)
     message = "\n".join(lines)
