@@ -3,7 +3,7 @@ import requests
 from typing import Any, Optional
 
 # Import Telegram config
-from tg_config import BOT_TOKEN, CHAT_ID
+from tg_config import BOT_TOKEN, CHAT_ID, TIER_CHAT_ID
 
 # Check if Telegram is properly configured (not placeholder values)
 TELEGRAM_ENABLED = (
@@ -461,35 +461,49 @@ def send_telegram_alert(
     # Print the message locally for debugging
     print(f"[Telegram][MSG] {numbered_signal}. {symbol}\n{message}", flush=True)
 
-    # Send to Telegram
-    payload = {
-        "chat_id": CHAT_ID,
-        "text": message,
-        "parse_mode": "HTML",
-        "disable_web_page_preview": True
-    }
-
-    try:
-        resp = requests.post(SEND_URL, json=payload, timeout=10)
-        resp.raise_for_status()
+    # Helper function to send to a chat_id
+    def send_to_chat(chat_id: str, msg: str, label: str = "") -> bool:
+        """Send message to specific chat ID"""
+        if not chat_id:
+            return False
+        
+        payload = {
+            "chat_id": chat_id,
+            "text": msg,
+            "parse_mode": "HTML",
+            "disable_web_page_preview": True
+        }
+        
         try:
-            rj = resp.json()
-            if rj.get("ok"):
-                mid = rj.get("result", {}).get("message_id")
-                print(f"📨 Telegram alert sent: {symbol} {signal_type} {Route} message_id={mid}", flush=True)
-            else:
-                print(f"📨 Telegram responded but ok=False: {rj}", flush=True)
-        except Exception:
-            print(f"📨 Telegram alert sent (no JSON result) for: {symbol} {signal_type} {Route}", flush=True)
-        return True
-    except requests.RequestException as e:
-        resp_text = ""
-        try:
-            resp_text = resp.text if resp is not None else str(e)
-        except Exception:
-            resp_text = str(e)
-        print(f"❗ Telegram send error: {e} — response: {resp_text}", flush=True)
-        return False
+            resp = requests.post(SEND_URL, json=payload, timeout=10)
+            resp.raise_for_status()
+            try:
+                rj = resp.json()
+                if rj.get("ok"):
+                    mid = rj.get("result", {}).get("message_id")
+                    print(f"📨 Telegram alert sent{label}: {symbol} {signal_type} {Route} message_id={mid}", flush=True)
+                else:
+                    print(f"📨 Telegram responded but ok=False{label}: {rj}", flush=True)
+            except Exception:
+                print(f"📨 Telegram alert sent{label} (no JSON result) for: {symbol} {signal_type} {Route}", flush=True)
+            return True
+        except requests.RequestException as e:
+            resp_text = ""
+            try:
+                resp_text = resp.text if resp is not None else str(e)
+            except Exception:
+                resp_text = str(e)
+            print(f"❗ Telegram send error{label}: {e} — response: {resp_text}", flush=True)
+            return False
+    
+    # Send to Group A (all signals)
+    success = send_to_chat(CHAT_ID, message, " (Group A)")
+    
+    # Send to Group B (Tier-1/2/3 only)
+    if tier and tier in ["Tier-1", "Tier-2", "Tier-3"] and TIER_CHAT_ID:
+        send_to_chat(TIER_CHAT_ID, message, f" (Group B - {tier})")
+    
+    return success
 
 
 def send_telegram_file(filepath: str, caption: Optional[str] = None) -> bool:

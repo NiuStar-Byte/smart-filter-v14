@@ -12,7 +12,11 @@
 # ============================================
 
 BOT_TOKEN = "8380427467:AAHyfjM1Xlvu4msEc0YzQHWIqUXwv359f_Q"
-CHAT_ID = "-1002857433223"
+CHAT_ID = "-1002857433223"  # Group A: ALL signals
+
+# Tier-based routing: Send Tier-1/2/3 signals to separate group
+TIER_CHAT_ID = None  # Group B: Only Tier-1/2/3 signals (set to group ID if using)
+# Example: TIER_CHAT_ID = "-1002857433224"  # Replace with your Tier group ID
 
 # Optional: Channel ID if sending to a channel instead
 CHANNEL_ID = None  # Set to channel ID if using channel instead of chat
