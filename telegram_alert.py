@@ -372,10 +372,11 @@ def send_telegram_alert(
 
     # Symbol Group categorization (at bottom of message)
     symbol_group = _get_symbol_group(symbol)
-    symbol_group_icon = "⛓️‍💥"
-    symbol_group_display = f"{symbol_group_icon} {symbol_group}"
+    # Symbol group icon (harmonized)
+    symbol_group_icon = "🗂️"
+    symbol_group_display = f"{symbol_group_icon} Symbol Group: {symbol_group}"
 
-    # Build message lines WITHOUT any blank empty lines
+    # Build message lines WITHOUT any blank empty lines (HARMONIZED ICON FORMAT)
     lines = []
     
     # Tier tag display (production criteria only - VERSION B AGREED)
@@ -388,26 +389,62 @@ def send_telegram_alert(
     tier_icon = tier_icon_map.get(tier, "")
     tier_display = f" {tier_icon} {tier}" if tier and tier != "Tier-X" else ""
     
+    # Build signal number line
     lines.append(f"{numbered_signal}. {symbol} ({tf}){tier_display}")
-    lines.append(f"{'📉' if regime_display == 'BEAR' else ('📈' if regime_display == 'BULL' else '🔎')} Regime: {regime_display}")
+    
+    # Signal type line (comes BEFORE regime)
     lines.append(f"{signal_icon} {signal_str} Signal")
+    
+    # Regime line
+    lines.append(f"{'📉' if regime_display == 'BEAR' else ('📈' if regime_display == 'BULL' else '🔎')} Regime: {regime_display}")
+    
+    # Route line
     lines.append(f"{route_icon} {route_str}")
+    
+    # Price line
     lines.append(f"💰 {price_display}")
+    
+    # TP/SL lines
     lines.append(f"🏁 TP: {tp_display}")
     lines.append(f"⛔ SL: {sl_display}")
+    
+    # Score and Passed lines
     lines.append(f"📊 Score: {score}/{score_max}")
     lines.append(f"🎯 Passed: {passed}/{gatekeepers_total}")
-    lines.append(f"{confidence_icon} Confidence: {confidence_val:.1f}%")
+    
+    # Weighted line
     lines.append(f"🏋️‍♀️ Weighted: {weighted_str}")
-    # append early breakout lines (each on its own single line)
+    
+    # Confidence line with category (HIGH/MID/LOW) and [Base] indicator
+    confidence_cat = "HIGH" if confidence_val >= 75 else ("MID" if confidence_val >= 50 else "LOW")
+    confidence_adj_text = f" Adjusted: {mtf_adjusted_confidence:.1f}%" if mtf_adjusted_confidence else "[Base]"
+    lines.append(f"{confidence_icon} Confidence: {confidence_val:.1f}% ({confidence_cat}) {confidence_adj_text}")
+    
+    # Early breakout lines (each on its own single line)
     for eb in early_break_lines:
         lines.append(eb)
-    # consensus & rr & fallback note
-    lines.append(consensus_display)
+    
+    # Risk/Reward line (changed icon from 📊 to ⚖️)
     if rr_line:
+        rr_line = rr_line.replace("📊 R:R:", "⚖️ R:R:")  # Replace icon
         lines.append(rr_line)
+    
+    # Multi-TF Alignment line (icon 🎶, shows score and label and adjusted confidence)
+    if mtf_alignment_score is not None and mtf_alignment_label:
+        mtf_adj_display = f" Adjusted: {mtf_adjusted_confidence:.1f}%" if mtf_adjusted_confidence else ""
+        lines.append(f"🎶 Multi-TF Alignment: {mtf_alignment_score}/100 ({mtf_alignment_label}){mtf_adj_display}")
+    
+    # Consensus line
+    lines.append(consensus_display)
+    
+    # Signal ID line
+    if signal_uuid:
+        lines.append(f"🆔 ID: {signal_uuid}")
+    
+    # Fallback note
     if fallback_used:
         lines.append("⚠️ Note: TP/SL fallback used")
+    
     # Symbol group at the very bottom
     lines.append(symbol_group_display)
 
