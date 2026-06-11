@@ -47,6 +47,7 @@ from ohlcv_fetch_safe import safe_fetch_ohlcv_by_tf, check_tf_data_available, sh
 from signal_logger import SignalLogger
 from signal_sent_tracker import get_signal_sent_tracker  # PEC: Track SENT signals only
 from signals_master_writer import get_signals_master_writer  # Write to SIGNALS_MASTER.jsonl (single source of truth)
+from mtf_alignment_analyzer import MTFAlignmentAnalyzer  # MTF analysis for ALL timeframes
 from pathlib import Path
 
 # ===== PHASE 2 IMPORTS (Stage 2 - Direction-Aware Gatekeepers + Regime Adjustments) =====
@@ -179,6 +180,14 @@ try:
 except Exception as e:
     _master_writer_ready = False
     print(f"[ERROR] Signals Master writer init failed: {e}. SIGNALS_MASTER.jsonl will not be updated.", flush=True)
+
+# === INITIALIZE MTF ALIGNMENT ANALYZER (For all timeframes) ===
+try:
+    _mtf_analyzer = MTFAlignmentAnalyzer()
+    print(f"[INIT] MTF Alignment Analyzer ready (enabled={_mtf_analyzer.enabled})", flush=True)
+except Exception as e:
+    _mtf_analyzer = None
+    print(f"[WARN] MTF Alignment Analyzer init failed: {e}. Signals will not have MTF band assignment.", flush=True)
 
 # === PHASE 1: INITIALIZE DUAL-WRITE VERIFIER (Alert + Continue Strategy) ===
 try:
@@ -414,6 +423,37 @@ def convert_mtf_score_to_band(mtf_alignment_score: int) -> str:
         return "conflict"
     else:
         return "neutral"
+
+
+def get_mtf_alignment_score(symbol, timeframe, signal_type, regime, route, confidence):
+    """
+    Get MTF alignment score for any timeframe using the analyzer.
+    Returns alignment score (0-100) for band classification.
+    Fallback to "unassigned" if analyzer unavailable.
+    """
+    if _mtf_analyzer is None:
+        return 0  # Default: unassigned band
+    
+    try:
+        # Build signal data dict for analyzer
+        signal_data = {
+            'symbol': symbol,
+            'timeframe': timeframe,
+            'signal_type': signal_type,
+            'direction': signal_type,
+            'regime': regime,
+            'route': route,
+            'confidence': confidence
+        }
+        
+        # Call analyzer to get alignment
+        result = _mtf_analyzer.analyze(signal_data)
+        if result and 'alignment_score' in result:
+            return int(result.get('alignment_score', 0))
+        return 0
+    except Exception as e:
+        print(f"[WARN] MTF analysis failed for {symbol} {timeframe}: {e}", flush=True)
+        return 0
 
 def create_and_store_signal(symbol, timeframe, signal_type, fired_time_utc, entry_price,
                            tp_target, sl_target, tp_pct, sl_pct, achieved_rr, fib_ratio,
@@ -1697,6 +1737,11 @@ def run_cycle():
                         # Calculate confidence_level for 6D tier matching
                         confidence_level_cat = 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
                         
+                        # Get MTF alignment score for 30min (for all timeframes now)
+                        mtf_score = get_mtf_alignment_score(symbol_val, tf_val, signal_type, regime, Route, confidence)
+                        mtf_band = convert_mtf_score_to_band(mtf_score)
+                        print(f"[MTF] 30min {symbol_val}: Band={mtf_band} Score={mtf_score}", flush=True)
+                        
                         # Send trade alert to Telegram
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
@@ -1789,8 +1834,8 @@ def run_cycle():
                                                 'failed_filters': failed_filters,
                                                 'passed_filter_count': passed_filter_count,
                                                 'failed_filter_count': failed_filter_count,
-                                                'mtf_alignment_band': 'unassigned',
-                                                'mtf_alignment_score': 0,
+                                                'mtf_alignment_band': mtf_band,
+                                                'mtf_alignment_score': mtf_score,
                                                 'status': 'OPEN',
                                                 'signal_origin': 'NEW_LIVE',
                                                 'weighted_score': confidence * score / 100 if score_max else 0,
@@ -2203,6 +2248,11 @@ def run_cycle():
                         # Calculate confidence_level for 6D tier matching
                         confidence_level_cat = 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
                         
+                        # Get MTF alignment score for 1h (for all timeframes now)
+                        mtf_score = get_mtf_alignment_score(symbol_val, tf_val, signal_type, regime, Route, confidence)
+                        mtf_band = convert_mtf_score_to_band(mtf_score)
+                        print(f"[MTF] 1h {symbol_val}: Band={mtf_band} Score={mtf_score}", flush=True)
+                        
                         # Send trade alert to Telegram
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
@@ -2295,8 +2345,8 @@ def run_cycle():
                                                 'failed_filters': failed_filters,
                                                 'passed_filter_count': passed_filter_count,
                                                 'failed_filter_count': failed_filter_count,
-                                                'mtf_alignment_band': 'unassigned',
-                                                'mtf_alignment_score': 0,
+                                                'mtf_alignment_band': mtf_band,
+                                                'mtf_alignment_score': mtf_score,
                                                 'status': 'OPEN',
                                                 'signal_origin': 'NEW_LIVE',
                                                 'weighted_score': confidence * score / 100 if score_max else 0,
@@ -2638,12 +2688,17 @@ def run_cycle():
                             print(f"[WARN] Signal {symbol_val} (2h) REJECTED - duplicate within 120s. NOT sending Telegram alert.", flush=True)
                             pass
                         
+                        # Get MTF alignment score for 2h (for all timeframes now)
+                        symbol_group = classify_symbol(symbol_val)
+                        confidence_level_cat = 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
+                        mtf_score = get_mtf_alignment_score(symbol_val, tf_val, signal_type, regime, Route, confidence)
+                        mtf_band = convert_mtf_score_to_band(mtf_score)
+                        print(f"[MTF] 2h {symbol_val}: Band={mtf_band} Score={mtf_score}", flush=True)
+                        
                         # Send trade alert to Telegram
                         if signal_uuid and os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
-                                symbol_group = classify_symbol(symbol_val)
-                                # Calculate confidence_level for 6D tier matching
-                                confidence_level_cat = 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
+                                # Get signal tier (6D matching with confidence_level)
                                 signal_tier = get_signal_tier(tf_val, signal_type, Route, regime, symbol_group, confidence_level_cat)
                                 print(f"[TIER] 2h {symbol_val} ({symbol_group}|{confidence_level_cat}): {signal_tier}", flush=True)
                                 
@@ -2729,8 +2784,8 @@ def run_cycle():
                                                 'failed_filters': failed_filters,
                                                 'passed_filter_count': passed_filter_count,
                                                 'failed_filter_count': failed_filter_count,
-                                                'mtf_alignment_band': 'unassigned',
-                                                'mtf_alignment_score': 0,
+                                                'mtf_alignment_band': mtf_band,
+                                                'mtf_alignment_score': mtf_score,
                                                 'status': 'OPEN',
                                                 'signal_origin': 'NEW_LIVE',
                                                 'weighted_score': confidence * score / 100 if score_max else 0,
@@ -2910,12 +2965,17 @@ def run_cycle():
                                 print(f"[WARN] Signal {symbol_val} (4h) REJECTED - duplicate within cooldown. NOT sending Telegram alert.", flush=True)
                                 pass
 
+                            # Get MTF alignment score for 4h (for all timeframes now)
+                            symbol_group = classify_symbol(symbol_val)
+                            confidence_level_cat = 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
+                            mtf_score = get_mtf_alignment_score(symbol_val, tf_val, signal_type, regime, Route, confidence)
+                            mtf_band = convert_mtf_score_to_band(mtf_score)
+                            print(f"[MTF] 4h {symbol_val}: Band={mtf_band} Score={mtf_score}", flush=True)
+                            
                             # Send trade alert to Telegram
                             if signal_uuid and os.getenv("DRY_RUN", "false").lower() != "true":
                                 try:
-                                    symbol_group = classify_symbol(symbol_val)
-                                    # Calculate confidence_level for 6D tier matching
-                                    confidence_level_cat = 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
+                                    # Get signal tier (6D matching with confidence_level)
                                     signal_tier = get_signal_tier(tf_val, signal_type, Route, regime, symbol_group, confidence_level_cat)
                                     print(f"[TIER] 4h {symbol_val} ({symbol_group}|{confidence_level_cat}): {signal_tier}", flush=True)
                                     
@@ -3002,8 +3062,8 @@ def run_cycle():
                                                     'failed_filters': failed_filters,
                                                     'passed_filter_count': passed_filter_count,
                                                     'failed_filter_count': failed_filter_count,
-                                                    'mtf_alignment_band': 'unassigned',
-                                                    'mtf_alignment_score': 0,
+                                                    'mtf_alignment_band': mtf_band,
+                                                    'mtf_alignment_score': mtf_score,
                                                     'status': 'OPEN',
                                                     'signal_origin': 'NEW_LIVE',
                                                     'weighted_score': confidence * score / 100 if score_max else 0,
