@@ -399,12 +399,27 @@ def get_resting_order_density(symbol, depth=100, top_n=5):
 def candle_color(open, close):
     return 'green' if close > open else 'red'
 
+def convert_mtf_score_to_band(mtf_alignment_score: int) -> str:
+    """Convert MTF alignment score to band category (v2 system)."""
+    if mtf_alignment_score is None:
+        return "unassigned"
+    
+    # Thresholds from mtf_alignment_config.py
+    if mtf_alignment_score >= 75:
+        return "strong"
+    elif mtf_alignment_score >= 50:
+        return "weak"
+    elif mtf_alignment_score > 0:
+        return "conflict"
+    else:
+        return "neutral"
+
 def create_and_store_signal(symbol, timeframe, signal_type, fired_time_utc, entry_price,
                            tp_target, sl_target, tp_pct, sl_pct, achieved_rr, fib_ratio,
                            atr_value, score, max_score, confidence, route, regime,
                            passed_gatekeepers, max_gatekeepers, passed_filters=None, 
                            failed_filters=None, passed_filter_count=0, failed_filter_count=0,
-                           telegram_msg_id=''):
+                           telegram_msg_id='', mtf_alignment_score=None):
     """
     Create signal dict and store to JSONL.
     Uses global _signal_store initialized at module load time.
@@ -419,6 +434,9 @@ def create_and_store_signal(symbol, timeframe, signal_type, fired_time_utc, entr
     
     try:
         signal_uuid = str(uuid_lib.uuid4())
+        
+        # Convert MTF alignment score to band (v2 system: strong/weak/conflict/neutral/unassigned)
+        mtf_band = convert_mtf_score_to_band(mtf_alignment_score)
         
         signal_data = {
             "uuid": signal_uuid,
@@ -447,6 +465,8 @@ def create_and_store_signal(symbol, timeframe, signal_type, fired_time_utc, entr
             "passed_filter_count": int(passed_filter_count),
             "failed_filter_count": int(failed_filter_count),
             "telegram_msg_id": str(telegram_msg_id) if telegram_msg_id else '',
+            "mtf_alignment_band": mtf_band,
+            "mtf_alignment_score": int(mtf_alignment_score) if mtf_alignment_score is not None else 0,
         }
         
         # Use global store (pre-initialized)
@@ -1102,7 +1122,8 @@ def run_cycle():
                                 failed_filters=failed_filters,
                                 passed_filter_count=passed_filter_count,
                                 failed_filter_count=failed_filter_count,
-                                telegram_msg_id=telegram_msg_id  # ← NEW: Pass telegram_msg_id upfront
+                                telegram_msg_id=telegram_msg_id,  # ← NEW: Pass telegram_msg_id upfront
+                                mtf_alignment_score=mtf_score  # ← MTF band: store 15min MTF alignment
                             )
                             
                             if not signal_uuid:
@@ -1604,7 +1625,8 @@ def run_cycle():
                             failed_filters=failed_filters,
                             passed_filter_count=passed_filter_count,
                             failed_filter_count=failed_filter_count,
-                            telegram_msg_id=telegram_msg_id  # ← NEW: Pass telegram_msg_id upfront
+                            telegram_msg_id=telegram_msg_id,  # ← NEW: Pass telegram_msg_id upfront
+                            mtf_alignment_score=None  # 30min: No MTF analysis, use fallback "unassigned"
                         )
                         
                         if not signal_uuid:
@@ -2138,7 +2160,8 @@ def run_cycle():
                             failed_filters=failed_filters,
                             passed_filter_count=passed_filter_count,
                             failed_filter_count=failed_filter_count,
-                            telegram_msg_id=telegram_msg_id  # ← NEW: Pass telegram_msg_id upfront
+                            telegram_msg_id=telegram_msg_id,  # ← NEW: Pass telegram_msg_id upfront
+                            mtf_alignment_score=None  # 1h: No MTF analysis, use fallback "unassigned"
                         )
                         
                         if not signal_uuid:
@@ -2598,7 +2621,8 @@ def run_cycle():
                             failed_filters=failed_filters,
                             passed_filter_count=passed_filter_count,
                             failed_filter_count=failed_filter_count,
-                            telegram_msg_id=telegram_msg_id
+                            telegram_msg_id=telegram_msg_id,
+                            mtf_alignment_score=None  # 2h: No MTF analysis, use fallback "unassigned"
                         )
                         
                         if not signal_uuid:
@@ -2867,7 +2891,8 @@ def run_cycle():
                                 failed_filters=failed_filters,
                                 passed_filter_count=passed_filter_count,
                                 failed_filter_count=failed_filter_count,
-                                telegram_msg_id=telegram_msg_id
+                                telegram_msg_id=telegram_msg_id,
+                                mtf_alignment_score=None  # 4h: No MTF analysis, use fallback "unassigned"
                             )
                             
                             if not signal_uuid:
