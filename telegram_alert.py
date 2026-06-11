@@ -251,6 +251,12 @@ def send_telegram_alert(
     elif route_upper == "AMBIGUOUS":
         route_icon = "🔃🔄"
         route_str = "Ambiguous Reversal Trend"
+    elif route_upper == "BULLISH_CONTINUATION":
+        route_icon = "↗️➡️"
+        route_str = "Bullish Continuation"
+    elif route_upper == "BEARISH_CONTINUATION":
+        route_icon = "↘️➡️"
+        route_str = "Bearish Continuation"
     elif route_upper in ["TREND CONTINUATION", "CONTINUATION"]:
         if isinstance(reversal_side, str) and "BULLISH" in reversal_side:
             route_icon = "↗️➡️"

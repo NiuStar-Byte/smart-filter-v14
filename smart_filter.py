@@ -765,7 +765,9 @@ class SmartFilter:
             print(f"[{self.symbol}] Error running explicit_reversal_gate(): {e}")
             reversal_route, reversal_side = ("NONE", None)
         reversal_detected = reversal_route in ["REVERSAL", "AMBIGUOUS"]
-        route = reversal_route if reversal_detected else "TREND CONTINUATION"
+        # Route will be finalized after direction is calculated
+        # Initialize with reversal route or placeholder for continuation
+        route = reversal_route if reversal_detected else None
     
         # --- Filters list & mapping ---
         filter_names = [
@@ -854,6 +856,15 @@ class SmartFilter:
             print(f"[{self.symbol}] Error in get_signal_direction(): {e}")
             direction = "NEUTRAL"
         self.bias = direction
+        
+        # --- Finalize route with direction (TREND CONTINUATION → BULLISH/BEARISH_CONTINUATION) ---
+        if route is None:  # Not a reversal, so it's a continuation
+            if direction == "LONG":
+                route = "BULLISH_CONTINUATION"
+            elif direction == "SHORT":
+                route = "BEARISH_CONTINUATION"
+            else:
+                route = "TREND CONTINUATION"  # Fallback if direction is NEUTRAL
     
         # --- Gatekeeper breakdown (using bias-specific gatekeepers) ---
         hard_gatekeepers_long = [gk for gk in self.gatekeepers_long if gk not in self.soft_gatekeepers]
