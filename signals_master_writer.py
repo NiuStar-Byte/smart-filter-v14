@@ -95,6 +95,10 @@ class SignalsMasterWriter:
                 "passed_filter_count": int(signal_dict.get('passed_filter_count', 0)),
                 "failed_filter_count": int(signal_dict.get('failed_filter_count', 0)),
                 
+                # MTF Alignment (2) - NEW: Store band for tracker visibility
+                "mtf_alignment_band": signal_dict.get('mtf_alignment_band', 'unassigned'),
+                "mtf_alignment_score": int(signal_dict.get('mtf_alignment_score', 0)) if signal_dict.get('mtf_alignment_score') is not None else 0,
+                
                 # Trade Status (5)
                 "status": signal_dict.get('status', 'OPEN'),
                 "closed_at": signal_dict.get('closed_at'),

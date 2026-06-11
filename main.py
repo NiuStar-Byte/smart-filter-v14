@@ -1225,6 +1225,8 @@ def run_cycle():
                                             )
                                             # Also write to SIGNALS_MASTER.jsonl (single source of truth)
                                             if _master_writer_ready:
+                                                # Convert MTF score to band for storage
+                                                mtf_band = convert_mtf_score_to_band(mtf_score)
                                                 _signals_master_writer.write_signal({
                                                     'signal_uuid': signal_uuid,
                                                     'symbol': symbol_val,
@@ -1248,6 +1250,8 @@ def run_cycle():
                                                     'failed_filters': failed_filters,
                                                     'passed_filter_count': passed_filter_count,
                                                     'failed_filter_count': failed_filter_count,
+                                                    'mtf_alignment_band': mtf_band,
+                                                    'mtf_alignment_score': mtf_score,
                                                     'status': 'OPEN',
                                                     'signal_origin': 'NEW_LIVE',
                                                     'weighted_score': confidence * score / 100 if score_max else 0,
@@ -1784,6 +1788,8 @@ def run_cycle():
                                                 'failed_filters': failed_filters,
                                                 'passed_filter_count': passed_filter_count,
                                                 'failed_filter_count': failed_filter_count,
+                                                'mtf_alignment_band': 'unassigned',
+                                                'mtf_alignment_score': 0,
                                                 'status': 'OPEN',
                                                 'signal_origin': 'NEW_LIVE',
                                                 'weighted_score': confidence * score / 100 if score_max else 0,
@@ -2288,6 +2294,8 @@ def run_cycle():
                                                 'failed_filters': failed_filters,
                                                 'passed_filter_count': passed_filter_count,
                                                 'failed_filter_count': failed_filter_count,
+                                                'mtf_alignment_band': 'unassigned',
+                                                'mtf_alignment_score': 0,
                                                 'status': 'OPEN',
                                                 'signal_origin': 'NEW_LIVE',
                                                 'weighted_score': confidence * score / 100 if score_max else 0,
@@ -2720,6 +2728,8 @@ def run_cycle():
                                                 'failed_filters': failed_filters,
                                                 'passed_filter_count': passed_filter_count,
                                                 'failed_filter_count': failed_filter_count,
+                                                'mtf_alignment_band': 'unassigned',
+                                                'mtf_alignment_score': 0,
                                                 'status': 'OPEN',
                                                 'signal_origin': 'NEW_LIVE',
                                                 'weighted_score': confidence * score / 100 if score_max else 0,
@@ -2991,6 +3001,8 @@ def run_cycle():
                                                     'failed_filters': failed_filters,
                                                     'passed_filter_count': passed_filter_count,
                                                     'failed_filter_count': failed_filter_count,
+                                                    'mtf_alignment_band': 'unassigned',
+                                                    'mtf_alignment_score': 0,
                                                     'status': 'OPEN',
                                                     'signal_origin': 'NEW_LIVE',
                                                     'weighted_score': confidence * score / 100 if score_max else 0,
