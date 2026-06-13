@@ -84,31 +84,31 @@ except ImportError as e:
 def apply_blacklist_filter(symbol: str) -> bool:
     """
     Check if symbol should be blocked from trading.
-    
+
     Logic:
     1. Check whitelist first (override)
     2. Then check blacklist
-    
+
     Args:
         symbol: Symbol string (e.g., 'EPT-USDT')
-    
+
     Returns:
         True if BLOCK (reject signal)
         False if ALLOW (allow signal)
     """
     if not BLACKLIST_READY:
         return False  # If blacklist system failed, allow all
-    
+
     # Check whitelist first (overrides blacklist)
     if is_symbol_whitelisted(symbol):
         print(f"[WHITELIST] {symbol} RELEASED from blacklist (override active)", flush=True)
         return False  # ALLOW this signal
-    
+
     # Check blacklist
     if symbol in BLACKLIST_SYMBOLS:
         print(f"[BLACKLIST] {symbol} rejected (WR < 21%)", flush=True)
         return True  # BLOCK this signal
-    
+
     return False  # ALLOW (not in either list)
 
 # ===== END SYMBOL BLACKLIST & WHITELIST =====
@@ -117,13 +117,13 @@ def apply_blacklist_filter(symbol: str) -> bool:
 def check_multitf_alignment_30_1h(symbol, ohlcv_data):
     """
     PHASE 4A Scenario 4: Check if 30min trend aligns with 1h trend
-    
+
     This acts as a consensus filter: only allow signals if higher timeframes agree
-    
+
     Args:
         symbol: Trading symbol (e.g., "BTC-USDT")
         ohlcv_data: Dict from safe_fetch_ohlcv_by_tf with keys "15min", "30min", "1h", "2h", "4h"
-    
+
     Returns:
         (should_allow_signal, trend_30min, trend_1h, reason_log)
     """
@@ -131,21 +131,21 @@ def check_multitf_alignment_30_1h(symbol, ohlcv_data):
         # Get 30min and 1h dataframes
         df30 = ohlcv_data.get("30min")
         df1h = ohlcv_data.get("1h")
-        
+
         if df30 is None or df1h is None or len(df30) < 1 or len(df1h) < 1:
             # Cannot check alignment without data
             return (True, "NONE", "NONE", "[PHASE4A-S4] Insufficient TF data, allowing signal")
-        
+
         # Detect trends (close > MA20)
         trend_30 = "LONG" if len(df30) >= 20 and df30['close'].iloc[-1] > df30['close'].iloc[-20:].mean() else "SHORT"
         trend_1h = "LONG" if len(df1h) >= 20 and df1h['close'].iloc[-1] > df1h['close'].iloc[-20:].mean() else "SHORT"
-        
+
         # Check alignment
         if trend_30 == trend_1h:
             return (True, trend_30, trend_1h, f"[PHASE4A-S4] ✅ Aligned: 30min={trend_30}, 1h={trend_1h}")
         else:
             return (False, trend_30, trend_1h, f"[PHASE4A-S4] ❌ Misaligned: 30min={trend_30}, 1h={trend_1h} (FILTERED)")
-    
+
     except Exception as e:
         # If error during check, allow signal (fail-safe)
         return (True, "ERROR", "ERROR", f"[PHASE4A-S4] Error checking alignment: {str(e)[:50]} (allowing signal)")
@@ -214,26 +214,30 @@ except Exception as e:
     _signal_tracker_ready = False
     print(f"[ERROR] Signal tracker init failed: {e}. Tracking disabled.", flush=True)
 
-# === EXECUTOR TRIGGER (EVENT-DRIVEN PEC HYBRID MODEL) ===
+# === EXECUTOR TRIGGER (PERMANENTLY DISABLED - June 12 11:20 GMT+7) ===
+# 🔴 CRITICAL: This function is a NO-OP to prevent spawning cascade
+#
+# REASON: Each signal was spawning a new pec_executor.py subprocess, creating:
+# - 6+ concurrent Python processes per signal cycle
+# - 72% CPU + 15% RAM usage (one process consuming entire system)
+# - Unbounded process creation (no cleanup, accumulating)
+# - System unresponsiveness and RAM exhaustion
+#
+# SOLUTION: All signal processing now happens via 5-6 SINGLETON services:
+# 1. main.py - Signal generation (write to SIGNALS_MASTER)
+# 2. asterdex_entry_poster.py - Post Tier-1/2/3 + MTF=strong signals
+# 3. asterdex_realtime_fetcher.py - Track open positions (continuous)
+# 4. asterdex_closed_tracker_CORRECTED.py - Track closed positions (continuous)
+# 5. pec_executor_persistent.py - Process closures (5-min intervals, if needed)
+# 6. xaut_daemon.py - XAUT tributary (isolated signal generation)
+#
+# NOTE: If you re-enable this, use a PERSISTENT daemon (not per-signal spawning)
 def trigger_executor_on_signal(signal_uuid: str, symbol: str, timeframe: str):
     """
-    Trigger PEC executor immediately when signal fires (event-driven, non-blocking)
-    This is part of the HYBRID operational model (cron + event-triggered)
+    NO-OP: Executor spawning permanently disabled (June 12 2026).
+    All signal processing handled by singleton services above.
     """
-    try:
-        import subprocess
-        executor_path = "/Users/geniustarigan/.openclaw/workspace/pec_executor.py"
-        # Non-blocking subprocess call
-        subprocess.Popen(
-            ['python3', executor_path, '--signal-uuid', signal_uuid],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            start_new_session=True  # Detach from parent process
-        )
-        print(f"[EXECUTOR] Event-triggered backtest for {symbol} {timeframe} (UUID: {signal_uuid[:12]})", flush=True)
-    except Exception as e:
-        print(f"[WARN] Failed to trigger executor: {e}", flush=True)
-        # Continue anyway - cron will catch it as fallback
+    pass  # Intentionally disabled - DO NOT RESTORE without explicit permission
 
 # --- Configuration ---
 # Full liquid pairs from kucoin_orderbook.py - 90+ symbols
@@ -298,18 +302,18 @@ def initialize_last_sent():
     global last_sent
     import time
     now = time.time()
-    
+
     # Use workspace root, not submodule directory
     sent_signals_path = "/Users/geniustarigan/.openclaw/workspace/SENT_SIGNALS.jsonl"
-    
+
     try:
         if not os.path.exists(sent_signals_path):
             return
-        
+
         # Read last 100 lines of SENT_SIGNALS.jsonl to find recent signals
         with open(sent_signals_path, "r") as f:
             lines = f.readlines()
-        
+
         # Process recent signals (last 200 lines, ~10 mins of signals)
         for line in lines[-200:]:
             try:
@@ -317,10 +321,10 @@ def initialize_last_sent():
                 symbol = signal.get("symbol")
                 tf = signal.get("timeframe")
                 sent_time_str = signal.get("sent_time_utc")
-                
+
                 if not (symbol and tf and sent_time_str):
                     continue
-                
+
                 # Parse sent_time_utc to get timestamp
                 try:
                     sent_dt = datetime.fromisoformat(sent_time_str.replace('Z', '+00:00'))
@@ -329,18 +333,18 @@ def initialize_last_sent():
                     sent_timestamp = sent_dt.timestamp()
                 except:
                     continue
-                
+
                 # Only consider signals sent within the last COOLDOWN window
                 key = f"{symbol}_{tf}"
                 max_cooldown = max(COOLDOWN.values())
-                
+
                 if now - sent_timestamp < max_cooldown:
                     # Store the latest sent time for this symbol+tf combo
                     if key not in last_sent or sent_timestamp > last_sent[key]:
                         last_sent[key] = sent_timestamp
             except:
                 pass
-        
+
         if last_sent:
             print(f"[INIT] Restored {len(last_sent)} last_sent entries from SENT_SIGNALS.jsonl", flush=True)
     except Exception as e:
@@ -414,7 +418,7 @@ def convert_mtf_score_to_band(mtf_alignment_score: int) -> str:
     """Convert MTF alignment score to band category (v2 system)."""
     if mtf_alignment_score is None:
         return "unassigned"
-    
+
     # Thresholds from mtf_alignment_config.py
     if mtf_alignment_score >= 75:
         return "strong"
@@ -434,7 +438,7 @@ def get_mtf_alignment_score(symbol, timeframe, signal_type, regime, route, confi
     """
     if _mtf_analyzer is None:
         return 0  # Default: unassigned band
-    
+
     try:
         # Build signal data dict for analyzer
         signal_data = {
@@ -446,7 +450,7 @@ def get_mtf_alignment_score(symbol, timeframe, signal_type, regime, route, confi
             'route': route,
             'confidence': confidence
         }
-        
+
         # Call analyzer to get alignment
         result = _mtf_analyzer.analyze(signal_data)
         if result and 'alignment_score' in result:
@@ -466,27 +470,27 @@ def get_mtf_alignment_label(band: str) -> str:
 def create_and_store_signal(symbol, timeframe, signal_type, fired_time_utc, entry_price,
                            tp_target, sl_target, tp_pct, sl_pct, achieved_rr, fib_ratio,
                            atr_value, score, max_score, confidence, route, regime,
-                           passed_gatekeepers, max_gatekeepers, passed_filters=None, 
+                           passed_gatekeepers, max_gatekeepers, passed_filters=None,
                            failed_filters=None, passed_filter_count=0, failed_filter_count=0,
                            telegram_msg_id='', mtf_alignment_score=None):
     """
     Create signal dict and store to JSONL.
     Uses global _signal_store initialized at module load time.
-    
+
     Returns: signal_uuid if successful, None if failed
     """
     global _signal_store_ready
-    
+
     if not _signal_store_ready:
         print(f"[WARN] Signal store not ready, skipping JSONL storage for {symbol} {timeframe}", flush=True)
         return None
-    
+
     try:
         signal_uuid = str(uuid_lib.uuid4())
-        
+
         # Convert MTF alignment score to band (v2 system: strong/weak/conflict/neutral/unassigned)
         mtf_band = convert_mtf_score_to_band(mtf_alignment_score)
-        
+
         signal_data = {
             "uuid": signal_uuid,
             "symbol": symbol,
@@ -517,17 +521,17 @@ def create_and_store_signal(symbol, timeframe, signal_type, fired_time_utc, entr
             "mtf_alignment_band": mtf_band,
             "mtf_alignment_score": int(mtf_alignment_score) if mtf_alignment_score is not None else 0,
         }
-        
+
         # Use global store (pre-initialized)
         stored_uuid = _signal_store.append_signal(signal_data)
-        
+
         if stored_uuid:
             print(f"[STORED] Signal captured: {symbol} {timeframe} {signal_type} UUID={stored_uuid[:8]}...", flush=True)
         else:
             print(f"[WARN] Signal store returned None for {symbol} {timeframe}", flush=True)
-        
+
         return stored_uuid
-    
+
     except Exception as e:
         print(f"[ERROR] create_and_store_signal failed for {symbol} {timeframe}: {e}", flush=True)
         import traceback
@@ -701,14 +705,14 @@ _dedup_cache_time = None
 def load_dedup_cache():
     """Load SENT_SIGNALS.jsonl ONCE per cycle into memory"""
     global _dedup_cache, _dedup_cache_time
-    
+
     sent_signals_path = "/Users/geniustarigan/.openclaw/workspace/SENT_SIGNALS.jsonl"
     _dedup_cache = []
     _dedup_cache_time = datetime.now(pytz.UTC)
-    
+
     if not os.path.exists(sent_signals_path):
         return  # File doesn't exist yet
-    
+
     try:
         with open(sent_signals_path, 'r') as f:
             for line in f:
@@ -727,41 +731,41 @@ def is_duplicate_signal(symbol, timeframe, signal_type):
     """
     Check if this signal (symbol + timeframe + signal_type) was sent recently.
     Uses in-memory cache loaded once per cycle (NOT file I/O 603 times!)
-    
+
     Returns: True if duplicate (should skip), False if new signal (should send)
     """
     global _dedup_cache, _dedup_cache_time
-    
+
     if _dedup_cache is None or _dedup_cache_time is None:
         return False  # Cache not initialized
-    
+
     try:
         window_seconds = DEDUP_WINDOWS.get(timeframe, 1200)
         current_time = datetime.now(pytz.UTC)
-        
+
         # Check in-memory cache (O(n) but n is small and we only do this once per cycle)
         for signal_record in _dedup_cache:
             # Check if same symbol + timeframe + signal_type
-            if (signal_record.get('symbol') == symbol and 
-                signal_record.get('timeframe') == timeframe and 
+            if (signal_record.get('symbol') == symbol and
+                signal_record.get('timeframe') == timeframe and
                 signal_record.get('signal_type') == signal_type):
-                
+
                 # Check if within dedup window
                 sent_time_str = signal_record.get('sent_time_utc')
                 if sent_time_str:
                     sent_time = datetime.fromisoformat(sent_time_str.replace('Z', '+00:00'))
                     if not sent_time.tzinfo:
                         sent_time = pytz.UTC.localize(sent_time)
-                    
+
                     time_diff_seconds = (current_time - sent_time).total_seconds()
-                    
+
                     # If within window = duplicate
                     if time_diff_seconds < window_seconds:
                         return True  # Duplicate found
-        
+
         # No duplicate found
         return False
-    
+
     except Exception as e:
         print(f"[DEDUP-ERROR] {symbol} {timeframe}: {e}. Assuming NOT duplicate.", flush=True)
         return False
@@ -771,17 +775,17 @@ def run_cycle():
     Single pass over all TOKENS. Returns list of valid_debug dicts collected during this cycle.
     """
     print("[INFO] Starting Smart Filter cycle (single pass)...", flush=True)
-    
+
     # === CRITICAL FIX: Load dedup cache ONCE per cycle (not 603 times!) ===
     load_dedup_cache()
-    
+
     logger = SignalLogger(enabled=True)  # Clean, informative logging
     valid_debugs = []
     now = time.time()
-    
+
     # IN-MEMORY DEDUP: Track signals sent in THIS CYCLE (prevents intra-cycle duplicates)
     signals_sent_this_cycle = set()
-    
+
     # NOTE: Deduplication now uses SENT_SIGNALS.jsonl with per-timeframe windows
     # PLUS in-memory set for same-cycle duplicates (see is_duplicate_signal function above)
 
@@ -790,13 +794,13 @@ def run_cycle():
         try:
             # Fetch OHLCV independently for each TF (PROJECT-3 SmartFilter fix - decouple TF processing)
             ohlcv_data = safe_fetch_ohlcv_by_tf(symbol, get_ohlcv)
-            
+
             # Check if symbol should be skipped (ALL TFs missing)
             should_skip, skip_reason = should_skip_symbol(ohlcv_data)
             if should_skip:
                 print(f"[WARN] Skipping {symbol}: {skip_reason}", flush=True)
                 continue
-            
+
             # Extract data (may be None for individual TFs - that's OK now)
             df15 = ohlcv_data.get("15min")
             df30 = ohlcv_data.get("30min")
@@ -807,13 +811,13 @@ def run_cycle():
             else:
                 print(f"[LOAD] {symbol}: df2h is None or empty - ohlcv_data.keys()={list(ohlcv_data.keys())}", flush=True)
             df4h = ohlcv_data.get("4h")  # PHASE 2 ADD
-            
+
             # DEBUG: Log TF4h fetch status (PHASE 2 - FIX TF4h not firing)
             if df4h is None:
                 print(f"[DEBUG-TF4h] {symbol}: df4h is NONE - data not available from API", flush=True)
             else:
                 print(f"[DEBUG-TF4h] {symbol}: df4h loaded - {len(df4h)} candles", flush=True)
-            
+
             # Calculate early breakout only for TFs with data
             early_breakout_15m = early_breakout(df15, lookback=3) if df15 is not None else None
             early_breakout_30m = early_breakout(df30, lookback=3) if df30 is not None else None
@@ -835,7 +839,7 @@ def run_cycle():
                         sf15 = SmartFilter(symbol, df15, tf="15min")
                         regime15 = sf15._market_regime()
                         res15 = sf15.analyze()
-    
+
                     # LOG ALL SIGNALS (even rejected) to ALL_SIGNALS.jsonl BEFORE filters_ok check
                     if isinstance(res15, dict):
                         score_15min = res15.get("score")
@@ -854,15 +858,15 @@ def run_cycle():
                                 f.write(json.dumps(all_signal_entry) + '\n')
                         except Exception as e:
                             print(f"[WARN] Failed to log to ALL_SIGNALS.jsonl: {e}", flush=True)
-    
+
                     if isinstance(res15, dict) and res15.get("filters_ok") is True:
-                        
+
                         # ===== SCORE VALIDATION GATE (Universal MIN_SCORE from smart_filter.py) =====
                         if score_15min is None or score_15min < MIN_SCORE:
                             print(f"[SCORE_GATE] 15min {symbol} REJECTED: score={score_15min} < MIN_SCORE={MIN_SCORE}", flush=True)
                             continue
                         # ===== END SCORE VALIDATION =====
-                        
+
                         # ===== PHASE 2-FIXED: DIRECTION-AWARE GATEKEEPER CHECK (DISABLED 2026-03-25) =====
                         # Code preserved but disabled - data showed gatekeeper reduces profitability
                         # 4h without gatekeeper: 56% WR | 1h with gatekeeper: 36% WR
@@ -875,7 +879,7 @@ def run_cycle():
                                     regime=regime15,
                                     debug=False
                                 )
-                                
+
                                 if not gates_passed:
                                     failed_gates = [k for k, v in gate_results.items() if not v]
                                     print(f"[PHASE2-FIXED] 15min {symbol} {signal_type} REJECTED - "
@@ -890,11 +894,11 @@ def run_cycle():
                         else:
                             print(f"[GATEKEEPER-DISABLED] 15min {symbol}: DirectionAwareGatekeeper bypassed (code preserved)", flush=True)
                         # ===== END PHASE 2-FIXED GATES (DISABLED) =====
-                        
+
                         last15 = last_sent.get(key15, 0)
                         if now - last15 >= COOLDOWN["15min"]:
                             numbered_signal = f"{idx}.A"
-    
+
                             # Fresh orderbook/density logs (main_log)
                             log_orderbook_and_density(symbol)
                             try:
@@ -907,19 +911,19 @@ def run_cycle():
                             except Exception as e:
                                 print(f"[ERROR] get_resting_order_density failed for {symbol}: {e}", flush=True)
                                 density_result = {"bid_density": 0.0, "ask_density": 0.0, "bid_levels": 0, "ask_levels": 0, "midprice": None}
-    
+
                             bias = res15.get("bias", "NEUTRAL")
                             sf15.bias = bias
-    
+
                             # DISABLED: SuperGK validation (broken mechanism, blocking all signals)
                             # TODO: Review SuperGK logic and fix it properly
                             print("[SuperGK][MAIN] DISABLED (broken) - bypassing SuperGK for ALL signals", flush=True)
                             super_gk_ok = True  # Bypass until SuperGK is fixed
                             print(f"[SuperGK][MAIN] Result -> bias={bias} super_gk_ok={super_gk_ok} (bypassed)", flush=True)
-    
+
                             if not super_gk_ok:
                                 # legacy compatibility block (should not execute with global bypass)
-                                print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
+                                print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} - NO SIGNAL SENT", flush=True)
                                 if len(valid_debugs) < 2:
                                     valid_debugs.append({
                                     "symbol": symbol,
@@ -938,11 +942,11 @@ def run_cycle():
                                     "early_breakout_15m": early_breakout_15m
                                     })
                                 continue
-    
+
                             # --- Prepare to send ---
                             print(f"[LOG] Sending 15min alert for {res15.get('symbol')}", flush=True)
                             fired_time_utc = datetime.utcnow()
-    
+
                             # Live entry price preferred, fall back to analyzer price
                             entry_price_raw = None
                             try:
@@ -955,7 +959,7 @@ def run_cycle():
                             except Exception as e:
                                 print(f"[WARN] get_live_entry_price raised: {e} -- falling back to analyzer price", flush=True)
                                 entry_price_raw = res15.get("price", 0.0)
-    
+
                             # Coerce defensively
                             try:
                                 entry_price = float(entry_price_raw)
@@ -966,10 +970,10 @@ def run_cycle():
                                 except Exception:
                                     print(f"[WARN] Failed to coerce entry_price ({entry_price_raw}); defaulting to 0.0", flush=True)
                                     entry_price = 0.0
-    
+
                             # Debug: final entry price vs analyzer price
                             print(f"[DEBUG] entry_price_final={entry_price:.8f} analyzer_price={res15.get('price')}", flush=True)
-    
+
                             # Collect signal metadata
                             score = res15.get("score", 0)
                             score_max = res15.get("score_max", 0)
@@ -986,17 +990,17 @@ def run_cycle():
                             except Exception:
                                 confidence = 0.0
                             entry_idx = df15.index.get_loc(df15.index[-1])
-    
+
                             # Log signal generated (passes SmartFilter)
                             logger.signal_generated(symbol_val, tf_val, signal_type, score, entry_price)
-    
+
                             # Get market regime EARLY (needed for Option C: RANGE TP scaling)
                             regime = sf15._market_regime() if hasattr(sf15, "_market_regime") else None
-                            
+
                             # ===== PHASE 3B: REVERSAL QUALITY GATE (15min block) =====
                             if Route == "REVERSAL":
                                 reversal_type = res15.get("reversal_type", None)  # BULLISH or BEARISH
-                                
+
                                 quality_check = check_reversal_quality(
                                     symbol=symbol_val,
                                     df=df15,
@@ -1004,29 +1008,29 @@ def run_cycle():
                                     regime=regime,
                                     direction=signal_type
                                 )
-                                
+
                                 # Log quality gate results
                                 gate_status = ", ".join([f"{k.split('_', 1)[1]}={'✓' if v else '✗'}" for k, v in quality_check["gate_results"].items()])
                                 print(f"[PHASE3B-RQ] 15min {symbol_val} {signal_type}: {gate_status} → Strength={quality_check['reversal_strength_score']:.0f}%", flush=True)
-                                
+
                                 # Apply recommendation
                                 if not quality_check["allowed"]:
                                     Route = quality_check["recommendation"]
                                     print(f"[PHASE3B-FALLBACK] 15min {symbol_val}: REVERSAL rejected ({quality_check['reason']}) → Routed to {Route}", flush=True)
                                 else:
                                     print(f"[PHASE3B-APPROVED] 15min {symbol_val}: REVERSAL approved ({quality_check['reason']})", flush=True)
-                            
+
                             # === RE-APPLY PHASE 1 VETO (post-Phase 3B route changes) ===
                             if Route in ["NONE", "AMBIGUOUS"]:
                                 print(f"[VETO-POST-3B] 15min {symbol_val} {signal_type}: Route={Route} (changed by Phase 3B). REJECTING signal.", flush=True)
                                 continue
-                            
+
                             # Route scoring & recommendation log
                             route_score = calculate_route_score(Route, signal_type, regime, reversal_strength_score=None)
                             route_rec = get_route_recommendation(Route, signal_type, regime)
                             print(f"[PHASE3B-SCORE] 15min {symbol_val}: {route_rec} (score: {route_score})", flush=True)
                             # ===== END PHASE 3B: 15min block =====
-    
+
                             # Recompute TP/SL against the final live entry_price so TP/SL match execution price
                             tp_sl = None
                             tp = None
@@ -1044,7 +1048,7 @@ def run_cycle():
                                 print(f"[WARN] calculate_tp_sl failed: {e}", flush=True)
                                 tp = sl = fib_levels = None
                                 tp_sl = None
-    
+
                             # Append debug object used for exporting debug files
                             if len(valid_debugs) < 2:
                                 valid_debugs.append({
@@ -1066,7 +1070,7 @@ def run_cycle():
                                 "sl": sl,
                                 "fib_levels": fib_levels
                                 })
-    
+
                             # Log fired signal (tracking) and then send telegram
                             try:
                                 log_fired_signal(
@@ -1087,28 +1091,28 @@ def run_cycle():
                             except Exception as e:
                                 print(f"[WARN] log_fired_signal raised: {e}", flush=True)
                                 traceback.print_exc()
-    
+
                             # DISABLED: Direction-aware threshold was too strict
                             # Scores are 9-12, but thresholds are 13-25 → rejected ALL signals
                             # Disabled 2026-03-06 00:18 GMT+7
                             # (threshold check moved to SmartFilter min_score, which is now 3)
-    
+
                             # ===== RR VALIDATION & ENFORCEMENT (PROJECT-11) ===== (regime already calculated earlier)
                             achieved_rr_value = tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None
-                            
+
                             # Step 1: Validate TP/SL relationship for direction
                             is_valid_relationship, rr_error = validate_tp_sl_relationship(entry_price, tp, sl, signal_type)
                             if not is_valid_relationship:
                                 print(f"[RR_ENFORCE] 15min signal REJECTED: {symbol_val} - {rr_error}", flush=True)
                                 continue
-                            
+
                             # Step 2: Enforce RR bounds (may adjust TP/SL)
                             adjusted_tp, adjusted_sl, enforced_rr, rr_action = enforce_rr_bounds(entry_price, tp, sl, signal_type, achieved_rr_value)
-                            
+
                             if rr_action.startswith("INVALID"):
                                 print(f"[RR_ENFORCE] 15min signal REJECTED: {symbol_val} - {rr_action}", flush=True)
                                 continue
-                            
+
                             # Step 3: Log enforcement action
                             if rr_action == "VALID":
                                 print(f"[RR_ENFORCE] 15min {symbol_val}: VALID RR {enforced_rr:.3f} (no adjustment)", flush=True)
@@ -1116,37 +1120,37 @@ def run_cycle():
                                 print(f"[RR_ENFORCE] 15min {symbol_val}: {rr_action} | Calculated RR: {achieved_rr_value} → Enforced RR: {enforced_rr} | TP: {tp} → {adjusted_tp} | SL: {sl} → {adjusted_sl}", flush=True)
                                 tp = adjusted_tp
                                 sl = adjusted_sl
-                            
+
                             # RR valid and enforced: Store signal + Fire
                             print(f"[RR_ENFORCE] 15min signal ACCEPTED: {symbol_val} - RR {enforced_rr:.3f} ({rr_action})", flush=True)
-                            
+
                             # BLACKLIST CHECK: Reject blacklisted symbols
                             if apply_blacklist_filter(symbol_val):
                                 continue
-                            
+
                             # Store signal to JSONL
                             tp_pct_val = ((tp - entry_price) / entry_price * 100) if tp and entry_price else 0
                             sl_pct_val = ((sl - entry_price) / entry_price * 100) if sl and entry_price else 0
-                            
+
                             # Extract passed/failed filters from SmartFilter results (PROJECT-5B instrumentation)
                             passed_filters = []
                             failed_filters = []
                             passed_filter_count = 0
                             failed_filter_count = 0
-                            
+
                             if signal_type == 'LONG':
                                 results = res15.get('results_long', {})
                             else:  # SHORT
                                 results = res15.get('results_short', {})
-                            
+
                             passed_filters = results.get('passed_filters', [])
                             failed_filters = results.get('failed_filters', [])
                             passed_filter_count = results.get('passed_filter_count', 0)
                             failed_filter_count = results.get('failed_filter_count', 0)
-                            
+
                             # Generate telegram_msg_id upfront (will be used for Telegram + stored in signal)
                             telegram_msg_id = str(uuid_lib.uuid4())[:12]
-                            
+
                             signal_uuid = create_and_store_signal(
                                 symbol=symbol_val,
                                 timeframe=tf_val,
@@ -1174,44 +1178,44 @@ def run_cycle():
                                 telegram_msg_id=telegram_msg_id,  # ← NEW: Pass telegram_msg_id upfront
                                 mtf_alignment_score=mtf_score  # ← MTF band: store 15min MTF alignment
                             )
-                            
+
                             if not signal_uuid:
                                 print(f"[WARN] Signal {symbol_val} (15min) REJECTED - duplicate within 120s. NOT sending Telegram alert.", flush=True)
                                 continue
-    
+
                             # IN-MEMORY DEDUP: Check if sent in THIS CYCLE (prevents rapid duplicates)
                             cycle_key = f"{symbol_val}|15min|{signal_type}"
                             if cycle_key in signals_sent_this_cycle:
                                 print(f"[DEDUP-CYCLE] 15min {symbol_val} {signal_type}: Already sent in THIS CYCLE. SKIPPING.", flush=True)
                                 continue
-                            
+
                             # DISABLED: PHASE 4A: Check 30min+1h alignment (Scenario 4)
                             # This was rejecting ALL signals - disabled 2026-03-06 00:10 GMT+7
                             # alignment_allowed, trend_30, trend_1h, alignment_reason = check_multitf_alignment_30_1h(symbol_val, ohlcv_data)
                             # if not alignment_allowed:
                             #     continue
                             alignment_allowed = True  # FIX: Allow all signals to proceed
-                            
+
                             # CRITICAL: Deduplication check (prevent duplicate within DEDUP_WINDOWS)
                             if is_duplicate_signal(symbol_val, "15min", signal_type):
                                 continue
-                            
+
                             # Mark as sent in this cycle
                             signals_sent_this_cycle.add(cycle_key)
-                            
+
                             # Define symbol_group early (for tier matching + write_signal)
                             symbol_group = classify_symbol(symbol_val)
-                            
+
                             # Calculate confidence_level for 6D tier matching
                             confidence_level_cat = 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
-                            
+
                             # Send trade alert to Telegram
                             if os.getenv("DRY_RUN", "false").lower() != "true":
                                 try:
                                     # Get signal tier (6D matching with confidence_level)
                                     signal_tier = get_signal_tier(tf_val, signal_type, Route, regime, symbol_group, confidence_level_cat)
                                     print(f"[TIER] 15min {symbol_val} ({symbol_group}|{confidence_level_cat}): {signal_tier}", flush=True)
-                                    
+
                                     print(f"[DEBUG] 15min: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
                                     sent_ok = send_telegram_alert(
                                         numbered_signal=numbered_signal,
@@ -1239,14 +1243,15 @@ def run_cycle():
                                         signal_uuid=signal_uuid,
                                         mtf_alignment_score=mtf_score,
                                         mtf_alignment_label=mtf_label,
-                                        mtf_adjusted_confidence=mtf_adj_conf
+                                        mtf_adjusted_confidence=mtf_adj_conf,
+                                        symbol_group=symbol_group
                                     )
                                     print(f"[DEBUG] 15min: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
                                     if sent_ok:
                                         last_sent[key15] = now
                                         # signals_sent_this_cycle.add(signal_key)  # Dedup now uses SENT_SIGNALS.jsonl
                                         logger.signal_sent(symbol_val, "15min", signal_uuid[:12])
-                                        
+
                                         # Log to SENT_SIGNALS for PEC tracking
                                         try:
                                             _sent_signal_tracker.log_sent_signal(
@@ -1276,42 +1281,47 @@ def run_cycle():
                                             if _master_writer_ready:
                                                 # Convert MTF score to band for storage
                                                 mtf_band = convert_mtf_score_to_band(mtf_score)
-                                                _signals_master_writer.write_signal({
-                                                    'signal_uuid': signal_uuid,
-                                                    'symbol': symbol_val,
-                                                    'timeframe': '15min',
-                                                    'signal_type': signal_type,
-                                                    'entry_price': entry_price,
-                                                    'tp_target': tp,
-                                                    'sl_target': sl,
-                                                    'tp_pct': tp_pct_val,
-                                                    'sl_pct': sl_pct_val,
-                                                    'achieved_rr': achieved_rr_value,
-                                                    'score': score,
-                                                    'max_score': score_max,
-                                                    'confidence': confidence,
-                                                    'route': Route,
-                                                    'regime': regime,
-                                                    'telegram_msg_id': signal_uuid[:12],
-                                                    'fired_time_utc': fired_time_utc.isoformat(),
-                                                    'sent_time_utc': datetime.utcnow().isoformat(),
-                                                    'passed_filters': passed_filters,
-                                                    'failed_filters': failed_filters,
-                                                    'passed_filter_count': passed_filter_count,
-                                                    'failed_filter_count': failed_filter_count,
-                                                    'mtf_alignment_band': mtf_band,
-                                                    'mtf_alignment_score': mtf_score,
-                                                    'status': 'OPEN',
-                                                    'signal_origin': 'NEW_LIVE',
-                                                    'weighted_score': confidence * score / 100 if score_max else 0,
-                                                    'tier': signal_tier,
-    
-                                                    'symbol_group': symbol_group,
-    
-                                                    'confidence_level': 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
-    
-                                                    })
-                                                
+                                                try:
+                                                    _signals_master_writer.write_signal({
+                                                        'signal_uuid': signal_uuid,
+                                                        'symbol': symbol_val,
+                                                        'timeframe': '15min',
+                                                        'signal_type': signal_type,
+                                                        'entry_price': entry_price,
+                                                        'tp_target': tp,
+                                                        'sl_target': sl,
+                                                        'tp_pct': tp_pct_val,
+                                                        'sl_pct': sl_pct_val,
+                                                        'achieved_rr': achieved_rr_value,
+                                                        'score': score,
+                                                        'max_score': score_max,
+                                                        'confidence': confidence,
+                                                        'route': Route,
+                                                        'regime': regime,
+                                                        'telegram_msg_id': signal_uuid[:12],
+                                                        'fired_time_utc': fired_time_utc.isoformat(),
+                                                        'sent_time_utc': datetime.utcnow().isoformat(),
+                                                        'passed_filters': passed_filters,
+                                                        'failed_filters': failed_filters,
+                                                        'passed_filter_count': passed_filter_count,
+                                                        'failed_filter_count': failed_filter_count,
+                                                        'mtf_alignment_band': mtf_band,
+                                                        'mtf_alignment_score': mtf_score,
+                                                        'status': 'OPEN',
+                                                        'signal_origin': 'NEW_LIVE',
+                                                        'weighted_score': confidence * score / 100 if score_max else 0,
+                                                        'tier': signal_tier,
+
+                                                        'symbol_group': symbol_group,
+
+                                                        'confidence_level': 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
+
+                                                        })
+                                                    print(f"[WRITE_OK] ✅ SIGNALS_MASTER: {signal_uuid[:12]} {symbol_val} 15min (tier={signal_tier})", flush=True)
+                                                except Exception as e:
+                                                    print(f"[WRITE_FAILED] ❌ CRITICAL: SIGNALS_MASTER write failed - {symbol_val} 15min {signal_uuid[:12]} - {type(e).__name__}: {str(e)[:100]}", flush=True)
+                                                    send_ops_alert(f"SIGNALS_MASTER write failed: {symbol_val} 15min - {str(e)[:200]}", "CRITICAL")
+
                                                 # PHASE 1: Dual-Write Verification (Alert + Continue strategy)
                                                 dual_write_ok = True
                                                 if _dual_write_ready:
@@ -1332,7 +1342,7 @@ def run_cycle():
                                                     except Exception as e:
                                                         print(f"[DUAL-WRITE] Warning: Verification error (continuing): {e}", flush=True)
                                                         dual_write_ok = False
-                                                
+
                                                 # NEW: Trigger executor on signal fire (hybrid model - event-driven)
                                                 trigger_executor_on_signal(signal_uuid, symbol_val, '15min')
                                         except Exception as e:
@@ -1341,13 +1351,13 @@ def run_cycle():
                                         logger.signal_rejected(symbol_val, "15min", "Telegram send failed")
                                 except Exception as e:
                                     print(f"[ERROR] Exception during Telegram send for {symbol_val}: {e}", flush=True)
-    
+
                     else:
                         pass  # Silent - not a signal
                 except Exception as e:
                     print(f"[ERROR] Exception in processing 15min for {symbol}: {e}", flush=True)
                     traceback.print_exc()
-    
+
                 # --- 30min TF block (mirror of 15min with identical safe flow) ---
             try:
                 key30 = f"{symbol}_30min"
@@ -1378,13 +1388,13 @@ def run_cycle():
                         print(f"[WARN] Failed to log to ALL_SIGNALS.jsonl: {e}", flush=True)
 
                 if isinstance(res30, dict) and res30.get("filters_ok") is True:
-                    
+
                     # ===== SCORE VALIDATION GATE (Universal MIN_SCORE from smart_filter.py) =====
                     if score_30min is None or score_30min < MIN_SCORE:
                         print(f"[SCORE_GATE] 30min {symbol} REJECTED: score={score_30min} < MIN_SCORE={MIN_SCORE}", flush=True)
                         continue
                     # ===== END SCORE VALIDATION =====
-                    
+
                     # ===== PHASE 2-FIXED: DIRECTION-AWARE GATEKEEPER CHECK - 30min (DISABLED 2026-03-25) =====
                     signal_type = res30.get("bias", "UNKNOWN")
                     if ENABLE_DIRECTION_AWARE_GATEKEEPER:
@@ -1395,7 +1405,7 @@ def run_cycle():
                                 regime=regime30,
                                 debug=False
                             )
-                            
+
                             if not gates_passed:
                                 failed_gates = [k for k, v in gate_results.items() if not v]
                                 print(f"[PHASE2-FIXED] 30min {symbol} {signal_type} REJECTED - "
@@ -1409,7 +1419,7 @@ def run_cycle():
                     else:
                         print(f"[GATEKEEPER-DISABLED] 30min {symbol}: DirectionAwareGatekeeper bypassed (code preserved)", flush=True)
                     # ===== END PHASE 2-FIXED GATES (DISABLED) =====
-                    
+
                     last30 = last_sent.get(key30, 0)
                     if now - last30 >= COOLDOWN["30min"]:
                         numbered_signal = f"{idx}.B"
@@ -1436,7 +1446,7 @@ def run_cycle():
                         print(f"[SuperGK][MAIN] Result -> bias={bias} super_gk_ok={super_gk_ok} (bypassed)", flush=True)
 
                         if not super_gk_ok:
-                            print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
+                            print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} - NO SIGNAL SENT", flush=True)
                             if len(valid_debugs) < 2:
                                 valid_debugs.append({
                                 "symbol": symbol,
@@ -1504,11 +1514,11 @@ def run_cycle():
 
                         # Get market regime EARLY (needed for Option C: RANGE TP scaling)
                         regime = sf30._market_regime() if hasattr(sf30, "_market_regime") else None
-                        
+
                         # ===== PHASE 3B: REVERSAL QUALITY GATE (30min block) =====
                         if Route == "REVERSAL":
                             reversal_type = res30.get("reversal_type", None)  # BULLISH or BEARISH
-                            
+
                             quality_check = check_reversal_quality(
                                 symbol=symbol_val,
                                 df=df30,
@@ -1516,23 +1526,23 @@ def run_cycle():
                                 regime=regime,
                                 direction=signal_type
                             )
-                            
+
                             # Log quality gate results
                             gate_status = ", ".join([f"{k.split('_', 1)[1]}={'✓' if v else '✗'}" for k, v in quality_check["gate_results"].items()])
                             print(f"[PHASE3B-RQ] 30min {symbol_val} {signal_type}: {gate_status} → Strength={quality_check['reversal_strength_score']:.0f}%", flush=True)
-                            
+
                             # Apply recommendation
                             if not quality_check["allowed"]:
                                 Route = quality_check["recommendation"]
                                 print(f"[PHASE3B-FALLBACK] 30min {symbol_val}: REVERSAL rejected ({quality_check['reason']}) → Routed to {Route}", flush=True)
                             else:
                                 print(f"[PHASE3B-APPROVED] 30min {symbol_val}: REVERSAL approved ({quality_check['reason']})", flush=True)
-                        
+
                         # === RE-APPLY PHASE 1 VETO (post-Phase 3B route changes) ===
                         if Route in ["NONE", "AMBIGUOUS"]:
                             print(f"[VETO-POST-3B] 30min {symbol_val} {signal_type}: Route={Route} (changed by Phase 3B). REJECTING signal.", flush=True)
                             continue
-                        
+
                         # Route scoring & recommendation log
                         route_score = calculate_route_score(Route, signal_type, regime, reversal_strength_score=None)
                         route_rec = get_route_recommendation(Route, signal_type, regime)
@@ -1602,20 +1612,20 @@ def run_cycle():
 
                         # ===== RR VALIDATION & ENFORCEMENT (PROJECT-11) ===== (regime already calculated earlier)
                         achieved_rr_value = tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None
-                        
+
                         # Step 1: Validate TP/SL relationship for direction
                         is_valid_relationship, rr_error = validate_tp_sl_relationship(entry_price, tp, sl, signal_type)
                         if not is_valid_relationship:
                             print(f"[RR_ENFORCE] 30min signal REJECTED: {symbol_val} - {rr_error}", flush=True)
                             continue
-                        
+
                         # Step 2: Enforce RR bounds (may adjust TP/SL)
                         adjusted_tp, adjusted_sl, enforced_rr, rr_action = enforce_rr_bounds(entry_price, tp, sl, signal_type, achieved_rr_value)
-                        
+
                         if rr_action.startswith("INVALID"):
                             print(f"[RR_ENFORCE] 30min signal REJECTED: {symbol_val} - {rr_action}", flush=True)
                             continue
-                        
+
                         # Step 3: Log enforcement action
                         if rr_action == "VALID":
                             print(f"[RR_ENFORCE] 30min {symbol_val}: VALID RR {enforced_rr:.3f} (no adjustment)", flush=True)
@@ -1623,37 +1633,37 @@ def run_cycle():
                             print(f"[RR_ENFORCE] 30min {symbol_val}: {rr_action} | Calculated RR: {achieved_rr_value} → Enforced RR: {enforced_rr} | TP: {tp} → {adjusted_tp} | SL: {sl} → {adjusted_sl}", flush=True)
                             tp = adjusted_tp
                             sl = adjusted_sl
-                        
+
                         # RR valid and enforced: Store signal + Fire
                         print(f"[RR_ENFORCE] 30min signal ACCEPTED: {symbol_val} - RR {enforced_rr:.3f} ({rr_action})", flush=True)
-                        
+
                         # BLACKLIST CHECK: Reject blacklisted symbols
                         if apply_blacklist_filter(symbol_val):
                             continue
-                        
+
                         # Store signal to JSONL
                         tp_pct_val = ((tp - entry_price) / entry_price * 100) if tp and entry_price else 0
                         sl_pct_val = ((sl - entry_price) / entry_price * 100) if sl and entry_price else 0
-                        
+
                         # Extract passed/failed filters from SmartFilter results (PROJECT-5B instrumentation)
                         passed_filters = []
                         failed_filters = []
                         passed_filter_count = 0
                         failed_filter_count = 0
-                        
+
                         if signal_type == 'LONG':
                             results = res30.get('results_long', {})
                         else:  # SHORT
                             results = res30.get('results_short', {})
-                        
+
                         passed_filters = results.get('passed_filters', [])
                         failed_filters = results.get('failed_filters', [])
                         passed_filter_count = results.get('passed_filter_count', 0)
                         failed_filter_count = results.get('failed_filter_count', 0)
-                        
+
                         # Generate telegram_msg_id upfront (will be used for Telegram + stored in signal)
                         telegram_msg_id = str(uuid_lib.uuid4())[:12]
-                        
+
                         signal_uuid = create_and_store_signal(
                             symbol=symbol_val,
                             timeframe=tf_val,
@@ -1681,7 +1691,7 @@ def run_cycle():
                             telegram_msg_id=telegram_msg_id,  # ← NEW: Pass telegram_msg_id upfront
                             mtf_alignment_score=None  # 30min: No MTF analysis, use fallback "unassigned"
                         )
-                        
+
                         if not signal_uuid:
                             print(f"[WARN] Signal {symbol_val} (30min) REJECTED - duplicate within 120s. NOT sending Telegram alert.", flush=True)
                             continue
@@ -1689,41 +1699,41 @@ def run_cycle():
                         # PHASE 4A: Check 30min+1h alignment (Scenario 4)
                         alignment_allowed, trend_30, trend_1h, alignment_reason = check_multitf_alignment_30_1h(symbol_val, ohlcv_data)
                         print(f"[PHASE4A-S4] 30min {symbol_val}: {alignment_reason}", flush=True)
-                        
+
                         if not alignment_allowed:
                             print(f"[PHASE4A-S4-FILTERED] 30min {symbol_val} {signal_type}: Rejected by 30min+1h filter", flush=True)
                             continue
-                        
+
                         # IN-MEMORY DEDUP: Check if sent in THIS CYCLE (prevents rapid duplicates)
                         cycle_key = f"{symbol_val}|30min|{signal_type}"
                         if cycle_key in signals_sent_this_cycle:
                             print(f"[DEDUP-CYCLE] 30min {symbol_val} {signal_type}: Already sent in THIS CYCLE. SKIPPING.", flush=True)
                             continue
-                        
+
                         # CRITICAL: Deduplication check (prevent duplicate within DEDUP_WINDOWS)
                         if is_duplicate_signal(symbol_val, "30min", signal_type):
                             print(f"[DEDUP-WINDOW] 30min {symbol_val} {signal_type}: Duplicate within dedup window. SKIPPING.", flush=True)
                             continue
-                        
+
                         # Mark as sent in this cycle
                         signals_sent_this_cycle.add(cycle_key)
-                        
+
                         # TEMP DEBUG: Verify gate code is reached
                         print(f"[GATE-ENTRY] 30min {symbol_val} signal reached gate block", flush=True)
-                        
+
                         # EMA CONFIRMATION GATE (TF-Specific): Align short-term signal to long-term trend
                         # Optimization 2026-02-27: Use EMA100 for 30min (better short-term alignment than EMA200)
                         try:
                             ema_period_30m = EMA_CONFIG.get("30min", 100)  # Default EMA100 for 30min
                             ema_col_name = f"ema{ema_period_30m}"
-                            
+
                             close_price = sf30.df['close'].iat[-1] if sf30.df is not None and not sf30.df.empty else None
                             ema_val = sf30.df[ema_col_name].iat[-1] if sf30.df is not None and ema_col_name in sf30.df.columns and not sf30.df.empty else None
-                            
+
                             # DIAGNOSTIC: Always log gate status
                             has_ema_col = ema_col_name in sf30.df.columns if sf30.df is not None else False
                             print(f"[EMA{ema_period_30m}-DEBUG] 30min {symbol_val}: has_col={has_ema_col}, close={close_price}, ema{ema_period_30m}={ema_val}", flush=True)
-                            
+
                             if close_price is not None and ema_val is not None:
                                 if signal_type == "LONG" and close_price < ema_val:
                                     print(f"[EMA{ema_period_30m}-GATE] 30min {symbol_val}: LONG rejected (close ${close_price:.6f} < EMA{ema_period_30m} ${ema_val:.6f})", flush=True)
@@ -1738,25 +1748,66 @@ def run_cycle():
                                 print(f"[EMA{ema_period_30m}-SKIP] 30min {symbol_val}: Skipping gate (values missing)", flush=True)
                         except Exception as e:
                             print(f"[EMA{ema_period_30m}-WARN] 30min {symbol_val}: Error checking gate: {e}", flush=True)
-                        
+
                         # Define symbol_group for tier matching + write_signal
                         symbol_group = classify_symbol(symbol_val)
-                        
+
                         # Calculate confidence_level for 6D tier matching
                         confidence_level_cat = 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
-                        
+
                         # Get MTF alignment score for 30min (for all timeframes now)
                         mtf_score = get_mtf_alignment_score(symbol_val, tf_val, signal_type, regime, Route, confidence)
                         mtf_band = convert_mtf_score_to_band(mtf_score)
                         print(f"[MTF] 30min {symbol_val}: Band={mtf_band} Score={mtf_score}", flush=True)
-                        
-                        # Send trade alert to Telegram
+
+                        # Get signal tier UPFRONT (needed for SIGNALS_MASTER write - independent of Telegram)
+                        signal_tier = get_signal_tier(tf_val, signal_type, Route, regime, symbol_group, confidence_level_cat)
+                        print(f"[TIER] 30min {symbol_val} ({symbol_group}|{confidence_level_cat}): {signal_tier}", flush=True)
+
+                        # CRITICAL: Write to SIGNALS_MASTER BEFORE Telegram send (independent concern)
+                        # Signal must persist with complete metadata regardless of Telegram delivery
+                        if _master_writer_ready:
+                            try:
+                                _signals_master_writer.write_signal({
+                                    'signal_uuid': signal_uuid,
+                                    'symbol': symbol_val,
+                                    'timeframe': '30min',
+                                    'signal_type': signal_type,
+                                    'entry_price': entry_price,
+                                    'tp_target': tp,
+                                    'sl_target': sl,
+                                    'tp_pct': tp_pct_val,
+                                    'sl_pct': sl_pct_val,
+                                    'achieved_rr': achieved_rr_value,
+                                    'score': score,
+                                    'max_score': score_max,
+                                    'confidence': confidence,
+                                    'route': Route,
+                                    'regime': regime,
+                                    'telegram_msg_id': signal_uuid[:12],
+                                    'fired_time_utc': fired_time_utc.isoformat(),
+                                    'sent_time_utc': datetime.utcnow().isoformat(),
+                                    'passed_filters': passed_filters,
+                                    'failed_filters': failed_filters,
+                                    'passed_filter_count': passed_filter_count,
+                                    'failed_filter_count': failed_filter_count,
+                                    'mtf_alignment_band': mtf_band,
+                                    'mtf_alignment_score': mtf_score,
+                                    'status': 'OPEN',
+                                    'signal_origin': 'NEW_LIVE',
+                                    'weighted_score': confidence * score / 100 if score_max else 0,
+                                    'tier': signal_tier,
+                                    'symbol_group': symbol_group,
+                                    'confidence_level': 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
+                                })
+                                print(f"[WRITE_OK] ✅ SIGNALS_MASTER: {signal_uuid[:12]} {symbol_val} 30min (tier={signal_tier})", flush=True)
+                            except Exception as e:
+                                print(f"[WRITE_FAILED] ❌ CRITICAL: SIGNALS_MASTER write failed - {symbol_val} 30min {signal_uuid[:12]} - {type(e).__name__}: {str(e)[:100]}", flush=True)
+                                send_ops_alert(f"SIGNALS_MASTER write failed: {symbol_val} 30min - {str(e)[:200]}", "CRITICAL")
+
+                        # Send trade alert to Telegram (independent of SIGNALS_MASTER persistence)
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
-                                # Get signal tier (6D matching with confidence_level)
-                                signal_tier = get_signal_tier(tf_val, signal_type, Route, regime, symbol_group, confidence_level_cat)
-                                print(f"[TIER] 30min {symbol_val} ({symbol_group}|{confidence_level_cat}): {signal_tier}", flush=True)
-                                
                                 print(f"[DEBUG] 30min: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
                                 mtf_label = get_mtf_alignment_label(mtf_band)
                                 sent_ok = send_telegram_alert(
@@ -1790,9 +1841,8 @@ def run_cycle():
                                 print(f"[DEBUG] 30min: send_telegram_alert returned {sent_ok} for {symbol_val}", flush=True)
                                 if sent_ok:
                                     last_sent[key30] = now
-                                    # signals_sent_this_cycle.add(signal_key)  # Dedup now uses SENT_SIGNALS.jsonl
                                     logger.signal_sent(symbol_val, "30min", signal_uuid[:12])
-                                    
+
                                     # Log to SENT_SIGNALS for PEC tracking
                                     try:
                                         _sent_signal_tracker.log_sent_signal(
@@ -1818,67 +1868,29 @@ def run_cycle():
                                             passed_filter_count=passed_filter_count,
                                             failed_filter_count=failed_filter_count
                                         )
-                                        # Also write to SIGNALS_MASTER.jsonl (single source of truth)
-                                        if _master_writer_ready:
-                                            _signals_master_writer.write_signal({
-                                                'signal_uuid': signal_uuid,
-                                                'symbol': symbol_val,
-                                                'timeframe': '30min',
-                                                'signal_type': signal_type,
-                                                'entry_price': entry_price,
-                                                'tp_target': tp,
-                                                'sl_target': sl,
-                                                'tp_pct': tp_pct_val,
-                                                'sl_pct': sl_pct_val,
-                                                'achieved_rr': achieved_rr_value,
-                                                'score': score,
-                                                'max_score': score_max,
-                                                'confidence': confidence,
-                                                'route': Route,
-                                                'regime': regime,
-                                                'telegram_msg_id': signal_uuid[:12],
-                                                'fired_time_utc': fired_time_utc.isoformat(),
-                                                'sent_time_utc': datetime.utcnow().isoformat(),
-                                                'passed_filters': passed_filters,
-                                                'failed_filters': failed_filters,
-                                                'passed_filter_count': passed_filter_count,
-                                                'failed_filter_count': failed_filter_count,
-                                                'mtf_alignment_band': mtf_band,
-                                                'mtf_alignment_score': mtf_score,
-                                                'status': 'OPEN',
-                                                'signal_origin': 'NEW_LIVE',
-                                                'weighted_score': confidence * score / 100 if score_max else 0,
-                                                'tier': signal_tier,
-
-                                                'symbol_group': symbol_group,
-
-                                                'confidence_level': 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
-
-                                                })
-                                            
-                                            # PHASE 1: Dual-Write Verification (Alert + Continue strategy)
-                                            dual_write_ok = True
-                                            if _dual_write_ready:
-                                                try:
-                                                    verify_result = verify_signal_dual_write(
-                                                        signal_uuid=signal_uuid,
-                                                        signal_data={'symbol': symbol_val, 'timeframe': '30min', 'entry_price': entry_price},
-                                                        raise_on_failure=False  # Alert+Continue (don't halt)
-                                                    )
-                                                    if verify_result:
-                                                        print(f"[DUAL-WRITE] ✅ Verified {signal_uuid[:12]} to both files | FIRE: {symbol_val} 30min", flush=True)
-                                                    else:
-                                                        dual_write_ok = False
-                                                        _divergence_tracker.record_failure(signal_uuid)
-                                                        alert_msg = f"Dual-write failed: {signal_uuid[:12]} {symbol_val} 30min | MASTER:✓ AUDIT:✗"
-                                                        print(f"[DUAL-WRITE] ❌ {alert_msg}", flush=True)
-                                                        send_ops_alert(alert_msg, "CRITICAL")
-                                                except Exception as e:
-                                                    print(f"[DUAL-WRITE] Warning: Verification error (continuing): {e}", flush=True)
+                                        # PHASE 1: Dual-Write Verification (Alert + Continue strategy)
+                                        dual_write_ok = True
+                                        if _dual_write_ready:
+                                            try:
+                                                verify_result = verify_signal_dual_write(
+                                                    signal_uuid=signal_uuid,
+                                                    signal_data={'symbol': symbol_val, 'timeframe': '30min', 'entry_price': entry_price},
+                                                    raise_on_failure=False  # Alert+Continue (don't halt)
+                                                )
+                                                if verify_result:
+                                                    print(f"[DUAL-WRITE] ✅ Verified {signal_uuid[:12]} to both files | FIRE: {symbol_val} 30min", flush=True)
+                                                else:
                                                     dual_write_ok = False
-                                            
-                                            # NEW: Trigger executor on signal fire (hybrid model - event-driven)
-                                            trigger_executor_on_signal(signal_uuid, symbol_val, '30min')
+                                                    _divergence_tracker.record_failure(signal_uuid)
+                                                    alert_msg = f"Dual-write failed: {signal_uuid[:12]} {symbol_val} 30min | MASTER:✓ AUDIT:✗"
+                                                    print(f"[DUAL-WRITE] ❌ {alert_msg}", flush=True)
+                                                    send_ops_alert(alert_msg, "CRITICAL")
+                                            except Exception as e:
+                                                print(f"[DUAL-WRITE] Warning: Verification error (continuing): {e}", flush=True)
+                                                dual_write_ok = False
+
+                                        # NEW: Trigger executor on signal fire (hybrid model - event-driven)
+                                        trigger_executor_on_signal(signal_uuid, symbol_val, '30min')
                                     except Exception as e:
                                         print(f"[ERROR] Failed to log PEC signal for {symbol_val}: {e}", flush=True)
                                 else:
@@ -1922,13 +1934,13 @@ def run_cycle():
                         print(f"[WARN] Failed to log to ALL_SIGNALS.jsonl: {e}", flush=True)
 
                 if isinstance(res1h, dict) and res1h.get("filters_ok") is True:
-                    
+
                     # ===== SCORE VALIDATION GATE (Universal MIN_SCORE from smart_filter.py) =====
                     if score_1h is None or score_1h < MIN_SCORE:
                         print(f"[SCORE_GATE] 1h {symbol} REJECTED: score={score_1h} < MIN_SCORE={MIN_SCORE}", flush=True)
                         continue
                     # ===== END SCORE VALIDATION =====
-                    
+
                     # ===== PHASE 2-FIXED: DIRECTION-AWARE GATEKEEPER CHECK - 1h (DISABLED 2026-03-25) =====
                     signal_type = res1h.get("bias", "UNKNOWN")
                     if ENABLE_DIRECTION_AWARE_GATEKEEPER:
@@ -1939,7 +1951,7 @@ def run_cycle():
                                 regime=regime1h,
                                 debug=False
                             )
-                            
+
                             if not gates_passed:
                                 failed_gates = [k for k, v in gate_results.items() if not v]
                                 print(f"[PHASE2-FIXED] 1h {symbol} {signal_type} REJECTED - "
@@ -1953,7 +1965,7 @@ def run_cycle():
                     else:
                         print(f"[GATEKEEPER-DISABLED] 1h {symbol}: DirectionAwareGatekeeper bypassed (code preserved)", flush=True)
                     # ===== END PHASE 2-FIXED GATES (DISABLED) =====
-                    
+
                     last1h = last_sent.get(key1h, 0)
                     if now - last1h >= COOLDOWN["1h"]:
                         numbered_signal = f"{idx}.C"
@@ -1980,7 +1992,7 @@ def run_cycle():
                         print(f"[SuperGK][MAIN] Result -> bias={bias} super_gk_ok={super_gk_ok} (bypassed)", flush=True)
 
                         if not super_gk_ok:
-                            print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} — NO SIGNAL SENT", flush=True)
+                            print(f"[BLOCKED] SuperGK not aligned: Signal={bias}, OrderBook={orderbook_result}, Density={density_result} - NO SIGNAL SENT", flush=True)
                             if len(valid_debugs) < 2:
                                 valid_debugs.append({
                                 "symbol": symbol,
@@ -2048,11 +2060,11 @@ def run_cycle():
 
                         # Get market regime EARLY (needed for Option C: RANGE TP scaling)
                         regime = sf1h._market_regime() if hasattr(sf1h, "_market_regime") else None
-                        
+
                         # ===== PHASE 3B: REVERSAL QUALITY GATE (1h block) =====
                         if Route == "REVERSAL":
                             reversal_type = res1h.get("reversal_type", None)  # BULLISH or BEARISH
-                            
+
                             quality_check = check_reversal_quality(
                                 symbol=symbol_val,
                                 df=df1h,
@@ -2060,23 +2072,23 @@ def run_cycle():
                                 regime=regime,
                                 direction=signal_type
                             )
-                            
+
                             # Log quality gate results
                             gate_status = ", ".join([f"{k.split('_', 1)[1]}={'✓' if v else '✗'}" for k, v in quality_check["gate_results"].items()])
                             print(f"[PHASE3B-RQ] 1h {symbol_val} {signal_type}: {gate_status} → Strength={quality_check['reversal_strength_score']:.0f}%", flush=True)
-                            
+
                             # Apply recommendation
                             if not quality_check["allowed"]:
                                 Route = quality_check["recommendation"]
                                 print(f"[PHASE3B-FALLBACK] 1h {symbol_val}: REVERSAL rejected ({quality_check['reason']}) → Routed to {Route}", flush=True)
                             else:
                                 print(f"[PHASE3B-APPROVED] 1h {symbol_val}: REVERSAL approved ({quality_check['reason']})", flush=True)
-                        
+
                         # === RE-APPLY PHASE 1 VETO (post-Phase 3B route changes) ===
                         if Route in ["NONE", "AMBIGUOUS"]:
                             print(f"[VETO-POST-3B] 1h {symbol_val} {signal_type}: Route={Route} (changed by Phase 3B). REJECTING signal.", flush=True)
                             continue
-                        
+
                         # Route scoring & recommendation log
                         route_score = calculate_route_score(Route, signal_type, regime, reversal_strength_score=None)
                         route_rec = get_route_recommendation(Route, signal_type, regime)
@@ -2145,20 +2157,20 @@ def run_cycle():
 
                         # ===== RR VALIDATION & ENFORCEMENT (PROJECT-11) ===== (regime already calculated earlier)
                         achieved_rr_value = tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None
-                        
+
                         # Step 1: Validate TP/SL relationship for direction
                         is_valid_relationship, rr_error = validate_tp_sl_relationship(entry_price, tp, sl, signal_type)
                         if not is_valid_relationship:
                             print(f"[RR_ENFORCE] 1h signal REJECTED: {symbol_val} - {rr_error}", flush=True)
                             continue
-                        
+
                         # Step 2: Enforce RR bounds (may adjust TP/SL)
                         adjusted_tp, adjusted_sl, enforced_rr, rr_action = enforce_rr_bounds(entry_price, tp, sl, signal_type, achieved_rr_value)
-                        
+
                         if rr_action.startswith("INVALID"):
                             print(f"[RR_ENFORCE] 1h signal REJECTED: {symbol_val} - {rr_action}", flush=True)
                             continue
-                        
+
                         # Step 3: Log enforcement action
                         if rr_action == "VALID":
                             print(f"[RR_ENFORCE] 1h {symbol_val}: VALID RR {enforced_rr:.3f} (no adjustment)", flush=True)
@@ -2166,37 +2178,37 @@ def run_cycle():
                             print(f"[RR_ENFORCE] 1h {symbol_val}: {rr_action} | Calculated RR: {achieved_rr_value} → Enforced RR: {enforced_rr} | TP: {tp} → {adjusted_tp} | SL: {sl} → {adjusted_sl}", flush=True)
                             tp = adjusted_tp
                             sl = adjusted_sl
-                        
+
                         # RR valid and enforced: Store signal + Fire
                         print(f"[RR_ENFORCE] 1h signal ACCEPTED: {symbol_val} - RR {enforced_rr:.3f} ({rr_action})", flush=True)
-                        
+
                         # BLACKLIST CHECK: Reject blacklisted symbols
                         if apply_blacklist_filter(symbol_val):
                             continue
-                        
+
                         # Store signal to JSONL
                         tp_pct_val = ((tp - entry_price) / entry_price * 100) if tp and entry_price else 0
                         sl_pct_val = ((sl - entry_price) / entry_price * 100) if sl and entry_price else 0
-                        
+
                         # Extract passed/failed filters from SmartFilter results (PROJECT-5B instrumentation)
                         passed_filters = []
                         failed_filters = []
                         passed_filter_count = 0
                         failed_filter_count = 0
-                        
+
                         if signal_type == 'LONG':
                             results = res1h.get('results_long', {})
                         else:  # SHORT
                             results = res1h.get('results_short', {})
-                        
+
                         passed_filters = results.get('passed_filters', [])
                         failed_filters = results.get('failed_filters', [])
                         passed_filter_count = results.get('passed_filter_count', 0)
                         failed_filter_count = results.get('failed_filter_count', 0)
-                        
+
                         # Generate telegram_msg_id upfront (will be used for Telegram + stored in signal)
                         telegram_msg_id = str(uuid_lib.uuid4())[:12]
-                        
+
                         signal_uuid = create_and_store_signal(
                             symbol=symbol_val,
                             timeframe=tf_val,
@@ -2224,7 +2236,7 @@ def run_cycle():
                             telegram_msg_id=telegram_msg_id,  # ← NEW: Pass telegram_msg_id upfront
                             mtf_alignment_score=None  # 1h: No MTF analysis, use fallback "unassigned"
                         )
-                        
+
                         if not signal_uuid:
                             print(f"[WARN] Signal {symbol_val} (1h) REJECTED - duplicate within 120s. NOT sending Telegram alert.", flush=True)
                             continue
@@ -2233,7 +2245,7 @@ def run_cycle():
                         # Note: For 1h signals, we check if 30min aligns with 1h (we're already at 1h, so both TFs must agree)
                         alignment_allowed, trend_30, trend_1h, alignment_reason = check_multitf_alignment_30_1h(symbol_val, ohlcv_data)
                         print(f"[PHASE4A-S4] 1h {symbol_val}: {alignment_reason}", flush=True)
-                        
+
                         if not alignment_allowed:
                             print(f"[PHASE4A-S4-FILTERED] 1h {symbol_val} {signal_type}: Rejected by 30min+1h filter", flush=True)
                             continue
@@ -2243,32 +2255,32 @@ def run_cycle():
                         if cycle_key in signals_sent_this_cycle:
                             print(f"[DEDUP-CYCLE] 1h {symbol_val} {signal_type}: Already sent in THIS CYCLE. SKIPPING.", flush=True)
                             continue
-                        
+
                         # CRITICAL: Deduplication check (prevent duplicate within DEDUP_WINDOWS)
                         if is_duplicate_signal(symbol_val, "1h", signal_type):
                             continue
-                        
+
                         # Mark as sent in this cycle
                         signals_sent_this_cycle.add(cycle_key)
-                        
+
                         # Define symbol_group for tier matching + write_signal
                         symbol_group = classify_symbol(symbol_val)
-                        
+
                         # Calculate confidence_level for 6D tier matching
                         confidence_level_cat = 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
-                        
+
                         # Get MTF alignment score for 1h (for all timeframes now)
                         mtf_score = get_mtf_alignment_score(symbol_val, tf_val, signal_type, regime, Route, confidence)
                         mtf_band = convert_mtf_score_to_band(mtf_score)
                         print(f"[MTF] 1h {symbol_val}: Band={mtf_band} Score={mtf_score}", flush=True)
-                        
+
                         # Send trade alert to Telegram
                         if os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
                                 # Get signal tier (6D matching with confidence_level)
                                 signal_tier = get_signal_tier(tf_val, signal_type, Route, regime, symbol_group, confidence_level_cat)
                                 print(f"[TIER] 1h {symbol_val} ({symbol_group}|{confidence_level_cat}): {signal_tier}", flush=True)
-                                
+
                                 print(f"[DEBUG] 1h: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
                                 mtf_label = get_mtf_alignment_label(mtf_band)
                                 sent_ok = send_telegram_alert(
@@ -2304,7 +2316,7 @@ def run_cycle():
                                     last_sent[key1h] = now
                                     # signals_sent_this_cycle.add(signal_key)  # Dedup now uses SENT_SIGNALS.jsonl
                                     logger.signal_sent(symbol_val, "1h", signal_uuid[:12])
-                                    
+
                                     # Log to SENT_SIGNALS for PEC tracking
                                     try:
                                         _sent_signal_tracker.log_sent_signal(
@@ -2332,42 +2344,47 @@ def run_cycle():
                                         )
                                         # Also write to SIGNALS_MASTER.jsonl (single source of truth)
                                         if _master_writer_ready:
-                                            _signals_master_writer.write_signal({
-                                                'signal_uuid': signal_uuid,
-                                                'symbol': symbol_val,
-                                                'timeframe': '1h',
-                                                'signal_type': signal_type,
-                                                'entry_price': entry_price,
-                                                'tp_target': tp,
-                                                'sl_target': sl,
-                                                'tp_pct': tp_pct_val,
-                                                'sl_pct': sl_pct_val,
-                                                'achieved_rr': achieved_rr_value,
-                                                'score': score,
-                                                'max_score': score_max,
-                                                'confidence': confidence,
-                                                'route': Route,
-                                                'regime': regime,
-                                                'telegram_msg_id': signal_uuid[:12],
-                                                'fired_time_utc': fired_time_utc.isoformat(),
-                                                'sent_time_utc': datetime.utcnow().isoformat(),
-                                                'passed_filters': passed_filters,
-                                                'failed_filters': failed_filters,
-                                                'passed_filter_count': passed_filter_count,
-                                                'failed_filter_count': failed_filter_count,
-                                                'mtf_alignment_band': mtf_band,
-                                                'mtf_alignment_score': mtf_score,
-                                                'status': 'OPEN',
-                                                'signal_origin': 'NEW_LIVE',
-                                                'weighted_score': confidence * score / 100 if score_max else 0,
-                                                'tier': signal_tier,
+                                            try:
+                                                _signals_master_writer.write_signal({
+                                                    'signal_uuid': signal_uuid,
+                                                    'symbol': symbol_val,
+                                                    'timeframe': '1h',
+                                                    'signal_type': signal_type,
+                                                    'entry_price': entry_price,
+                                                    'tp_target': tp,
+                                                    'sl_target': sl,
+                                                    'tp_pct': tp_pct_val,
+                                                    'sl_pct': sl_pct_val,
+                                                    'achieved_rr': achieved_rr_value,
+                                                    'score': score,
+                                                    'max_score': score_max,
+                                                    'confidence': confidence,
+                                                    'route': Route,
+                                                    'regime': regime,
+                                                    'telegram_msg_id': signal_uuid[:12],
+                                                    'fired_time_utc': fired_time_utc.isoformat(),
+                                                    'sent_time_utc': datetime.utcnow().isoformat(),
+                                                    'passed_filters': passed_filters,
+                                                    'failed_filters': failed_filters,
+                                                    'passed_filter_count': passed_filter_count,
+                                                    'failed_filter_count': failed_filter_count,
+                                                    'mtf_alignment_band': mtf_band,
+                                                    'mtf_alignment_score': mtf_score,
+                                                    'status': 'OPEN',
+                                                    'signal_origin': 'NEW_LIVE',
+                                                    'weighted_score': confidence * score / 100 if score_max else 0,
+                                                    'tier': signal_tier,
 
-                                                'symbol_group': symbol_group,
+                                                    'symbol_group': symbol_group,
 
-                                                'confidence_level': 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
+                                                    'confidence_level': 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
 
-                                                })
-                                            
+                                                    })
+                                                print(f"[WRITE_OK] ✅ SIGNALS_MASTER: {signal_uuid[:12]} {symbol_val} 1h (tier={signal_tier})", flush=True)
+                                            except Exception as e:
+                                                print(f"[WRITE_FAILED] ❌ CRITICAL: SIGNALS_MASTER write failed - {symbol_val} 1h {signal_uuid[:12]} - {type(e).__name__}: {str(e)[:100]}", flush=True)
+                                                send_ops_alert(f"SIGNALS_MASTER write failed: {symbol_val} 1h - {str(e)[:200]}", "CRITICAL")
+
                                             # PHASE 1: Dual-Write Verification (Alert + Continue strategy)
                                             dual_write_ok = True
                                             if _dual_write_ready:
@@ -2388,7 +2405,7 @@ def run_cycle():
                                                 except Exception as e:
                                                     print(f"[DUAL-WRITE] Warning: Verification error (continuing): {e}", flush=True)
                                                     dual_write_ok = False
-                                            
+
                                             # NEW: Trigger executor on signal fire (hybrid model - event-driven)
                                             trigger_executor_on_signal(signal_uuid, symbol_val, '1h')
                                     except Exception as e:
@@ -2423,17 +2440,17 @@ def run_cycle():
                     passes_2h = res2h.get("passes", 0)
                     max_gatekeepers_2h = res2h.get("gatekeepers_total", 0)
                     score_max_2h = res2h.get("score_max", 0)
-                    
+
                     # ===== 4TH FACTOR: DYNAMIC MIN_SCORE FOR 2h =====
                     # 2h has higher volatility (3.2x) and fewer filters passing due to structural constraints
                     # Instead of requiring MIN_SCORE=10 (designed for 15min), use relaxed threshold for 2h
                     # Target: Allow 2h signals at score=8-9/19 (67% filter confidence vs 83% for 15min)
                     MIN_SCORE_2h = 8  # Relaxed from global 10 to account for TF volatility differences
-                    
+
                     print(f"[DEBUG-2h] {symbol}: score={score_2h}/{score_max_2h}, passes={passes_2h}/{max_gatekeepers_2h}, bias={bias_2h}, filters_ok={filters_ok_2h}", flush=True)
                     if filters_ok_2h is not True:
                         print(f"[DEBUG-2h] {symbol}: REJECTED - filters_ok={filters_ok_2h} (score={score_2h}, MIN_SCORE={MIN_SCORE} from smart_filter.py)", flush=True)
-                    
+
                     # ===== APPLY DYNAMIC MIN_SCORE FOR 2h =====
                     # If global MIN_SCORE check failed but TF-specific check passes, override
                     if not filters_ok_2h and score_2h is not None and score_2h >= MIN_SCORE_2h:
@@ -2461,7 +2478,7 @@ def run_cycle():
                 if isinstance(res2h, dict) and res2h.get("filters_ok") is True:
                     # SmartFilter already enforces MIN_SCORE in filters_ok calculation, so no need to check again
                     # Just proceed with signal processing
-                    
+
                     # ===== PHASE 2-FIXED: DIRECTION-AWARE GATEKEEPER CHECK - 2h (DISABLED 2026-03-25) =====
                     signal_type = res2h.get("bias", "UNKNOWN")
                     if ENABLE_DIRECTION_AWARE_GATEKEEPER:
@@ -2472,7 +2489,7 @@ def run_cycle():
                                 regime=regime2h,
                                 debug=False
                             )
-                            
+
                             if not gates_passed:
                                 failed_gates = [k for k, v in gate_results.items() if not v]
                                 print(f"[PHASE2-FIXED] 2h {symbol} {signal_type} REJECTED - failed: {failed_gates}", flush=True)
@@ -2485,7 +2502,7 @@ def run_cycle():
                     else:
                         print(f"[GATEKEEPER-DISABLED] 2h {symbol}: DirectionAwareGatekeeper bypassed (code preserved)", flush=True)
                     # ===== END PHASE 2-FIXED GATES (DISABLED) =====
-                    
+
                     last2h = last_sent.get(key2h, 0)
                     if now - last2h >= COOLDOWN["2h"]:
                         numbered_signal = f"{idx}.D"
@@ -2510,7 +2527,7 @@ def run_cycle():
                         print(f"[SuperGK][MAIN] Result -> bias={bias} super_gk_ok={super_gk_ok} (bypassed)", flush=True)
 
                         if not super_gk_ok:
-                            print(f"[BLOCKED] SuperGK not aligned: Signal={bias} — NO SIGNAL SENT", flush=True)
+                            print(f"[BLOCKED] SuperGK not aligned: Signal={bias} - NO SIGNAL SENT", flush=True)
                             continue
 
                         print(f"[LOG] Sending 2h alert for {res2h.get('symbol')}", flush=True)
@@ -2559,10 +2576,10 @@ def run_cycle():
                         logger.signal_generated(symbol_val, tf_val, signal_type, score, entry_price)
 
                         regime = sf2h._market_regime() if hasattr(sf2h, "_market_regime") else None
-                        
+
                         if Route == "REVERSAL":
                             reversal_type = res2h.get("reversal_type", None)
-                            
+
                             quality_check = check_reversal_quality(
                                 symbol=symbol_val,
                                 df=df2h,
@@ -2570,20 +2587,20 @@ def run_cycle():
                                 regime=regime,
                                 direction=signal_type
                             )
-                            
+
                             gate_status = ", ".join([f"{k.split('_', 1)[1]}={'✓' if v else '✗'}" for k, v in quality_check["gate_results"].items()])
                             print(f"[PHASE3B-RQ] 2h {symbol_val} {signal_type}: {gate_status} → Strength={quality_check['reversal_strength_score']:.0f}%", flush=True)
-                            
+
                             if not quality_check["allowed"]:
                                 Route = quality_check["recommendation"]
                                 print(f"[PHASE3B-FALLBACK] 2h {symbol_val}: REVERSAL rejected ({quality_check['reason']}) → Routed to {Route}", flush=True)
                             else:
                                 print(f"[PHASE3B-APPROVED] 2h {symbol_val}: REVERSAL approved ({quality_check['reason']})", flush=True)
-                        
+
                         if Route in ["NONE", "AMBIGUOUS"]:
                             print(f"[VETO-POST-3B] 2h {symbol_val} {signal_type}: Route={Route} (changed by Phase 3B). REJECTING signal.", flush=True)
                             continue
-                        
+
                         route_score = calculate_route_score(Route, signal_type, regime, reversal_strength_score=None)
                         route_rec = get_route_recommendation(Route, signal_type, regime)
                         print(f"[PHASE3B-SCORE] 2h {symbol_val}: {route_rec} (score: {route_score})", flush=True)
@@ -2626,20 +2643,20 @@ def run_cycle():
 
                         # ===== RR VALIDATION & ENFORCEMENT (PROJECT-11) ===== (regime already calculated earlier)
                         achieved_rr_value = tp_sl.get('achieved_rr') if isinstance(tp_sl, dict) else None
-                        
+
                         # Step 1: Validate TP/SL relationship for direction
                         is_valid_relationship, rr_error = validate_tp_sl_relationship(entry_price, tp, sl, signal_type)
                         if not is_valid_relationship:
                             print(f"[RR_ENFORCE] 2h signal REJECTED: {symbol_val} - {rr_error}", flush=True)
                             continue
-                        
+
                         # Step 2: Enforce RR bounds (may adjust TP/SL)
                         adjusted_tp, adjusted_sl, enforced_rr, rr_action = enforce_rr_bounds(entry_price, tp, sl, signal_type, achieved_rr_value)
-                        
+
                         if rr_action.startswith("INVALID"):
                             print(f"[RR_ENFORCE] 2h signal REJECTED: {symbol_val} - {rr_action}", flush=True)
                             continue
-                        
+
                         # Step 3: Log enforcement action
                         if rr_action == "VALID":
                             print(f"[RR_ENFORCE] 2h {symbol_val}: VALID RR {enforced_rr:.3f} (no adjustment)", flush=True)
@@ -2647,25 +2664,25 @@ def run_cycle():
                             print(f"[RR_ENFORCE] 2h {symbol_val}: {rr_action} | Calculated RR: {achieved_rr_value} → Enforced RR: {enforced_rr} | TP: {tp} → {adjusted_tp} | SL: {sl} → {adjusted_sl}", flush=True)
                             tp = adjusted_tp
                             sl = adjusted_sl
-                        
+
                         # RR valid and enforced: Store signal + Fire
                         print(f"[RR_ENFORCE] 2h signal ACCEPTED: {symbol_val} - RR {enforced_rr:.3f} ({rr_action})", flush=True)
-                        
+
                         tp_pct_val = ((tp - entry_price) / entry_price * 100) if tp and entry_price else 0
                         sl_pct_val = ((sl - entry_price) / entry_price * 100) if sl and entry_price else 0
-                        
+
                         if signal_type == 'LONG':
                             results = res2h.get('results_long', {})
                         else:
                             results = res2h.get('results_short', {})
-                        
+
                         passed_filters = results.get('passed_filters', [])
                         failed_filters = results.get('failed_filters', [])
                         passed_filter_count = results.get('passed_filter_count', 0)
                         failed_filter_count = results.get('failed_filter_count', 0)
-                        
+
                         telegram_msg_id = str(uuid_lib.uuid4())[:12]
-                        
+
                         signal_uuid = create_and_store_signal(
                             symbol=symbol_val,
                             timeframe=tf_val,
@@ -2693,25 +2710,25 @@ def run_cycle():
                             telegram_msg_id=telegram_msg_id,
                             mtf_alignment_score=None  # 2h: No MTF analysis, use fallback "unassigned"
                         )
-                        
+
                         if not signal_uuid:
                             print(f"[WARN] Signal {symbol_val} (2h) REJECTED - duplicate within 120s. NOT sending Telegram alert.", flush=True)
                             pass
-                        
+
                         # Get MTF alignment score for 2h (for all timeframes now)
                         symbol_group = classify_symbol(symbol_val)
                         confidence_level_cat = 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
                         mtf_score = get_mtf_alignment_score(symbol_val, tf_val, signal_type, regime, Route, confidence)
                         mtf_band = convert_mtf_score_to_band(mtf_score)
                         print(f"[MTF] 2h {symbol_val}: Band={mtf_band} Score={mtf_score}", flush=True)
-                        
+
                         # Send trade alert to Telegram
                         if signal_uuid and os.getenv("DRY_RUN", "false").lower() != "true":
                             try:
                                 # Get signal tier (6D matching with confidence_level)
                                 signal_tier = get_signal_tier(tf_val, signal_type, Route, regime, symbol_group, confidence_level_cat)
                                 print(f"[TIER] 2h {symbol_val} ({symbol_group}|{confidence_level_cat}): {signal_tier}", flush=True)
-                                
+
                                 print(f"[DEBUG] 2h: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
                                 mtf_label = get_mtf_alignment_label(mtf_band)
                                 sent_ok = send_telegram_alert(
@@ -2746,7 +2763,7 @@ def run_cycle():
                                 if sent_ok:
                                     last_sent[key2h] = now
                                     logger.signal_sent(symbol_val, "2h", signal_uuid[:12])
-                                    
+
                                     try:
                                         _sent_signal_tracker.log_sent_signal(
                                             signal_uuid=signal_uuid,
@@ -2772,42 +2789,47 @@ def run_cycle():
                                             failed_filter_count=failed_filter_count
                                         )
                                         if _master_writer_ready:
-                                            _signals_master_writer.write_signal({
-                                                'signal_uuid': signal_uuid,
-                                                'symbol': symbol_val,
-                                                'timeframe': '2h',
-                                                'signal_type': signal_type,
-                                                'entry_price': entry_price,
-                                                'tp_target': tp,
-                                                'sl_target': sl,
-                                                'tp_pct': tp_pct_val,
-                                                'sl_pct': sl_pct_val,
-                                                'achieved_rr': achieved_rr_value,
-                                                'score': score,
-                                                'max_score': score_max,
-                                                'confidence': confidence,
-                                                'route': Route,
-                                                'regime': regime,
-                                                'telegram_msg_id': signal_uuid[:12],
-                                                'fired_time_utc': fired_time_utc.isoformat(),
-                                                'sent_time_utc': datetime.utcnow().isoformat(),
-                                                'passed_filters': passed_filters,
-                                                'failed_filters': failed_filters,
-                                                'passed_filter_count': passed_filter_count,
-                                                'failed_filter_count': failed_filter_count,
-                                                'mtf_alignment_band': mtf_band,
-                                                'mtf_alignment_score': mtf_score,
-                                                'status': 'OPEN',
-                                                'signal_origin': 'NEW_LIVE',
-                                                'weighted_score': confidence * score / 100 if score_max else 0,
-                                                'tier': signal_tier,
+                                            try:
+                                                _signals_master_writer.write_signal({
+                                                    'signal_uuid': signal_uuid,
+                                                    'symbol': symbol_val,
+                                                    'timeframe': '2h',
+                                                    'signal_type': signal_type,
+                                                    'entry_price': entry_price,
+                                                    'tp_target': tp,
+                                                    'sl_target': sl,
+                                                    'tp_pct': tp_pct_val,
+                                                    'sl_pct': sl_pct_val,
+                                                    'achieved_rr': achieved_rr_value,
+                                                    'score': score,
+                                                    'max_score': score_max,
+                                                    'confidence': confidence,
+                                                    'route': Route,
+                                                    'regime': regime,
+                                                    'telegram_msg_id': signal_uuid[:12],
+                                                    'fired_time_utc': fired_time_utc.isoformat(),
+                                                    'sent_time_utc': datetime.utcnow().isoformat(),
+                                                    'passed_filters': passed_filters,
+                                                    'failed_filters': failed_filters,
+                                                    'passed_filter_count': passed_filter_count,
+                                                    'failed_filter_count': failed_filter_count,
+                                                    'mtf_alignment_band': mtf_band,
+                                                    'mtf_alignment_score': mtf_score,
+                                                    'status': 'OPEN',
+                                                    'signal_origin': 'NEW_LIVE',
+                                                    'weighted_score': confidence * score / 100 if score_max else 0,
+                                                    'tier': signal_tier,
 
-                                                'symbol_group': symbol_group,
+                                                    'symbol_group': symbol_group,
 
-                                                'confidence_level': 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
+                                                    'confidence_level': 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
 
-                                                })
-                                            
+                                                    })
+                                                print(f"[WRITE_OK] ✅ SIGNALS_MASTER: {signal_uuid[:12]} {symbol_val} 2h (tier={signal_tier})", flush=True)
+                                            except Exception as e:
+                                                print(f"[WRITE_FAILED] ❌ CRITICAL: SIGNALS_MASTER write failed - {symbol_val} 2h {signal_uuid[:12]} - {type(e).__name__}: {str(e)[:100]}", flush=True)
+                                                send_ops_alert(f"SIGNALS_MASTER write failed: {symbol_val} 2h - {str(e)[:200]}", "CRITICAL")
+
                                             if _dual_write_ready:
                                                 try:
                                                     verify_result = verify_signal_dual_write(
@@ -2824,7 +2846,7 @@ def run_cycle():
                                                         send_ops_alert(alert_msg, "CRITICAL")
                                                 except Exception as e:
                                                     print(f"[DUAL-WRITE] Warning: Verification error (continuing): {e}", flush=True)
-                                            
+
                                             trigger_executor_on_signal(signal_uuid, symbol_val, '2h')
                                     except Exception as e:
                                         print(f"[ERROR] Failed to log PEC signal for {symbol_val}: {e}", flush=True)
@@ -2857,7 +2879,7 @@ def run_cycle():
                     score_4h = res4h.get("score")
                     filters_ok_4h = res4h.get("filters_ok")
                     MIN_SCORE_4h = 8  # Relaxed from global 10 for high-volatility TF
-                    
+
                     # If global MIN_SCORE check failed but TF-specific check passes, override
                     if not filters_ok_4h and score_4h is not None and score_4h >= MIN_SCORE_4h:
                         filters_ok_4h = True  # Override: allow signal with relaxed 4h threshold
@@ -2867,15 +2889,15 @@ def run_cycle():
                 if isinstance(res4h, dict) and res4h.get("filters_ok") is True:
                     bias = res4h.get("bias", "UNKNOWN")
                     score = res4h.get("score", 0)
-                    
+
                     if score is None or score < MIN_SCORE:
                         pass
                     else:
                         last4h = last_sent.get(key4h, 0)
-                        
+
                         if now - last4h >= COOLDOWN["4h"]:
                             numbered_signal = f"{idx}.E"
-                            
+
                             try:
                                 entry_price_raw = get_live_entry_price(
                                     res4h.get("symbol"),
@@ -2917,7 +2939,7 @@ def run_cycle():
 
                             # Get market regime from SmartFilter (extracted early for TP/SL scaling)
                             regime = sf4h._market_regime() if hasattr(sf4h, "_market_regime") else None
-                            
+
                             tp_sl = calculate_tp_sl(df4h, entry_price, signal_type, regime=regime)
                             tp = tp_sl.get("tp") if isinstance(tp_sl, dict) else 0
                             sl = tp_sl.get("sl") if isinstance(tp_sl, dict) else 0
@@ -2934,7 +2956,7 @@ def run_cycle():
                                 results = res4h.get('results_long', {})
                             else:
                                 results = res4h.get('results_short', {})
-                            
+
                             passed_filters = results.get('passed_filters', [])
                             failed_filters = results.get('failed_filters', [])
                             passed_filter_count = results.get('passed_filter_count', 0)
@@ -2943,7 +2965,7 @@ def run_cycle():
                             numbered_signal = f"{idx}.E"
                             fired_time_utc = datetime.utcnow()
                             telegram_msg_id = str(uuid_lib.uuid4())[:12]
-                            
+
                             signal_uuid = create_and_store_signal(
                                 symbol=symbol_val,
                                 timeframe=tf_val,
@@ -2971,7 +2993,7 @@ def run_cycle():
                                 telegram_msg_id=telegram_msg_id,
                                 mtf_alignment_score=None  # 4h: No MTF analysis, use fallback "unassigned"
                             )
-                            
+
                             if not signal_uuid:
                                 print(f"[WARN] Signal {symbol_val} (4h) REJECTED - duplicate within cooldown. NOT sending Telegram alert.", flush=True)
                                 pass
@@ -2982,14 +3004,14 @@ def run_cycle():
                             mtf_score = get_mtf_alignment_score(symbol_val, tf_val, signal_type, regime, Route, confidence)
                             mtf_band = convert_mtf_score_to_band(mtf_score)
                             print(f"[MTF] 4h {symbol_val}: Band={mtf_band} Score={mtf_score}", flush=True)
-                            
+
                             # Send trade alert to Telegram
                             if signal_uuid and os.getenv("DRY_RUN", "false").lower() != "true":
                                 try:
                                     # Get signal tier (6D matching with confidence_level)
                                     signal_tier = get_signal_tier(tf_val, signal_type, Route, regime, symbol_group, confidence_level_cat)
                                     print(f"[TIER] 4h {symbol_val} ({symbol_group}|{confidence_level_cat}): {signal_tier}", flush=True)
-                                    
+
                                     print(f"[DEBUG] 4h: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
                                     mtf_label = get_mtf_alignment_label(mtf_band)
                                     sent_ok = send_telegram_alert(
@@ -3024,7 +3046,7 @@ def run_cycle():
                                     if sent_ok:
                                         last_sent[key4h] = now
                                         logger.signal_sent(symbol_val, "4h", signal_uuid[:12])
-                                        
+
                                         try:
                                             _sent_signal_tracker.log_sent_signal(
                                                 signal_uuid=signal_uuid,
@@ -3049,44 +3071,49 @@ def run_cycle():
                                                 passed_filter_count=passed_filter_count,
                                                 failed_filter_count=failed_filter_count
                                             )
-                                            
+
                                             if _master_writer_ready:
-                                                _signals_master_writer.write_signal({
-                                                    'signal_uuid': signal_uuid,
-                                                    'symbol': signal_val,
-                                                    'timeframe': '4h',
-                                                    'signal_type': signal_type,
-                                                    'entry_price': entry_price,
-                                                    'tp_target': tp,
-                                                    'sl_target': sl,
-                                                    'tp_pct': tp_pct_val,
-                                                    'sl_pct': sl_pct_val,
-                                                    'achieved_rr': achieved_rr_value,
-                                                    'score': score,
-                                                    'max_score': score_max,
-                                                    'confidence': confidence,
-                                                    'route': Route,
-                                                    'regime': regime,
-                                                    'telegram_msg_id': signal_uuid[:12],
-                                                    'fired_time_utc': fired_time_utc.isoformat(),
-                                                    'sent_time_utc': datetime.utcnow().isoformat(),
-                                                    'passed_filters': passed_filters,
-                                                    'failed_filters': failed_filters,
-                                                    'passed_filter_count': passed_filter_count,
-                                                    'failed_filter_count': failed_filter_count,
-                                                    'mtf_alignment_band': mtf_band,
-                                                    'mtf_alignment_score': mtf_score,
-                                                    'status': 'OPEN',
-                                                    'signal_origin': 'NEW_LIVE',
-                                                    'weighted_score': confidence * score / 100 if score_max else 0,
-                                                    'tier': signal_tier,
+                                                try:
+                                                    _signals_master_writer.write_signal({
+                                                        'signal_uuid': signal_uuid,
+                                                        'symbol': signal_val,
+                                                        'timeframe': '4h',
+                                                        'signal_type': signal_type,
+                                                        'entry_price': entry_price,
+                                                        'tp_target': tp,
+                                                        'sl_target': sl,
+                                                        'tp_pct': tp_pct_val,
+                                                        'sl_pct': sl_pct_val,
+                                                        'achieved_rr': achieved_rr_value,
+                                                        'score': score,
+                                                        'max_score': score_max,
+                                                        'confidence': confidence,
+                                                        'route': Route,
+                                                        'regime': regime,
+                                                        'telegram_msg_id': signal_uuid[:12],
+                                                        'fired_time_utc': fired_time_utc.isoformat(),
+                                                        'sent_time_utc': datetime.utcnow().isoformat(),
+                                                        'passed_filters': passed_filters,
+                                                        'failed_filters': failed_filters,
+                                                        'passed_filter_count': passed_filter_count,
+                                                        'failed_filter_count': failed_filter_count,
+                                                        'mtf_alignment_band': mtf_band,
+                                                        'mtf_alignment_score': mtf_score,
+                                                        'status': 'OPEN',
+                                                        'signal_origin': 'NEW_LIVE',
+                                                        'weighted_score': confidence * score / 100 if score_max else 0,
+                                                        'tier': signal_tier,
 
-                                                    'symbol_group': symbol_group,
+                                                        'symbol_group': symbol_group,
 
-                                                    'confidence_level': 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
+                                                        'confidence_level': 'HIGH' if confidence >= 75 else 'MID' if confidence >= 50 else 'LOW'
 
-                                                    })
-                                                
+                                                        })
+                                                    print(f"[WRITE_OK] ✅ SIGNALS_MASTER: {signal_uuid[:12]} {symbol_val} 4h (tier={signal_tier})", flush=True)
+                                                except Exception as e:
+                                                    print(f"[WRITE_FAILED] ❌ CRITICAL: SIGNALS_MASTER write failed - {symbol_val} 4h {signal_uuid[:12]} - {type(e).__name__}: {str(e)[:100]}", flush=True)
+                                                    send_ops_alert(f"SIGNALS_MASTER write failed: {symbol_val} 4h - {str(e)[:200]}", "CRITICAL")
+
                                                 if _dual_write_ready:
                                                     try:
                                                         verify_result = verify_signal_dual_write(
@@ -3103,7 +3130,7 @@ def run_cycle():
                                                             send_ops_alert(alert_msg, "CRITICAL")
                                                     except Exception as e:
                                                         print(f"[DUAL-WRITE] Warning: Verification error (continuing): {e}", flush=True)
-                                                
+
                                                 trigger_executor_on_signal(signal_uuid, symbol_val, '4h')
                                         except Exception as e:
                                             print(f"[ERROR] Failed to log PEC signal for {symbol_val}: {e}", flush=True)
@@ -3124,9 +3151,9 @@ def run_cycle():
             traceback.print_exc()
 
     # End of per-symbol loop
-    
+
     logger.cycle_summary()
-    
+
     # Print SENT_SIGNALS summary for PEC tracking
     if _sent_tracker_ready:
         stats = _sent_signal_tracker.get_summary_stats()
@@ -3142,7 +3169,7 @@ def run_cycle():
             print(f"  Total P&L:       ${stats.get('total_pnl_usd', 0)}", flush=True)
             print(f"  Win Rate:        {stats.get('win_rate_pct', 0)}% ({stats.get('winning_trades', 0)}W/{stats.get('losing_trades', 0)}L)", flush=True)
             print("="*70 + "\n", flush=True)
-    
+
     return valid_debugs
 
 def run():
@@ -3151,16 +3178,16 @@ def run():
     Enforces CYCLE_SLEEP interval and prevents overlapping cycles.
     """
     print("[INFO] Starting Smart Filter engine (LIVE MODE)...\n", flush=True)
-    
+
     # Initialize last_sent from recent SENT_SIGNALS.jsonl to avoid resending after restart
     initialize_last_sent()
-    
+
     last_cycle_end = 0
     while True:
         try:
             cycle_start = time.time()
             print(f"[CYCLE] START at {datetime.utcnow().isoformat()} (wall: {datetime.now().isoformat()})", flush=True)
-            
+
             valid_debugs = run_cycle()
 
             # --- Send 2 random debug files from fired signals (PROVEN METHOD) ---
@@ -3191,7 +3218,7 @@ def run():
                         except Exception as e:
                             print(f"[ERROR] Exception in Telegram debug send: {e}", flush=True)
                 else:
-                    print("[FIRED] valid_debugs is empty — no debug files to send to Telegram.", flush=True)
+                    print("[FIRED] valid_debugs is empty - no debug files to send to Telegram.", flush=True)
             except Exception as e:
                 print(f"[FATAL] Exception in debug sending block: {e}", flush=True)
 
@@ -3203,7 +3230,7 @@ def run():
             cycle_end = time.time()
             cycle_duration = cycle_end - cycle_start
             print(f"[CYCLE] END at {datetime.utcnow().isoformat()} (duration: {cycle_duration:.2f}s)", flush=True)
-            
+
             # ENFORCE CYCLE_SLEEP interval
             time_to_sleep = CYCLE_SLEEP - cycle_duration
             if time_to_sleep > 0:
@@ -3211,7 +3238,7 @@ def run():
                 time.sleep(time_to_sleep)
             else:
                 print(f"[WARN] Cycle took {cycle_duration:.2f}s (longer than CYCLE_SLEEP={CYCLE_SLEEP}s). No sleep. Next cycle starts immediately.\n", flush=True)
-            
+
             last_cycle_end = time.time()
 
         except Exception as e:

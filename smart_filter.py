@@ -111,9 +111,9 @@ class SmartFilter:
             "Momentum": 6.0,                   # PREMIUM | WR 30.3% | Primary direction filter
             "Spread Filter": 5.9,              # PREMIUM | WR 29.9% | Liquidity validation
             
-            # TIER 3: STRONG (WR 27-29%) — Unique weights per filter
-            "HH/LL Trend": 5.5,                # STRONG | WR 27.9% | Trend structure
-            "Liquidity Awareness": 5.3,        # STRONG | WR 27.4% | Risk control
+            # TIER 3: STRONG (WR 27-29%) — Unique weights per filter [2026-04-08 REVERTED]
+            "HH/LL Trend": 2.8,                # REVERTED | Was 5.5, broke in NEW BALANCED (-7.9pp) | Reduce influence for recalibration
+            "Liquidity Awareness": 2.7,        # REVERTED | Was 5.3, broke in NEW BALANCED (-19.7pp) | Reduce influence for recalibration
             "Fractal Zone": 5.2,               # STRONG | WR 27.4% | Pattern recognition
             "Wick Dominance": 5.1,             # STRONG | WR 27.2% | Price action
             "MTF Volume Agreement": 5.0,       # STRONG | WR 27.2% | Cross-TF confirmation
@@ -145,9 +145,9 @@ class SmartFilter:
             "Momentum": 6.0,                   # PREMIUM | WR 30.3% | Primary direction filter
             "Spread Filter": 5.9,              # PREMIUM | WR 29.9% | Liquidity validation
             
-            # TIER 3: STRONG (WR 27-29%) — Unique weights per filter
-            "HH/LL Trend": 5.5,                # STRONG | WR 27.9% | Trend structure
-            "Liquidity Awareness": 5.3,        # STRONG | WR 27.4% | Risk control
+            # TIER 3: STRONG (WR 27-29%) — Unique weights per filter [2026-04-08 REVERTED]
+            "HH/LL Trend": 2.8,                # REVERTED | Was 5.5, broke in NEW BALANCED (-7.9pp) | Reduce influence for recalibration
+            "Liquidity Awareness": 2.7,        # REVERTED | Was 5.3, broke in NEW BALANCED (-19.7pp) | Reduce influence for recalibration
             "Fractal Zone": 5.2,               # STRONG | WR 27.4% | Pattern recognition
             "Wick Dominance": 5.1,             # STRONG | WR 27.2% | Price action
             "MTF Volume Agreement": 5.0,       # STRONG | WR 27.2% | Cross-TF confirmation
@@ -765,9 +765,7 @@ class SmartFilter:
             print(f"[{self.symbol}] Error running explicit_reversal_gate(): {e}")
             reversal_route, reversal_side = ("NONE", None)
         reversal_detected = reversal_route in ["REVERSAL", "AMBIGUOUS"]
-        # Route will be finalized after direction is calculated
-        # Initialize with reversal route or placeholder for continuation
-        route = reversal_route if reversal_detected else None
+        route = reversal_route if reversal_detected else "TREND CONTINUATION"
     
         # --- Filters list & mapping ---
         filter_names = [
@@ -856,15 +854,6 @@ class SmartFilter:
             print(f"[{self.symbol}] Error in get_signal_direction(): {e}")
             direction = "NEUTRAL"
         self.bias = direction
-        
-        # --- Finalize route with direction (TREND CONTINUATION → BULLISH/BEARISH_CONTINUATION) ---
-        if route is None:  # Not a reversal, so it's a continuation
-            if direction == "LONG":
-                route = "BULLISH_CONTINUATION"
-            elif direction == "SHORT":
-                route = "BEARISH_CONTINUATION"
-            else:
-                route = "TREND CONTINUATION"  # Fallback if direction is NEUTRAL
     
         # --- Gatekeeper breakdown (using bias-specific gatekeepers) ---
         hard_gatekeepers_long = [gk for gk in self.gatekeepers_long if gk not in self.soft_gatekeepers]
@@ -1401,7 +1390,7 @@ class SmartFilter:
     def _check_momentum(
         self,
         window=10,
-        min_conditions=3,
+        min_conditions=2,
         min_roc_threshold=0.001,
         min_acceleration=0,
         rsi_period=14,
@@ -1749,10 +1738,10 @@ class SmartFilter:
     def _check_liquidity_awareness(
         self,
         window: int = 20,
-        wall_delta_threshold: float = 0.15,
+        wall_delta_threshold: float = 0.10,
         density_imbalance_mult: float = 1.3,
         min_density_levels: int = 5,
-        min_cond: int = 2,
+        min_cond: int = 1,
         debug: bool = False
     ) -> Optional[str]:
         """
@@ -2127,37 +2116,77 @@ class SmartFilter:
         
         return signal
 
-    def _check_absorption(self, window=20, stall_pct=0.04, volume_threshold=1.05, debug=False):
+    def _check_absorption(self, window=20, stall_pct=0.02, volume_threshold=1.3, min_stall_bars=2, rsi_threshold=35, debug=False):
         """
-        REWRITTEN Absorption - Real institutional accumulation detection (2026-04-01)
-        Detects: Price stalls at level for 2+ bars, then HIGH volume breaks the stall
+        ABSORPTION v2 - REWORKED (2026-04-05)
+        
+        Detects institutional accumulation: Price consolidates near support/resistance + sudden high volume breakout
+        
+        CHANGES FROM v1:
+        - stall_pct: 0.04 → 0.02 (TIGHTER consolidation detection)
+        - volume_threshold: 1.05 → 1.3 (MUCH stronger volume requirement)
+        - NEW: min_stall_bars=2 (require 2+ bars of consolidation)
+        - NEW: RSI filter (35-65 range, avoid extremes)
+        
+        LOGIC:
+        LONG: Price consolidates near support (2+ bars) + Sudden high volume breakout UP + RSI healthy
+        SHORT: Price consolidates near resistance (2+ bars) + Sudden high volume breakout DOWN + RSI healthy
         """
-        if len(self.df) < window + 2:
+        if len(self.df) < window + min_stall_bars:
             return None
         
         close = self.df['close'].iat[-1]
+        close_prev = self.df['close'].iat[-2]
         volume = self.df['volume'].iat[-1]
         avg_volume = self.df['volume'].rolling(window).mean().iat[-1]
+        rsi = self.df['rsi'].iat[-1] if 'rsi' in self.df.columns else 50
         
         recent_low = self.df['low'].rolling(window).min().iat[-1]
         recent_high = self.df['high'].rolling(window).max().iat[-1]
         
-        recent_closes = self.df['close'].tail(4).values
-        price_range = (max(recent_closes) - min(recent_closes)) / min(recent_closes) if min(recent_closes) > 0 else 1.0
+        # Check for stalling period (2+ bars of tight consolidation)
+        stall_bars = 0
+        for i in range(1, min(min_stall_bars + 2, len(self.df))):
+            recent_closes = self.df['close'].tail(i).values
+            price_range = (max(recent_closes) - min(recent_closes)) / min(recent_closes) if min(recent_closes) > 0 else 1.0
+            if price_range <= stall_pct:
+                stall_bars += 1
         
-        price_near_low = close >= recent_low and close <= recent_low * (1 + stall_pct)
-        price_near_high = close <= recent_high and close >= recent_high * (1 - stall_pct)
-        price_stalled = price_range <= stall_pct
-        vol_confirmed = volume > avg_volume * volume_threshold
+        stalling_confirmed = (stall_bars >= min_stall_bars)
         
-        if price_near_low and price_stalled and vol_confirmed:
-            if debug:
-                print(f"[{self.symbol}] [Absorption REWRITTEN] LONG signal")
+        # Volume breakout confirmation
+        volume_spike = volume > avg_volume * volume_threshold
+        
+        # Price near support/resistance
+        at_support = close >= recent_low and close <= recent_low * (1 + stall_pct)
+        at_resistance = close <= recent_high and close >= recent_high * (1 - stall_pct)
+        
+        # Direction confirmation
+        bullish_breakout = close > close_prev
+        bearish_breakout = close < close_prev
+        
+        # RSI filter (avoid extremes)
+        rsi_healthy = 35 < rsi < 65
+        
+        if debug:
+            print(
+                f"[{self.symbol}] [Absorption v2] stalling={stalling_confirmed} (bars={stall_bars}), "
+                f"volume_spike={volume_spike} ({volume/avg_volume:.2f}x), "
+                f"at_support={at_support}, at_resistance={at_resistance}, rsi={rsi}"
+            )
+        
+        if stalling_confirmed and volume_spike and at_support and bullish_breakout and rsi_healthy:
+            print(
+                f"[{self.symbol}] [Absorption v2] LONG | stall_bars={stall_bars}, "
+                f"volume={volume/avg_volume:.2f}x, RSI={rsi}"
+            )
             return "LONG"
         
-        if price_near_high and price_stalled and vol_confirmed:
-            if debug:
-                print(f"[{self.symbol}] [Absorption REWRITTEN] SHORT signal")
+        if stalling_confirmed and volume_spike and at_resistance and bearish_breakout and rsi_healthy:
+            print(
+                f"[{self.symbol}] [Absorption v2] SHORT | stall_bars={stall_bars}, "
+                f"volume={volume/avg_volume:.2f}x, RSI={rsi}"
+            )
             return "SHORT"
         
         return None
@@ -2168,7 +2197,7 @@ class SmartFilter:
         min_divergence_pct: float = None,  # Now dynamically set from TF params
         require_crossover: bool = False,
         volume_ma_period: int = 20,
-        min_cond: int = 2,
+        min_cond: int = 1,
         debug: bool = False
     ):
         """
@@ -2327,10 +2356,19 @@ class SmartFilter:
         else:
             return series.min().iat[-1], series.max().iat[-1]
     
-    def _check_support_resistance(self, window=20, margin_pct=0.015, debug=False):
+    def _check_support_resistance(self, window=20, margin_pct=0.008, min_reversal_pct=0.015, rsi_threshold=40, require_strong_volume=False, debug=False):
         """
-        IMPROVED Support/Resistance - Bounce confirmation required (2026-04-01)
-        Logic: Price touches support/resistance + price reverses (confirmation)
+        SUPPORT/RESISTANCE v2 - STRICTER (2026-04-05)
+        
+        CHANGES FROM v1:
+        - margin_pct: 0.015 → 0.008 (TIGHTER touch detection)
+        - NEW: min_reversal_pct=0.015 (require 1.5% reversal candle)
+        - NEW: RSI filter (RSI >40 for LONG, <60 for SHORT)
+        - NEW: require_strong_volume (volume confirmation for reversal)
+        
+        LOGIC:
+        LONG: Price touches support (tight margin) + Strong reversal candle (1.5%+) + RSI not oversold + Volume confirmed
+        SHORT: Price touches resistance (tight margin) + Strong reversal candle (1.5%+) + RSI not overbought + Volume confirmed
         """
         if len(self.df) < window + 1:
             return None
@@ -2338,6 +2376,8 @@ class SmartFilter:
         close = self.df['close'].iat[-1]
         open_ = self.df['open'].iat[-1]
         close_prev = self.df['close'].iat[-2]
+        volume = self.df['volume'].iat[-1]
+        volume_ma = self.df['volume'].rolling(window).mean().iat[-1]
         
         recent_support = self.df['low'].rolling(window).min().iat[-1]
         recent_resistance = self.df['high'].rolling(window).max().iat[-1]
@@ -2345,20 +2385,45 @@ class SmartFilter:
         support_upper = recent_support * (1 + margin_pct)
         resistance_lower = recent_resistance * (1 - margin_pct)
         
+        # Touch detection (tighter)
         long_touch = close >= recent_support and close <= support_upper
-        long_reversal = close > open_ and close > close_prev
-        
         short_touch = close <= recent_resistance and close >= resistance_lower
-        short_reversal = close < open_ and close < close_prev
         
-        if long_touch and long_reversal:
-            if debug:
-                print(f"[{self.symbol}] [S/R Improved] LONG signal")
+        # Reversal detection (STRONGER requirement)
+        reversal_strength = abs(close - open_) / close if close > 0 else 0
+        long_reversal = close > open_ and close > close_prev and reversal_strength >= min_reversal_pct
+        short_reversal = close < open_ and close < close_prev and reversal_strength >= min_reversal_pct
+        
+        # RSI filter (NEW)
+        rsi = self.df['rsi'].iat[-1] if 'rsi' in self.df.columns else 50
+        long_rsi_valid = rsi > rsi_threshold  # Not oversold
+        short_rsi_valid = rsi < (100 - rsi_threshold)  # Not overbought
+        
+        # Volume filter (NEW)
+        volume_confirmed = volume > volume_ma * 1.1 if require_strong_volume else True
+        
+        if debug:
+            print(
+                f"[{self.symbol}] [S/R v2] LONG check: touch={long_touch}, reversal={long_reversal} "
+                f"(strength={reversal_strength:.3f}), rsi={rsi}, volume_ratio={volume/volume_ma:.2f}x"
+            )
+            print(
+                f"[{self.symbol}] [S/R v2] SHORT check: touch={short_touch}, reversal={short_reversal} "
+                f"(strength={reversal_strength:.3f}), rsi={rsi}, volume_ratio={volume/volume_ma:.2f}x"
+            )
+        
+        if long_touch and long_reversal and long_rsi_valid and volume_confirmed:
+            print(
+                f"[{self.symbol}] [S/R v2] LONG | support touch, reversal={reversal_strength:.3f}, "
+                f"RSI={rsi}, volume={volume/volume_ma:.2f}x"
+            )
             return "LONG"
         
-        if short_touch and short_reversal:
-            if debug:
-                print(f"[{self.symbol}] [S/R Improved] SHORT signal")
+        if short_touch and short_reversal and short_rsi_valid and volume_confirmed:
+            print(
+                f"[{self.symbol}] [S/R v2] SHORT | resistance touch, reversal={reversal_strength:.3f}, "
+                f"RSI={rsi}, volume={volume/volume_ma:.2f}x"
+            )
             return "SHORT"
         
         return None
@@ -2453,7 +2518,7 @@ class SmartFilter:
             print(f"[{self.symbol}] [Fractal Zone] Error: {e}", flush=True)
             return None
 
-    def _check_hh_ll(self, lookback=3, range_threshold_pct=0.5, debug=False):  # OPTIMIZED: 0.5% is real minimum for meaningful trend
+    def _check_hh_ll(self, lookback=2, range_threshold_pct=0.3, debug=False):  # CALIBRATED (2026-04-08): lookback 3→2, range_threshold 0.5→0.3
         """
         ENHANCED HH/LL Trend with Lookback + Range Check (2026-03-05)
         
@@ -2646,7 +2711,7 @@ class SmartFilter:
         
         return signal
 
-    def _check_atr_momentum_burst(self, move_threshold_pct=0.02, debug=False):
+    def _check_atr_momentum_burst(self, move_threshold_pct=0.01, debug=False):
         """
         SIMPLIFIED ATR Momentum Burst (2026-03-23)
         Volatility-backed momentum (real moves, not noise).
@@ -2777,41 +2842,31 @@ class SmartFilter:
 
     def _check_volatility_squeeze(
         self,
-        min_cond: int = 2,
-        min_squeeze_diff: float = None,  # Now dynamically set from TF params
-        squeeze_exhaustion_bars: int = 3,
-        require_directional_bias: bool = False,
+        min_cond: int = 4,
+        min_squeeze_diff: float = None,
+        squeeze_exhaustion_bars: int = 4,
+        require_directional_bias: bool = True,
         momentum_lookback: int = 5,
         bb_tightening_check: bool = True,
-        volume_into_squeeze_mult: float = 1.2,
+        volume_into_squeeze_mult: float = 1.4,
+        require_volume: bool = True,
         debug: bool = False
     ):
         """
-        ENHANCED Volatility Squeeze (2026-03-08, 2026-03-25 3-FACTOR NORMALIZATION)
+        VOLATILITY SQUEEZE v2 - STRICTER (2026-04-05)
         
-        Predicts squeeze breakout direction with institutional-grade precision:
-        - Squeeze exhaustion metric (how long in squeeze = pressure buildup)
-        - Directional bias before breakout (momentum into squeeze predicts direction)
-        - BB tightening analysis (intensity of squeeze)
-        - Volume building confirmation (institutional setup detection)
-        - TF-SPECIFIC thresholds (volatility normalization for 2h/4h)
+        CHANGES FROM v1:
+        - min_cond: 2 → 4 (STRICTER - require MORE conditions)
+        - squeeze_exhaustion_bars: 3 → 4 (more pressure buildup required)
+        - require_directional_bias: False → True (MANDATORY directional confirmation)
+        - volume_into_squeeze_mult: 1.2 → 1.4 (stronger volume requirement)
+        - NEW: require_volume=True (volume buildup is now MANDATORY)
         
-        Parameters:
-        - min_squeeze_diff: Squeeze magnitude threshold (0.05 baseline, 0.12 for 4h)
-        - squeeze_exhaustion_bars: Minimum bars in squeeze (3+ bars = pressure ready to release)
-        - require_directional_bias: Strict directional confirmation (True = stricter)
-        - momentum_lookback: How many bars back to measure directional momentum (5 = last 5)
-        - bb_tightening_check: Analyze BB width trend (True = check tightening)
-        - volume_into_squeeze_mult: Volume multiplier at squeeze (1.2 = 20% above avg)
-        
-        Logic:
-        LONG: Squeeze firing + upward momentum into squeeze + optional volume buildup
-        SHORT: Squeeze firing + downward momentum into squeeze + optional volume buildup
-        
-        Returns: "LONG", "SHORT", or None
+        LOGIC:
+        LONG: Squeeze firing + 4+ bar exhaustion + UPTREND momentum + BB tightening + HIGH VOLUME
+        SHORT: Squeeze firing + 4+ bar exhaustion + DOWNTREND momentum + BB tightening + HIGH VOLUME
         """
         try:
-            # TF-SPECIFIC NORMALIZATION: Use dynamic thresholds from get_tf_specific_params()
             if min_squeeze_diff is None:
                 tf_params = self.get_tf_specific_params()
                 min_squeeze_diff = tf_params["min_squeeze_diff"]
@@ -2825,123 +2880,100 @@ class SmartFilter:
             close = self.df['close'].iat[-1]
             close_prev = self.df['close'].iat[-2]
             volume = self.df['volume'].iat[-1]
-            volume_prev = self.df['volume'].iat[-2]
             volume_ma = self.df['volume'].rolling(10).mean().iat[-1]
         
-            # ===== ENHANCEMENT 1: Squeeze Firing Detection =====
+            # CONDITION 1: Squeeze Firing
             squeeze_diff = bb_width - kc_width
             squeeze_firing = (squeeze_diff > min_squeeze_diff and bb_width_prev < kc_width_prev)
-        
-            # ===== ENHANCEMENT 2: Squeeze Exhaustion Metric =====
-            # Count how many bars have been in squeeze state (BB inside KC)
+            
+            # CONDITION 2: Exhaustion (4+ bars in squeeze - STRICTER)
             squeeze_bars = 0
-            for i in range(1, min(squeeze_exhaustion_bars + 2, len(self.df))):  # Check last N+1 bars
+            for i in range(1, min(squeeze_exhaustion_bars + 2, len(self.df))):
                 bb_w_i = self.df['bb_upper'].iat[-i] - self.df['bb_lower'].iat[-i]
                 kc_w_i = self.df['kc_upper'].iat[-i] - self.df['kc_lower'].iat[-i]
-                if bb_w_i < kc_w_i:  # BB inside KC = in squeeze
+                if bb_w_i < kc_w_i:
                     squeeze_bars += 1
         
-            exhaustion_valid = (squeeze_bars >= squeeze_exhaustion_bars)  # 3+ bars = pressure buildup
-        
-            # ===== ENHANCEMENT 3: Directional Bias Before Breakout =====
-            # Check momentum BEFORE squeeze breaks (where was price trending into squeeze?)
-            momentum_into_squeeze = 0
+            exhaustion_valid = (squeeze_bars >= squeeze_exhaustion_bars)
+            
+            # CONDITION 3: Directional Bias (MANDATORY NOW)
             uptrend_into_squeeze = False
             downtrend_into_squeeze = False
-        
+            
             if momentum_lookback <= len(self.df) - 1:
                 close_far = self.df['close'].iat[-momentum_lookback] if momentum_lookback > 0 else close
                 close_mid = self.df['close'].iat[-(momentum_lookback // 2)] if momentum_lookback > 1 else close
                 close_now = close
             
-                # Uptrend into squeeze: far < mid < now
                 if close_far < close_mid < close_now:
                     uptrend_into_squeeze = True
-                    momentum_into_squeeze = 1
-            
-                # Downtrend into squeeze: far > mid > now
                 if close_far > close_mid > close_now:
                     downtrend_into_squeeze = True
-                    momentum_into_squeeze = -1
-        
-            directional_bias_long = uptrend_into_squeeze
-            directional_bias_short = downtrend_into_squeeze
-        
-            # ===== ENHANCEMENT 4: BB Tightening Analysis =====
+            
+            # CONDITION 4: BB Tightening
             bb_tightening_strength = 0
             if bb_tightening_check:
-                # Measure BB width trend (tightening = getting narrower)
                 bb_widths = [
                     self.df['bb_upper'].iat[-5] - self.df['bb_lower'].iat[-5] if len(self.df) > 4 else bb_width,
                     self.df['bb_upper'].iat[-3] - self.df['bb_lower'].iat[-3] if len(self.df) > 2 else bb_width,
                     bb_width
                 ]
             
-                # If tightening: width[-5] > width[-3] > width[-1]
                 if bb_widths[0] > bb_widths[1] > bb_widths[2] and bb_widths[0] > 0:
                     tightening_pct = (bb_widths[0] - bb_widths[2]) / bb_widths[0]
-                    if tightening_pct > 0.1:  # At least 10% tightening
+                    if tightening_pct > 0.1:
                         bb_tightening_strength = 1
-                        if tightening_pct > 0.2:  # 20%+ tightening = very strong
-                            bb_tightening_strength = 2
-        
-            # ===== ENHANCEMENT 5: Volume Building Into Squeeze =====
+                    if tightening_pct > 0.2:
+                        bb_tightening_strength = 2
+            
+            # CONDITION 5: Volume Building (MANDATORY NOW)
             volume_into_squeeze = volume > volume_ma * volume_into_squeeze_mult
-        
-            # ===== CONDITIONS =====
-            cond1_long = squeeze_firing                                  # Squeeze just fired
-            cond2_long = close > close_prev                              # Bullish candle
-            cond3_long = directional_bias_long or not require_directional_bias  # Uptrend or optional
-            cond4_long = exhaustion_valid                                # Pressure buildup (3+ bars)
-            cond5_long = bb_tightening_strength > 0                      # BB tightening (bonus)
-            cond6_long = volume_into_squeeze                             # Volume buildup (bonus)
-        
-            cond1_short = squeeze_firing                                 # Squeeze just fired
-            cond2_short = close < close_prev                             # Bearish candle
-            cond3_short = directional_bias_short or not require_directional_bias  # Downtrend or optional
-            cond4_short = exhaustion_valid                               # Pressure buildup (3+ bars)
-            cond5_short = bb_tightening_strength > 0                     # BB tightening (bonus)
-            cond6_short = volume_into_squeeze                            # Volume buildup (bonus)
-        
+            
+            # COMBINE CONDITIONS
+            cond1_long = squeeze_firing
+            cond2_long = exhaustion_valid
+            cond3_long = uptrend_into_squeeze
+            cond4_long = bb_tightening_strength > 0
+            cond5_long = volume_into_squeeze if require_volume else True
+            cond6_long = close > close_prev
+            
+            cond1_short = squeeze_firing
+            cond2_short = exhaustion_valid
+            cond3_short = downtrend_into_squeeze
+            cond4_short = bb_tightening_strength > 0
+            cond5_short = volume_into_squeeze if require_volume else True
+            cond6_short = close < close_prev
+            
             long_met = sum([cond1_long, cond2_long, cond3_long, cond4_long, cond5_long, cond6_long])
             short_met = sum([cond1_short, cond2_short, cond3_short, cond4_short, cond5_short, cond6_short])
-        
+            
             if debug:
                 print(
-                    f"[{self.symbol}] [Volatility Squeeze ENHANCED] Exhaustion | squeeze_bars={squeeze_bars}, "
-                    f"exhaustion_valid={exhaustion_valid}, momentum_into_squeeze={momentum_into_squeeze}, "
-                    f"bb_tightening={bb_tightening_strength}, volume_buildup={volume_into_squeeze}"
+                    f"[{self.symbol}] [Volatility Squeeze v2] "
+                    f"Conditions: {long_met}/{short_met} | "
+                    f"firing={squeeze_firing}, exhaustion={exhaustion_valid}, "
+                    f"uptrend={uptrend_into_squeeze}, tightening={bb_tightening_strength}, volume={volume_into_squeeze}"
                 )
-                print(
-                    f"[{self.symbol}] [Volatility Squeeze ENHANCED] Conditions | "
-                    f"Long: [firing={cond1_long}, bullish={cond2_long}, uptrend={cond3_long}, exhaustion={cond4_long}, "
-                    f"tightening={cond5_long}, volume={cond6_long}] = {long_met}/6"
-                )
-        
+            
             if long_met >= min_cond and long_met > short_met:
                 print(
-                    f"[{self.symbol}] [Volatility Squeeze ENHANCED] Signal: LONG | "
-                    f"long_met={long_met}/6, squeeze_bars={squeeze_bars}, bb_tightening={bb_tightening_strength}, "
-                    f"momentum={momentum_into_squeeze}, volume_buildup={volume_into_squeeze}"
+                    f"[{self.symbol}] [Volatility Squeeze v2] LONG | "
+                    f"conditions={long_met}/6, exhaustion_bars={squeeze_bars}, "
+                    f"volume_ratio={volume/volume_ma:.2f}x"
                 )
                 return "LONG"
             elif short_met >= min_cond and short_met > long_met:
                 print(
-                    f"[{self.symbol}] [Volatility Squeeze ENHANCED] Signal: SHORT | "
-                    f"short_met={short_met}/6, squeeze_bars={squeeze_bars}, bb_tightening={bb_tightening_strength}, "
-                    f"momentum={momentum_into_squeeze}, volume_buildup={volume_into_squeeze}"
+                    f"[{self.symbol}] [Volatility Squeeze v2] SHORT | "
+                    f"conditions={short_met}/6, exhaustion_bars={squeeze_bars}, "
+                    f"volume_ratio={volume/volume_ma:.2f}x"
                 )
                 return "SHORT"
-            else:
-                if debug:
-                    print(
-                        f"[{self.symbol}] [Volatility Squeeze ENHANCED] No signal | "
-                        f"long_met={long_met}, short_met={short_met}, min_cond={min_cond}"
-                    )
-                return None
+            
+            return None
         
         except Exception as e:
-            print(f"[{self.symbol}] [Volatility Squeeze ENHANCED] Error: {e}")
+            print(f"[{self.symbol}] [Volatility Squeeze v2] Error: {e}")
             return None
 
     def _check_chop_zone(

@@ -193,6 +193,7 @@ def send_telegram_alert(
     mtf_alignment_score: Optional[int] = None,  # MTF alignment score
     mtf_alignment_label: Optional[str] = None,  # MTF alignment label (Strong/Weak/Conflict/Neutral)
     mtf_adjusted_confidence: Optional[float] = None,  # MTF-adjusted confidence
+    symbol_group: Optional[str] = None,  # Captured symbol group (MAIN_BLOCKCHAIN/TOP_ALTS/MID_ALTS/LOW_ALTS)
 ) -> bool:
     """
     Send a Telegram formatted alert message without extra blank lines.
@@ -377,8 +378,10 @@ def send_telegram_alert(
         source_display = f"ATR-Based {achieved_rr:.1f}:1 RR" if isinstance(achieved_rr, (int, float)) else "ATR-Based RR"
         rr_line = f"📊 R:R: {rr_str}:1 | {source_display}"
 
-    # Symbol Group categorization (at bottom of message)
-    symbol_group = _get_symbol_group(symbol)
+    # Symbol Group categorization (use captured value, fallback to recalculation)
+    # ✅ FIXED (June 12 2026): Use the symbol_group passed in signal, don't recalculate
+    if not symbol_group or symbol_group == 'UNKNOWN':
+        symbol_group = _get_symbol_group(symbol)  # Fallback only if not captured
     # Symbol group icon (harmonized)
     symbol_group_icon = "🗂️"
     symbol_group_display = f"{symbol_group_icon} Symbol Group: {symbol_group}"
