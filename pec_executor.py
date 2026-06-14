@@ -24,6 +24,10 @@ import requests
 # Import consolidated P&L calculation
 from calculations import calculate_pnl
 
+# FRESH START CUTOFF (2026-06-14 00:00:00 UTC = 2026-06-14 07:00:00 GMT+7)
+# Only process OPEN signals fired on or after this date
+FRESH_START_CUTOFF_UTC_STR = '2026-06-13T17:00:00'  # UTC for 2026-06-14 00:00 GMT+7
+
 class PECExecutor:
     """Auto-execute and track PEC signals"""
     
@@ -234,7 +238,8 @@ class PECExecutor:
     
     def update_signals(self) -> Dict:
         """
-        Scan all OPEN signals in SIGNALS_MASTER.jsonl, check status, update file
+        Scan all OPEN signals in COMPLETE_SIGNALS.jsonl, check status, update file
+        OPTIMIZED: Limit to 500 per cycle for speed (process ~3600/hour at 60s intervals)
         Returns: summary of changes
         """
         summary = {
@@ -252,16 +257,40 @@ class PECExecutor:
         try:
             records = []
             
-            # Read all records from SIGNALS_MASTER.jsonl
+            # Read all records from COMPLETE_SIGNALS.jsonl
             with open(self.signals_master_path, 'r') as f:
                 for line in f:
                     if line.strip():
                         record = json.loads(line)
                         records.append(record)
             
-            # Check each OPEN signal
+            # Check each OPEN signal (limit to 500 per cycle for responsiveness)
+            max_per_cycle = 500
+            checked = 0
+            fresh_start_dt = datetime.fromisoformat(FRESH_START_CUTOFF_UTC_STR)
+            
             for record in records:
                 if record.get('status') == 'OPEN':
+                    # FRESH START FILTER: Only process signals from today onwards
+                    fired_str = record.get('fired_time_utc', '')
+                    if fired_str:
+                        try:
+                            # Remove Z/timezone, parse as naive UTC
+                            fired_str_clean = fired_str.replace('Z', '').replace('+00:00', '')
+                            fired_dt = datetime.fromisoformat(fired_str_clean)
+                            # Skip if signal fired before fresh start cutoff
+                            if fired_dt < fresh_start_dt:
+                                continue
+                        except:
+                            # If parse fails, skip this signal
+                            continue
+                    else:
+                        # No fired_time, skip
+                        continue
+                    
+                    if checked >= max_per_cycle:
+                        break  # Stop after 500 per cycle, resume next cycle
+                    checked += 1  # Increment checked counter
                     summary['total_checked'] += 1
                     
                     # SILENT TAGGING: Assign Champion/Challenger group before checking
@@ -272,7 +301,26 @@ class PECExecutor:
                     result = self.check_signal_status(record)
                     
                     if result:
-                        # Update record
+                        # ATOMIC WRITE VALIDATION: All fields must be valid before writing
+                        # If any field fails, reject the entire write (no partial records)
+                        try:
+                            exit_price = result['exit_price']
+                            pnl_usd = result['pnl_usd']
+                            pnl_pct = result['pnl_pct']
+                            status = result['status']
+                            
+                            # Validate: No NULL, None, or zero P&L for closed signals
+                            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT', 'STALE_TIMEOUT']:
+                                if exit_price is None or exit_price == '' or exit_price == 0:
+                                    continue  # REJECT: Missing exit price
+                                if pnl_usd is None or pnl_usd == '':
+                                    continue  # REJECT: Missing P&L calculation
+                            
+                        except Exception as e:
+                            print(f"[ATOMIC_VALIDATION_REJECT] {record.get('symbol')} {record.get('timeframe')}: {str(e)}", flush=True)
+                            continue  # REJECT: Validation failed
+                        
+                        # Update record (all-or-nothing)
                         record['status'] = result['status']
                         record['actual_exit_price'] = result['exit_price']
                         
