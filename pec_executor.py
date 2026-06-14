@@ -122,7 +122,8 @@ class PECExecutor:
             tf_minutes = {
                 '15min': 15,
                 '30min': 30,
-                '1h': 60
+                '1h': 60,
+                '4h': 240
             }.get(timeframe, 60)
             
             # CHAMPION vs CHALLENGER: Choose timeout strategy
