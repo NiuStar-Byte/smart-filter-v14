@@ -25,6 +25,11 @@ from collections import defaultdict
 import os
 from tier_config import TIER_THRESHOLDS
 
+# FRESH START CUTOFF (2026-06-14 00:00:00 UTC = 2026-06-14 07:00:00 GMT+7)
+# Only track signals fired on or after this date
+# Old signals kept as reference/backup only
+FRESH_START_CUTOFF_UTC_STR = '2026-06-13T17:00:00'  # UTC for 2026-06-14 00:00 GMT+7
+
 # === SYMBOL GROUPING (5D DIMENSION) ===
 SYMBOL_GROUPS = {
     "MAIN_BLOCKCHAIN": [
@@ -89,17 +94,37 @@ class PECEnhancedReporter:
         try:
             with open(self.sent_signals_file, 'r') as f:
                 count = 0
+                fresh_start_count = 0
                 for line in f:
                     try:
                         signal = json.loads(line.strip())
                         # Normalize field names: convert 'direction' → 'signal_type' if needed
                         if 'direction' in signal and 'signal_type' not in signal:
                             signal['signal_type'] = signal['direction']
-                        self.signals.append(signal)
+                        
+                        # FRESH START FILTER: Only include signals from today onwards
+                        fired_str = signal.get('fired_time_utc', '')
+                        if fired_str:
+                            try:
+                                # Remove Z/timezone, parse as naive UTC
+                                fired_str_clean = fired_str.replace('Z', '').replace('+00:00', '')
+                                fired_dt = datetime.fromisoformat(fired_str_clean)
+                                fresh_start_dt = datetime.fromisoformat(FRESH_START_CUTOFF_UTC_STR)
+                                
+                                # Only include if >= fresh start cutoff
+                                if fired_dt >= fresh_start_dt:
+                                    self.signals.append(signal)
+                                    fresh_start_count += 1
+                            except:
+                                # If parse fails, include signal (safe fallback)
+                                self.signals.append(signal)
+                                fresh_start_count += 1
+                        
                         count += 1
                     except:
                         pass
-                print(f"[INFO] Loaded {count} signals from {os.path.basename(self.sent_signals_file)}", flush=True)
+                print(f"[INFO] Loaded {count} total signals from {os.path.basename(self.sent_signals_file)}", flush=True)
+                print(f"[INFO] FRESH START: Using {fresh_start_count} signals from 2026-06-14 00:00 GMT+7 onwards", flush=True)
         except Exception as e:
             print(f"[WARN] Error loading signals: {e}")
         
