@@ -3,7 +3,7 @@
 POST-DEPLOYMENT TRACKER V2 - Direction Determination by COUNT instead of WEIGHTS (2026-04-12 01:15 GMT+7)
 
 Purpose: Track signal performance AFTER direction-by-count deployment
-Source: SIGNALS_MASTER.jsonl (same as pec_post_deployment_tracker.py)
+Source: SIGNALS_MASTER.jsonl.backup_before_dedup (FULL HISTORY - same as pec_executor_persistent & MTF tracker)
 Cut-off: 2026-04-12T08:15:00Z (01:15 GMT+7 2026-04-12 deployment timestamp - onwards only)
 
 Code Changes Applied:
@@ -77,7 +77,8 @@ class PostDeploymentTracker:
     def __init__(self, signals_file=None):
         if signals_file is None:
             workspace = "/Users/geniustarigan/.openclaw/workspace"
-            signals_file = os.path.join(workspace, "SIGNALS_MASTER.jsonl")
+            # USE FULL HISTORY BACKUP - same source as pec_executor_persistent & MTF tracker
+            signals_file = os.path.join(workspace, "SIGNALS_MASTER.jsonl.backup_before_dedup")
         
         self.signals_file = signals_file
         self.signals = []
