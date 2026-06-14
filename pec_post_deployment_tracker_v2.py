@@ -1,0 +1,1804 @@
+#!/usr/bin/env python3
+"""
+POST-DEPLOYMENT TRACKER V2 - Direction Determination by COUNT instead of WEIGHTS (2026-04-12 01:15 GMT+7)
+
+Purpose: Track signal performance AFTER direction-by-count deployment
+Source: SIGNALS_MASTER.jsonl (same as pec_post_deployment_tracker.py)
+Cut-off: 2026-04-12T08:15:00Z (01:15 GMT+7 2026-04-12 deployment timestamp - onwards only)
+
+Code Changes Applied:
+- PRIMARY: smart_filter.py get_signal_direction() - changed from WEIGHTED SCORES to FILTER COUNT
+- RATIONALE: Direction should be based on HOW MANY filters pass, not their weights
+- WEIGHTS NOW AFFECT ONLY: Confidence calculation (not direction selection)
+
+Protocol: Each code deployment creates NEW tracker with same source, different cut-off.
+This prevents silent drift by isolating code changes from market conditions.
+
+Pre-Deployment Baseline: pec_post_deployment_tracker.py (locked, <= 2026-04-12T08:15:00Z)
+Post-Deployment Baseline: this tracker (new, >= 2026-04-12T08:15:00Z - COUNT-BASED DIRECTION)
+"""
+
+import json
+from datetime import datetime, timezone, timedelta
+from collections import defaultdict
+import os
+import sys
+import fcntl
+import time
+
+# Import TIER_THRESHOLDS for tier config section
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'smart-filter-v14-main'))
+try:
+    from tier_config import TIER_THRESHOLDS
+except ImportError:
+    # Fallback if tier_config not found (UPDATED 2026-04-04 23:42 GMT+7)
+    TIER_THRESHOLDS = {
+        'tier1_wr': 0.55, 'tier1_pnl': 4.50, 'tier1_min_trades': 55,
+        'tier2_wr': 0.50, 'tier2_pnl': 3.50, 'tier2_min_trades': 50,
+        'tier3_wr': 0.45, 'tier3_pnl': 2.50, 'tier3_min_trades': 45,
+    }
+
+# DEPLOYMENT CUT-OFF TIMESTAMP (START - when daemon restarted with COUNT-BASED direction logic)
+# 2026-04-12 01:15 GMT+7 (COUNT-BASED DIRECTION FIX)
+_default_cutoff = '2026-04-11T18:15:00'
+DEPLOYMENT_CUTOFF_UTC = datetime.fromisoformat(_default_cutoff)
+TZ_OFFSET = timedelta(hours=7)  # GMT+7
+
+def utc_to_gmt7(dt_utc):
+    """Convert UTC datetime to GMT+7 string"""
+    if isinstance(dt_utc, str):
+        try:
+            dt_utc = datetime.fromisoformat(dt_utc.replace('Z', '+00:00'))
+        except:
+            return dt_utc
+    
+    if dt_utc.tzinfo is None:
+        dt_utc = dt_utc.replace(tzinfo=timezone.utc)
+    
+    dt_gmt7 = dt_utc + TZ_OFFSET
+    return dt_gmt7.strftime('%Y-%m-%d %H:%M:%S GMT+7')
+
+# OPTIONAL END WINDOW (for manual daily combo refresh to lock yesterday's data)
+# Format: COMBO_END_CUTOFF_UTC=2026-03-30T16:59:59Z (naive UTC comparison)
+_env_end_cutoff = os.environ.get('COMBO_END_CUTOFF_UTC')
+if _env_end_cutoff:
+    try:
+        # Parse as naive UTC (strip Z, parse as naive)
+        _end_cutoff_str = _env_end_cutoff.replace('Z', '').replace('+00:00', '')
+        COMBO_END_CUTOFF_UTC = datetime.fromisoformat(_end_cutoff_str)
+        print(f"[INFO] Using COMBO_END_CUTOFF_UTC from environment: {_env_end_cutoff}", flush=True)
+    except:
+        COMBO_END_CUTOFF_UTC = None
+        print(f"[WARN] Invalid COMBO_END_CUTOFF_UTC format, ignoring", flush=True)
+else:
+    COMBO_END_CUTOFF_UTC = None
+
+class PostDeploymentTracker:
+    def __init__(self, signals_file=None):
+        if signals_file is None:
+            workspace = "/Users/geniustarigan/.openclaw/workspace"
+            signals_file = os.path.join(workspace, "SIGNALS_MASTER.jsonl")
+        
+        self.signals_file = signals_file
+        self.signals = []
+        self.load_signals()
+    
+    def load_signals(self):
+        """
+        Load signals from SIGNALS_MASTER.jsonl with FILE-LEVEL LOCKING
+        ===============================================================
+        Uses shared lock (LOCK_SH) to:
+        - Allow multiple trackers to read simultaneously
+        - Prevent reads during pec_executor_persistent writes
+        - Guarantee consistent snapshot (no mid-write corruption)
+        """
+        if not os.path.exists(self.signals_file):
+            print(f"[WARN] {self.signals_file} not found")
+            return
+        
+        max_retries = 5
+        for attempt in range(max_retries):
+            try:
+                with open(self.signals_file, 'r') as f:
+                    # SHARED LOCK - multiple readers allowed, blocks on exclusive write
+                    fcntl.flock(f.fileno(), fcntl.LOCK_SH)
+                    
+                    try:
+                        count = 0
+                        filtered = 0
+                        
+                        # Read all lines while locked
+                        f.seek(0)
+                        for line in f:
+                            try:
+                                if not line.strip() or line.startswith('#'):
+                                    continue
+                                
+                                signal = json.loads(line.strip())
+                                count += 1
+                                
+                                # Filter: only signals fired >= deployment cut-off
+                                fired_str = signal.get('fired_time_utc', '')
+                                if not fired_str:
+                                    continue
+                                
+                                # Parse UTC time (as naive for consistent comparison)
+                                try:
+                                    # Remove any Z suffix, parse as naive UTC
+                                    fired_dt_str = fired_str.replace('Z', '').replace('+00:00', '')
+                                    # Keep only YYYY-MM-DDTHH:MM:SS part (strip microseconds)
+                                    fired_dt_str = fired_dt_str.split('.')[0] if '.' in fired_dt_str else fired_dt_str
+                                    fired_dt = datetime.fromisoformat(fired_dt_str)
+                                except:
+                                    continue
+                                
+                                # Include only if >= deployment cut-off AND <= optional end cutoff
+                                if fired_dt >= DEPLOYMENT_CUTOFF_UTC:
+                                    # Apply optional END window filter (for manual daily combo refresh)
+                                    if COMBO_END_CUTOFF_UTC and fired_dt > COMBO_END_CUTOFF_UTC:
+                                        continue  # Skip signals after end cutoff
+                                    
+                                    # Normalize field names
+                                    if 'direction' in signal and 'signal_type' not in signal:
+                                        signal['signal_type'] = signal['direction']
+                                    self.signals.append(signal)
+                                    filtered += 1
+                            except json.JSONDecodeError:
+                                continue  # Skip malformed JSON lines
+                            except Exception:
+                                continue
+                        
+                        print(f"[INFO] Loaded {filtered} post-deployment signals (from {count} total in {os.path.basename(self.signals_file)})", flush=True)
+                        print(f"[INFO] Cut-off: {utc_to_gmt7(DEPLOYMENT_CUTOFF_UTC)} onwards (COUNT-BASED DIRECTION DEPLOYMENT)", flush=True)
+                        
+                        fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                        return  # Success - exit retry loop
+                        
+                    except Exception as e:
+                        fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                        raise e
+                        
+            except IOError as lock_error:
+                if attempt < max_retries - 1:
+                    wait_time = 0.5 * (attempt + 1)  # Exponential backoff
+                    print(f"[LOCK_RETRY] Attempt {attempt+1}/{max_retries}: Lock busy, retrying in {wait_time}s", flush=True)
+                    time.sleep(wait_time)
+                else:
+                    print(f"[LOCK_FAILED] Unable to acquire read lock after {max_retries} attempts", flush=True)
+                    raise lock_error
+            except Exception as e:
+                print(f"[WARN] Error loading signals: {e}")
+    
+    def _format_duration_hm(self, total_seconds):
+        """Format duration as Xh Ym"""
+        if total_seconds <= 0:
+            return "N/A"
+        hours = int(total_seconds // 3600)
+        minutes = int((total_seconds % 3600) // 60)
+        if hours > 0:
+            return f"{hours}h {minutes}m"
+        else:
+            return f"{minutes}m"
+    
+    def _calculate_pnl_usd(self, entry_price, exit_price, direction):
+        """Calculate P&L USD using notional position of $1000"""
+        try:
+            if not entry_price or entry_price == 0 or not exit_price or exit_price == 0:
+                return None
+            
+            entry = float(entry_price)
+            exit_val = float(exit_price)
+            notional_position = 1000.0
+            
+            dir_up = str(direction).strip().upper() == "LONG"
+            dir_down = str(direction).strip().upper() == "SHORT"
+            
+            if dir_up:
+                pnl_usd = ((exit_val - entry) / entry) * notional_position
+            elif dir_down:
+                pnl_usd = ((entry - exit_val) / exit_val) * notional_position
+            else:
+                return None
+            
+            return round(pnl_usd, 2)
+        except:
+            return None
+    
+    def _calculate_avg_duration_by_status(self, signals_list, status):
+        """Calculate average duration for signals with specific status"""
+        try:
+            matching_signals = []
+            for s in signals_list:
+                if s.get('status') == status and s.get('fired_time_utc') and s.get('closed_at'):
+                    try:
+                        fired = datetime.fromisoformat(s.get('fired_time_utc').replace('Z', '+00:00'))
+                        closed = datetime.fromisoformat(s.get('closed_at').replace('Z', '+00:00'))
+                        delta = closed - fired
+                        total_seconds = int(delta.total_seconds())
+                        if total_seconds > 0:
+                            matching_signals.append(total_seconds)
+                    except:
+                        pass
+            
+            if not matching_signals:
+                return None
+            
+            avg_seconds = sum(matching_signals) / len(matching_signals)
+            return int(avg_seconds)
+        except:
+            return None
+    
+    def _calculate_rr_metrics(self, signals_list):
+        """Calculate Risk:Reward metrics: Max, Min, Avg
+        RR = |TP - Entry| / |Entry - SL|
+        Works for both LONG and SHORT
+        """
+        try:
+            rr_values = []
+            for s in signals_list:
+                entry = s.get('entry_price')
+                # Support BOTH schemas: old (tp_price/sl_price) + new (tp_target/sl_target)
+                tp = s.get('tp_price') or s.get('tp_target')
+                sl = s.get('sl_price') or s.get('sl_target')
+                
+                if entry and tp and sl:
+                    try:
+                        entry_f = float(entry)
+                        tp_f = float(tp)
+                        sl_f = float(sl)
+                        
+                        # Calculate RR using absolute values (works for LONG and SHORT)
+                        reward = abs(tp_f - entry_f)
+                        risk = abs(entry_f - sl_f)
+                        
+                        if risk > 0:  # Avoid division by zero
+                            rr = reward / risk
+                            rr_values.append(rr)
+                    except:
+                        pass
+            
+            if not rr_values:
+                return None, None, None
+            
+            highest_rr = max(rr_values)
+            avg_rr = sum(rr_values) / len(rr_values)
+            lowest_rr = min(rr_values)
+            
+            return round(highest_rr, 2), round(avg_rr, 2), round(lowest_rr, 2)
+        except:
+            return None, None, None
+
+    def _get_symbol_group(self, symbol):
+        """Map symbol to group"""
+        main_blockchain = ["BTC-USDT", "ETH-USDT", "SOL-USDT", "XRP-USDT", "ADA-USDT", "AVAX-USDT", "BNB-USDT", "XLM-USDT", "LINK-USDT", "POL-USDT"]
+        top_alts = ["ZKJ-USDT", "ROAM-USDT", "XAUT-USDT", "SAHARA-USDT"]
+        mid_alts = ["XPL-USDT", "DOT-USDT", "FUEL-USDT", "VIRTUAL-USDT", "BERA-USDT", "CROSS-USDT", "FUN-USDT", "ENA-USDT"]
+        
+        if symbol in main_blockchain:
+            return "MAIN_BLOCKCHAIN"
+        elif symbol in top_alts:
+            return "TOP_ALTS"
+        elif symbol in mid_alts:
+            return "MID_ALTS"
+        else:
+            return "LOW_ALTS"
+    
+    def _get_confidence_level(self, confidence):
+        """Convert confidence % to level"""
+        if confidence >= 73:
+            return "HIGH"
+        elif confidence >= 66:
+            return "MID"
+        else:
+            return "LOW"
+
+    def _aggregate_by_dimensions(self, dimensions):
+        """Aggregate signals by specified dimensions
+        
+        ⚠️ CRITICAL: DATA QUALITY EXCLUSIONS
+        
+        STALE_TIMEOUT & REJECTED_NOT_SENT_TELEGRAM signals are completely excluded:
+        
+        - STALE_TIMEOUT: Signal timed out >5 hours (exceeds design window)
+          → Indicates backtest data quality issue
+          → EXCLUDED from all aggregates
+        
+        - REJECTED_NOT_SENT_TELEGRAM: Never sent to traders
+          → Failed validation/filtering
+          → EXCLUDED from all aggregates
+        
+        CLEAN DATA: TP_HIT, SL_HIT, TIMEOUT (within design window), OPEN
+        - Include TIMEOUT profits in tier calculation
+        """
+        stats = {}
+        for signal in self.signals:
+            status = signal.get('status', 'OPEN')
+            
+            # EXCLUDE stale/rejected signals
+            if status == 'STALE_TIMEOUT':
+                continue
+            if status == 'REJECTED_NOT_SENT_TELEGRAM':
+                continue
+            
+            # Build key from specified dimensions
+            key_parts = []
+            for dim in dimensions:
+                if dim == 'confidence_level':
+                    val = self._get_confidence_level(signal.get('confidence', 0))
+                elif dim == 'symbol_group':
+                    val = self._get_symbol_group(signal.get('symbol', 'UNKNOWN'))
+                else:
+                    val = signal.get(dim, 'N/A')
+                key_parts.append(val)
+            
+            key = tuple(key_parts)
+            
+            if key not in stats:
+                stats[key] = {'tp': 0, 'sl': 0, 'timeout_win': 0, 'timeout_loss': 0, 'pnl': 0.0}
+            
+            # Status-specific counting
+            if status == 'TP_HIT':
+                stats[key]['tp'] += 1
+            elif status == 'SL_HIT':
+                stats[key]['sl'] += 1
+            elif status == 'TIMEOUT':
+                direction = signal.get('signal_type', 'LONG')
+                pnl_calc = self._calculate_pnl_usd(signal.get('entry_price'), signal.get('actual_exit_price'), direction)
+                if pnl_calc and pnl_calc > 0:
+                    stats[key]['timeout_win'] += 1
+                elif pnl_calc and pnl_calc < 0:
+                    stats[key]['timeout_loss'] += 1
+            
+            # Calculate P&L for TP_HIT, SL_HIT, TIMEOUT
+            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                direction = signal.get('signal_type', 'LONG')
+                pnl_calc = self._calculate_pnl_usd(signal.get('entry_price'), signal.get('actual_exit_price'), direction)
+                if pnl_calc:
+                    stats[key]['pnl'] += pnl_calc
+        
+        return stats
+
+    def append_tier_combos_to_file(self, tier_combos, valid_from_date, data_through_date):
+        """
+        REPLACE (not append) tier combos in SIGNAL_TIERS_APPEND.jsonl with TODAY's combos ONLY
+        
+        CRITICAL RULE: File contains ONLY today's qualified combos, NOT historical garbage
+        Each daily refresh REPLACES the file (not appends) to prevent stale combos
+        
+        Args:
+            tier_combos: List of tier combo dicts with 'name', 'tier', 'wr', 'pnl', 'closed' keys
+            valid_from_date: datetime when these combos become valid (00:00 GMT+7)
+            data_through_date: datetime through which data was used (end of previous day GMT+7)
+        """
+        import json
+        import os
+        from datetime import datetime
+        
+        workspace = "/Users/geniustarigan/.openclaw/workspace"
+        tier_file = os.path.join(workspace, "SIGNAL_TIERS_APPEND.jsonl")  # Root path (authoritative)
+        tier_file_submodule = os.path.join(workspace, "smart-filter-v14-main/SIGNAL_TIERS_APPEND.jsonl")  # Sync copy
+        
+        if not tier_combos:
+            print("[TIER-APPEND] No qualifying combos this cycle. Skipping append.", flush=True)
+            return
+        
+        try:
+            combos_appended = 0
+            
+            # DEDUPLICATION: Load existing combos, keep only unique (combo, valid_from) pairs
+            existing_combos = {}
+            if os.path.exists(tier_file):
+                with open(tier_file, 'r') as f:
+                    for line in f:
+                        if not line.strip() or line.startswith('#'):
+                            continue
+                        try:
+                            existing = json.loads(line)
+                            combo_key = existing.get('combo')
+                            valid_from_key = existing.get('valid_from')
+                            # Keep only LATEST generated_at for each (combo, valid_from) pair
+                            key = (combo_key, valid_from_key)
+                            if key not in existing_combos:
+                                existing_combos[key] = existing
+                            else:
+                                # Update if this is newer
+                                existing_date = existing_combos[key].get('generated_at', '')
+                                new_date = existing.get('generated_at', '')
+                                if new_date > existing_date:
+                                    existing_combos[key] = existing
+                        except:
+                            continue
+            
+            # Write file with deduplicated combos (REPLACE, not append)
+            with open(tier_file, 'w') as f:
+                f.write("# File cleared - stale combos removed. Daily refresh will populate with TODAY's combos only\n")
+                
+                # Add existing combos from previous days
+                for combo in existing_combos.values():
+                    f.write(json.dumps(combo) + '\n')
+                
+                # Add new combos for today
+                for combo in tier_combos:
+                    # Build record for SIGNAL_TIERS_APPEND.jsonl
+                    record = {
+                        "combo": combo['name'],
+                        "tier": combo.get('tier', 'Tier-X'),
+                        "dimension": combo.get('dimension'),
+                        "wr": combo['wr'],
+                        "pnl": combo['pnl'],
+                        "avg_pnl": combo['avg_pnl'],
+                        "closed_trades": combo['closed'],
+                        "valid_from": valid_from_date.isoformat() + "Z" if hasattr(valid_from_date, 'isoformat') else valid_from_date,
+                        "generated_at": datetime.utcnow().isoformat() + "Z",
+                        "data_through": data_through_date.isoformat() + "Z" if hasattr(data_through_date, 'isoformat') else data_through_date,
+                    }
+                    
+                    # Only add if not already present with this valid_from date
+                    key = (combo['name'], valid_from_date.isoformat() + "Z" if hasattr(valid_from_date, 'isoformat') else valid_from_date)
+                    if key not in existing_combos:
+                        f.write(json.dumps(record) + '\n')
+                        combos_appended += 1
+                    else:
+                        # Already exists for this date, skip
+                        pass
+            
+            print(f"[TIER-REPLACE] ✅ REPLACED {combos_appended} qualifying combos in SIGNAL_TIERS_APPEND.jsonl (TODAY ONLY, no stale combos)", flush=True)
+            
+            # DUAL-LOCATION SYNC: Also write to submodule path
+            try:
+                import shutil
+                shutil.copy(tier_file, tier_file_submodule)
+                print(f"[TIER-SYNC] SIGNAL_TIERS_APPEND.jsonl synced to SUBMODULE ✓", flush=True)
+            except Exception as copy_err:
+                print(f"[TIER-SYNC-ERROR] Failed to sync to submodule: {copy_err}", flush=True)
+            
+            # AUTO-SYNC TO ROOT (mandatory dual-location sync per user directive 2026-04-05 09:09)
+            try:
+                from file_sync_helper import get_file_sync_helper
+                syncer = get_file_sync_helper()
+                syncer.sync_file("SIGNAL_TIERS_APPEND.jsonl", force=True)
+                print(f"[TIER-SYNC-AUTO] SIGNAL_TIERS_APPEND.jsonl synced to ROOT ✓", flush=True)
+            except Exception as sync_err:
+                print(f"[TIER-SYNC-WARN] Failed to sync SIGNAL_TIERS_APPEND to ROOT: {sync_err}", flush=True)
+            
+            return combos_appended
+        except Exception as e:
+            print(f"[TIER-APPEND] ❌ Error appending combos: {str(e)}", flush=True)
+            return 0
+
+    def _generate_fired_by_date_section(self):
+        """Generate 'Fired by Date' section showing signals fired per date with hourly breakdown for today"""
+        from collections import defaultdict
+        
+        section = []
+        section.append("=" * 200)
+        section.append("🔥 FIRED BY DATE")
+        section.append("=" * 200)
+        
+        # Group signals by date
+        signals_by_date = defaultdict(lambda: {'total': 0, 'unique': set(), 'sent_to_telegram': 0, 'times': []})
+        
+        for signal in self.signals:
+            fired_str = signal.get('fired_time_utc', '')
+            if not fired_str:
+                continue
+            
+            try:
+                # Parse fired time (UTC)
+                fired_dt = datetime.fromisoformat(fired_str.replace('Z', '+00:00'))
+                if fired_dt.tzinfo is None:
+                    fired_dt = fired_dt.replace(tzinfo=timezone.utc)
+                
+                # Convert to GMT+7 for date grouping
+                fired_gmt7 = fired_dt + timedelta(hours=7)
+                date_key = fired_gmt7.strftime('%Y-%m-%d')
+                
+                uuid = signal.get('signal_uuid', '')
+                signals_by_date[date_key]['total'] += 1
+                if uuid:
+                    signals_by_date[date_key]['unique'].add(uuid)
+                
+                # Check if sent to telegram (has fired_time_telegram field)
+                if signal.get('fired_time_telegram'):
+                    signals_by_date[date_key]['sent_to_telegram'] += 1
+                
+                signals_by_date[date_key]['times'].append(fired_gmt7)
+            except:
+                pass
+        
+        # Sort by date and display
+        for date_key in sorted(signals_by_date.keys()):
+            data = signals_by_date[date_key]
+            unique_count = len(data['unique'])
+            sent_count = data['sent_to_telegram']
+            times = sorted(data['times'])
+            
+            time_range = ""
+            if times:
+                first_time = times[0].strftime('%H:%M:%S')
+                last_time = times[-1].strftime('%H:%M:%S')
+                time_range = f"{first_time}-{last_time}"
+            
+            status = "🔄 still accumulating" if date_key == datetime.now(timezone(timedelta(hours=7))).strftime('%Y-%m-%d') else "✓ IMMUTABLE"
+            
+            section.append(f"{date_key}: Total Fired={data['total']} | Unique Fired={unique_count} | Tele Sent={sent_count} | {time_range} | {status}")
+        
+        # Today's hourly breakdown
+        today_gmt7 = datetime.now(timezone(timedelta(hours=7)))
+        today_str = today_gmt7.strftime('%Y-%m-%d')
+        
+        if today_str in signals_by_date:
+            section.append("")
+            section.append(f"⏰ TODAY'S BREAKDOWN BY HOUR ({today_str}):")
+            
+            hourly_data = defaultdict(lambda: {'total': 0, 'unique': set(), 'sent': 0})
+            
+            for signal in self.signals:
+                fired_str = signal.get('fired_time_utc', '')
+                if not fired_str:
+                    continue
+                
+                try:
+                    fired_dt = datetime.fromisoformat(fired_str.replace('Z', '+00:00'))
+                    if fired_dt.tzinfo is None:
+                        fired_dt = fired_dt.replace(tzinfo=timezone.utc)
+                    
+                    fired_gmt7 = fired_dt + timedelta(hours=7)
+                    date_key = fired_gmt7.strftime('%Y-%m-%d')
+                    
+                    if date_key == today_str:
+                        hour = fired_gmt7.hour
+                        hour_key = f"{hour:02d}:00-{(hour+1)%24:02d}:00"
+                        
+                        hourly_data[hour_key]['total'] += 1
+                        uuid = signal.get('signal_uuid', '')
+                        if uuid:
+                            hourly_data[hour_key]['unique'].add(uuid)
+                        
+                        if signal.get('fired_time_telegram'):
+                            hourly_data[hour_key]['sent'] += 1
+                except:
+                    pass
+            
+            for hour_key in sorted(hourly_data.keys()):
+                data = hourly_data[hour_key]
+                unique_count = len(data['unique'])
+                is_current = hour_key.startswith(f"{today_gmt7.hour:02d}")
+                status = "🔄 still accumulating" if is_current else "✓ IMMUTABLE"
+                section.append(f"{hour_key}: Total={data['total']} | Unique={unique_count} | TeleSent={data['sent']} | {status}")
+        
+        return section
+    
+    def _generate_hierarchy_ranking_section(self):
+        """Generate 'Hierarchy Ranking' section showing 6D/5D/4D/3D/2D combo performance"""
+        section = []
+        section.append("=" * 200)
+        section.append("🎯 HIERARCHY RANKING - 6D / 5D / 4D / 3D / 2D PERFORMANCE TRACKING")
+        section.append("=" * 200)
+        
+        def get_symbol_group(symbol):
+            """Get symbol group from symbol"""
+            if not symbol:
+                return 'UNKNOWN'
+            symbol_upper = symbol.upper()
+            if symbol_upper in ['BTC', 'ETH']:
+                return 'MAIN_BLOCKCHAIN'
+            elif symbol_upper in ['BNB', 'SOL', 'ADA', 'AVAX', 'POLKADOT']:
+                return 'TOP_ALTS'
+            elif symbol_upper in ['UNI', 'AAVE', 'CRV', 'LINK']:
+                return 'MID_ALTS'
+            else:
+                return 'LOW_ALTS'
+        
+        def get_confidence_category(conf):
+            """Get confidence category"""
+            if conf >= 0.67:
+                return 'HIGH'
+            elif conf >= 0.33:
+                return 'MID'
+            else:
+                return 'LOW'
+        
+        # Build 6D combos (TF × DIR × ROUTE × REGIME × SG × CONF)
+        stats_6d = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout_win': 0, 'timeout_loss': 0, 'pnl': 0.0})
+        
+        for signal in self.signals:
+            status = signal.get('status', 'OPEN')
+            
+            # Skip invalid signals
+            if status in ['STALE_TIMEOUT', 'REJECTED_NOT_SENT_TELEGRAM']:
+                continue
+            
+            # Only analyze closed signals
+            if status not in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                continue
+            
+            # Build 6D key from signal fields
+            tf = signal.get('timeframe', 'N/A')
+            direction = signal.get('signal_type', 'LONG')
+            route = signal.get('route', 'NONE')
+            regime = signal.get('regime', 'RANGE')
+            symbol = signal.get('symbol', 'UNKNOWN')
+            symbol_group = get_symbol_group(symbol)
+            confidence = signal.get('confidence', 0)
+            confidence_cat = get_confidence_category(confidence)
+            
+            key_6d = (tf, direction, route, regime, symbol_group, confidence_cat)
+            
+            stats_6d[key_6d]['count'] += 1
+            
+            if status == 'TP_HIT':
+                stats_6d[key_6d]['tp'] += 1
+            elif status == 'SL_HIT':
+                stats_6d[key_6d]['sl'] += 1
+            elif status == 'TIMEOUT':
+                pnl_calc = self._calculate_pnl_usd(signal.get('entry_price'), signal.get('actual_exit_price'), direction)
+                if pnl_calc and pnl_calc > 0:
+                    stats_6d[key_6d]['timeout_win'] += 1
+                elif pnl_calc:
+                    stats_6d[key_6d]['timeout_loss'] += 1
+            
+            # P&L calculation
+            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                pnl_calc = self._calculate_pnl_usd(signal.get('entry_price'), signal.get('actual_exit_price'), direction)
+                if pnl_calc:
+                    stats_6d[key_6d]['pnl'] += pnl_calc
+        
+        # Format 6D combos
+        min_trades = 20
+        all_6d = []
+        for key, stat in stats_6d.items():
+            closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
+            if closed >= min_trades:
+                win_count = stat['tp'] + stat['timeout_win']
+                wr = (win_count / closed) if closed > 0 else 0
+                avg_pnl = stat['pnl'] / closed if closed > 0 else 0
+                combo_name = f"TF_DIR_ROUTE_REGIME_SG_CONF_{key[0]}_{key[1]}_{key[2]}_{key[3]}_{key[4]}_{key[5]}"
+                all_6d.append({'name': combo_name, 'wr': wr, 'pnl': stat['pnl'], 'avg_pnl': avg_pnl, 'closed': closed})
+        
+        all_6d.sort(key=lambda x: x['wr'], reverse=True)
+        
+        if all_6d:
+            section.append("")
+            section.append("📊 6-DIMENSIONAL COMBOS (TimeFrame × Direction × Route × Regime × Symbol_Group × Confidence Level)")
+            section.append("─" * 200)
+            section.append("Top 10 6D Combos by WR:")
+            for combo in all_6d[:10]:
+                section.append(f"✓ {combo['name']} | WR: {combo['wr']*100:>5.1f}% | P&L: ${combo['pnl']:+8.2f} | Avg: ${combo['avg_pnl']:+.2f} | Closed: {combo['closed']}")
+        
+        # Build 5D combos (TF × DIR × ROUTE × REGIME × SG)
+        stats_5d = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout_win': 0, 'timeout_loss': 0, 'pnl': 0.0})
+        
+        for signal in self.signals:
+            status = signal.get('status', 'OPEN')
+            if status in ['STALE_TIMEOUT', 'REJECTED_NOT_SENT_TELEGRAM'] or status not in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                continue
+            
+            tf = signal.get('timeframe', 'N/A')
+            direction = signal.get('signal_type', 'LONG')
+            route = signal.get('route', 'NONE')
+            regime = signal.get('regime', 'RANGE')
+            symbol = signal.get('symbol', 'UNKNOWN')
+            symbol_group = get_symbol_group(symbol)
+            
+            key_5d = (tf, direction, route, regime, symbol_group)
+            stats_5d[key_5d]['count'] += 1
+            
+            if status == 'TP_HIT':
+                stats_5d[key_5d]['tp'] += 1
+            elif status == 'SL_HIT':
+                stats_5d[key_5d]['sl'] += 1
+            elif status == 'TIMEOUT':
+                pnl_calc = self._calculate_pnl_usd(signal.get('entry_price'), signal.get('actual_exit_price'), direction)
+                if pnl_calc and pnl_calc > 0:
+                    stats_5d[key_5d]['timeout_win'] += 1
+                elif pnl_calc:
+                    stats_5d[key_5d]['timeout_loss'] += 1
+            
+            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                pnl_calc = self._calculate_pnl_usd(signal.get('entry_price'), signal.get('actual_exit_price'), direction)
+                if pnl_calc:
+                    stats_5d[key_5d]['pnl'] += pnl_calc
+        
+        all_5d = []
+        for key, stat in stats_5d.items():
+            closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
+            if closed >= min_trades:
+                win_count = stat['tp'] + stat['timeout_win']
+                wr = (win_count / closed) if closed > 0 else 0
+                avg_pnl = stat['pnl'] / closed if closed > 0 else 0
+                combo_name = f"TF_DIR_ROUTE_REGIME_SG_{key[0]}_{key[1]}_{key[2]}_{key[3]}_{key[4]}"
+                all_5d.append({'name': combo_name, 'wr': wr, 'pnl': stat['pnl'], 'avg_pnl': avg_pnl, 'closed': closed})
+        
+        all_5d.sort(key=lambda x: x['wr'], reverse=True)
+        
+        if all_5d:
+            section.append("")
+            section.append("📊 5-DIMENSIONAL COMBOS (TimeFrame × Direction × Route × Regime × Symbol_Group)")
+            section.append("─" * 200)
+            section.append("Top 10 5D Combos by WR:")
+            for combo in all_5d[:10]:
+                section.append(f"✓ {combo['name']} | WR: {combo['wr']*100:>5.1f}% | P&L: ${combo['pnl']:+8.2f} | Avg: ${combo['avg_pnl']:+.2f} | Closed: {combo['closed']}")
+        
+        # Build 4D combos (TF × DIR × ROUTE × REGIME)
+        stats_4d = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout_win': 0, 'timeout_loss': 0, 'pnl': 0.0})
+        
+        for signal in self.signals:
+            status = signal.get('status', 'OPEN')
+            if status in ['STALE_TIMEOUT', 'REJECTED_NOT_SENT_TELEGRAM'] or status not in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                continue
+            
+            tf = signal.get('timeframe', 'N/A')
+            direction = signal.get('signal_type', 'LONG')
+            route = signal.get('route', 'NONE')
+            regime = signal.get('regime', 'RANGE')
+            
+            key_4d = (tf, direction, route, regime)
+            stats_4d[key_4d]['count'] += 1
+            
+            if status == 'TP_HIT':
+                stats_4d[key_4d]['tp'] += 1
+            elif status == 'SL_HIT':
+                stats_4d[key_4d]['sl'] += 1
+            elif status == 'TIMEOUT':
+                pnl_calc = self._calculate_pnl_usd(signal.get('entry_price'), signal.get('actual_exit_price'), direction)
+                if pnl_calc and pnl_calc > 0:
+                    stats_4d[key_4d]['timeout_win'] += 1
+                elif pnl_calc:
+                    stats_4d[key_4d]['timeout_loss'] += 1
+            
+            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                pnl_calc = self._calculate_pnl_usd(signal.get('entry_price'), signal.get('actual_exit_price'), direction)
+                if pnl_calc:
+                    stats_4d[key_4d]['pnl'] += pnl_calc
+        
+        all_4d = []
+        for key, stat in stats_4d.items():
+            closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
+            if closed >= min_trades:
+                win_count = stat['tp'] + stat['timeout_win']
+                wr = (win_count / closed) if closed > 0 else 0
+                avg_pnl = stat['pnl'] / closed if closed > 0 else 0
+                combo_name = f"TF_DIR_ROUTE_REGIME_{key[0]}_{key[1]}_{key[2]}_{key[3]}"
+                all_4d.append({'name': combo_name, 'wr': wr, 'pnl': stat['pnl'], 'avg_pnl': avg_pnl, 'closed': closed})
+        
+        all_4d.sort(key=lambda x: x['wr'], reverse=True)
+        
+        if all_4d:
+            section.append("")
+            section.append("📊 4-DIMENSIONAL COMBOS (TimeFrame × Direction × Route × Regime)")
+            section.append("─" * 200)
+            section.append("Top 5 4D Combos by WR:")
+            for combo in all_4d[:5]:
+                section.append(f"✓ {combo['name']} | WR: {combo['wr']*100:>5.1f}% | P&L: ${combo['pnl']:+8.2f} | Avg: ${combo['avg_pnl']:+.2f} | Closed: {combo['closed']}")
+        
+        return section
+
+    def generate_summary(self):
+        """Generate detailed summary of post-deployment signals"""
+        report = []
+        
+        report.append("")
+        report.append("=" * 200)
+        report.append("📊 POST-DEPLOYMENT TRACKER (DIRECTION based on PASSED Counts instead of PASSED Weights)")
+        report.append("=" * 200)
+        report.append("")
+        cutoff_gmt7 = utc_to_gmt7(DEPLOYMENT_CUTOFF_UTC)
+        report.append(f"Deployment Cut-off: {cutoff_gmt7} onwards [COUNT-BASED DIRECTION]")
+        report.append(f"Report Generated: {datetime.now(timezone(timedelta(hours=7))).strftime('%Y-%m-%d %H:%M:%S GMT+7')}")
+        
+        # DEBUG SECTION: Data Source & Validation
+        report.append("")
+        report.append("🔍 DEBUG INFORMATION - DATA SOURCE & VALIDATION")
+        report.append("─" * 200)
+        report.append(f"  Signal Source: SIGNALS_MASTER.jsonl (PRIMARY)")
+        report.append(f"  Backup Source: SENT_SIGNALS.jsonl (verification)")
+        report.append(f"  Signals Loaded: {len(self.signals):,} total")
+        report.append(f"  Deployment Window: {utc_to_gmt7(DEPLOYMENT_CUTOFF_UTC)} onwards (COUNT-BASED DIRECTION FIX)")
+        report.append(f"  Observation Window: From deployment until now")
+        report.append(f"  Signal Status Tracked: TP_HIT, SL_HIT, TIMEOUT, OPEN, REJECTED_NOT_SENT_TELEGRAM, STALE_TIMEOUT")
+        report.append(f"  Measurement Focus: Direction Determination (PASSED Filter Counts vs PASSED Filter Weights)")
+        report.append(f"  Environment Variables: COMBO_TARGET_DATE, COMBO_END_CUTOFF_UTC (if set)")
+        report.append(f"  Fallback: Uses tier_config.py if environment variables not set")
+        report.append("")
+        
+        # ⚠️ DATA QUALITY DISCLAIMER
+        report.append("⚠️  DATA QUALITY NOTE - Signal Exclusions")
+        report.append("─" * 200)
+        report.append("The following signals are COMPLETELY EXCLUDED from all metrics:")
+        report.append("")
+        report.append("  1. STALE_TIMEOUT: Signals timed out >5 hours after firing")
+        report.append("     → Exceeds design window → Excluded from all aggregates")
+        report.append("")
+        report.append("  2. REJECTED_NOT_SENT_TELEGRAM: Never sent to traders")
+        report.append("     → Failed validation → Excluded from all aggregates")
+        report.append("")
+        report.append("METRICS include: TP_HIT, SL_HIT, TIMEOUT (within window), OPEN")
+        report.append("=" * 200)
+        report.append("")
+        
+        # ===== LAYER 1: BASELINE COMPARISON (3 FIXES) =====
+        report.append("")
+        report.append("📊 LAYER 1: BASELINE COMPARISON - 3 FIXES DEPLOYED (Apr 13 2026)")
+        report.append("=" * 200)
+        report.append("")
+        report.append("FIXES DEPLOYED (Apr 13 21:19 GMT+7):")
+        report.append("  1. Momentum Filter (ENHANCED - CROSSOVER)           - Deployed 13:58 GMT+7 | Expected: +1.6pp")
+        report.append("  2. Candle Confirmation (TRIPLE-CORRECTED)          - Deployed 20:57 GMT+7 | Expected: +1.3pp")
+        report.append("  3. Support/Resistance v3-PRO (INSTITUTIONAL)       - Deployed 21:19 GMT+7 | Expected: +4.5pp")
+        report.append("")
+        report.append("  CUMULATIVE EXPECTED IMPACT: +7.4pp WR (from 29.81% baseline → ~37%+)")
+        report.append("")
+        report.append("BASELINE (Apr 12 2026 - Pre-Fix):")
+        report.append("  • WR: 29.81%")
+        report.append("  • TP_HIT: 4,409 (9.6%)")
+        report.append("  • SL_HIT: 12,919 (23.4%)")
+        report.append("  • TIMEOUT: 18,221 (33.0%)")
+        report.append("  • STALE_TIMEOUT: 17,488 (31.7%)")
+        report.append("  • OPEN: 706 (1.3%)")
+        report.append("  • Total: 54,743 signals")
+        report.append("")
+        report.append("MEASUREMENT WINDOW: Apr 13 21:19 → Apr 19 21:19 (6 days)")
+        report.append("VERDICT DATE: Apr 19 2026 21:19 GMT+7")
+        report.append("")
+        report.append("=" * 200)
+        report.append("")
+        
+        if not self.signals:
+            report.append("⏳ No post-deployment signals yet (still accumulating)")
+            report.append("")
+            return "\n".join(report)
+        
+        # Signal counts by status
+        tp = sum(1 for s in self.signals if s.get('status') == 'TP_HIT')
+        sl = sum(1 for s in self.signals if s.get('status') == 'SL_HIT')
+        # TIMEOUT: Only count those with calculable exit_price (matches pec_enhanced_reporter.py logic)
+        timeout = sum(1 for s in self.signals if s.get('status') == 'TIMEOUT' and s.get('actual_exit_price'))
+        # TIMEOUT without exit_price: data quality issue (pre-fix corruption)
+        timeout_no_data = sum(1 for s in self.signals if s.get('status') == 'TIMEOUT' and not s.get('actual_exit_price'))
+        open_trades = sum(1 for s in self.signals if s.get('status') == 'OPEN')
+        rejected = sum(1 for s in self.signals if s.get('status') == 'REJECTED_NOT_SENT_TELEGRAM')
+        stale = sum(1 for s in self.signals if s.get('status') == 'STALE_TIMEOUT')
+        
+        total = len(self.signals)
+        included_count = tp + sl + timeout + open_trades
+        excluded_count = rejected + stale + timeout_no_data
+        
+        # ===== DETAILED BREAKDOWN SECTION =====
+        report.append("📋 SIGNAL BREAKDOWN")
+        report.append("─" * 200)
+        report.append("")
+        report.append(f"INCLUDED IN METRICS (TP/SL/TIMEOUT/OPEN - Counted in WR & P&L):")
+        report.append(f"  • TP_HIT:     {tp:>5} signals")
+        report.append(f"  • SL_HIT:     {sl:>5} signals")
+        report.append(f"  • TIMEOUT:    {timeout:>5} signals (only those with calculable exit price)")
+        report.append(f"  • OPEN:       {open_trades:>5} signals (unrealized)")
+        report.append(f"  ──────────────────────")
+        report.append(f"  Subtotal (Counted in WR & P&L): {included_count}")
+        report.append("")
+        report.append(f"EXCLUDED FROM METRICS (Not counted in WR or P&L):")
+        report.append(f"  • REJECTED_NOT_SENT_TELEGRAM:         {rejected:>5} signals (never sent to traders)")
+        report.append(f"  • STALE_TIMEOUT:                      {stale:>5} signals ⚠️ DATA QUALITY ISSUE - COMPLETELY EXCLUDED")
+        report.append(f"  • TIMEOUT (no exit_price):            {timeout_no_data:>5} signals ⚠️ DATA CORRUPTION - pre-fix period (exit_price=0 or None)")
+        report.append(f"  ──────────────────────")
+        report.append(f"  Subtotal (Excluded from all calculations): {excluded_count}")
+        report.append("")
+        report.append(f"BREAKDOWN VERIFICATION:")
+        report.append(f"  Included ({included_count}) + Excluded ({excluded_count}) = Total ({total})")
+        if included_count + excluded_count == total:
+            report.append(f"  ✓ Verified: All {total} signals accounted for")
+        else:
+            report.append(f"  ✗ ERROR: Mismatch detected! {included_count} + {excluded_count} ≠ {total}")
+        report.append("")
+        report.append(f"Loaded {total} post-deployment signals")
+        report.append("")
+        report.append("─" * 200)
+        report.append("")
+        
+        # ===== CLOSED TRADES ANALYSIS SECTION =====
+        report.append("🎯 CLOSED TRADES ANALYSIS (Backtest Signals Only)")
+        report.append("─" * 200)
+        
+        closed = tp + sl + timeout
+        
+        # Separate timeout into wins/losses/breakeven (only for those with exit_price)
+        timeout_wins = 0
+        timeout_losses = 0
+        timeout_breakeven = 0
+        for s in self.signals:
+            if s.get('status') == 'TIMEOUT' and s.get('actual_exit_price'):
+                exit_p = float(s.get('actual_exit_price', 0))
+                entry = float(s.get('entry_price', 0))
+                direction = s.get('signal_type', 'LONG')
+                
+                # Only calculate if we have BOTH entry and exit prices (both > 0)
+                if entry > 0 and exit_p > 0:
+                    if direction.upper() == 'LONG':
+                        pnl = ((exit_p - entry) / entry) * 1000
+                    else:
+                        pnl = ((entry - exit_p) / exit_p) * 1000
+                    
+                    if pnl > 0:
+                        timeout_wins += 1
+                    elif pnl < 0:
+                        timeout_losses += 1
+                    else:
+                        # pnl == 0 (break-even)
+                        timeout_breakeven += 1
+        
+        if closed > 0:
+            wins = tp + timeout_wins
+            wr = (wins / closed * 100) if closed > 0 else 0
+            
+            report.append(f"Closed Trades (Clean Data): {closed}")
+            report.append(f"  • TP_HIT:               {tp:>5} signals (profit targets hit)")
+            report.append(f"  • SL_HIT:               {sl:>5} signals (stop losses hit)")
+            report.append(f"  • TIMEOUT:              {timeout:>5} signals (only those with calculable exit price)")
+            report.append(f"    - Timeout Win:       {timeout_wins:>5} (closed > entry)")
+            report.append(f"    - Timeout Loss:      {timeout_losses:>5} (closed < entry)")
+            report.append(f"    - Timeout Breakeven: {timeout_breakeven:>5} (closed ≈ entry)")
+            report.append("")
+            report.append(f"Overall Win Rate: {wr:.2f}%")
+            report.append(f"Calculation: ({tp} TP + {timeout_wins} TIMEOUT_WIN) / {closed} Closed = {wins} / {closed} = {wr:.2f}%")
+            
+            # Add Win Rate v2 (TP & SL ONLY - excludes TIMEOUT)
+            tp_sl_closed = tp + sl
+            if tp_sl_closed > 0:
+                wr_v2 = (tp / tp_sl_closed * 100) if tp_sl_closed > 0 else 0
+                report.append(f"Win Rate (based on TP & SL ONLY): {wr_v2:.2f}%")
+                report.append(f"Calculation: ({tp} TP) / ({tp} TP + {sl} SL) = {tp} / {tp_sl_closed} = {wr_v2:.2f}%")
+        else:
+            report.append(f"Closed Trades (Clean Data): {closed}")
+            report.append(f"  (No closed trades yet - awaiting first completions)")
+        
+        report.append("")
+        
+        # ===== P&L BREAKDOWN SECTION =====
+        report.append("💰 P&L BREAKDOWN")
+        report.append("─" * 200)
+        
+        # Calculate P&L by category (INCLUDED)
+        pnl_tp = 0.0
+        pnl_sl = 0.0
+        pnl_timeout = 0.0
+        pnl_timeout_win = 0.0
+        pnl_timeout_loss = 0.0
+        pnl_open = 0.0
+        
+        for s in self.signals:
+            status = s.get('status', 'OPEN')
+            direction = s.get('signal_type', 'LONG')
+            
+            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                if pnl_calc:
+                    if status == 'TP_HIT':
+                        pnl_tp += pnl_calc
+                    elif status == 'SL_HIT':
+                        pnl_sl += pnl_calc
+                    elif status == 'TIMEOUT':
+                        pnl_timeout += pnl_calc
+                        # Separate timeout into wins and losses
+                        if pnl_calc > 0:
+                            pnl_timeout_win += pnl_calc
+                        else:
+                            pnl_timeout_loss += pnl_calc
+            elif status == 'OPEN':
+                pnl_open += 0.0  # Unrealized, counted as 0
+        
+        # Calculate P&L by category (EXCLUDED)
+        pnl_rejected = 0.0
+        pnl_stale = 0.0
+        
+        for s in self.signals:
+            status = s.get('status', 'OPEN')
+            direction = s.get('signal_type', 'LONG')
+            
+            if status == 'REJECTED_NOT_SENT_TELEGRAM':
+                pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                if pnl_calc:
+                    pnl_rejected += pnl_calc
+            elif status == 'STALE_TIMEOUT':
+                # Stale: don't calculate P&L
+                pass
+        
+        total_pnl_included = pnl_tp + pnl_sl + pnl_timeout + pnl_open
+        total_pnl_excluded = pnl_rejected + pnl_stale
+        total_pnl = total_pnl_included + total_pnl_excluded
+        
+        report.append(f"INCLUDED IN TOTAL P&L (Counted in metrics):")
+        report.append(f"  • TP_HIT:   ${pnl_tp:>+12.2f}")
+        report.append(f"  • SL_HIT:   ${pnl_sl:>+12.2f}")
+        report.append(f"  • TIMEOUT:  ${pnl_timeout:>+12.2f}")
+        report.append(f"    - Timeout Win:  ${pnl_timeout_win:>+10.2f}")
+        report.append(f"    - Timeout Loss: ${pnl_timeout_loss:>+10.2f}")
+        report.append(f"  • OPEN:     ${pnl_open:>+12.2f} (unrealized)")
+        report.append(f"  ──────────────────────────────")
+        report.append(f"  Subtotal (Backtest P&L): ${total_pnl_included:>+12.2f}")
+        report.append("")
+        report.append(f"EXCLUDED FROM TOTAL P&L (Not counted in any metric):")
+        report.append(f"  • REJECTED: ${pnl_rejected:>+12.2f} (never sent to traders, excluded from WR)")
+        report.append(f"  • STALE:    ⚠️ NOT CALCULATED (data quality - completely excluded)")
+        report.append(f"  ──────────────────────────────")
+        report.append(f"  Subtotal (Excluded P&L): ${total_pnl_excluded:>+12.2f}")
+        report.append("")
+        report.append(f"VALIDATION:")
+        report.append(f"  Included in Total P&L: ${total_pnl_included:>+12.2f}")
+        report.append(f"  Total P&L Reported:    ${total_pnl:>+12.2f}")
+        if abs(total_pnl - total_pnl_included) < 0.01:
+            report.append(f"  ✓ Verified: P&L matches")
+        report.append("")
+        
+        # Per-signal averages
+        if closed > 0:
+            avg_pnl_per_closed = total_pnl_included / closed
+            report.append(f"Average P&L per Closed Trade: ${avg_pnl_per_closed:>+.2f}")
+        
+        if included_count > 0:
+            avg_pnl_per_signal = total_pnl_included / included_count
+            report.append(f"Average P&L per Signal (Included): ${avg_pnl_per_signal:>+.2f}")
+        
+        if tp > 0:
+            avg_pnl_tp = pnl_tp / tp
+            report.append(f"Average P&L per TP_HIT: ${avg_pnl_tp:>+.2f}")
+        
+        if sl > 0:
+            avg_pnl_sl = pnl_sl / sl
+            report.append(f"Average P&L per SL_HIT: ${avg_pnl_sl:>+.2f}")
+        
+        report.append("")
+        report.append("─" * 200)
+        report.append("")
+        
+        # ===== OVERALL RR METRICS SECTION =====
+        report.append("📊 OVERALL RISK:REWARD (RR) METRICS")
+        report.append("─" * 200)
+        
+        # Calculate RR for ALL included signals
+        all_rr_values = []
+        for s in self.signals:
+            status = s.get('status')
+            if status not in ['REJECTED_NOT_SENT_TELEGRAM', 'STALE_TIMEOUT']:
+                entry = s.get('entry_price')
+                tp = s.get('tp_price') or s.get('tp_target')
+                sl = s.get('sl_price') or s.get('sl_target')
+                
+                if entry and tp and sl:
+                    try:
+                        entry_f = float(entry)
+                        tp_f = float(tp)
+                        sl_f = float(sl)
+                        
+                        reward = abs(tp_f - entry_f)
+                        risk = abs(entry_f - sl_f)
+                        
+                        if risk > 0:
+                            rr = reward / risk
+                            all_rr_values.append(rr)
+                    except:
+                        pass
+        
+        if all_rr_values:
+            highest_rr = max(all_rr_values)
+            avg_rr = sum(all_rr_values) / len(all_rr_values)
+            lowest_rr = min(all_rr_values)
+            
+            report.append(f"Highest RR: {highest_rr:.2f}")
+            report.append(f"Avg RR:     {avg_rr:.2f}")
+            report.append(f"Lowest RR:  {lowest_rr:.2f}")
+            report.append("")
+            report.append(f"Total signals analyzed: {len(all_rr_values)}")
+        else:
+            report.append("No RR data available")
+        
+        report.append("")
+        report.append("─" * 200)
+        report.append("")
+        
+        # BY TIMEFRAME (Enhanced table)
+        report.append("🕐 BY TIMEFRAME")
+        report.append("─" * 260)
+        report.append(f"{'TF':<8} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<10} | {'Closed':<7} | {'Open':<6} | {'WR':<8} | {'P&L':<12} | {'Max RR':<8} | {'Avg RR':<8} | {'Min RR':<8} | {'Avg TP Dur':<12} | {'Avg SL Dur':<12}")
+        report.append("─" * 260)
+        
+        # Build timeframe statistics
+        tf_stats = defaultdict(lambda: {
+            'count': 0, 'tp': 0, 'sl': 0, 'timeout': 0, 'timeout_win': 0, 'timeout_loss': 0, 'open': 0, 'pnl': 0.0
+        })
+        
+        for s in self.signals:
+            tf = s.get('timeframe', 'N/A')
+            status = s.get('status', 'OPEN')
+            direction = s.get('signal_type', 'LONG')
+            
+            tf_stats[tf]['count'] += 1
+            
+            if status == 'TP_HIT':
+                tf_stats[tf]['tp'] += 1
+            elif status == 'SL_HIT':
+                tf_stats[tf]['sl'] += 1
+            elif status == 'TIMEOUT':
+                tf_stats[tf]['timeout'] += 1
+                # Separate into win/loss
+                if s.get('actual_exit_price'):
+                    pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                    if pnl_calc and pnl_calc > 0:
+                        tf_stats[tf]['timeout_win'] += 1
+                    elif pnl_calc and pnl_calc < 0:
+                        tf_stats[tf]['timeout_loss'] += 1
+            elif status == 'OPEN':
+                tf_stats[tf]['open'] += 1
+            
+            # Calculate P&L
+            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                if pnl_calc:
+                    tf_stats[tf]['pnl'] += pnl_calc
+        
+        # Print by timeframe in order
+        for tf in sorted(tf_stats.keys()):
+            stats = tf_stats[tf]
+            closed = stats['tp'] + stats['sl'] + stats['timeout']
+            open_count = stats['open']
+            timeout_str = f"{stats['timeout_win']}W/{stats['timeout_loss']}L" if stats['timeout'] > 0 else "-"
+            
+            if closed > 0:
+                wins = stats['tp'] + stats['timeout_win']
+                wr = (wins / closed * 100) if closed > 0 else 0
+            else:
+                wr = 0
+            
+            pnl_str = f"${stats['pnl']:+.2f}"
+            
+            # Calculate average durations for this timeframe
+            tf_signals = [s for s in self.signals if s.get('timeframe') == tf]
+            avg_tp_dur = self._calculate_avg_duration_by_status(tf_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(tf_signals, 'SL_HIT')
+            
+            avg_tp_dur_str = self._format_duration_hm(avg_tp_dur) if avg_tp_dur else "N/A"
+            avg_sl_dur_str = self._format_duration_hm(avg_sl_dur) if avg_sl_dur else "N/A"
+            
+            # Calculate RR metrics for this timeframe
+            max_rr, avg_rr, min_rr = self._calculate_rr_metrics(tf_signals)
+            max_rr_str = f"{max_rr}" if max_rr is not None else "N/A"
+            avg_rr_str = f"{avg_rr}" if avg_rr is not None else "N/A"
+            min_rr_str = f"{min_rr}" if min_rr is not None else "N/A"
+            
+            report.append(f"{tf:<8} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {timeout_str:<10} | {closed:<7} | {open_count:<6} | {wr:>6.1f}% | {pnl_str:>10} | {max_rr_str:>6} | {avg_rr_str:>6} | {min_rr_str:>6} | {avg_tp_dur_str:<12} | {avg_sl_dur_str:<12}")
+        
+        report.append("─" * 260)
+        report.append("")
+        
+        # BY DIRECTION
+        report.append("📈 BY DIRECTION")
+        report.append("─" * 260)
+        report.append(f"{'Direction':<12} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<10} | {'Closed':<7} | {'Open':<6} | {'WR':<8} | {'P&L':<12} | {'Max RR':<8} | {'Avg RR':<8} | {'Min RR':<8} | {'Avg TP Dur':<12} | {'Avg SL Dur':<12}")
+        report.append("─" * 260)
+        
+        dir_stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout': 0, 'timeout_win': 0, 'timeout_loss': 0, 'open': 0, 'pnl': 0.0})
+        for s in self.signals:
+            direction = s.get('signal_type', 'N/A')
+            status = s.get('status', 'OPEN')
+            dir_stats[direction]['count'] += 1
+            
+            if status == 'TP_HIT':
+                dir_stats[direction]['tp'] += 1
+            elif status == 'SL_HIT':
+                dir_stats[direction]['sl'] += 1
+            elif status == 'TIMEOUT':
+                dir_stats[direction]['timeout'] += 1
+                if s.get('actual_exit_price'):
+                    pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                    if pnl_calc and pnl_calc > 0:
+                        dir_stats[direction]['timeout_win'] += 1
+                    elif pnl_calc and pnl_calc < 0:
+                        dir_stats[direction]['timeout_loss'] += 1
+            elif status == 'OPEN':
+                dir_stats[direction]['open'] += 1
+            
+            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                if pnl_calc:
+                    dir_stats[direction]['pnl'] += pnl_calc
+        
+        for direction in sorted(dir_stats.keys()):
+            stats = dir_stats[direction]
+            closed = stats['tp'] + stats['sl'] + stats['timeout']
+            open_count = stats['open']
+            timeout_str = f"{stats['timeout_win']}W/{stats['timeout_loss']}L" if stats['timeout'] > 0 else "-"
+            wr = (((stats['tp'] + stats['timeout_win']) / closed) * 100) if closed > 0 else 0
+            pnl_str = f"${stats['pnl']:+.2f}"
+            
+            dir_signals = [s for s in self.signals if s.get('signal_type') == direction]
+            max_rr, avg_rr, min_rr = self._calculate_rr_metrics(dir_signals)
+            max_rr_str = f"{max_rr}" if max_rr is not None else "N/A"
+            avg_rr_str = f"{avg_rr}" if avg_rr is not None else "N/A"
+            min_rr_str = f"{min_rr}" if min_rr is not None else "N/A"
+            
+            avg_tp_dur = self._calculate_avg_duration_by_status(dir_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(dir_signals, 'SL_HIT')
+            avg_tp_dur_str = self._format_duration_hm(avg_tp_dur) if avg_tp_dur else "N/A"
+            avg_sl_dur_str = self._format_duration_hm(avg_sl_dur) if avg_sl_dur else "N/A"
+            
+            report.append(f"{direction:<12} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {timeout_str:<10} | {closed:<7} | {open_count:<6} | {wr:>6.1f}% | {pnl_str:>10} | {max_rr_str:>6} | {avg_rr_str:>6} | {min_rr_str:>6} | {avg_tp_dur_str:<12} | {avg_sl_dur_str:<12}")
+        
+        report.append("─" * 260)
+        report.append("")
+        
+        # BY ROUTE
+        report.append("🛣️ BY ROUTE")
+        report.append("─" * 280)
+        report.append(f"{'Route':<20} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<10} | {'Closed':<7} | {'Open':<6} | {'WR':<8} | {'P&L':<12} | {'Max RR':<8} | {'Avg RR':<8} | {'Min RR':<8} | {'Avg TP Dur':<12} | {'Avg SL Dur':<12}")
+        report.append("─" * 280)
+        
+        route_stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout': 0, 'timeout_win': 0, 'timeout_loss': 0, 'open': 0, 'pnl': 0.0})
+        for s in self.signals:
+            route = s.get('route', 'N/A')
+            status = s.get('status', 'OPEN')
+            direction = s.get('signal_type', 'LONG')
+            route_stats[route]['count'] += 1
+            
+            if status == 'TP_HIT':
+                route_stats[route]['tp'] += 1
+            elif status == 'SL_HIT':
+                route_stats[route]['sl'] += 1
+            elif status == 'TIMEOUT':
+                route_stats[route]['timeout'] += 1
+                if s.get('actual_exit_price'):
+                    pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                    if pnl_calc and pnl_calc > 0:
+                        route_stats[route]['timeout_win'] += 1
+                    elif pnl_calc and pnl_calc < 0:
+                        route_stats[route]['timeout_loss'] += 1
+            elif status == 'OPEN':
+                route_stats[route]['open'] += 1
+            
+            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                if pnl_calc:
+                    route_stats[route]['pnl'] += pnl_calc
+        
+        for route in sorted(route_stats.keys()):
+            stats = route_stats[route]
+            closed = stats['tp'] + stats['sl'] + stats['timeout']
+            open_count = stats['open']
+            timeout_str = f"{stats['timeout_win']}W/{stats['timeout_loss']}L" if stats['timeout'] > 0 else "-"
+            wr = (((stats['tp'] + stats['timeout_win']) / closed) * 100) if closed > 0 else 0
+            pnl_str = f"${stats['pnl']:+.2f}"
+            
+            route_signals = [s for s in self.signals if s.get('route') == route]
+            max_rr, avg_rr, min_rr = self._calculate_rr_metrics(route_signals)
+            max_rr_str = f"{max_rr}" if max_rr is not None else "N/A"
+            avg_rr_str = f"{avg_rr}" if avg_rr is not None else "N/A"
+            min_rr_str = f"{min_rr}" if min_rr is not None else "N/A"
+            
+            avg_tp_dur = self._calculate_avg_duration_by_status(route_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(route_signals, 'SL_HIT')
+            avg_tp_dur_str = self._format_duration_hm(avg_tp_dur) if avg_tp_dur else "N/A"
+            avg_sl_dur_str = self._format_duration_hm(avg_sl_dur) if avg_sl_dur else "N/A"
+            
+            report.append(f"{route:<20} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {timeout_str:<10} | {closed:<7} | {open_count:<6} | {wr:>6.1f}% | {pnl_str:>10} | {max_rr_str:>6} | {avg_rr_str:>6} | {min_rr_str:>6} | {avg_tp_dur_str:<12} | {avg_sl_dur_str:<12}")
+        
+        report.append("─" * 280)
+        report.append("")
+        
+        # BY REGIME
+        report.append("🌊 BY REGIME")
+        report.append("─" * 260)
+        report.append(f"{'Regime':<12} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<10} | {'Closed':<7} | {'Open':<6} | {'WR':<8} | {'P&L':<12} | {'Max RR':<8} | {'Avg RR':<8} | {'Min RR':<8} | {'Avg TP Dur':<12} | {'Avg SL Dur':<12}")
+        report.append("─" * 260)
+        
+        regime_stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout': 0, 'timeout_win': 0, 'timeout_loss': 0, 'open': 0, 'pnl': 0.0})
+        for s in self.signals:
+            regime = s.get('regime', 'N/A')
+            status = s.get('status', 'OPEN')
+            direction = s.get('signal_type', 'LONG')
+            regime_stats[regime]['count'] += 1
+            
+            if status == 'TP_HIT':
+                regime_stats[regime]['tp'] += 1
+            elif status == 'SL_HIT':
+                regime_stats[regime]['sl'] += 1
+            elif status == 'TIMEOUT':
+                regime_stats[regime]['timeout'] += 1
+                if s.get('actual_exit_price'):
+                    pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                    if pnl_calc and pnl_calc > 0:
+                        regime_stats[regime]['timeout_win'] += 1
+                    elif pnl_calc and pnl_calc < 0:
+                        regime_stats[regime]['timeout_loss'] += 1
+            elif status == 'OPEN':
+                regime_stats[regime]['open'] += 1
+            
+            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                if pnl_calc:
+                    regime_stats[regime]['pnl'] += pnl_calc
+        
+        for regime in sorted(regime_stats.keys()):
+            stats = regime_stats[regime]
+            closed = stats['tp'] + stats['sl'] + stats['timeout']
+            open_count = stats['open']
+            timeout_str = f"{stats['timeout_win']}W/{stats['timeout_loss']}L" if stats['timeout'] > 0 else "-"
+            wr = (((stats['tp'] + stats['timeout_win']) / closed) * 100) if closed > 0 else 0
+            pnl_str = f"${stats['pnl']:+.2f}"
+            
+            regime_signals = [s for s in self.signals if s.get('regime') == regime]
+            max_rr, avg_rr, min_rr = self._calculate_rr_metrics(regime_signals)
+            max_rr_str = f"{max_rr}" if max_rr is not None else "N/A"
+            avg_rr_str = f"{avg_rr}" if avg_rr is not None else "N/A"
+            min_rr_str = f"{min_rr}" if min_rr is not None else "N/A"
+            
+            avg_tp_dur = self._calculate_avg_duration_by_status(regime_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(regime_signals, 'SL_HIT')
+            avg_tp_dur_str = self._format_duration_hm(avg_tp_dur) if avg_tp_dur else "N/A"
+            avg_sl_dur_str = self._format_duration_hm(avg_sl_dur) if avg_sl_dur else "N/A"
+            
+            report.append(f"{regime:<12} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {timeout_str:<10} | {closed:<7} | {open_count:<6} | {wr:>6.1f}% | {pnl_str:>10} | {max_rr_str:>6} | {avg_rr_str:>6} | {min_rr_str:>6} | {avg_tp_dur_str:<12} | {avg_sl_dur_str:<12}")
+        
+        report.append("─" * 260)
+        report.append("")
+        
+        # BY SYMBOL GROUP
+        report.append("💰 BY SYMBOL GROUP")
+        report.append("─" * 280)
+        report.append(f"{'Symbol Group':<20} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<10} | {'Closed':<7} | {'Open':<6} | {'WR':<8} | {'P&L':<12} | {'Max RR':<8} | {'Avg RR':<8} | {'Min RR':<8} | {'Avg TP Dur':<12} | {'Avg SL Dur':<12}")
+        report.append("─" * 280)
+        
+        symbol_group_stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout': 0, 'timeout_win': 0, 'timeout_loss': 0, 'open': 0, 'pnl': 0.0})
+        for s in self.signals:
+            symbol = s.get('symbol', 'UNKNOWN')
+            group = self._get_symbol_group(symbol)
+            status = s.get('status', 'OPEN')
+            direction = s.get('signal_type', 'LONG')
+            symbol_group_stats[group]['count'] += 1
+            
+            if status == 'TP_HIT':
+                symbol_group_stats[group]['tp'] += 1
+            elif status == 'SL_HIT':
+                symbol_group_stats[group]['sl'] += 1
+            elif status == 'TIMEOUT':
+                symbol_group_stats[group]['timeout'] += 1
+                if s.get('actual_exit_price'):
+                    pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                    if pnl_calc and pnl_calc > 0:
+                        symbol_group_stats[group]['timeout_win'] += 1
+                    elif pnl_calc and pnl_calc < 0:
+                        symbol_group_stats[group]['timeout_loss'] += 1
+            elif status == 'OPEN':
+                symbol_group_stats[group]['open'] += 1
+            
+            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                if pnl_calc:
+                    symbol_group_stats[group]['pnl'] += pnl_calc
+        
+        for group in sorted(symbol_group_stats.keys()):
+            stats = symbol_group_stats[group]
+            closed = stats['tp'] + stats['sl'] + stats['timeout']
+            open_count = stats['open']
+            timeout_str = f"{stats['timeout_win']}W/{stats['timeout_loss']}L" if stats['timeout'] > 0 else "-"
+            wr = (((stats['tp'] + stats['timeout_win']) / closed) * 100) if closed > 0 else 0
+            pnl_str = f"${stats['pnl']:+.2f}"
+            
+            group_signals = [s for s in self.signals if self._get_symbol_group(s.get('symbol', 'UNKNOWN')) == group]
+            max_rr, avg_rr, min_rr = self._calculate_rr_metrics(group_signals)
+            max_rr_str = f"{max_rr}" if max_rr is not None else "N/A"
+            avg_rr_str = f"{avg_rr}" if avg_rr is not None else "N/A"
+            min_rr_str = f"{min_rr}" if min_rr is not None else "N/A"
+            
+            avg_tp_dur = self._calculate_avg_duration_by_status(group_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(group_signals, 'SL_HIT')
+            avg_tp_dur_str = self._format_duration_hm(avg_tp_dur) if avg_tp_dur else "N/A"
+            avg_sl_dur_str = self._format_duration_hm(avg_sl_dur) if avg_sl_dur else "N/A"
+            
+            report.append(f"{group:<20} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {timeout_str:<10} | {closed:<7} | {open_count:<6} | {wr:>6.1f}% | {pnl_str:>10} | {max_rr_str:>6} | {avg_rr_str:>6} | {min_rr_str:>6} | {avg_tp_dur_str:<12} | {avg_sl_dur_str:<12}")
+        
+        report.append("─" * 280)
+        report.append("")
+        
+        # BY CONFIDENCE LEVEL
+        report.append("💡 BY CONFIDENCE LEVEL")
+        report.append("─" * 280)
+        report.append(f"{'Confidence':<20} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<10} | {'Closed':<7} | {'Open':<6} | {'WR':<8} | {'P&L':<12} | {'Max RR':<8} | {'Avg RR':<8} | {'Min RR':<8} | {'Avg TP Dur':<12} | {'Avg SL Dur':<12}")
+        report.append("─" * 280)
+        
+        conf_stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout': 0, 'timeout_win': 0, 'timeout_loss': 0, 'open': 0, 'pnl': 0.0})
+        for s in self.signals:
+            confidence = s.get('confidence', 0)
+            conf_level = self._get_confidence_level(confidence)
+            status = s.get('status', 'OPEN')
+            direction = s.get('signal_type', 'LONG')
+            conf_stats[conf_level]['count'] += 1
+            
+            if status == 'TP_HIT':
+                conf_stats[conf_level]['tp'] += 1
+            elif status == 'SL_HIT':
+                conf_stats[conf_level]['sl'] += 1
+            elif status == 'TIMEOUT':
+                conf_stats[conf_level]['timeout'] += 1
+                if s.get('actual_exit_price'):
+                    pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                    if pnl_calc and pnl_calc > 0:
+                        conf_stats[conf_level]['timeout_win'] += 1
+                    elif pnl_calc and pnl_calc < 0:
+                        conf_stats[conf_level]['timeout_loss'] += 1
+            elif status == 'OPEN':
+                conf_stats[conf_level]['open'] += 1
+            
+            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                if pnl_calc:
+                    conf_stats[conf_level]['pnl'] += pnl_calc
+        
+        for conf_level in ['HIGH', 'MID', 'LOW']:
+            if conf_level not in conf_stats:
+                continue
+            stats = conf_stats[conf_level]
+            closed = stats['tp'] + stats['sl'] + stats['timeout']
+            open_count = stats['open']
+            timeout_str = f"{stats['timeout_win']}W/{stats['timeout_loss']}L" if stats['timeout'] > 0 else "-"
+            wr = (((stats['tp'] + stats['timeout_win']) / closed) * 100) if closed > 0 else 0
+            pnl_str = f"${stats['pnl']:+.2f}"
+            
+            conf_signals = [s for s in self.signals if self._get_confidence_level(s.get('confidence', 0)) == conf_level]
+            max_rr, avg_rr, min_rr = self._calculate_rr_metrics(conf_signals)
+            max_rr_str = f"{max_rr}" if max_rr is not None else "N/A"
+            avg_rr_str = f"{avg_rr}" if avg_rr is not None else "N/A"
+            min_rr_str = f"{min_rr}" if min_rr is not None else "N/A"
+            
+            avg_tp_dur = self._calculate_avg_duration_by_status(conf_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(conf_signals, 'SL_HIT')
+            avg_tp_dur_str = self._format_duration_hm(avg_tp_dur) if avg_tp_dur else "N/A"
+            avg_sl_dur_str = self._format_duration_hm(avg_sl_dur) if avg_sl_dur else "N/A"
+            
+            report.append(f"{conf_level:<20} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {timeout_str:<10} | {closed:<7} | {open_count:<6} | {wr:>6.1f}% | {pnl_str:>10} | {max_rr_str:>6} | {avg_rr_str:>6} | {min_rr_str:>6} | {avg_tp_dur_str:<12} | {avg_sl_dur_str:<12}")
+        
+        report.append("─" * 280)
+        report.append("")
+        
+        # BY TIER
+        report.append("⭐ BY TIER")
+        report.append("─" * 280)
+        report.append(f"{'Tier':<20} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<10} | {'Closed':<7} | {'Open':<6} | {'WR':<8} | {'P&L':<12} | {'Max RR':<8} | {'Avg RR':<8} | {'Min RR':<8} | {'Avg TP Dur':<12} | {'Avg SL Dur':<12}")
+        report.append("─" * 280)
+        
+        # ⚠️ NOTE: STALE_TIMEOUT and REJECTED_NOT_SENT_TELEGRAM are completely excluded from metrics
+        # They represent data quality issues and are not counted in any aggregate
+        tier_stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout': 0, 'timeout_win': 0, 'timeout_loss': 0, 'open': 0, 'pnl': 0.0})
+        for s in self.signals:
+            status = s.get('status', 'OPEN')
+            
+            # EXCLUDE stale/rejected from all counting
+            if status == 'STALE_TIMEOUT':
+                continue
+            if status == 'REJECTED_NOT_SENT_TELEGRAM':
+                continue
+            
+            tier = s.get('tier', 'Tier-X')
+            direction = s.get('signal_type', 'LONG')
+            tier_stats[tier]['count'] += 1
+            
+            if status == 'TP_HIT':
+                tier_stats[tier]['tp'] += 1
+            elif status == 'SL_HIT':
+                tier_stats[tier]['sl'] += 1
+            elif status == 'TIMEOUT':
+                tier_stats[tier]['timeout'] += 1
+                if s.get('actual_exit_price'):
+                    pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                    if pnl_calc and pnl_calc > 0:
+                        tier_stats[tier]['timeout_win'] += 1
+                    elif pnl_calc and pnl_calc < 0:
+                        tier_stats[tier]['timeout_loss'] += 1
+            elif status == 'OPEN':
+                tier_stats[tier]['open'] += 1
+            
+            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                if pnl_calc:
+                    tier_stats[tier]['pnl'] += pnl_calc
+        
+        for tier_level in ['Tier-1', 'Tier-2', 'Tier-3', 'Tier-X']:
+            if tier_level not in tier_stats:
+                continue
+            stats = tier_stats[tier_level]
+            closed = stats['tp'] + stats['sl'] + stats['timeout']
+            open_count = stats['open']
+            timeout_str = f"{stats['timeout_win']}W/{stats['timeout_loss']}L" if stats['timeout'] > 0 else "-"
+            wr = (((stats['tp'] + stats['timeout_win']) / closed) * 100) if closed > 0 else 0
+            pnl_str = f"${stats['pnl']:+.2f}"
+            
+            tier_signals = [s for s in self.signals if s.get('tier', 'Tier-X') == tier_level]
+            max_rr, avg_rr, min_rr = self._calculate_rr_metrics(tier_signals)
+            max_rr_str = f"{max_rr}" if max_rr is not None else "N/A"
+            avg_rr_str = f"{avg_rr}" if avg_rr is not None else "N/A"
+            min_rr_str = f"{min_rr}" if min_rr is not None else "N/A"
+            
+            avg_tp_dur = self._calculate_avg_duration_by_status(tier_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(tier_signals, 'SL_HIT')
+            avg_tp_dur_str = self._format_duration_hm(avg_tp_dur) if avg_tp_dur else "N/A"
+            avg_sl_dur_str = self._format_duration_hm(avg_sl_dur) if avg_sl_dur else "N/A"
+            
+            report.append(f"{tier_level:<20} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {timeout_str:<10} | {closed:<7} | {open_count:<6} | {wr:>6.1f}% | {pnl_str:>10} | {max_rr_str:>6} | {avg_rr_str:>6} | {min_rr_str:>6} | {avg_tp_dur_str:<12} | {avg_sl_dur_str:<12}")
+        
+        report.append("─" * 280)
+        report.append("")
+        
+        # BY MTF BANDS
+        report.append("🌈 BY MTF BANDS")
+        report.append("─" * 280)
+        report.append(f"{'Band':<20} | {'Total':<6} | {'TP':<4} | {'SL':<4} | {'TIMEOUT':<10} | {'Closed':<7} | {'Open':<6} | {'WR':<8} | {'P&L':<12} | {'Max RR':<8} | {'Avg RR':<8} | {'Min RR':<8} | {'Avg TP Dur':<12} | {'Avg SL Dur':<12}")
+        report.append("─" * 280)
+        
+        # ⚠️ NOTE: STALE_TIMEOUT and REJECTED_NOT_SENT_TELEGRAM are completely excluded from metrics
+        # They represent data quality issues and are not counted in any aggregate
+        band_stats = defaultdict(lambda: {'count': 0, 'tp': 0, 'sl': 0, 'timeout': 0, 'timeout_win': 0, 'timeout_loss': 0, 'open': 0, 'pnl': 0.0})
+        for s in self.signals:
+            status = s.get('status', 'OPEN')
+            
+            # EXCLUDE stale/rejected from all counting
+            if status == 'STALE_TIMEOUT':
+                continue
+            if status == 'REJECTED_NOT_SENT_TELEGRAM':
+                continue
+            
+            band = s.get('mtf_alignment_band', 'unassigned')
+            direction = s.get('signal_type', 'LONG')
+            band_stats[band]['count'] += 1
+            
+            if status == 'TP_HIT':
+                band_stats[band]['tp'] += 1
+            elif status == 'SL_HIT':
+                band_stats[band]['sl'] += 1
+            elif status == 'TIMEOUT':
+                band_stats[band]['timeout'] += 1
+                if s.get('actual_exit_price'):
+                    pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                    if pnl_calc and pnl_calc > 0:
+                        band_stats[band]['timeout_win'] += 1
+                    elif pnl_calc and pnl_calc < 0:
+                        band_stats[band]['timeout_loss'] += 1
+            elif status == 'OPEN':
+                band_stats[band]['open'] += 1
+            
+            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT']:
+                pnl_calc = self._calculate_pnl_usd(s.get('entry_price'), s.get('actual_exit_price'), direction)
+                if pnl_calc:
+                    band_stats[band]['pnl'] += pnl_calc
+        
+        for band_level in ['strong', 'weak', 'neutral', 'conflict', 'unassigned']:
+            if band_level not in band_stats:
+                continue
+            stats = band_stats[band_level]
+            closed = stats['tp'] + stats['sl'] + stats['timeout']
+            open_count = stats['open']
+            timeout_str = f"{stats['timeout_win']}W/{stats['timeout_loss']}L" if stats['timeout'] > 0 else "-"
+            wr = (((stats['tp'] + stats['timeout_win']) / closed) * 100) if closed > 0 else 0
+            pnl_str = f"${stats['pnl']:+.2f}"
+            
+            band_signals = [s for s in self.signals if s.get('mtf_alignment_band', 'unassigned') == band_level]
+            max_rr, avg_rr, min_rr = self._calculate_rr_metrics(band_signals)
+            max_rr_str = f"{max_rr}" if max_rr is not None else "N/A"
+            avg_rr_str = f"{avg_rr}" if avg_rr is not None else "N/A"
+            min_rr_str = f"{min_rr}" if min_rr is not None else "N/A"
+            
+            avg_tp_dur = self._calculate_avg_duration_by_status(band_signals, 'TP_HIT')
+            avg_sl_dur = self._calculate_avg_duration_by_status(band_signals, 'SL_HIT')
+            avg_tp_dur_str = self._format_duration_hm(avg_tp_dur) if avg_tp_dur else "N/A"
+            avg_sl_dur_str = self._format_duration_hm(avg_sl_dur) if avg_sl_dur else "N/A"
+            
+            report.append(f"{band_level:<20} | {stats['count']:<6} | {stats['tp']:<4} | {stats['sl']:<4} | {timeout_str:<10} | {closed:<7} | {open_count:<6} | {wr:>6.1f}% | {pnl_str:>10} | {max_rr_str:>6} | {avg_rr_str:>6} | {min_rr_str:>6} | {avg_tp_dur_str:<12} | {avg_sl_dur_str:<12}")
+        
+        report.append("─" * 280)
+        report.append("")
+        report.append("=" * 200)
+        report.append("🏵️ TIER CONFIG FULFILMENT COMBOS (POST-DEPLOYMENT SUBSET - Validation Signal Pool)")
+        report.append("=" * 200)
+        report.append("")
+        
+        tier_configs = [
+            ("Tier-1", TIER_THRESHOLDS['tier1_wr'], TIER_THRESHOLDS['tier1_pnl'], TIER_THRESHOLDS['tier1_min_trades']),
+            ("Tier-2", TIER_THRESHOLDS['tier2_wr'], TIER_THRESHOLDS['tier2_pnl'], TIER_THRESHOLDS['tier2_min_trades']),
+            ("Tier-3", TIER_THRESHOLDS['tier3_wr'], TIER_THRESHOLDS['tier3_pnl'], TIER_THRESHOLDS['tier3_min_trades']),
+        ]
+        
+        # Track combos shown in higher tiers to avoid duplicates (HIGHEST TIER ONLY)
+        combos_already_shown = set()
+        
+        for tier_name, tier_wr, tier_pnl, tier_min_trades in tier_configs:
+            report.append(f"{tier_name}: {tier_wr*100:.0f}% WR, ${tier_pnl}+ avg, {tier_min_trades}+ trades")
+            
+            tier_combos = []
+            
+            # Check 6D combos (post-deployment includes symbol_group + confidence)
+            six_d_stats = self._aggregate_by_dimensions(['timeframe', 'signal_type', 'route', 'regime', 'symbol_group', 'confidence_level'])
+            for key, stat in six_d_stats.items():
+                closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
+                if closed >= tier_min_trades:
+                    win_count = stat['tp'] + stat['timeout_win']
+                    wr = (win_count / closed) if closed > 0 else 0
+                    avg_pnl = stat['pnl'] / closed if closed > 0 else 0
+                    # Include if: meets min thresholds AND not already shown in higher tier
+                    if wr >= tier_wr and avg_pnl >= tier_pnl:
+                        combo_id = f"6D_{key}"
+                        if combo_id not in combos_already_shown:
+                            tier_combos.append({
+                                'dimension': '6D',
+                                'name': f"TF_DIR_ROUTE_REGIME_SG_CONF_{key[0]}_{key[1]}_{key[2]}_{key[3]}_{key[4]}_{key[5]}",
+                                'id': combo_id,
+                                'wr': wr,
+                                'pnl': stat['pnl'],
+                                'avg_pnl': avg_pnl,
+                                'closed': closed
+                            })
+            
+            # Check 5D combos
+            five_d_stats = self._aggregate_by_dimensions(['timeframe', 'signal_type', 'route', 'regime', 'symbol_group'])
+            for key, stat in five_d_stats.items():
+                closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
+                if closed >= tier_min_trades:
+                    win_count = stat['tp'] + stat['timeout_win']
+                    wr = (win_count / closed) if closed > 0 else 0
+                    avg_pnl = stat['pnl'] / closed if closed > 0 else 0
+                    # Include if: meets min thresholds AND doesn't exceed higher tier (exclusive range)
+                    if wr >= tier_wr and avg_pnl >= tier_pnl:
+                        tier_combos.append({
+                            'dimension': '5D',
+                            'name': f"TF_DIR_ROUTE_REGIME_SG_{key[0]}_{key[1]}_{key[2]}_{key[3]}_{key[4]}",
+                            'wr': wr,
+                            'pnl': stat['pnl'],
+                            'avg_pnl': avg_pnl,
+                            'closed': closed
+                        })
+            
+            # Check 4D combos
+            four_d_stats = self._aggregate_by_dimensions(['timeframe', 'signal_type', 'route', 'regime'])
+            for key, stat in four_d_stats.items():
+                closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
+                if closed >= tier_min_trades:
+                    win_count = stat['tp'] + stat['timeout_win']
+                    wr = (win_count / closed) if closed > 0 else 0
+                    avg_pnl = stat['pnl'] / closed if closed > 0 else 0
+                    # Include if: meets min thresholds AND doesn't exceed higher tier (exclusive range)
+                    if wr >= tier_wr and avg_pnl >= tier_pnl:
+                        tier_combos.append({
+                            'dimension': '4D',
+                            'name': f"TF_DIR_ROUTE_REGIME_{key[0]}_{key[1]}_{key[2]}_{key[3]}",
+                            'wr': wr,
+                            'pnl': stat['pnl'],
+                            'avg_pnl': avg_pnl,
+                            'closed': closed
+                        })
+            
+            # Check 3D combos
+            three_d_stats = self._aggregate_by_dimensions(['timeframe', 'signal_type', 'route'])
+            for key, stat in three_d_stats.items():
+                closed = stat['tp'] + stat['sl'] + stat['timeout_win'] + stat['timeout_loss']
+                if closed >= tier_min_trades:
+                    win_count = stat['tp'] + stat['timeout_win']
+                    wr = (win_count / closed) if closed > 0 else 0
+                    avg_pnl = stat['pnl'] / closed if closed > 0 else 0
+                    # Include if: meets min thresholds AND doesn't exceed higher tier (exclusive range)
+                    if wr >= tier_wr and avg_pnl >= tier_pnl:
+                        tier_combos.append({
+                            'dimension': '3D',
+                            'name': f"TF_DIR_ROUTE_{key[0]}_{key[1]}_{key[2]}",
+                            'wr': wr,
+                            'pnl': stat['pnl'],
+                            'avg_pnl': avg_pnl,
+                            'closed': closed
+                        })
+            
+            # ===== ENFORCE DIMENSIONAL CASCADE RULES =====
+            # Tier-1: Only 6D, 5D (4D, 3D, 2D excluded)
+            # Tier-2: Only 6D, 5D, 4D (3D, 2D excluded)
+            # Tier-3: Only 6D, 5D, 4D, 3D (2D excluded)
+            allowed_dimensions = {
+                'Tier-1': ['6D', '5D'],
+                'Tier-2': ['6D', '5D', '4D'],
+                'Tier-3': ['6D', '5D', '4D', '3D']
+            }
+            
+            if tier_name in allowed_dimensions:
+                excluded_combos = []
+                filtered_combos = []
+                for combo in tier_combos:
+                    if combo['dimension'] in allowed_dimensions[tier_name]:
+                        filtered_combos.append(combo)
+                    else:
+                        excluded_combos.append(combo)
+                
+                if excluded_combos:
+                    print(f"[DIMENSIONAL-FILTER] {tier_name}: Excluded {len(excluded_combos)} combos with dimensions not allowed", flush=True)
+                    for exc in excluded_combos:
+                        print(f"  ❌ {exc['dimension']}: {exc['name']} (WR: {exc['wr']*100:.1f}%, P&L: ${exc['pnl']:+.2f})", flush=True)
+                
+                tier_combos = filtered_combos
+            
+            # Sort by WR and P&L
+            tier_combos.sort(key=lambda x: (x['wr'], x['pnl']), reverse=True)
+            
+            # Mark combos as shown so they don't appear in lower tiers (HIGHEST TIER ONLY)
+            for combo in tier_combos:
+                if 'id' in combo:
+                    combos_already_shown.add(combo['id'])
+            
+            if tier_combos:
+                for combo in tier_combos[:5]:  # Show top 5 combos per tier
+                    report.append(f"  {combo['dimension']}: ✓ {combo['name']:<90} | WR: {combo['wr']*100:5.1f}% | P&L: ${combo['pnl']:+8.2f} | Avg: ${combo['avg_pnl']:+.2f} | Closed: {combo['closed']}")
+                
+                # Append qualifying combos to SIGNAL_TIERS_APPEND.jsonl for daily tier refresh
+                # Add tier name to each combo
+                for combo in tier_combos:
+                    combo['tier'] = tier_name
+                    if 'id' not in combo:
+                        # Auto-generate id if missing
+                        combo['id'] = f"{combo['dimension']}_{combo['name'].replace(' ', '_')}"
+                
+                # Import config for date metadata
+                try:
+                    from tier_refresh_config import get_today_gmt7, get_valid_from_gmt7, get_data_cutoff_utc
+                    
+                    # Check for manual override environment variables
+                    combo_target_date_env = os.environ.get('COMBO_TARGET_DATE')
+                    if combo_target_date_env:
+                        # Manual override: parse target date
+                        try:
+                            today_gmt7 = datetime.strptime(combo_target_date_env, '%Y-%m-%d')
+                            print(f"[INFO] Using COMBO_TARGET_DATE override: {combo_target_date_env}", flush=True)
+                        except:
+                            today_gmt7 = get_today_gmt7()
+                            print(f"[WARN] Invalid COMBO_TARGET_DATE format, using current date", flush=True)
+                    else:
+                        today_gmt7 = get_today_gmt7()
+                    
+                    valid_from = get_valid_from_gmt7(today_gmt7)
+                    data_through = get_data_cutoff_utc(today_gmt7)
+                    
+                    print(f"[INFO] Combo metadata: valid_from={valid_from.isoformat()}Z, data_through={data_through.isoformat()}Z", flush=True)
+                    
+                    # Append combos with daily refresh metadata
+                    self.append_tier_combos_to_file(tier_combos, valid_from, data_through)
+                except Exception as e:
+                    print(f"[TIER-APPEND-ERROR] Failed to append combos: {str(e)}", flush=True)
+            else:
+                report.append("  (No qualifying combos yet for this tier in post-deployment signals)")
+            report.append("")
+        
+        report.append("=" * 200)
+        report.append("")
+        report.append("=" * 200)
+        
+        # NEW: Add Fired by Date section
+        report.append("")
+        report.extend(self._generate_fired_by_date_section())
+        report.append("")
+        
+        # NEW: Add Hierarchy Ranking section
+        report.append("")
+        report.extend(self._generate_hierarchy_ranking_section())
+        report.append("")
+        
+        return "\n".join(report)
+
+if __name__ == "__main__":
+    tracker = PostDeploymentTracker()
+    report = tracker.generate_summary()
+    print(report)
+    
+    # Save latest version (for quick access)
+    with open("PEC_POST_DEPLOYMENT_TRACKER_v2.txt", "w") as f:
+        f.write(report)
+    print("\n✅ Report saved to PEC_POST_DEPLOYMENT_TRACKER_v2.txt")
+    
+    # Also save timestamped version (for audit trail/history)
+    reports_dir = "pec_reports"
+    if not os.path.exists(reports_dir):
+        os.makedirs(reports_dir)
+    
+    timestamp = datetime.now(timezone(timedelta(hours=7))).strftime('%Y-%m-%d_%H-%M-%S')
+    timestamped_file = os.path.join(reports_dir, f"PEC_POST_DEPLOYMENT_TRACKER_v2_{timestamp}.txt")
+    with open(timestamped_file, "w") as f:
+        f.write(report)
+    print(f"✅ Timestamped copy saved to pec_reports/PEC_POST_DEPLOYMENT_TRACKER_v2_{timestamp}.txt")
