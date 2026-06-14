@@ -30,11 +30,14 @@ CRITICAL_FILES = [
     "pec_executor_persistent.py",
 ]
 
-# CRITICAL SERVICES THAT MUST BE RUNNING
+# CRITICAL SERVICES THAT MUST BE RUNNING (6 total)
 CRITICAL_SERVICES = [
-    ("main.py", "Signal Generation"),
-    ("asterdex_entry_poster.py", "Entry Posting"),
-    ("pec_executor_persistent.py", "Position Closure"),
+    ("main.py", "Signal Generation (smart-filter)"),
+    ("pec_executor_persistent.py", "Position Closure (PEC)"),
+    ("asterdex_realtime_fetcher.py", "Asterdex Data Fetcher"),
+    ("asterdex_entry_poster.py", "Entry Posting (Asterdex)"),
+    ("xaut_daemon.py", "XAUT Tributary"),
+    ("caffeinate", "Mac Keep-Awake Service"),
 ]
 
 def log_startup(message, level="INFO"):
