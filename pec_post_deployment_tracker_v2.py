@@ -3,7 +3,7 @@
 POST-DEPLOYMENT TRACKER V2 - Direction Determination by COUNT instead of WEIGHTS (2026-04-12 01:15 GMT+7)
 
 Purpose: Track signal performance AFTER direction-by-count deployment
-Source: SIGNALS_MASTER.jsonl.backup_before_dedup (FULL HISTORY - same as pec_executor_persistent & MTF tracker)
+Source: SIGNALS_CANONICAL.jsonl (FULL HISTORY - canonical merged source: SENT + COMPLETE + MASTER)
 Cut-off: 2026-04-12T08:15:00Z (01:15 GMT+7 2026-04-12 deployment timestamp - onwards only)
 
 Code Changes Applied:
@@ -78,7 +78,7 @@ class PostDeploymentTracker:
         if signals_file is None:
             workspace = "/Users/geniustarigan/.openclaw/workspace"
             # USE CURRENT SIGNALS FILE - merged with full history
-            signals_file = os.path.join(workspace, "SIGNALS_MASTER.jsonl")
+            signals_file = os.path.join(workspace, "SIGNALS_CANONICAL.jsonl")  # Use canonical merged source
         
         self.signals_file = signals_file
         self.signals = []
@@ -86,7 +86,7 @@ class PostDeploymentTracker:
     
     def load_signals(self):
         """
-        Load signals from SIGNALS_MASTER.jsonl with FILE-LEVEL LOCKING
+        Load signals from SIGNALS_CANONICAL.jsonl with FILE-LEVEL LOCKING
         ===============================================================
         Uses shared lock (LOCK_SH) to:
         - Allow multiple trackers to read simultaneously
@@ -792,8 +792,7 @@ class PostDeploymentTracker:
         report.append("")
         report.append("🔍 DEBUG INFORMATION - DATA SOURCE & VALIDATION")
         report.append("─" * 200)
-        report.append(f"  Signal Source: SIGNALS_MASTER.jsonl (PRIMARY)")
-        report.append(f"  Backup Source: SENT_SIGNALS.jsonl (verification)")
+        report.append(f"  Signal Source: SIGNALS_CANONICAL.jsonl (CANONICAL - merged all sources)")
         report.append(f"  Signals Loaded: {len(self.signals):,} total")
         report.append(f"  Deployment Window: {utc_to_gmt7(DEPLOYMENT_CUTOFF_UTC)} onwards (COUNT-BASED DIRECTION FIX)")
         report.append(f"  Observation Window: From deployment until now")
