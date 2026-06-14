@@ -2864,6 +2864,8 @@ def run_cycle():
             # --- 4h TF block (PHASE 2 ADD - mirror of 15min/30min/1h with identical safe flow) ---
             # --- 4h TF block (SIMPLIFIED - mirror of 1h exactly, no extra gates) ---
             try:
+                # CRITICAL FIX (2026-06-14): Define symbol_val early to avoid NameError in write blocks
+                symbol_val = symbol  # Ensure symbol_val is defined before any writes
                 key4h = f"{symbol}_4h"
                 if df4h is None or df4h.empty:
                     res4h = None
