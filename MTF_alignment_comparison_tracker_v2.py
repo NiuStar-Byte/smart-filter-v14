@@ -45,7 +45,7 @@ class MTFv2ComparisonTracker:
     
     def __init__(self):
         self.results_file = '/Users/geniustarigan/.openclaw/workspace/smart-filter-v14-main/MTF_ALIGNMENT_RESULTS.jsonl'
-        self.master_file = '/Users/geniustarigan/.openclaw/workspace/SIGNALS_MASTER.jsonl.backup_before_dedup'  # Full dataset WITH closure data
+        self.master_file = '/Users/geniustarigan/.openclaw/workspace/SIGNALS_MASTER.jsonl'  # Current dataset WITH closure data
         
     def load_signals(self) -> List[dict]:
         """Load all signals from ALL_SIGNALS.jsonl (complete historical dataset with 75K+ closed signals)"""

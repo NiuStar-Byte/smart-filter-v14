@@ -77,8 +77,8 @@ class PostDeploymentTracker:
     def __init__(self, signals_file=None):
         if signals_file is None:
             workspace = "/Users/geniustarigan/.openclaw/workspace"
-            # USE FULL HISTORY BACKUP - same source as pec_executor_persistent & MTF tracker
-            signals_file = os.path.join(workspace, "SIGNALS_MASTER.jsonl.backup_before_dedup")
+            # USE CURRENT SIGNALS FILE - merged with full history
+            signals_file = os.path.join(workspace, "SIGNALS_MASTER.jsonl")
         
         self.signals_file = signals_file
         self.signals = []
