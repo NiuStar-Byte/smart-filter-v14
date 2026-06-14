@@ -126,7 +126,16 @@ class SignalsMasterWriter:
             except Exception as e:
                 print(f"[WARN] Failed to update audit trail: {e}", flush=True)
             
-            print(f"[WRITE_SUCCESS] {symbol} written to SIGNALS_MASTER.jsonl ✓", flush=True)
+            # ALSO append to SIGNALS_CANONICAL.jsonl (synchronized master)
+            try:
+                canonical_path = self.master_path.replace('SIGNALS_MASTER.jsonl', 'SIGNALS_CANONICAL.jsonl')
+                with open(canonical_path, 'a') as f:
+                    f.write(json.dumps(master_record) + '\n')
+                print(f"[WRITE_DEBUG] Also wrote to SIGNALS_CANONICAL.jsonl (synced copy)", flush=True)
+            except Exception as e:
+                print(f"[WARN] Failed to update SIGNALS_CANONICAL.jsonl: {e}", flush=True)
+            
+            print(f"[WRITE_SUCCESS] {symbol} written to SIGNALS_MASTER.jsonl + SIGNALS_CANONICAL.jsonl ✓", flush=True)
             return True
             
         except Exception as e:

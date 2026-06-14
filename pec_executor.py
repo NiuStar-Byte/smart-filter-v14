@@ -38,37 +38,44 @@ class PECExecutor:
             workspace_root = "/Users/geniustarigan/.openclaw/workspace"
             signals_master_path = os.path.join(workspace_root, 'SIGNALS_MASTER.jsonl')
         self.signals_master_path = signals_master_path
+        print(f"[PEC-DEBUG] __init__: signals_master_path = {self.signals_master_path}", flush=True)
         self.kucoin_api_base = "https://api.kucoin.com"
         
-        # CHAMPION: MAX_BARS timeout per timeframe (baseline, no tier)
+        # CHAMPION: MAX_BARS timeout per timeframe (follows Challenger Tier-2)
         self.champion_max_bars = {
-            "15min": 15,   # 15 bars × 15min = 225 min = 3.75 hours
-            "30min": 10,   # 10 bars × 30min = 300 min = 5 hours
-            "1h": 5,       # 5 bars × 60min = 300 min = 5 hours
-            "4h": 5        # 5 bars × 4h = 1200 min = 20 hours (4h candles need longer runway)
+            "15min": 8,    # 8 bars × 15min = 120 min = 2h (Tier-2 baseline)
+            "30min": 6,    # 6 bars × 30min = 180 min = 3h (Tier-2 baseline)
+            "1h": 5,       # 5 bars × 60min = 300 min = 5h (Tier-2 baseline)
+            "2h": 4,       # 4 bars × 120min = 480 min = 8h (Tier-2 baseline)
+            "4h": 3        # 3 bars × 240min = 720 min = 12h (Tier-2 baseline)
         }
         
         # CHALLENGER: Tier-based timeout windows (minutes, not bars)
         self.challenger_timeout_minutes = {
             "15min": {
-                "TIER-1": 4 * 60,      # 4h (reward high conviction)
-                "TIER-2": 3 * 60,      # 3h (standard)
-                "TIER-3": 2 * 60,      # 2h (stop bleed)
+                "TIER-1": 3 * 60,      # 3h (reward high conviction)
+                "TIER-2": 2 * 60,      # 2h (standard)
+                "TIER-3": 1 * 60,      # 1h (stop bleed)
             },
             "30min": {
-                "TIER-1": 5 * 60,      # 5h
-                "TIER-2": 4 * 60,      # 4h
-                "TIER-3": 3 * 60,      # 3h
+                "TIER-1": 4 * 60,      # 4h
+                "TIER-2": 3 * 60,      # 3h
+                "TIER-3": 2 * 60,      # 2h
             },
             "1h": {
                 "TIER-1": 6 * 60,      # 6h (extra runway for proven combos)
                 "TIER-2": 5 * 60,      # 5h
                 "TIER-3": 4 * 60,      # 4h (quick exit for losing combos)
             },
+            "2h": {
+                "TIER-1": 10 * 60,     # 10h (extra runway for 2h signals)
+                "TIER-2": 8 * 60,      # 8h (standard)
+                "TIER-3": 6 * 60,      # 6h (quick exit for losing combos)
+            },
             "4h": {
-                "TIER-1": 24 * 60,     # 24h (full day for high conviction 4h signals)
-                "TIER-2": 18 * 60,     # 18h (mid-range)
-                "TIER-3": 12 * 60,     # 12h (quick exit for losing combos)
+                "TIER-1": 16 * 60,     # 16h (full day for high conviction 4h signals)
+                "TIER-2": 12 * 60,     # 12h (mid-range)
+                "TIER-3": 8 * 60,      # 8h (quick exit for losing combos)
             }
         }
         
@@ -393,9 +400,22 @@ class PECExecutor:
                             })
             
             # Write back updated records to SIGNALS_MASTER.jsonl
+            print(f"[PEC-DEBUG] Writing {len(records)} records to {self.signals_master_path}", flush=True)
             with open(self.signals_master_path, 'w') as f:
                 for record in records:
                     f.write(json.dumps(record) + '\n')
+            print(f"[PEC-DEBUG] Write complete", flush=True)
+            
+            # ALSO write to SIGNALS_CANONICAL.jsonl (synchronized copy)
+            try:
+                canonical_path = self.signals_master_path.replace('SIGNALS_MASTER.jsonl', 'SIGNALS_CANONICAL.jsonl')
+                print(f"[PEC-DEBUG] Also writing {len(records)} records to SIGNALS_CANONICAL.jsonl", flush=True)
+                with open(canonical_path, 'w') as f:
+                    for record in records:
+                        f.write(json.dumps(record) + '\n')
+                print(f"[PEC-DEBUG] SIGNALS_CANONICAL.jsonl write complete", flush=True)
+            except Exception as e:
+                print(f"[WARN] Failed to update SIGNALS_CANONICAL.jsonl: {e}", flush=True)
             
         except Exception as e:
             print(f"[ERROR] PEC update failed: {e}", flush=True)
