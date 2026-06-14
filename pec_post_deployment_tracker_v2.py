@@ -38,9 +38,9 @@ except ImportError:
         'tier3_wr': 0.45, 'tier3_pnl': 2.50, 'tier3_min_trades': 45,
     }
 
-# DEPLOYMENT CUT-OFF TIMESTAMP (START - when daemon restarted with COUNT-BASED direction logic)
-# 2026-04-12 01:15 GMT+7 (COUNT-BASED DIRECTION FIX)
-_default_cutoff = '2026-04-11T18:15:00'
+# DEPLOYMENT CUT-OFF TIMESTAMP (START - Fresh Start baseline)
+# 2026-06-14 00:00 GMT+7 (FRESH START OBSERVATION WINDOW)
+_default_cutoff = '2026-06-13T17:00:00'
 DEPLOYMENT_CUTOFF_UTC = datetime.fromisoformat(_default_cutoff)
 TZ_OFFSET = timedelta(hours=7)  # GMT+7
 
