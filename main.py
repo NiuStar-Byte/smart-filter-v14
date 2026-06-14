@@ -2892,7 +2892,8 @@ def run_cycle():
                     bias = res4h.get("bias", "UNKNOWN")
                     score = res4h.get("score", 0)
 
-                    if score is None or score < MIN_SCORE:
+                    # Use relaxed MIN_SCORE_4h for 4h timeframe (overridden above)
+                    if score is None or score < MIN_SCORE_4h:
                         pass
                     else:
                         last4h = last_sent.get(key4h, 0)
