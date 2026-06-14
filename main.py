@@ -3076,9 +3076,12 @@ def run_cycle():
 
                                             if _master_writer_ready:
                                                 try:
+                                                    # CRITICAL FIX: Ensure symbol_val is defined before write attempt
+                                                    if 'symbol_val' not in locals():
+                                                        symbol_val = symbol
                                                     _signals_master_writer.write_signal({
                                                         'signal_uuid': signal_uuid,
-                                                        'symbol': signal_val,
+                                                        'symbol': symbol_val or symbol,
                                                         'timeframe': '4h',
                                                         'signal_type': signal_type,
                                                         'entry_price': entry_price,
