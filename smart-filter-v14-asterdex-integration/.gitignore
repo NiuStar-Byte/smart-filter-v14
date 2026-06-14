@@ -1,0 +1,24 @@
+# Large live tracking files (data files, not code)
+ASTERDEX_POSITIONS_LIVE.jsonl
+ASTERDEX_POSITIONS_LIVE_FINAL.jsonl
+ASTERDEX_CLOSED_POSITIONS_LIVE.jsonl
+ASTERDEX_TRADES.jsonl
+ASTERDEX_TRADES_COMPREHENSIVE.jsonl
+*_ARCHIVE_*.jsonl
+*_archive_*.jsonl
+entry_log_archive_*.jsonl
+
+# Logs
+*.log
+*.log.*
+
+# Data directories
+data/
+archive/
+
+# Temporary files
+*.tmp
+*.temp
+__pycache__/
+*.pyc
+.DS_Store

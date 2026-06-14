@@ -1,0 +1,96 @@
+================================================================================
+ASTERDEX FINAL TRACKER - COMMAND REFERENCE
+Jun 7+ Only (58 Positions)
+================================================================================
+
+📊 A. ONE-TIME REPORT (Quick Snapshot)
+================================================================================
+
+cd /Users/geniustarigan/.openclaw/workspace/smart-filter-v14-asterdex-integration && \
+python3 asterdex_tracker_final_jun7.py
+
+Output: Summary metrics, symbol breakdown, top 10 winners, bottom 10 losers
+Time: ~1 second
+Use: Daily check-in, quick performance review
+
+
+🔴 B. LIVE MONITOR (Real-Time with 5-Min Auto-Refresh)
+================================================================================
+
+cd /Users/geniustarigan/.openclaw/workspace/smart-filter-v14-asterdex-integration && \
+python3 asterdex_live_monitor_jun7.py
+
+Output: Auto-refreshes every 5 minutes, shows new positions, real-time metrics
+Time: Continuous (press Ctrl+C to stop)
+Use: Leave running in terminal for live monitoring
+
+
+================================================================================
+RECOMMENDED SETUP
+================================================================================
+
+Terminal 1 (Live Monitor - Keep Running):
+----
+cd /Users/geniustarigan/.openclaw/workspace/smart-filter-v14-asterdex-integration && \
+python3 asterdex_live_monitor_jun7.py
+
+Terminal 2 (Manual Reports - Use as Needed):
+----
+cd /Users/geniustarigan/.openclaw/workspace/smart-filter-v14-asterdex-integration && \
+python3 asterdex_tracker_final_jun7.py
+
+
+================================================================================
+CURRENT PERFORMANCE (58 Positions - Jun 7+)
+================================================================================
+
+Total Positions: 58
+Wins: 27 (46.6%)
+Losses: 26 (44.8%)
+Breakeven: 5 (8.6%)
+━━━━━━━━━━━━━━━━━━━━━
+Win Rate: 50.9%
+Total P&L: -$6.59 USD
+Avg P&L/trade: -$0.11 USD
+
+
+================================================================================
+ADJUST UPDATE INTERVAL (if needed)
+================================================================================
+
+Edit asterdex_live_monitor_jun7.py, line with:
+    monitor = AsterdexLiveMonitor(update_interval=300)
+
+Change 300 to:
+  60   = 1 minute
+  180  = 3 minutes
+  300  = 5 minutes (default)
+  600  = 10 minutes
+  900  = 15 minutes
+
+Then restart the monitor.
+
+
+================================================================================
+QUICK TROUBLESHOOTING
+================================================================================
+
+Q: "File not found" error?
+A: Make sure you're in the correct directory:
+   cd /Users/geniustarigan/.openclaw/workspace/smart-filter-v14-asterdex-integration
+
+Q: Monitor not updating?
+A: Check that asterdex_entry_poster.py is still running and posting positions
+
+Q: How to stop live monitor?
+A: Press Ctrl+C (in the terminal running the monitor)
+
+Q: How to restart monitor?
+A: Just run the command again - it reads the same position file
+
+
+================================================================================
+Created: Jun 8 2026 20:23 GMT+7
+Filter: opened >= 2026-06-07 00:00:00 GMT+7
+Status: ✅ Production Ready
+================================================================================
