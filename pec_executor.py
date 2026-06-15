@@ -367,37 +367,38 @@ class PECExecutor:
                             local_time = ''
                         
                         if result['status'] == 'TP_HIT':
-                            summary['tp_hits'].append({
-                                'symbol': record.get('symbol'),
-                                'timeframe': record.get('timeframe'),
-                                'pnl_usd': record['pnl_usd'],
-                                'pnl_pct': record['pnl_pct'],
-                                'fired_time': local_time
-                            })
+                            summary['tp_hits'].append((
+                                record.get('signal_uuid'),
+                                record.get('entry_price'),
+                                result['exit_price'],
+                                record['pnl_usd'],
+                                record['pnl_pct']
+                            ))
                         elif result['status'] == 'SL_HIT':
-                            summary['sl_hits'].append({
-                                'symbol': record.get('symbol'),
-                                'timeframe': record.get('timeframe'),
-                                'pnl_usd': record['pnl_usd'],
-                                'pnl_pct': record['pnl_pct'],
-                                'fired_time': local_time
-                            })
+                            summary['sl_hits'].append((
+                                record.get('signal_uuid'),
+                                record.get('entry_price'),
+                                result['exit_price'],
+                                record['pnl_usd'],
+                                record['pnl_pct']
+                            ))
                         elif result['status'] == 'TIMEOUT':
-                            summary['timeouts'].append({
-                                'symbol': record.get('symbol'),
-                                'timeframe': record.get('timeframe'),
-                                'pnl_usd': record['pnl_usd'],
-                                'pnl_pct': record['pnl_pct'],
-                                'fired_time': local_time,
-                                'actual_timeout': result.get('actual_timeout_time', '')
-                            })
+                            summary['timeouts'].append((
+                                record.get('signal_uuid'),
+                                record.get('entry_price'),
+                                result['exit_price'],
+                                record['pnl_usd'],
+                                record['pnl_pct'],
+                                result.get('is_stale', False)
+                            ))
                         elif result['status'] == 'STALE_TIMEOUT':
-                            summary['stale_timeouts'].append({
-                                'symbol': record.get('symbol'),
-                                'timeframe': record.get('timeframe'),
-                                'fired_time': local_time,
-                                'hours_overdue': result.get('hours_overdue', 0)
-                            })
+                            summary['stale_timeouts'].append((
+                                record.get('signal_uuid'),
+                                record.get('entry_price'),
+                                result['exit_price'],
+                                record['pnl_usd'],
+                                record['pnl_pct']
+                            ))
             
             # Write back updated records to SIGNALS_MASTER.jsonl
             print(f"[PEC-DEBUG] Writing {len(records)} records to {self.signals_master_path}", flush=True)
