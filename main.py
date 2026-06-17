@@ -2443,10 +2443,10 @@ def run_cycle():
                     score_max_2h = res2h.get("score_max", 0)
 
                     # ===== 4TH FACTOR: DYNAMIC MIN_SCORE FOR 2h =====
-                    # 2h has higher volatility (3.2x) and fewer filters passing due to structural constraints
-                    # Instead of requiring MIN_SCORE=12 (global), use relaxed threshold for 2h
-                    # Target: Allow 2h signals at score=11+/19 (slightly relaxed from global 12)
-                    MIN_SCORE_2h = 11  # Slightly relaxed from global 12 to account for 2h volatility (2026-06-14 17:59)
+                    # 2h timeframe specific threshold (adjustable if needed)
+                    # Set to match global MIN_SCORE now that MTF bands work properly (2026-06-17 10:51)
+                    # Can be adjusted independently: MIN_SCORE_2h = 11 (relaxed) or MIN_SCORE_2h = 12 (strict)
+                    MIN_SCORE_2h = 12  # Set to match global MIN_SCORE (aligned with MTF bands)
 
                     print(f"[DEBUG-2h] {symbol}: score={score_2h}/{score_max_2h}, passes={passes_2h}/{max_gatekeepers_2h}, bias={bias_2h}, filters_ok={filters_ok_2h}", flush=True)
                     if filters_ok_2h is not True:
@@ -2875,13 +2875,13 @@ def run_cycle():
                     res4h = sf4h.analyze()
 
                 # ===== 4TH FACTOR: DYNAMIC MIN_SCORE FOR 4h =====
-                # 4h has highest volatility (4.4x) and fewest filters passing
-                # Instead of requiring MIN_SCORE=12 (global), use relaxed threshold for 4h
-                # This allows 4h signals at score=11+/19 (slightly relaxed from global 12)
+                # 4h timeframe specific threshold (adjustable if needed)
+                # Set to match global MIN_SCORE now that MTF bands work properly (2026-06-17 10:51)
+                # Can be adjusted independently: MIN_SCORE_4h = 11 (relaxed) or MIN_SCORE_4h = 12 (strict)
                 if isinstance(res4h, dict):
                     score_4h = res4h.get("score")
                     filters_ok_4h = res4h.get("filters_ok")
-                    MIN_SCORE_4h = 11  # Slightly relaxed from global 12 for high-volatility 4h TF (2026-06-14 17:59)
+                    MIN_SCORE_4h = 12  # Set to match global MIN_SCORE (aligned with MTF bands)
 
                     # If global MIN_SCORE check failed but TF-specific check passes, override
                     if not filters_ok_4h and score_4h is not None and score_4h >= MIN_SCORE_4h:
@@ -2893,8 +2893,8 @@ def run_cycle():
                     bias = res4h.get("bias", "UNKNOWN")
                     score = res4h.get("score", 0)
 
-                    # 4h uses TF-specific MIN_SCORE_4h (11) not global MIN_SCORE (12) - critical for signal firing
-                    MIN_SCORE_4h_final = 11  # Must match override threshold above (2026-06-14 17:59)
+                    # 4h uses TF-specific MIN_SCORE_4h (12) aligned with global MIN_SCORE - critical for signal firing
+                    MIN_SCORE_4h_final = 12  # Must match override threshold above (2026-06-17 10:51)
                     if score is None or score < MIN_SCORE_4h_final:
                         pass
                     else:
