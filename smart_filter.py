@@ -35,7 +35,7 @@ DEBUG_FILTERS = os.getenv("DEBUG_FILTERS", "false").lower() == "true"
 # ===== UNIVERSAL MIN_SCORE THRESHOLD (Single Source of Truth) =====
 # Applies to all timeframes (15min, 30min, 1h, 2h, 4h)
 # Change this one value to update threshold everywhere
-MIN_SCORE = 10  # Signals below this score will be rejected (LOWERED from 12 to 10 on 2026-03-25 22:59 to test 2h TF)
+MIN_SCORE = 12  # Signals below this score will be rejected (RAISED from 10 to 12 on 2026-06-14 17:59 for quality improvement)
 
 class SmartFilter:
     """

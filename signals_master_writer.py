@@ -2,40 +2,50 @@
 """
 signals_master_writer.py
 
-Write signals to SIGNALS_MASTER.jsonl (single source of truth)
+Write signals to COMPLETE_SIGNALS.jsonl (single source of truth - ATOMIC)
 Called after Telegram alert succeeds
+
+CRITICAL:
+- Path: /Users/geniustarigan/.openclaw/workspace/COMPLETE_SIGNALS.jsonl (passed from main.py)
+- Write Strategy: ATOMIC (temp file + verify JSON + atomic replace)
+- All fields: symbol_group, confidence_level, status, fired_time_utc, etc.
+- All trackers read from this SINGLE file
 """
 
 import json
 import os
 from datetime import datetime
 from typing import Dict, Any, Optional
+from signal_file_lock import get_signal_file_lock
 
 class SignalsMasterWriter:
-    """Append sent signals to SIGNALS_MASTER.jsonl (primary) and SIGNALS_INDEPENDENT_AUDIT.txt (backup)"""
+    """Atomically write signals to COMPLETE_SIGNALS.jsonl (single source of truth)
     
-    def __init__(self, master_path: str = "SIGNALS_MASTER.jsonl"):
+    All writes are atomic: temp file -> verify JSON -> atomic replace
+    All fields required for trackers (symbol_group, confidence_level, status, etc.) are included
+    """
+    
+    def __init__(self, master_path: str = "COMPLETE_SIGNALS.jsonl"):
         self.master_path = master_path
-        self.audit_path = master_path.replace("SIGNALS_MASTER.jsonl", "SIGNALS_INDEPENDENT_AUDIT.txt")
+        self.file_lock = get_signal_file_lock(master_path)
         self._ensure_file_exists()
     
     def _ensure_file_exists(self):
-        """Create files if don't exist"""
-        for fpath, fname in [(self.master_path, "SIGNALS_MASTER.jsonl"), (self.audit_path, "SIGNALS_INDEPENDENT_AUDIT.txt")]:
-            if not os.path.exists(fpath):
-                try:
-                    parent_dir = os.path.dirname(fpath)
-                    if parent_dir and not os.path.exists(parent_dir):
-                        os.makedirs(parent_dir, exist_ok=True)
-                    with open(fpath, 'w') as f:
-                        pass
-                    print(f"[INIT] Created {fname} at {fpath}", flush=True)
-                except Exception as e:
-                    print(f"[ERROR] Failed to create {fname}: {e}", flush=True)
+        """Create file if doesn't exist (COMPLETE_SIGNALS.jsonl only)"""
+        if not os.path.exists(self.master_path):
+            try:
+                parent_dir = os.path.dirname(self.master_path)
+                if parent_dir and not os.path.exists(parent_dir):
+                    os.makedirs(parent_dir, exist_ok=True)
+                with open(self.master_path, 'w') as f:
+                    pass
+                print(f"[INIT] Created COMPLETE_SIGNALS.jsonl at {self.master_path}", flush=True)
+            except Exception as e:
+                print(f"[ERROR] Failed to create COMPLETE_SIGNALS.jsonl: {e}", flush=True)
     
     def write_signal(self, signal_dict: Dict[str, Any]) -> bool:
         """
-        Append signal to SIGNALS_MASTER.jsonl with canonical schema including instrumentation
+        Atomically write signal to COMPLETE_SIGNALS.jsonl with canonical schema
         
         Args:
             signal_dict: Complete signal data with all fields
@@ -106,36 +116,66 @@ class SignalsMasterWriter:
                 "pnl_usd": signal_dict.get('pnl_usd'),
                 "pnl_pct": signal_dict.get('pnl_pct'),
                 
+                # Exit Timestamps (2) - When TP/SL were hit (populated by PEC executor)
+                "tp_hit_time": signal_dict.get('tp_hit_time'),  # ISO timestamp when TP was hit
+                "sl_hit_time": signal_dict.get('sl_hit_time'),  # ISO timestamp when SL was hit
+                
+                # Risk/Reward Variants (3) - Multiple representations for analysis flexibility
+                "max_weights": int(signal_dict.get('max_weights', 0)),  # Max possible weighted score
+                "atr_rr": float(signal_dict.get('atr_rr', 0)),  # Explicit ATR-based RR calculation
+                "mtf_consensus": signal_dict.get('mtf_consensus', ''),  # LONG/SHORT/MIXED from MTF alignment
+                
+                # Derived Status Flags (3) - Computed from existing fields for convenience
+                "timeout_win": signal_dict.get('timeout_win', False),  # Timeout closed profitably
+                "timeout_loss": signal_dict.get('timeout_loss', False),  # Timeout closed at loss
+                "stale_timeout": signal_dict.get('stale_timeout', False),  # Exceeded design window
+                
                 # Data Quality (2)
                 "signal_origin": signal_dict.get('signal_origin', 'NEW_LIVE'),
                 "data_quality_flag": signal_dict.get('data_quality_flag', ''),
             }
             
-            # Append to SIGNALS_MASTER.jsonl (primary)
-            print(f"[WRITE_DEBUG] Opening {self.master_path} in append mode", flush=True)
-            with open(self.master_path, 'a') as f:
-                json_line = json.dumps(master_record) + '\n'
-                f.write(json_line)
-                print(f"[WRITE_DEBUG] Successfully wrote {symbol} to SIGNALS_MASTER.jsonl", flush=True)
+            # ATOMIC WRITE to COMPLETE_SIGNALS.jsonl (single source of truth)
+            # Strategy: Acquire exclusive lock → write to temp file → verify JSON → atomic replace
+            print(f"[WRITE_DEBUG] Acquiring write lock for {self.master_path}", flush=True)
             
-            # Also append to SIGNALS_INDEPENDENT_AUDIT.txt (immutable audit trail)
-            try:
-                with open(self.audit_path, 'a') as f:
-                    f.write(json.dumps(master_record) + '\n')
-                print(f"[WRITE_DEBUG] Also wrote to audit trail", flush=True)
-            except Exception as e:
-                print(f"[WARN] Failed to update audit trail: {e}", flush=True)
-            
-            # ALSO append to SIGNALS_CANONICAL.jsonl (synchronized master)
-            try:
-                canonical_path = self.master_path.replace('SIGNALS_MASTER.jsonl', 'SIGNALS_CANONICAL.jsonl')
-                with open(canonical_path, 'a') as f:
-                    f.write(json.dumps(master_record) + '\n')
-                print(f"[WRITE_DEBUG] Also wrote to SIGNALS_CANONICAL.jsonl (synced copy)", flush=True)
-            except Exception as e:
-                print(f"[WARN] Failed to update SIGNALS_CANONICAL.jsonl: {e}", flush=True)
-            
-            print(f"[WRITE_SUCCESS] {symbol} written to SIGNALS_MASTER.jsonl + SIGNALS_CANONICAL.jsonl ✓", flush=True)
+            with self.file_lock.write_lock(timeout_sec=10):
+                print(f"[WRITE_DEBUG] Write lock acquired, performing atomic write to {self.master_path}", flush=True)
+                
+                temp_path = self.master_path + '.tmp'
+                try:
+                    # Step 1: Read existing file to temp (preserving order)
+                    existing_lines = []
+                    try:
+                        with open(self.master_path, 'r') as f:
+                            existing_lines = f.readlines()
+                    except FileNotFoundError:
+                        pass
+                    
+                    # Step 2: Write to temp file (existing + new)
+                    with open(temp_path, 'w') as f:
+                        for line in existing_lines:
+                            f.write(line)
+                        json_line = json.dumps(master_record) + '\n'
+                        f.write(json_line)
+                    
+                    # Step 3: Verify temp file is valid JSON
+                    with open(temp_path, 'r') as f:
+                        for line in f:
+                            json.loads(line)  # Will raise if invalid
+                    
+                    # Step 4: Atomic replace (os.replace is atomic on all platforms)
+                    os.replace(temp_path, self.master_path)
+                    print(f"[WRITE_DEBUG] Successfully wrote {symbol} via atomic operation", flush=True)
+                    print(f"[WRITE_SUCCESS] {symbol} written to {os.path.basename(self.master_path)} ✓ (ATOMIC+LOCKED)", flush=True)
+                    
+                except Exception as e:
+                    # Clean up temp file on error
+                    try:
+                        os.remove(temp_path)
+                    except:
+                        pass
+                    raise e
             return True
             
         except Exception as e:

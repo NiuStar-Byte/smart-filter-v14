@@ -3,7 +3,7 @@ import requests
 from typing import Any, Optional
 
 # Import Telegram config
-from tg_config import BOT_TOKEN, CHAT_ID, TIER_CHAT_ID
+from tg_config import BOT_TOKEN, CHAT_ID, TIER_CHAT_ID, TIER_BOT_TOKEN
 
 # Check if Telegram is properly configured (not placeholder values)
 TELEGRAM_ENABLED = (
@@ -60,6 +60,7 @@ def get_token_blockchain_info(symbol: str):
 
 SEND_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 SEND_FILE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendDocument"
+TIER_SEND_URL = f"https://api.telegram.org/bot{TIER_BOT_TOKEN}/sendMessage"
 
 
 def _safe_float(v: Any, default: Optional[float] = None) -> Optional[float]:
@@ -203,6 +204,9 @@ def send_telegram_alert(
     # Skip if Telegram not enabled or not configured
     if not TELEGRAM_ENABLED:
         return False  # Silently skip if not configured
+    
+    # DEBUG: Function entry
+    print(f"[SEND_TELEGRAM_ALERT] ENTRY: symbol={symbol} tier={tier}", flush=True)
     
     # Note: Tier-X signals ARE sent to Telegram, just without tier badge
     # Only Tier-1/2/3 get the badge (🥇/🥈/🥉)
@@ -465,8 +469,8 @@ def send_telegram_alert(
     print(f"[Telegram][MSG] {numbered_signal}. {symbol}\n{message}", flush=True)
 
     # Helper function to send to a chat_id
-    def send_to_chat(chat_id: str, msg: str, label: str = "") -> bool:
-        """Send message to specific chat ID"""
+    def send_to_chat(chat_id: str, msg: str, label: str = "", send_url: str = SEND_URL) -> bool:
+        """Send message to specific chat ID with specified bot token"""
         if not chat_id:
             return False
         
@@ -478,7 +482,7 @@ def send_telegram_alert(
         }
         
         try:
-            resp = requests.post(SEND_URL, json=payload, timeout=10)
+            resp = requests.post(send_url, json=payload, timeout=10)
             resp.raise_for_status()
             try:
                 rj = resp.json()
@@ -499,12 +503,18 @@ def send_telegram_alert(
             print(f"❗ Telegram send error{label}: {e} — response: {resp_text}", flush=True)
             return False
     
-    # Send to Group A (all signals)
-    success = send_to_chat(CHAT_ID, message, " (Group A)")
+    # DEBUG: Log tier routing decision
+    print(f"[TIER-ROUTING-DEBUG] symbol={symbol} tier={tier} TIER_CHAT_ID={TIER_CHAT_ID} tier_check={tier in ['Tier-1', 'Tier-2', 'Tier-3']}", flush=True)
     
-    # Send to Group B (Tier-1/2/3 only)
+    # Send to Group A (all signals)
+    success = send_to_chat(CHAT_ID, message, " (Group A)", SEND_URL)
+    
+    # Send to Group B (Tier-1/2/3 only) - use separate bot token
     if tier and tier in ["Tier-1", "Tier-2", "Tier-3"] and TIER_CHAT_ID:
-        send_to_chat(TIER_CHAT_ID, message, f" (Group B - {tier})")
+        print(f"[TIER-ROUTING] Sending {symbol} {tier} to Group B", flush=True)
+        send_to_chat(TIER_CHAT_ID, message, f" (Group B - {tier})", TIER_SEND_URL)
+    else:
+        print(f"[TIER-ROUTING-SKIP] {symbol} tier={tier} not in premium tiers or missing CHAT_ID", flush=True)
     
     return success
 

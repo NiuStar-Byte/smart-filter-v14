@@ -174,7 +174,8 @@ except Exception as e:
 # === INITIALIZE SIGNALS_MASTER WRITER (Single Source of Truth) ===
 try:
     # Write to WORKSPACE ROOT (shared with all instances)
-    signals_master_path = "/Users/geniustarigan/.openclaw/workspace/SIGNALS_MASTER.jsonl"
+    # CRITICAL FIX (2026-06-14 17:15): Write to COMPLETE_SIGNALS.jsonl (unified source - same as pec_executor & trackers)
+    signals_master_path = "/Users/geniustarigan/.openclaw/workspace/COMPLETE_SIGNALS.jsonl"
     _signals_master_writer = get_signals_master_writer(signals_master_path)
     _master_writer_ready = True
     print(f"[INIT] Signals Master writer ready: {os.path.abspath(signals_master_path)}", flush=True)
@@ -2443,9 +2444,9 @@ def run_cycle():
 
                     # ===== 4TH FACTOR: DYNAMIC MIN_SCORE FOR 2h =====
                     # 2h has higher volatility (3.2x) and fewer filters passing due to structural constraints
-                    # Instead of requiring MIN_SCORE=10 (designed for 15min), use relaxed threshold for 2h
-                    # Target: Allow 2h signals at score=8-9/19 (67% filter confidence vs 83% for 15min)
-                    MIN_SCORE_2h = 8  # Relaxed from global 10 to account for TF volatility differences
+                    # Instead of requiring MIN_SCORE=12 (global), use relaxed threshold for 2h
+                    # Target: Allow 2h signals at score=11+/19 (slightly relaxed from global 12)
+                    MIN_SCORE_2h = 11  # Slightly relaxed from global 12 to account for 2h volatility (2026-06-14 17:59)
 
                     print(f"[DEBUG-2h] {symbol}: score={score_2h}/{score_max_2h}, passes={passes_2h}/{max_gatekeepers_2h}, bias={bias_2h}, filters_ok={filters_ok_2h}", flush=True)
                     if filters_ok_2h is not True:
@@ -2875,12 +2876,12 @@ def run_cycle():
 
                 # ===== 4TH FACTOR: DYNAMIC MIN_SCORE FOR 4h =====
                 # 4h has highest volatility (4.4x) and fewest filters passing
-                # Instead of requiring MIN_SCORE=10, use MIN_SCORE_4h=8 for 4h
-                # This allows 4h signals at score=8-9/19 (same as 2h)
+                # Instead of requiring MIN_SCORE=12 (global), use relaxed threshold for 4h
+                # This allows 4h signals at score=11+/19 (slightly relaxed from global 12)
                 if isinstance(res4h, dict):
                     score_4h = res4h.get("score")
                     filters_ok_4h = res4h.get("filters_ok")
-                    MIN_SCORE_4h = 8  # Relaxed from global 10 for high-volatility TF
+                    MIN_SCORE_4h = 11  # Slightly relaxed from global 12 for high-volatility 4h TF (2026-06-14 17:59)
 
                     # If global MIN_SCORE check failed but TF-specific check passes, override
                     if not filters_ok_4h and score_4h is not None and score_4h >= MIN_SCORE_4h:
@@ -2892,7 +2893,9 @@ def run_cycle():
                     bias = res4h.get("bias", "UNKNOWN")
                     score = res4h.get("score", 0)
 
-                    if score is None or score < MIN_SCORE:
+                    # 4h uses TF-specific MIN_SCORE_4h (11) not global MIN_SCORE (12) - critical for signal firing
+                    MIN_SCORE_4h_final = 11  # Must match override threshold above (2026-06-14 17:59)
+                    if score is None or score < MIN_SCORE_4h_final:
                         pass
                     else:
                         last4h = last_sent.get(key4h, 0)
@@ -3016,6 +3019,7 @@ def run_cycle():
 
                                     print(f"[DEBUG] 4h: Calling send_telegram_alert for {symbol_val} (tf={tf_val}, Entry={entry_price})", flush=True)
                                     mtf_label = get_mtf_alignment_label(mtf_band)
+                                    print(f"[DEBUG-TIER-SEND] 4h {symbol_val}: tier={signal_tier} (should route to Group B? {signal_tier in ['Tier-1', 'Tier-2', 'Tier-3']})", flush=True)
                                     sent_ok = send_telegram_alert(
                                         numbered_signal=numbered_signal,
                                         symbol=symbol_val,

@@ -5590,3 +5590,11 @@
 [2026-04-02 15:01:58 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
 [2026-04-02 16:02:31 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 10527+ minutes
 [2026-04-02 16:02:31 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-06-15 07:51:12 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 1387+ minutes
+[2026-06-15 07:51:12 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-06-15 07:51:12 GMT+7] 🔴 WATCHDOG        | NOT_RUNNING          | pec_watchdog.py process not found
+[2026-06-15 07:51:12 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour
+[2026-06-15 07:51:45 GMT+7] 🟡 DAEMON          | STALE_DATA           | SENT_SIGNALS.jsonl not updated for 1387+ minutes
+[2026-06-15 07:51:45 GMT+7] 🔴 EXECUTOR        | NOT_RUNNING          | pec_executor.py process not found
+[2026-06-15 07:51:46 GMT+7] 🔴 WATCHDOG        | NOT_RUNNING          | pec_watchdog.py process not found
+[2026-06-15 07:51:46 GMT+7] 🟡 FLOW            | NO_RECENT            | No signals fired in last hour

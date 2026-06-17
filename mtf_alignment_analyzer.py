@@ -71,23 +71,25 @@ class MTFAlignmentAnalyzer:
     def get_latest_signal_for_tf(self, symbol: str, timeframe: str) -> Optional[Dict]:
         """Get the latest signal for a given symbol + timeframe"""
         
-        # Special case: 1d timeframe is fetched from KuCoin API (not from signals)
-        if timeframe == '1d':
+        # Special case: 1d (daily) and 1w (weekly) timeframes are fetched from KuCoin API (not from signals)
+        if timeframe in ['1d', '1w']:
             try:
-                d1_context = get_1d_context(symbol)
-                if d1_context and 'candle_data' in d1_context:
-                    candle = d1_context['candle_data']
+                # Map internal names to KuCoin API timeframes
+                kucoin_tf = "1day" if timeframe == "1d" else "1week"
+                context = get_1d_context(symbol, timeframe=kucoin_tf)
+                if context and 'candle_data' in context:
+                    candle = context['candle_data']
                     return {
                         'symbol': symbol,
-                        'timeframe': '1d',
+                        'timeframe': timeframe,
                         'signal_type': candle.get('direction', 'NONE'),
                         'direction': candle.get('direction', 'NONE'),
-                        'regime': d1_context.get('regime', 'NONE'),
+                        'regime': context.get('regime', 'NONE'),
                         'route': 'NONE',
                         'source': 'kucoin_api'
                     }
             except Exception as e:
-                print(f"[MTF] Error fetching 1d context for {symbol}: {e}", flush=True)
+                print(f"[MTF] Error fetching {timeframe} context for {symbol}: {e}", flush=True)
                 return None
         
         # For other timeframes, use cached signals

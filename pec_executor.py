@@ -32,14 +32,15 @@ class PECExecutor:
     """Auto-execute and track PEC signals"""
     
     def __init__(self, signals_master_path: str = None):
-        # Use absolute path to workspace root - read from SIGNALS_MASTER.jsonl (unified source)
+        # Use absolute path to workspace root - read from COMPLETE_SIGNALS.jsonl (unified source 2026-06-15)
         if signals_master_path is None:
             # pec_executor.py lives in smart-filter-v14-main submodule, but reads from workspace root
             workspace_root = "/Users/geniustarigan/.openclaw/workspace"
-            signals_master_path = os.path.join(workspace_root, 'SIGNALS_MASTER.jsonl')
+            signals_master_path = os.path.join(workspace_root, 'COMPLETE_SIGNALS.jsonl')
         self.signals_master_path = signals_master_path
         print(f"[PEC-DEBUG] __init__: signals_master_path = {self.signals_master_path}", flush=True)
         self.kucoin_api_base = "https://api.kucoin.com"
+        self.__init_api_circuit()
         
         # CHAMPION: MAX_BARS timeout per timeframe (follows Challenger Tier-2)
         self.champion_max_bars = {
@@ -82,18 +83,47 @@ class PECExecutor:
         # Running Champion vs Challenger test (50/50 split)
         self.cc_test_enabled = True
     
+    def __init_api_circuit(self):
+        """Initialize API circuit breaker"""
+        self.api_failures = 0
+        self.api_circuit_open = False
+    
     def get_current_price(self, symbol: str) -> Optional[float]:
         """Get current price from public KuCoin API (no auth needed)"""
+        # CIRCUIT BREAKER: Stop trying if too many failures
+        if self.api_circuit_open:
+            return None
+        
         try:
             url = f"{self.kucoin_api_base}/api/v1/market/orderbook/level1?symbol={symbol}"
-            response = requests.get(url, timeout=3)
+            response = requests.get(url, timeout=2)
+            
             if response.status_code == 200:
-                data = response.json()
-                if data.get('code') == '200000':
-                    price = float(data['data']['price'])
-                    return price
-        except Exception as e:
-            pass  # Return None on any error
+                try:
+                    data = response.json()
+                    if data.get('code') == '200000' and data.get('data'):
+                        price_str = data['data'].get('price')
+                        if price_str:
+                            price = float(price_str)
+                            self.api_failures = 0  # Reset counter on success
+                            return price
+                except (json.JSONDecodeError, ValueError, KeyError, TypeError):
+                    pass
+            elif response.status_code == 429:
+                # Rate limited - backoff
+                self.api_circuit_open = True
+                return None
+        except (requests.Timeout, requests.RequestException):
+            pass
+        except Exception:
+            pass
+        
+        # Increment failure counter
+        self.api_failures += 1
+        if self.api_failures > 10:
+            print(f"[PEC-WARN] API circuit breaker triggered (>10 failures)", flush=True)
+            self.api_circuit_open = True
+        
         return None
     
     def check_signal_status(self, signal: Dict) -> Optional[Dict]:
@@ -266,160 +296,187 @@ class PECExecutor:
             records = []
             
             # Read all records from COMPLETE_SIGNALS.jsonl
+            print(f"[PEC-DEBUG] Reading from: {self.signals_master_path}", flush=True)
             with open(self.signals_master_path, 'r') as f:
+                line_num = 0
                 for line in f:
+                    line_num += 1
                     if line.strip():
-                        record = json.loads(line)
-                        records.append(record)
+                        try:
+                            record = json.loads(line)
+                            records.append(record)
+                        except json.JSONDecodeError as je:
+                            print(f"[PEC-ERROR] JSON parse failed on line {line_num}: {je} | line={line[:100]}", flush=True)
+                            continue
             
-            # Check each OPEN signal (limit to 500 per cycle for responsiveness)
-            max_per_cycle = 500
+            print(f"[PEC-DEBUG] Loaded {len(records)} total signals from file", flush=True)
+            
+            # Check each OPEN signal (limit to 2000 per cycle for faster full coverage)
+            # 2000 signals × 60s cycle = all 10K signals checked in ~5 cycles (5 minutes)
+            max_per_cycle = 2000
             checked = 0
             fresh_start_dt = datetime.fromisoformat(FRESH_START_CUTOFF_UTC_STR)
             
+            print(f"[PEC-DEBUG] Processing {len(records)} total records, checking OPEN signals...", flush=True)
+            
             for record in records:
-                if record.get('status') == 'OPEN':
-                    # FRESH START FILTER: Only process signals from today onwards
-                    fired_str = record.get('fired_time_utc', '')
-                    if fired_str:
-                        try:
-                            # Remove Z/timezone, parse as naive UTC
-                            fired_str_clean = fired_str.replace('Z', '').replace('+00:00', '')
-                            fired_dt = datetime.fromisoformat(fired_str_clean)
-                            # Skip if signal fired before fresh start cutoff
-                            if fired_dt < fresh_start_dt:
-                                continue
-                        except:
-                            # If parse fails, skip this signal
-                            continue
-                    else:
-                        # No fired_time, skip
-                        continue
-                    
-                    if checked >= max_per_cycle:
-                        break  # Stop after 500 per cycle, resume next cycle
-                    checked += 1  # Increment checked counter
-                    summary['total_checked'] += 1
-                    
-                    # SILENT TAGGING: Assign Champion/Challenger group before checking
-                    import random
-                    if self.cc_test_enabled and record.get('champion_challenger_group') is None:
-                        record['champion_challenger_group'] = 'CHALLENGER' if random.random() < 0.5 else 'CHAMPION'
-                    
-                    result = self.check_signal_status(record)
-                    
-                    if result:
-                        # ATOMIC WRITE VALIDATION: All fields must be valid before writing
-                        # If any field fails, reject the entire write (no partial records)
-                        try:
-                            exit_price = result['exit_price']
-                            pnl_usd = result['pnl_usd']
-                            pnl_pct = result['pnl_pct']
-                            status = result['status']
-                            
-                            # Validate: No NULL, None, or zero P&L for closed signals
-                            if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT', 'STALE_TIMEOUT']:
-                                if exit_price is None or exit_price == '' or exit_price == 0:
-                                    continue  # REJECT: Missing exit price
-                                if pnl_usd is None or pnl_usd == '':
-                                    continue  # REJECT: Missing P&L calculation
-                            
-                        except Exception as e:
-                            print(f"[ATOMIC_VALIDATION_REJECT] {record.get('symbol')} {record.get('timeframe')}: {str(e)}", flush=True)
-                            continue  # REJECT: Validation failed
-                        
-                        # Update record (all-or-nothing)
-                        record['status'] = result['status']
-                        record['actual_exit_price'] = result['exit_price']
-                        
-                        # CRITICAL FIX: Use actual_timeout_time if available (timeout), else current time
-                        if 'actual_timeout_time' in result:
-                            record['closed_at'] = result['actual_timeout_time']
-                        else:
-                            record['closed_at'] = datetime.utcnow().isoformat()
-                        
-                        # Set P&L
-                        record['pnl_usd'] = round(result['pnl_usd'], 4)
-                        record['pnl_pct'] = round(result['pnl_pct'], 2)
-                        
-                        # Set data_quality_flag for STALE_TIMEOUT
-                        if result['status'] == 'STALE_TIMEOUT':
-                            hours_overdue = result.get('hours_overdue', 0)
-                            record['data_quality_flag'] = f'STALE_TIMEOUT_{hours_overdue}h_overdue'
-                        else:
-                            record['data_quality_flag'] = None
-                        
-                        # SILENT TAGGING: Store timeout window info (internal only, not shown to traders)
-                        if result['status'] in ['TIMEOUT', 'STALE_TIMEOUT']:
-                            record['cc_timeout_window_minutes'] = result.get('timeout_window_minutes', 0)
-                            record['cc_group'] = result.get('cc_group', 'CHAMPION')
-                        
-                        # Track summary
-                        fired_time = record.get('fired_time_utc', '')
-                        if fired_time:
+                try:
+                    if record.get('status') == 'OPEN':
+                        # FRESH START FILTER: Only process signals from today onwards
+                        fired_str = record.get('fired_time_utc', '')
+                        if fired_str:
                             try:
-                                dt = datetime.fromisoformat(fired_time.replace('Z', '+00:00'))
-                                gmt7_time = dt + timedelta(hours=7)
-                                local_time = gmt7_time.strftime("%H:%M:%S")
-                            except:
-                                local_time = ''
+                                # Remove Z/timezone, parse as naive UTC
+                                fired_str_clean = fired_str.replace('Z', '').replace('+00:00', '')
+                                fired_dt = datetime.fromisoformat(fired_str_clean)
+                                # Skip if signal fired before fresh start cutoff
+                                if fired_dt < fresh_start_dt:
+                                    continue
+                            except Exception as e:
+                                # If parse fails, skip this signal
+                                print(f"[PEC-DEBUG] Skip signal {record.get('signal_uuid', 'unknown')}: parse error {e}", flush=True)
+                                continue
                         else:
-                            local_time = ''
+                            # No fired_time, skip
+                            continue
                         
-                        if result['status'] == 'TP_HIT':
-                            summary['tp_hits'].append((
-                                record.get('signal_uuid'),
-                                record.get('entry_price'),
-                                result['exit_price'],
-                                record['pnl_usd'],
-                                record['pnl_pct']
-                            ))
-                        elif result['status'] == 'SL_HIT':
-                            summary['sl_hits'].append((
-                                record.get('signal_uuid'),
-                                record.get('entry_price'),
-                                result['exit_price'],
-                                record['pnl_usd'],
-                                record['pnl_pct']
-                            ))
-                        elif result['status'] == 'TIMEOUT':
-                            summary['timeouts'].append((
-                                record.get('signal_uuid'),
-                                record.get('entry_price'),
-                                result['exit_price'],
-                                record['pnl_usd'],
-                                record['pnl_pct'],
-                                result.get('is_stale', False)
-                            ))
-                        elif result['status'] == 'STALE_TIMEOUT':
-                            summary['stale_timeouts'].append((
-                                record.get('signal_uuid'),
-                                record.get('entry_price'),
-                                result['exit_price'],
-                                record['pnl_usd'],
-                                record['pnl_pct']
-                            ))
+                        if checked >= max_per_cycle:
+                            break  # Stop after 500 per cycle, resume next cycle
+                        checked += 1  # Increment checked counter
+                        summary['total_checked'] += 1
+                        
+                        # SILENT TAGGING: Assign Champion/Challenger group before checking
+                        import random
+                        if self.cc_test_enabled and record.get('champion_challenger_group') is None:
+                            record['champion_challenger_group'] = 'CHALLENGER' if random.random() < 0.5 else 'CHAMPION'
+                        
+                        result = self.check_signal_status(record)
+                        
+                        if result:
+                            # ATOMIC WRITE VALIDATION: All fields must be valid before writing
+                            # If any field fails, reject the entire write (no partial records)
+                            try:
+                                exit_price = result['exit_price']
+                                pnl_usd = result['pnl_usd']
+                                pnl_pct = result['pnl_pct']
+                                status = result['status']
+                                
+                                # Validate: No NULL, None, or zero P&L for closed signals
+                                if status in ['TP_HIT', 'SL_HIT', 'TIMEOUT', 'STALE_TIMEOUT']:
+                                    if exit_price is None or exit_price == '' or exit_price == 0:
+                                        continue  # REJECT: Missing exit price
+                                    if pnl_usd is None or pnl_usd == '':
+                                        continue  # REJECT: Missing P&L calculation
+                                
+                            except Exception as e:
+                                print(f"[ATOMIC_VALIDATION_REJECT] {record.get('symbol')} {record.get('timeframe')}: {str(e)}", flush=True)
+                                continue  # REJECT: Validation failed
+                            
+                            # Update record (all-or-nothing)
+                            record['status'] = result['status']
+                            record['actual_exit_price'] = result['exit_price']
+                            
+                            # CRITICAL FIX: Use actual_timeout_time if available (timeout), else current time
+                            if 'actual_timeout_time' in result:
+                                record['closed_at'] = result['actual_timeout_time']
+                            else:
+                                record['closed_at'] = datetime.utcnow().isoformat()
+                            
+                            # Set P&L
+                            record['pnl_usd'] = round(result['pnl_usd'], 4)
+                            record['pnl_pct'] = round(result['pnl_pct'], 2)
+                            
+                            # Set data_quality_flag for STALE_TIMEOUT
+                            if result['status'] == 'STALE_TIMEOUT':
+                                hours_overdue = result.get('hours_overdue', 0)
+                                record['data_quality_flag'] = f'STALE_TIMEOUT_{hours_overdue}h_overdue'
+                            else:
+                                record['data_quality_flag'] = None
+                            
+                            # SILENT TAGGING: Store timeout window info (internal only, not shown to traders)
+                            if result['status'] in ['TIMEOUT', 'STALE_TIMEOUT']:
+                                record['cc_timeout_window_minutes'] = result.get('timeout_window_minutes', 0)
+                                record['cc_group'] = result.get('cc_group', 'CHAMPION')
+                            
+                            # Track summary
+                            fired_time = record.get('fired_time_utc', '')
+                            if fired_time:
+                                try:
+                                    dt = datetime.fromisoformat(fired_time.replace('Z', '+00:00'))
+                                    gmt7_time = dt + timedelta(hours=7)
+                                    local_time = gmt7_time.strftime("%H:%M:%S")
+                                except:
+                                    local_time = ''
+                            else:
+                                local_time = ''
+                            
+                            if result['status'] == 'TP_HIT':
+                                summary['tp_hits'].append((
+                                    record.get('signal_uuid'),
+                                    record.get('entry_price'),
+                                    result['exit_price'],
+                                    record['pnl_usd'],
+                                    record['pnl_pct']
+                                ))
+                            elif result['status'] == 'SL_HIT':
+                                summary['sl_hits'].append((
+                                    record.get('signal_uuid'),
+                                    record.get('entry_price'),
+                                    result['exit_price'],
+                                    record['pnl_usd'],
+                                    record['pnl_pct']
+                                ))
+                            elif result['status'] == 'TIMEOUT':
+                                summary['timeouts'].append((
+                                    record.get('signal_uuid'),
+                                    record.get('entry_price'),
+                                    result['exit_price'],
+                                    record['pnl_usd'],
+                                    record['pnl_pct'],
+                                    result.get('is_stale', False)
+                                ))
+                            elif result['status'] == 'STALE_TIMEOUT':
+                                summary['stale_timeouts'].append((
+                                    record.get('signal_uuid'),
+                                    record.get('entry_price'),
+                                    result['exit_price'],
+                                    record['pnl_usd'],
+                                    record['pnl_pct']
+                                ))
+                except Exception as e:
+                    print(f"[PEC-ERROR] Exception processing signal {record.get('signal_uuid', 'unknown')}: {e}", flush=True)
+                    continue
             
-            # Write back updated records to SIGNALS_MASTER.jsonl
-            print(f"[PEC-DEBUG] Writing {len(records)} records to {self.signals_master_path}", flush=True)
-            with open(self.signals_master_path, 'w') as f:
-                for record in records:
-                    f.write(json.dumps(record) + '\n')
-            print(f"[PEC-DEBUG] Write complete", flush=True)
+            # Write back updated records to COMPLETE_SIGNALS.jsonl (unified 2026-06-15)
+            print(f"[PEC-DEBUG] Writing {len(records)} records back to {self.signals_master_path}", flush=True)
             
-            # ALSO write to SIGNALS_CANONICAL.jsonl (synchronized copy)
+            # Atomic write: temp file → validate → rename
+            temp_path = self.signals_master_path + '.tmp'
             try:
-                canonical_path = self.signals_master_path.replace('SIGNALS_MASTER.jsonl', 'SIGNALS_CANONICAL.jsonl')
-                print(f"[PEC-DEBUG] Also writing {len(records)} records to SIGNALS_CANONICAL.jsonl", flush=True)
-                with open(canonical_path, 'w') as f:
+                with open(temp_path, 'w') as f:
                     for record in records:
                         f.write(json.dumps(record) + '\n')
-                print(f"[PEC-DEBUG] SIGNALS_CANONICAL.jsonl write complete", flush=True)
+                
+                # Validate temp file is valid JSON
+                with open(temp_path, 'r') as f:
+                    for line in f:
+                        if line.strip():
+                            json.loads(line)
+                
+                # Atomic replace
+                os.replace(temp_path, self.signals_master_path)
+                print(f"[PEC-DEBUG] ✅ Atomic write complete: {len(records)} records written to {self.signals_master_path}", flush=True)
             except Exception as e:
-                print(f"[WARN] Failed to update SIGNALS_CANONICAL.jsonl: {e}", flush=True)
+                print(f"[PEC-ERROR] Atomic write failed: {e}", flush=True)
+                try:
+                    os.remove(temp_path)
+                except:
+                    pass
             
         except Exception as e:
-            print(f"[ERROR] PEC update failed: {e}", flush=True)
+            print(f"[ERROR] PEC update failed: {type(e).__name__}: {e}", flush=True)
+            import traceback
+            traceback.print_exc()
         
         return summary
     

@@ -12,18 +12,18 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional
 
 class MTF1DFetcher:
-    """Fetches daily candles from KuCoin public API for any symbol"""
+    """Fetches daily & weekly candles from KuCoin public API for any symbol"""
     
-    def __init__(self, symbol: str = "XAUUSD"):
+    def __init__(self, symbol: str = "XAUUSD", timeframe: str = "1day"):
         # KuCoin public API endpoints (no auth needed)
         self.base_url = "https://api.kucoin.com"
         self.symbol = symbol  # Accept any symbol (FUEL-USDT, ADA-USDT, etc.)
-        self.timeframe = "1day"
+        self.timeframe = timeframe  # "1day" or "1week"
         self.timeout = 5
         
     def fetch_daily_candle(self) -> Optional[Dict]:
         """
-        Fetch latest daily candle for XAUUSD
+        Fetch latest candle (1day or 1week)
         Returns: {'open', 'close', 'high', 'low', 'time', 'direction', 'regime'} or None
         """
         try:
@@ -31,7 +31,7 @@ class MTF1DFetcher:
             url = f"{self.base_url}/api/v1/market/candles"
             params = {
                 'symbol': self.symbol,
-                'type': self.timeframe  # '1day' for daily
+                'type': self.timeframe  # '1day' or '1week'
             }
             
             response = requests.get(url, params=params, timeout=self.timeout)
@@ -39,7 +39,8 @@ class MTF1DFetcher:
             
             data = response.json()
             if not data.get('data') or len(data['data']) == 0:
-                print(f"[MTF-1D] ⚠️ No daily candle data from KuCoin for {self.symbol}", flush=True)
+                tf_name = "daily" if self.timeframe == "1day" else "weekly"
+                print(f"[MTF-1D] ⚠️ No {tf_name} candle data from KuCoin for {self.symbol}", flush=True)
                 return None
             
             # Latest candle is first in list
@@ -62,6 +63,7 @@ class MTF1DFetcher:
             # Calculate direction (LONG if close > open, SHORT if close < open, NONE if equal)
             direction = "LONG" if close_price > open_price else ("SHORT" if close_price < open_price else "NONE")
             
+            tf_label = "1d" if self.timeframe == "1day" else "1w"
             candle_data = {
                 'timestamp': timestamp_utc.isoformat(),
                 'open': open_price,
@@ -70,17 +72,18 @@ class MTF1DFetcher:
                 'low': low_price,
                 'direction': direction,
                 'symbol': self.symbol,
-                'timeframe': '1d'
+                'timeframe': tf_label
             }
             
-            print(f"[MTF-1D] ✅ Fetched daily {self.symbol}: {open_price:.2f} → {close_price:.2f} ({direction})", flush=True)
+            tf_name = "daily" if self.timeframe == "1day" else "weekly"
+            print(f"[MTF-1D] ✅ Fetched {tf_name} {self.symbol}: {open_price:.2f} → {close_price:.2f} ({direction})", flush=True)
             return candle_data
             
         except requests.exceptions.RequestException as e:
-            print(f"[MTF-1D] ❌ Failed to fetch daily candle: {str(e)}", flush=True)
+            print(f"[MTF-1D] ❌ Failed to fetch candle: {str(e)}", flush=True)
             return None
         except (KeyError, IndexError, ValueError) as e:
-            print(f"[MTF-1D] ❌ Error parsing daily candle: {str(e)}", flush=True)
+            print(f"[MTF-1D] ❌ Error parsing candle: {str(e)}", flush=True)
             return None
     
     def get_daily_regime(self) -> Optional[str]:
@@ -105,14 +108,15 @@ class MTF1DFetcher:
         return regime
 
 
-def get_1d_context(symbol: str = "XAUUSD") -> Optional[Dict]:
+def get_1d_context(symbol: str = "XAUUSD", timeframe: str = "1day") -> Optional[Dict]:
     """
-    Public interface: Fetch 1D context for MTF analysis
+    Public interface: Fetch 1D or 1W context for MTF analysis
     Args:
         symbol: Trading pair symbol (e.g., 'FUEL-USDT', 'ADA-USDT', 'XAUUSD')
+        timeframe: "1day" for daily, "1week" for weekly
     Returns: {'direction', 'regime', 'candle_data'} or None on failure
     """
-    fetcher = MTF1DFetcher(symbol)
+    fetcher = MTF1DFetcher(symbol, timeframe=timeframe)
     candle = fetcher.fetch_daily_candle()
     
     if not candle:

@@ -99,7 +99,7 @@ TF_CHECK_CASCADE = {
     '30min': ['1h', '2h'],          # 30min signal checks 1h + 2h
     '1h': ['2h', '4h'],             # 1h signal checks 2h + 4h
     '2h': ['4h'],                   # 2h signal checks 4h
-    '4h': ['1d']                    # V2 ENHANCED: 4h signal checks 1d (fetched from KuCoin API)
+    '4h': ['1d', '1w']              # 4h checks 1d (daily) + 1w (weekly) for stronger signal confirmation
 }
 
 # ============================================
