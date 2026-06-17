@@ -534,18 +534,21 @@ class SmartFilter:
 
     def get_signal_direction(self, results_long, results_short, debug: bool = False):
         """
-        Robust signal direction decision.
-    
+        COUNT-BASED signal direction decision (2026-06-17 UPDATE).
+        
+        Direction is determined by which side has MORE PASSED FILTERS (count-based, not weight-based).
+        Confidence is calculated using the WEIGHT of those passed filters.
+        
         Rules:
         1. Hard gatekeepers have priority: if one side's hard GKs are all passed and the other's are not,
            pick the side that passed its hard GKs.
-        2. If both sides pass hard GKs, choose by weighted non-GK score (require a margin to avoid flips).
-        3. If neither side passes hard GKs, use a conservative fallback:
-           - Compute a weighted_min_score derived from self.min_score scaled by average filter weight.
-           - Only pick a side if its weighted score >= weighted_min_score AND exceeds the other side by fallback_margin.
-           - Otherwise return "NEUTRAL".
-        4. Soft gatekeepers are excluded from the "hard pass" requirement but are available for reporting elsewhere.
-    
+        2. If both sides pass hard GKs, choose by FILTER COUNT (not weight).
+           - Whichever side has more passed filters wins
+           - Use weight sum of passed filters to calculate confidence
+        3. If neither side passes hard GKs, use conservative count-based fallback.
+        4. Confidence = (total weight of passed filters) / (total possible weight) * 100%
+           Example: 13 passed filters with total weight 53.7 out of 77.4 total → 69.37%
+        
         Returns: "LONG", "SHORT", or "NEUTRAL".
         """
         # Soft/hard gatekeepers
@@ -556,44 +559,30 @@ class SmartFilter:
         long_gk_passed = all(results_long.get(gk, False) for gk in hard_gatekeepers) if hard_gatekeepers else True
         short_gk_passed = all(results_short.get(gk, False) for gk in hard_gatekeepers) if hard_gatekeepers else True
     
-        # Also expose which gatekeepers passed per side for debugging
+        # Expose which gatekeepers passed per side for debugging
         passed_hard_gks_long = [gk for gk in hard_gatekeepers if results_long.get(gk, False)]
         passed_hard_gks_short = [gk for gk in hard_gatekeepers if results_short.get(gk, False)]
         passed_soft_gks_long = [gk for gk in soft_gatekeepers if results_long.get(gk, False)]
         passed_soft_gks_short = [gk for gk in soft_gatekeepers if results_short.get(gk, False)]
     
-        # Weighted sum for non-GK filters
+        # Scoring filters (non-gatekeeper filters)
         scoring_filters = [f for f in getattr(self, "filter_names", []) if f not in getattr(self, "gatekeepers", [])]
     
-        long_score = sum(self.filter_weights_long.get(name, 0.0) for name in scoring_filters if results_long.get(name, False))
-        short_score = sum(self.filter_weights_short.get(name, 0.0) for name in scoring_filters if results_short.get(name, False))
-    
-        # Also compute counts for informational purposes
-        long_count = sum(1 for name in scoring_filters if results_long.get(name, False))
-        short_count = sum(1 for name in scoring_filters if results_short.get(name, False))
-    
-        # Compute an approximate weighted_min_score using self.min_score scaled by average weight per scoring filter.
-        # This avoids directly comparing "count" to "weight" scales.
-        try:
-            if scoring_filters:
-                total_weight_long = sum(self.filter_weights_long.get(name, 0.0) for name in scoring_filters)
-                total_weight_short = sum(self.filter_weights_short.get(name, 0.0) for name in scoring_filters)
-                avg_weight_long = total_weight_long / len(scoring_filters)
-                avg_weight_short = total_weight_short / len(scoring_filters)
-                avg_weight = (avg_weight_long + avg_weight_short) / 2.0 if (avg_weight_long + avg_weight_short) > 0 else 1.0
-            else:
-                avg_weight = 1.0
-        except Exception:
-            avg_weight = 1.0
-    
-        # Weighted minimum score derived from configured min_score (counts) scaled to the weight units
-        weighted_min_score = getattr(self, "weighted_min_score", None)
-        if weighted_min_score is None:
-            weighted_min_score = (getattr(self, "min_score", 0) or 0) * avg_weight
-    
-        # Margin to require a meaningful difference between sides when making fallback choices (in weight units)
-        fallback_margin = getattr(self, "fallback_margin", 2.0)
-    
+        # === COUNT-BASED LOGIC (NEW 2026-06-17) ===
+        # Direction is determined by which side has MORE PASSED FILTERS
+        long_passed_filters = [name for name in scoring_filters if results_long.get(name, False)]
+        short_passed_filters = [name for name in scoring_filters if results_short.get(name, False)]
+        long_count = len(long_passed_filters)
+        short_count = len(short_passed_filters)
+        
+        # Calculate weights for passed filters (for confidence calculation)
+        long_passed_weight = sum(self.filter_weights_long.get(name, 0.0) for name in long_passed_filters)
+        short_passed_weight = sum(self.filter_weights_short.get(name, 0.0) for name in short_passed_filters)
+        
+        # Total possible weights
+        total_weight_long = sum(self.filter_weights_long.get(name, 0.0) for name in scoring_filters)
+        total_weight_short = sum(self.filter_weights_short.get(name, 0.0) for name in scoring_filters)
+        
         # Save debug sums for external inspection
         self._debug_sums = {
             "long_gk_passed": long_gk_passed,
@@ -602,27 +591,25 @@ class SmartFilter:
             "passed_hard_gks_short": passed_hard_gks_short,
             "passed_soft_gks_long": passed_soft_gks_long,
             "passed_soft_gks_short": passed_soft_gks_short,
-            "long_score": long_score,
-            "short_score": short_score,
             "long_count": long_count,
             "short_count": short_count,
-            "weighted_min_score": weighted_min_score,
-            "fallback_margin": fallback_margin,
+            "long_passed_weight": long_passed_weight,
+            "short_passed_weight": short_passed_weight,
+            "total_weight_long": total_weight_long,
+            "total_weight_short": total_weight_short,
             "hard_gatekeepers": hard_gatekeepers,
             "soft_gatekeepers": soft_gatekeepers,
         }
     
-        # Extra debug print to make GK status explicit in logs
+        # Extra debug print to make GK status and count-based decision explicit
         if debug:
             print(
-                f"[{self.symbol}] get_signal_direction GK status | "
-                f"hard_gatekeepers={hard_gatekeepers} soft_gatekeepers={soft_gatekeepers} | "
-                f"long_gk_passed={long_gk_passed} passed_hard_gks_long={passed_hard_gks_long} passed_soft_gks_long={passed_soft_gks_long} | "
-                f"short_gk_passed={short_gk_passed} passed_hard_gks_short={passed_hard_gks_short} passed_soft_gks_short={passed_soft_gks_short} | "
-                f"long_score={long_score:.2f} short_score={short_score:.2f} weighted_min_score={weighted_min_score:.2f} fallback_margin={fallback_margin:.2f}"
+                f"[{self.symbol}] get_signal_direction (COUNT-BASED 2026-06-17) | "
+                f"long_count={long_count} ({long_passed_weight:.1f} weight) vs short_count={short_count} ({short_passed_weight:.1f} weight) | "
+                f"long_gk_passed={long_gk_passed} vs short_gk_passed={short_gk_passed}"
             )
     
-        # Decision logic with clear precedence and conservative fallback
+        # Decision logic with COUNT-BASED precedence
         # 1) If one side passes hard GKs and the other does not -> pick that side
         if long_gk_passed and not short_gk_passed:
             if debug:
@@ -633,35 +620,52 @@ class SmartFilter:
                 print(f"[{self.symbol}] get_signal_direction -> SHORT (hard GKs passed for SHORT, not for LONG)")
             return "SHORT"
     
-        # 2) If both sides pass hard GKs, pick side by weighted score, require a small margin to avoid flip-flopping
+        # 2) If both sides pass hard GKs, pick side by FILTER COUNT (NEW COUNT-BASED LOGIC)
         if long_gk_passed and short_gk_passed:
-            score_diff = long_score - short_score
+            count_diff = long_count - short_count
             if debug:
-                print(f"[{self.symbol}] get_signal_direction (both GKs passed) -> long_score={long_score}, short_score={short_score}, diff={score_diff}")
-            if score_diff > fallback_margin:
+                print(f"[{self.symbol}] get_signal_direction (both GKs passed) -> COUNT-BASED: long_count={long_count}, short_count={short_count}, diff={count_diff}")
+            
+            # Pick side with more passed filters
+            if count_diff > 0:
+                if debug:
+                    print(f"[{self.symbol}] get_signal_direction -> LONG (more filters passed: {long_count} > {short_count})")
                 return "LONG"
-            elif -score_diff > fallback_margin:
+            elif count_diff < 0:
+                if debug:
+                    print(f"[{self.symbol}] get_signal_direction -> SHORT (more filters passed: {short_count} > {long_count})")
                 return "SHORT"
             else:
-                return "NEUTRAL"
+                # Same count: use weight as tiebreaker
+                if debug:
+                    print(f"[{self.symbol}] get_signal_direction (equal counts {long_count}) -> TIEBREAKER: long_weight={long_passed_weight:.1f} vs short_weight={short_passed_weight:.1f}")
+                if long_passed_weight > short_passed_weight:
+                    return "LONG"
+                elif short_passed_weight > long_passed_weight:
+                    return "SHORT"
+                else:
+                    return "NEUTRAL"
     
-        # 3) Neither side passes hard GKs: conservative fallback by weighted score + margin + minimum threshold
+        # 3) Neither side passes hard GKs: conservative count-based fallback
         if debug:
-            print(f"[{self.symbol}] get_signal_direction (fallback) -> long_score={long_score}, short_score={short_score}, weighted_min_score={weighted_min_score}, fallback_margin={fallback_margin}")
+            print(f"[{self.symbol}] get_signal_direction (fallback, neither GKs passed) -> COUNT-BASED: long_count={long_count}, short_count={short_count}")
     
-        # Only allow fallback if the winning side both exceeds weighted_min_score and exceeds the other by margin
-        if long_score >= weighted_min_score and (long_score - short_score) >= fallback_margin:
+        # Only allow fallback if one side has notably more filters passed
+        min_count_threshold = max(1, getattr(self, "min_score", 3) - 1)  # Conservative: require at least min_score-1 filters
+        count_diff = long_count - short_count
+        
+        if long_count >= min_count_threshold and count_diff > 0:
             if debug:
-                print(f"[{self.symbol}] get_signal_direction -> LONG (fallback by weight)")
+                print(f"[{self.symbol}] get_signal_direction -> LONG (fallback by count: {long_count} >= {min_count_threshold} and > {short_count})")
             return "LONG"
-        if short_score >= weighted_min_score and (short_score - long_score) >= fallback_margin:
+        if short_count >= min_count_threshold and count_diff < 0:
             if debug:
-                print(f"[{self.symbol}] get_signal_direction -> SHORT (fallback by weight)")
+                print(f"[{self.symbol}] get_signal_direction -> SHORT (fallback by count: {short_count} >= {min_count_threshold} and > {long_count})")
             return "SHORT"
     
         # Otherwise neutral
         if debug:
-            print(f"[{self.symbol}] get_signal_direction -> NEUTRAL (no decisive condition met)")
+            print(f"[{self.symbol}] get_signal_direction -> NEUTRAL (no decisive count-based condition met)")
         return "NEUTRAL"
 
     def superGK_check(self, signal_direction, orderbook_result, density_result):
@@ -925,30 +929,35 @@ class SmartFilter:
         if not signal_short_ok:
             print(f"[{self.symbol}] Signal BLOCKED for SHORT: Failed hard GKs: {failed_hard_gk_short}")
     
-        # --- Use selected direction's stats ---
+        # === USE SELECTED DIRECTION'S STATS (COUNT-BASED + WEIGHT-BASED CONFIDENCE) ===
+        # Direction is determined by COUNT, confidence is determined by WEIGHT
+        debug_sums = getattr(self, '_debug_sums', {})
+        
         if direction == "LONG":
             score = long_score
             passes = passes_long
-            confidence = round(100 * passed_non_gk_weight_long / total_non_gk_weight_long, 1) if total_non_gk_weight_long else 0.0
-            passed_weight = passed_non_gk_weight_long
-            total_weight = total_non_gk_weight_long
+            # Confidence = weight of passed LONG filters / total possible LONG weight (%)
+            passed_weight = debug_sums.get('long_passed_weight', 0.0)
+            total_weight = debug_sums.get('total_weight_long', total_non_gk_weight_long)
+            confidence = round(100 * passed_weight / total_weight, 1) if total_weight else 0.0
             results = results_long
         elif direction == "SHORT":
             score = short_score
             passes = passes_short
-            confidence = round(100 * passed_non_gk_weight_short / total_non_gk_weight_short, 1) if total_non_gk_weight_short else 0.0
-            passed_weight = passed_non_gk_weight_short
-            total_weight = total_non_gk_weight_short
+            # Confidence = weight of passed SHORT filters / total possible SHORT weight (%)
+            passed_weight = debug_sums.get('short_passed_weight', 0.0)
+            total_weight = debug_sums.get('total_weight_short', total_non_gk_weight_short)
+            confidence = round(100 * passed_weight / total_weight, 1) if total_weight else 0.0
             results = results_short
         else:
             score = max(long_score, short_score)
             passes = max(passes_long, passes_short)
-            confidence = max(
-                round(100 * passed_non_gk_weight_long / total_non_gk_weight_long, 1) if total_non_gk_weight_long else 0.0,
-                round(100 * passed_non_gk_weight_short / total_non_gk_weight_short, 1) if total_non_gk_weight_short else 0.0
-            )
-            passed_weight = max(passed_non_gk_weight_long, passed_non_gk_weight_short)
-            total_weight = max(total_non_gk_weight_long, total_non_gk_weight_short)
+            # For NEUTRAL, use max of both sides
+            long_conf = round(100 * debug_sums.get('long_passed_weight', 0.0) / debug_sums.get('total_weight_long', 1), 1) if debug_sums.get('total_weight_long', 0) else 0.0
+            short_conf = round(100 * debug_sums.get('short_passed_weight', 0.0) / debug_sums.get('total_weight_short', 1), 1) if debug_sums.get('total_weight_short', 0) else 0.0
+            confidence = max(long_conf, short_conf)
+            passed_weight = max(debug_sums.get('long_passed_weight', 0.0), debug_sums.get('short_passed_weight', 0.0))
+            total_weight = max(debug_sums.get('total_weight_long', 0.0), debug_sums.get('total_weight_short', 0.0))
             results = results_long
     
         # Recompute GK-based passes using the chosen 'results' dictionary
@@ -967,7 +976,7 @@ class SmartFilter:
             passes = sum(1 for gk in all_gks if results.get(gk, False))
     
         gatekeepers_total = len(all_gks)
-        confidence = round(100 * passed_weight / total_weight, 1) if total_weight else 0.0
+        # Confidence already calculated above per direction
     
         # --- SuperGK fetch REMOVED: FIX 2026-02-22 ---
         # Removed redundant API calls (get_order_wall_delta, get_resting_density)
