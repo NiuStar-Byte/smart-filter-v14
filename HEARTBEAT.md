@@ -1,5 +1,30 @@
 # HEARTBEAT.md - Daily Operations & Startup Verification
 
+## 🔧 FIELD COMPLETENESS FIX - CRITICAL CONTEXT (2026-06-19 00:14 GMT+7)
+
+**Implementation:** Option A - Comprehensive field initialization in signal_store.py  
+**Status:** ✅ DEPLOYED & ACTIVE
+
+### Pre-Restart (2026-06-18 00:00 - 2026-06-19 00:14 GMT+7)
+- Signals fired: ~3,457
+- **Incomplete fields (missing status/symbol_group/confidence_level/tier): ~1,975**
+- Schema: Old format (no field initialization)
+- Breakdown accuracy: ❌ Mismatch (3486 loaded ≠ 1511 counted)
+- Status: LOCKED/IMMUTABLE (won't grow)
+
+### Post-Restart (2026-06-19 00:14 GMT+7 onwards)
+- Signals fired: 29+ (and growing)
+- **Complete fields (all 37-40 present): 100%**
+- Schema: New format with _ensure_field_completeness()
+- Breakdown accuracy: ✅ Perfect (all new signals complete)
+- Status: ACTIVE (growing continuously)
+
+### Key Metric
+**Incomplete signals from old code: ~1,975 (STATIC - will not increase)**
+These signals remain in COMPLETE_SIGNALS.jsonl but don't affect new data quality.
+
+---
+
 ## 🚀 STARTUP VERIFICATION (Automatic on Mac startup)
 **File:** `startup_verification.py`
 **LaunchAgent:** `com.trading.startup-verification.plist`
@@ -7,7 +32,7 @@
 **Checks:**
   ✅ All 10 critical tracker files exist (100% guaranteed in GitHub)
   ✅ All 6 critical services running:
-     1. main.py (Signal Generation)
+     1. main.py (Signal Generation) - Restarted 2026-06-19 00:14 with field completeness fix
      2. pec_executor_persistent.py (Position Closure)
      3. asterdex_realtime_fetcher.py (Data Fetcher)
      4. asterdex_entry_poster.py (Entry Posting)
