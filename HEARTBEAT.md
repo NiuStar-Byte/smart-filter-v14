@@ -61,7 +61,15 @@
 **Monitor.pec.sh (Live Monitoring Script):**
 - ✅ Created and verified working
 - ✅ Tracks OPEN, TP_HIT, SL_HIT, timeouts, process status
-- ✅ Hourly backup script operational (keeping last 24 backups)
+
+**Hourly Backup Scripts:**
+- ✅ `hourly_backup_complete_signals.sh` - Creates dual backups:
+  - `.jsonl` backups: Last 24 hourly snapshots (history)
+  - `.txt` backups: Last 5 hourly snapshots only (sliding window)
+  - Format: `COMPLETE_SIGNALS_hourly_backup_YYYY-MM-DD_HHMM.txt`
+  - Example: `COMPLETE_SIGNALS_hourly_backup_2026-06-18_1400.txt`
+- ✅ All signals backed up with complete record attributes (100%)
+- ✅ Rotation working: Creates at top of each hour, deletes oldest when >5 exist
 
 **Status: ALL SYSTEMS OPERATIONAL & VERIFIED STABLE**
 

@@ -4,6 +4,49 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
+## 📦 **HOURLY BACKUP SYSTEM - DUAL FORMAT (2026-06-18 13:16 GMT+7)**
+
+### **Backup Mechanism**
+```bash
+# Script: hourly_backup_complete_signals.sh
+# Location: /Users/geniustarigan/.openclaw/workspace/
+# Runs: Hourly at top of each hour (via cron/launchd)
+```
+
+**Two Backup Types:**
+
+1. **`.jsonl` Backups (Full History)**
+   - Location: `backups/hourly_signals/`
+   - Pattern: `COMPLETE_SIGNALS_YYYY-MM-DD_HH-MM-SS.jsonl`
+   - Keeps: Last 24 hourly backups
+   - Purpose: Long-term data recovery
+
+2. **`.txt` Backups (Last 5 Only)**
+   - Location: `backups/hourly_signals_txt/`
+   - Pattern: `COMPLETE_SIGNALS_hourly_backup_YYYY-MM-DD_HHMM.txt`
+   - Example: `COMPLETE_SIGNALS_hourly_backup_2026-06-18_1400.txt`
+   - Keeps: ONLY last 5 files (sliding window)
+   - Purpose: Quick access to recent hourly snapshots
+   - Content: All signals with complete attributes (100% field completeness)
+
+**How Rotation Works:**
+- At 14:00 GMT+7: Creates backup #1 → 1 file exists
+- At 15:00 GMT+7: Creates backup #2 → 2 files exist
+- At 16:00 GMT+7: Creates backup #3 → 3 files exist
+- At 17:00 GMT+7: Creates backup #4 → 4 files exist
+- At 18:00 GMT+7: Creates backup #5 → 5 files exist
+- At 19:00 GMT+7: Creates backup #6, **automatically deletes oldest (14:00)** → 5 files remain
+- At 20:00 GMT+7: Creates backup #7, **automatically deletes oldest (15:00)** → 5 files remain
+
+**Verified (2026-06-18 13:16 GMT+7):**
+- ✅ .jsonl backup created: `COMPLETE_SIGNALS_2026-06-18_13-16-01.jsonl` (743 lines)
+- ✅ .txt backup created: `COMPLETE_SIGNALS_hourly_backup_2026-06-18_1316.txt` (743 lines)
+- ✅ All signals contain complete attributes: symbol, timeframe, tier, status, closed_at, pnl_usd, etc.
+- ✅ Rotation tested: At 18:00 simulation, oldest (13:16) deleted automatically
+- ✅ Last 5 files preserved: 14:00, 15:00, 16:00, 17:00, 18:00
+
+---
+
 ## 🎯 **PEC EXECUTOR PERSISTENT - VERIFIED OPERATIONAL (2026-06-18 13:07 GMT+7)**
 
 ### **Live Progress Monitor Command**
