@@ -88,38 +88,61 @@ watch -n 5 /Users/geniustarigan/.openclaw/workspace/monitor_pec.sh
 
 ---
 
-## 🚨 **CRITICAL FIX: TIER LOOKUP MODULE CACHE BUG (2026-06-18 13:32 GMT+7)**
+## 🔒 **LOCKED COMBOS ENFORCEMENT - STRICT DAILY PROTOCOL (2026-06-18 14:24 GMT+7)**
 
-### **The Problem**
-Tier-3 signals were still firing even though only 1 Tier-1 combo is locked for today. ROOT CAUSE: Python's module import cache!
+### **CRITICAL GUARANTEES (LOCKED - NO EXCEPTIONS)**
 
-**What was happening:**
-1. main.py starts, imports LOCKED_COMBOS_TODAY.py
-2. Python caches the module in sys.modules
-3. We update LOCKED_COMBOS_TODAY.py on disk (1 Tier-1 combo)
-4. main.py tries to reload but gets CACHED old version (9 combos with 4 Tier-1, 4 Tier-2, 1 Tier-3)
-5. Result: Tier-3 signals still fire because old cached combos still exist in memory
+**1. LOCKED_COMBOS_TODAY.py IS THE ONLY SOURCE OF TIER ASSIGNMENT**
+   - ✅ tier_lookup.py reads ONLY from LOCKED_COMBOS_TODAY.py
+   - ✅ importlib.reload() forces disk reload (NO CACHE)
+   - ✅ main.py calls get_signal_tier() which enforces locked combos
+   - ✅ Signals NOT matching locked combos → Tier-X (REJECTED)
 
-### **The Fix**
-Updated both tier_lookup.py files (workspace root + smart-filter-v14-main submodule):
+**2. DAILY MODIFICATION PROTOCOL (LOCKED ONCE PER DAY)**
+   - ⏰ Modification window: ONCE per calendar day ONLY
+   - 📝 Method: `manual_daily_combo_refresh.py` (automated, deterministic)
+   - 🔒 No manual edits to LOCKED_COMBOS_TODAY.py allowed
+   - 🔐 Modification prevents corruption via:
+     - `git checkout` before refresh (clean state)
+     - Deterministic generation from PEC reports
+     - Atomic file write (no partial updates)
+     - Validation before commit
+
+**3. CORRUPTION PREVENTION MEASURES**
+   - ✅ Source of truth: PEC_POST_DEPLOYMENT_TRACKER_v2_YYYY-MM-DD_*.txt (newest)
+   - ✅ Validation: Python code generation checks all tiers present
+   - ✅ Sync: Submodule `/smart-filter-v14-main/LOCKED_COMBOS_TODAY.py` kept in sync
+   - ✅ Backup: Git history preserves all daily versions
+   - ✅ No partial writes: Atomic file operations only
+
+**4. TODAY'S LOCKED STATE (2026-06-18 14:24 GMT+7)**
+   - Generated: 2026-06-18 13:22:00 GMT+7
+   - Source Report: PEC_POST_DEPLOYMENT_TRACKER_v2_2026-06-17_23-44-14.txt
+   - Expires: 2026-06-19 00:00:00 GMT+7
+   - **LOCKED COMBOS:**
+     - Tier-1: 1 combo (6D SHORT `30min_SHORT_TREND CONTINUATION_BEAR_LOW_ALTS_HIGH`)
+     - Tier-2: 0 combos
+     - Tier-3: 0 combos
+   - **ENFORCEMENT:** Only Tier-1 signals can fire. All others → Tier-X (rejected)
+
+### **VERIFICATION CHECKLIST (daily)**
+- [ ] LOCKED_COMBOS_TODAY.py modified ONLY via manual_daily_combo_refresh.py
+- [ ] Modification timestamp = generated timestamp in file (audit trail)
+- [ ] Git commit message shows source report used
+- [ ] Submodule sync verified (both paths have identical content)
+- [ ] No corruption: File parses as valid Python with correct structure
+
+### **THE FIX (2026-06-18 13:32 GMT+7)**
+Updated tier_lookup.py to force disk reload:
 ```python
-# Before: from LOCKED_COMBOS_TODAY import get_locked_combos  ❌ Uses cache!
-# After:  
 import importlib
 if 'LOCKED_COMBOS_TODAY' in sys.modules:
-    importlib.reload(sys.modules['LOCKED_COMBOS_TODAY'])  ✅ Forces disk reload!
+    importlib.reload(sys.modules['LOCKED_COMBOS_TODAY'])  # Force fresh from disk!
 ```
-
-**Applied to:**
-- ✅ `/Users/geniustarigan/.openclaw/workspace/tier_lookup.py` (line 36-42)
-- ✅ `/Users/geniustarigan/.openclaw/workspace/smart-filter-v14-main/tier_lookup.py` (line 36-42)
-
-### **MUST RESTART main.py**
-Old processes have OLD module cache. Need fresh start to use new reload code:
-```bash
-pkill -f "main.py"
-python3 main.py &
-```
+- ✅ Applied to: `/Users/geniustarigan/.openclaw/workspace/tier_lookup.py`
+- ✅ Applied to: `/Users/geniustarigan/.openclaw/workspace/smart-filter-v14-main/tier_lookup.py`
+- ✅ Verified: main.py restart cleared old module cache
+- ✅ Result: NEW signals (07:19+ GMT+7) all Tier-X except rare Tier-1 match
 
 ---
 

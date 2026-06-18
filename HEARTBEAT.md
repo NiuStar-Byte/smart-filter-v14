@@ -21,16 +21,48 @@
 
 ---
 
-## 🚨 **CRITICAL: TIER LOOKUP MODULE CACHE BUG - FIXED (2026-06-18 13:32 GMT+7)**
+## 🔒 **LOCKED COMBOS DAILY ENFORCEMENT (2026-06-18 14:24 GMT+7) - STRICT MODE**
 
-**Issue:** Tier-3 signals firing when only Tier-1 locked today  
-**Root Cause:** Python module import cache (old LOCKED_COMBOS_TODAY still in memory)  
-**Status:** ✅ FIXED with importlib.reload() in tier_lookup.py  
-**Action Required:** RESTART main.py to clear old cache  
-```bash
-pkill -f "main.py"
-python3 /Users/geniustarigan/.openclaw/workspace/main.py &
-```
+**GUARANTEE #1: main.py STRICTLY FOLLOWS locked_today_combos (NO CACHING)**
+- ✅ importlib.reload() forces disk reload every call
+- ✅ Signals NOT matching locked combos → Tier-X (REJECTED, no Telegram)
+- ✅ Module cache cleared on main.py restart
+- Verification: Check COMPLETE_SIGNALS.jsonl for Tier-2/Tier-3 NEW signals
+  - Before 2026-06-18 14:21: Old Tier-2/Tier-3 present (cached)
+  - After 2026-06-18 14:21: NEW signals ONLY Tier-X (locked combos enforced)
+
+**GUARANTEE #2: LOCKED_COMBOS_TODAY.py IS IMMUTABLE (SINGLE DAILY REFRESH)**
+- ✅ Modified ONCE per calendar day ONLY via manual_daily_combo_refresh.py
+- ✅ No manual edits allowed (prevents corruption)
+- ✅ Source: Newest PEC_POST_DEPLOYMENT_TRACKER_v2_YYYY-MM-DD_*.txt
+- ✅ Atomic write: No partial updates possible
+- Verification command: `git log --oneline LOCKED_COMBOS_TODAY.py | head -3`
+  - Should show 1 commit per day
+  - Commit message must reference source report
+
+**GUARANTEE #3: NO CORRUPTION OF locked_today_combos**
+- ✅ File backed by git (revert if corrupted: `git checkout LOCKED_COMBOS_TODAY.py`)
+- ✅ Submodule sync: smart-filter-v14-main/LOCKED_COMBOS_TODAY.py identical
+- ✅ Validation: Python syntax check before any write
+- ✅ Audit trail: Generated timestamp + source report in file comments
+- Verification: Compare both paths:
+  ```bash
+  diff LOCKED_COMBOS_TODAY.py smart-filter-v14-main/LOCKED_COMBOS_TODAY.py
+  # Should be empty (identical)
+  ```
+
+**TODAY'S LOCKED STATE (2026-06-18 14:24 GMT+7)**
+- **Tier-1:** 1 combo (30min SHORT TREND CONTINUATION BEAR LOW_ALTS HIGH)
+- **Tier-2:** 0 combos
+- **Tier-3:** 0 combos
+- **Result:** ONLY Tier-1 signals CAN fire to Telegram. All others → Tier-X rejected.
+
+**AUDIT CHECKLIST (Run daily)**
+- [ ] LOCKED_COMBOS_TODAY.py modification time = today only?
+- [ ] Last git commit = today? (run: `git log -1 --format="%ai" LOCKED_COMBOS_TODAY.py`)
+- [ ] File is valid Python? (run: `python3 -m py_compile LOCKED_COMBOS_TODAY.py`)
+- [ ] Submodule in sync? (run: `diff LOCKED_COMBOS_TODAY.py smart-filter-v14-main/LOCKED_COMBOS_TODAY.py`)
+- [ ] Tier-2/3 in NEW signals after 14:21? Should be ZERO.
 
 ---
 
@@ -58,6 +90,30 @@ python3 /Users/geniustarigan/.openclaw/workspace/main.py &
 - Signal count drops below 544
 - Any attempt to use other signal files (SIGNALS_MASTER, SENT_SIGNALS, etc.)
 - Code changes without explicit approval
+
+---
+
+## 📅 **DAILY COMBO REFRESH SCHEDULE (LOCKED)**
+
+**WHEN: ONCE per calendar day ONLY**
+- ⏰ Recommended time: End of day (18:00-20:00 GMT+7) after PEC reports generated
+- 🔒 LOCKED: NO manual modifications outside this window
+- 📋 Command: `python3 /Users/geniustarigan/.openclaw/workspace/manual_daily_combo_refresh.py`
+
+**WHAT IT DOES:**
+1. Finds NEWEST PEC_POST_DEPLOYMENT_TRACKER_v2_YYYY-MM-DD_*.txt from YESTERDAY
+2. Extracts combos with performance metrics (WR, P&L)
+3. Assigns to tiers (Tier-1: top 4 by WR, etc.)
+4. Generates LOCKED_COMBOS_TODAY.py
+5. Syncs to submodule
+6. Commits to git with source report reference
+
+**VALIDATION AFTER REFRESH:**
+- ✅ LOCKED_COMBOS_TODAY.py updated (timestamp = today)
+- ✅ File is valid Python
+- ✅ Submodule synced
+- ✅ Git commit has source report in message
+- ✅ Restart main.py to clear module cache
 
 ---
 
@@ -100,7 +156,25 @@ python3 /Users/geniustarigan/.openclaw/workspace/main.py &
 
 # HEARTBEAT CHECKLIST - 2026-06-18 ONWARDS
 
-## 📌 CRITICAL - Check on every heartbeat
+## 📌 CRITICAL - Check on EVERY heartbeat
+
+### **LOCKED COMBOS ENFORCEMENT (NEW - STRICT)**
+- [ ] **Tier-2/Tier-3 in NEW signals ONLY?** 
+  - Command: `grep '"fired_time": "2026-06-18T14' COMPLETE_SIGNALS.jsonl | grep -c '"tier": "Tier-[23]"'`
+  - Should be: 0 (zero Tier-2/Tier-3 after 14:00 GMT+7)
+  - If > 0: Old cache active, RESTART main.py immediately
+  
+- [ ] **LOCKED_COMBOS_TODAY.py has NOT been modified since 13:22?**
+  - Command: `stat LOCKED_COMBOS_TODAY.py | grep Modify`
+  - Should be: 2026-06-18 13:22:00 (NO NEWER MODIFICATIONS)
+  - If newer: Corruption detected, REVERT: `git checkout LOCKED_COMBOS_TODAY.py`
+
+- [ ] **Submodule LOCKED_COMBOS_TODAY.py in sync?**
+  - Command: `diff LOCKED_COMBOS_TODAY.py smart-filter-v14-main/LOCKED_COMBOS_TODAY.py`
+  - Should be: Empty (no differences)
+  - If differences: SYNC immediately: `cp LOCKED_COMBOS_TODAY.py smart-filter-v14-main/LOCKED_COMBOS_TODAY.py`
+
+### **STANDARD CHECKS (All heartbeats)**
 - [ ] **Signal growth:** `grep -c '"status": "OPEN"' COMPLETE_SIGNALS.jsonl` should ALWAYS be >= last check
   - **Rule:** OPEN count can only STAY SAME or GROW, NEVER DECREASE
   - If it decreases: STOP main.py immediately, investigate data corruption
