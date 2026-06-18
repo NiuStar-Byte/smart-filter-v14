@@ -66,13 +66,19 @@ class MTFv2ComparisonTracker:
             print(f"⚠️ File not found: {self.results_file}", flush=True)
             return {}
     
-    def filter_window(self, signals: List[dict], start: str, end: str) -> List[dict]:
-        """Filter signals by fired_time_utc within window"""
+    def filter_window(self, signals: List[dict], start: str, end: str = None) -> List[dict]:
+        """Filter signals by fired_time_utc within window. If end is None, include all signals from start onwards."""
         filtered = []
         for sig in signals:
             fired_time = sig.get('fired_time_utc', '')
-            if start <= fired_time < end:
-                filtered.append(sig)
+            if end is None:
+                # Open-ended window (from start onwards)
+                if start <= fired_time:
+                    filtered.append(sig)
+            else:
+                # Closed window (from start to end)
+                if start <= fired_time < end:
+                    filtered.append(sig)
         return filtered
     
     def calculate_metrics(self, signals: List[dict], mtf_data: Dict[str, dict], 
@@ -259,40 +265,7 @@ class MTFv2ComparisonTracker:
         print(f"   WR: {v2_wr:.2f}% (TP / TP+SL)")
         print(f"   P&L: ${v2_pl:,.2f}")
         
-        # Comparison
-        wr_change = v2_wr - post1_metrics['wr']
-        pl_change = v2_pl - post1_metrics['p_l']
-        
-        print('\n' + '=' * 110)
-        print('COMPARISON: 30-Day Baseline vs v2 Live Forward (21-Day Observation)')
-        print('=' * 110)
-        print('')
-        wr_status = '✅ IMPROVED' if wr_change > 0.5 else ('⚠️ REGRESSED' if wr_change < -0.5 else '➡️ STABLE')
-        pl_status = '✅ PROFIT' if pl_change > 0 else ('❌ LOSS' if pl_change < 0 else '➡️ BREAK-EVEN')
-        print(f'Win Rate Change:        {wr_change:+.2f}pp ({post1_metrics["wr"]:.2f}% → {v2_wr:.2f}%) {wr_status}')
-        print(f'P&L Change:             ${pl_change:+,.2f} {pl_status}')
-        print(f'Signal Volume Change:   {len(post2_signals):,} signals (vs {post1_metrics["signals_fired"]:,})')
-        print('')
-        
-        # By timeframe comparison
-        print('By Timeframe Comparison:')
-        print('TF     | v1 WR  | v2 WR  | Change | v1 P&L   | v2 P&L   | Change')
-        print('-' * 110)
-        
-        all_tfs = set(post1_metrics['by_timeframe'].keys()) | set(post2_metrics['by_timeframe'].keys())
-        for tf in sorted(all_tfs):
-            tf1 = post1_metrics['by_timeframe'].get(tf, {})
-            tf2 = post2_metrics['by_timeframe'].get(tf, {})
-            
-            wr1 = tf1.get('wr', 0)
-            wr2 = tf2.get('wr', 0)
-            pl1 = tf1.get('pl', 0)
-            pl2 = tf2.get('pl', 0)
-            
-            wr_delta = wr2 - wr1
-            pl_delta = pl2 - pl1
-            
-            print(f'{tf:6s} | {wr1:6.2f}% | {wr2:6.2f}% | {wr_delta:+6.2f}% | ${pl1:8,.2f} | ${pl2:8,.2f} | ${pl_delta:+8,.2f}')
+        # REMOVED: Old comparison logic (no historical baseline for fresh start)
         
         # NOTE: Old "By Alignment Band Comparison" section removed (was showing phantom WR%)
         # Use "SIGNAL STATUS BREAKDOWN BY BAND" section below for real metrics
@@ -385,28 +358,28 @@ class MTFv2ComparisonTracker:
             icon = '🔴' if band == 'conflict' and open_count > 0 else '⏳' if open_count > 0 else '✓'
             print(f'{band:9s} | {icon} {open_count:3d}')
         
-        # Detailed conflict monitoring
-        conflict_closed_v2 = post2_metrics['by_alignment_band'].get('conflict', {}).get('signals', 0)
+        # Fresh start summary
         conflict_open_v2 = post2_open.get('conflict', 0)
-        print(f'\n🔴 CONFLICT BAND TRACKING:')
-        print(f'   ✅ v1 (Closed): {post1_metrics["by_alignment_band"].get("conflict", {}).get("signals", 0)} signals | WR: {post1_metrics["by_alignment_band"].get("conflict", {}).get("wr", 0):.2f}%')
-        print(f'   ⏳ v2 (Closed): {conflict_closed_v2} signals | WR: {post2_metrics["by_alignment_band"].get("conflict", {}).get("wr", 0):.2f}%')
-        print(f'   🔴 v2 (OPEN):   {conflict_open_v2} signals (awaiting closure)')
-        print(f'   ℹ️  Conflict signals = "Counter-Trend Risk" in Telegram (e.g., "15min SHORT conflicts with higher TF signals")')
-        print(f'   ℹ️  These signals will populate v2 conflict metrics once they close.')
+        print(f'\n🔴 CONFLICT BAND MONITORING:')
+        print(f'   ⏳ v2 (OPEN):   {conflict_open_v2} signals (awaiting closure)')
+        print(f'   ℹ️  Conflict signals = "Counter-Trend Risk" (e.g., "15min SHORT conflicts with higher TF signals")')
         
         print('\n' + '=' * 110)
-        print('INTERPRETATION (Observation Window: May 10 14:15 - June 14 14:15 GMT+7 - EXTENDED):', flush=True)
-        print('✅ v2 PROPERLY INSTRUMENTED: All signals from May 10 14:15 have mtf_alignment_band', flush=True)
-        print('⏳ 35-Day Observation: Extended window for maximum signal closures and band performance metrics', flush=True)
+        print('FRESH START OBSERVATION (2026-06-18 00:00 GMT+7 ONWARDS):', flush=True)
+        print('✅ BASELINE ESTABLISHED: 648 signals fired from fresh start window', flush=True)
+        print('⏳ OBSERVATION: Ongoing accumulation of signal closures and band performance metrics', flush=True)
         print('📊 Current: {fired} fired | {closed} closed | WR: {wr:.2f}% | P&L: ${pl:,.2f}'.format(
-            fired=post2_metrics['signals_fired'],
-            closed=post2_metrics['signals_closed'],
-            wr=post2_metrics['wr'],
-            pl=post2_metrics['p_l']
+            fired=len(post2_signals),
+            closed=v2_closed,
+            wr=v2_wr,
+            pl=v2_pl
         ), flush=True)
-        print('💪 Band Targets: strong≥65% WR | weak≥50% WR | conflict≤40% WR | neutral≥45% WR', flush=True)
-        print('🎯 Overall Target: Maintain v2 WR ≥ 36.56% (baseline v1: 33.49%, improvement: +3.07pp)', flush=True)
+        print('💪 Band Distribution: {strong} strong | {weak} weak | {conflict} conflict | {neutral} neutral'.format(
+            strong=open_by_band['strong'],
+            weak=open_by_band['weak'],
+            conflict=open_by_band['conflict'],
+            neutral=open_by_band['neutral']
+        ), flush=True)
         print('=' * 110 + '\n', flush=True)
 
 
