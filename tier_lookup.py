@@ -29,82 +29,57 @@ class TierLookupComplete:
         self.load_latest_tiers()
     
     def load_latest_tiers(self):
-        """Load combos from LOCKED_COMBOS_TODAY.py (TODAY'S LOCKED COMBOS - PRIMARY SOURCE)"""
+        """
+        MANDATORY: Load TODAY's locked combos from LOCKED_COMBOS_TODAY.py
+        NO FALLBACK. NO DIMENSIONAL CASCADE. ONLY LOCKED COMBOS.
+        """
         try:
             workspace = "/Users/geniustarigan/.openclaw/workspace"
-            
-            # PRIMARY: Load TODAY's locked combos from LOCKED_COMBOS_TODAY.py
             locked_combos_file = os.path.join(workspace, "LOCKED_COMBOS_TODAY.py")
             
-            if os.path.exists(locked_combos_file):
-                # Import LOCKED_COMBOS_TODAY and get locked combos
-                import sys
-                sys.path.insert(0, workspace)
-                try:
-                    from LOCKED_COMBOS_TODAY import get_locked_combos
-                    locked_combos = get_locked_combos()
-                    
-                    # Build tier_combos from locked combos
-                    tier_combos = {"tier1": [], "tier2": [], "tier3": [], "tierx": []}
-                    
-                    for item in locked_combos:
-                        combo = item.get('combo', '')
-                        tier = item.get('tier', 'Tier-X')
-                        
-                        # Normalize tier name
-                        tier_key = tier.lower().replace('-', '')  # 'Tier-1' → 'tier1'
-                        if tier_key in tier_combos:
-                            tier_combos[tier_key].append(combo)
-                        else:
-                            tier_combos['tierx'].append(combo)
-                    
-                    self.tier_data = tier_combos
-                    self.using_locked_combos = True  # STRICT MODE: Only match today's locked combos
-                    total = sum(len(v) for v in tier_combos.values())
-                    print(f"[TIER] ✅ Loaded {total} TODAY's LOCKED combos from LOCKED_COMBOS_TODAY.py (STRICT MODE ACTIVE)", flush=True)
-                    print(f"[TIER]    Tier-1: {len(tier_combos['tier1'])} | Tier-2: {len(tier_combos['tier2'])} | Tier-3: {len(tier_combos['tier3'])}", flush=True)
-                    return
-                except ImportError:
-                    print(f"[TIER-WARN] Could not import LOCKED_COMBOS_TODAY.py. Falling back to SIGNAL_TIERS_APPEND.jsonl", flush=True)
-            
-            # FALLBACK: Load from SIGNAL_TIERS_APPEND.jsonl (old historical data)
-            filename = os.path.join(workspace, "smart-filter-v14-main/SIGNAL_TIERS_APPEND.jsonl")
-            
-            if not os.path.exists(filename):
-                print(f"[TIER-ERROR] {filename} not found. All signals will be Tier-X.", flush=True)
+            # MUST load LOCKED_COMBOS_TODAY.py
+            if not os.path.exists(locked_combos_file):
+                print(f"[TIER-FATAL] LOCKED_COMBOS_TODAY.py NOT FOUND! All signals will be Tier-X.", flush=True)
                 self.tier_data = {"tier1": [], "tier2": [], "tier3": [], "tierx": []}
+                self.using_locked_combos = True
                 return
             
-            tier_combos = {"tier1": [], "tier2": [], "tier3": [], "tierx": []}
-            
-            with open(filename, 'r') as f:
-                for line in f:
-                    if not line.strip():
-                        continue
-                    try:
-                        record = json.loads(line)
-                        combo = record.get('combo', '')
-                        tier = record.get('tier', 'Tier-X')
-                        
-                        # Normalize tier name
-                        tier_key = tier.lower().replace('-', '')  # 'Tier-1' → 'tier1'
-                        if tier_key in tier_combos:
-                            tier_combos[tier_key].append(combo)
-                        else:
-                            tier_combos['tierx'].append(combo)
-                    except:
-                        continue
-            
-            self.tier_data = tier_combos
-            self.using_locked_combos = False  # FALLBACK MODE: Use dimensional cascade
-            total = sum(len(v) for v in tier_combos.values())
-            print(f"[TIER] ⚠️  Loaded {total} combos from FALLBACK: {filename} (DIMENSIONAL CASCADE MODE)", flush=True)
-            print(f"[TIER]    Tier-1: {len(tier_combos['tier1'])} | Tier-2: {len(tier_combos['tier2'])} | Tier-3: {len(tier_combos['tier3'])} | Tier-X: {len(tier_combos['tierx'])}", flush=True)
+            # Import LOCKED_COMBOS_TODAY.py
+            import sys
+            sys.path.insert(0, workspace)
+            try:
+                from LOCKED_COMBOS_TODAY import get_locked_combos
+                locked_combos = get_locked_combos()
+                
+                # Build tier_combos from locked combos ONLY
+                tier_combos = {"tier1": [], "tier2": [], "tier3": [], "tierx": []}
+                
+                for item in locked_combos:
+                    combo = item.get('combo', '')
+                    tier = item.get('tier', 'Tier-X')
+                    
+                    # Normalize tier name
+                    tier_key = tier.lower().replace('-', '')  # 'Tier-1' → 'tier1'
+                    if tier_key in tier_combos:
+                        tier_combos[tier_key].append(combo)
+                    else:
+                        tier_combos['tierx'].append(combo)
+                
+                self.tier_data = tier_combos
+                self.using_locked_combos = True
+                total = sum(len(v) for v in tier_combos.values())
+                print(f"[TIER] ✅ LOCKED COMBOS ONLY: Loaded {total} combos from LOCKED_COMBOS_TODAY.py", flush=True)
+                print(f"[TIER]    Tier-1: {len(tier_combos['tier1'])} | Tier-2: {len(tier_combos['tier2'])} | Tier-3: {len(tier_combos['tier3'])}", flush=True)
+                
+            except Exception as e:
+                print(f"[TIER-FATAL] Failed to load LOCKED_COMBOS_TODAY.py: {e}. All signals will be Tier-X.", flush=True)
+                self.tier_data = {"tier1": [], "tier2": [], "tier3": [], "tierx": []}
+                self.using_locked_combos = True
             
         except Exception as e:
-            print(f"[TIER-ERROR] Failed to load tier data: {e}. Defaulting to Tier-X.", flush=True)
+            print(f"[TIER-FATAL] Unexpected error loading tiers: {e}. All signals will be Tier-X.", flush=True)
             self.tier_data = {"tier1": [], "tier2": [], "tier3": [], "tierx": []}
-            self.using_locked_combos = False
+            self.using_locked_combos = True
     
     def _generate_all_6d_variants(self, tf, direction, route, regime, symbol_group, confidence_level):
         """Generate all 6D format variants"""
@@ -239,18 +214,14 @@ class TierLookupComplete:
     
     def get_tier(self, timeframe, direction, route=None, regime=None, symbol_group=None, confidence_level=None):
         """
-        COMPLETE tier lookup with STRICT dimensional cascading
+        LOCKED COMBOS ONLY - NO CASCADE
         
-        LOCKED COMBOS MODE (STRICT):
-          - Only fire signals matching TODAY's locked combos
-          - Signals not matching any locked combo → Tier-X (rejected)
-          - Do NOT fall through to dimensional cascade
+        Only matches signals against TODAY's locked combos from LOCKED_COMBOS_TODAY.py
         
-        FALLBACK MODE (CASCADE):
-          - TIER-1: 6D → 5D (STOP at 5D)
-          - TIER-2: 6D → 5D → 4D (STOP at 4D)
-          - TIER-3: 6D → 5D → 4D → 3D (STOP at 3D)
-          - TIER-X: Everything else
+        TIER-1: Signals matching Tier-1 locked combos (or 0 combos = auto Tier-X)
+        TIER-2: Signals matching Tier-2 locked combos (or 0 combos = auto Tier-X)
+        TIER-3: Signals matching Tier-3 locked combos (or 0 combos = auto Tier-X)
+        TIER-X: Everything else (no match to locked combos)
         """
         if not self.tier_data:
             return "Tier-X"
@@ -264,47 +235,25 @@ class TierLookupComplete:
             sg_val = str(symbol_group).strip() if symbol_group else None
             conf_val = str(confidence_level).strip() if confidence_level else None
             
-            # ====== STRICT MODE: LOCKED COMBOS TODAY ======
-            if self.using_locked_combos:
-                # Only check tiers that have combos today
-                has_tier1 = len(self.tier_data.get("tier1", [])) > 0
-                has_tier2 = len(self.tier_data.get("tier2", [])) > 0
-                has_tier3 = len(self.tier_data.get("tier3", [])) > 0
-                
-                # Check Tier-1 only if it has combos today
-                if has_tier1 and self._check_tier("tier1", tf, dir_val, route_val, regime_val, sg_val, conf_val):
-                    return "Tier-1"
-                
-                # Check Tier-2 only if it has combos today
-                if has_tier2 and self._check_tier("tier2", tf, dir_val, route_val, regime_val, sg_val, conf_val):
-                    return "Tier-2"
-                
-                # Check Tier-3 only if it has combos today
-                if has_tier3 and (self._check_tier("tier3", tf, dir_val, route_val, regime_val, sg_val, conf_val) or 
-                                  self._check_tier_3d_only("tier3", tf, dir_val, route_val, regime_val, sg_val)):
-                    return "Tier-3"
-                
-                # Signal doesn't match any locked combo → Tier-X (REJECT)
-                return "Tier-X"
+            # ====== LOCKED COMBOS ONLY (NO FALLBACK CASCADE) ======
             
-            # ====== FALLBACK MODE: DIMENSIONAL CASCADE ======
-            # ====== TIER-1: 6D → 5D (STOP at 5D) ======
-            if self._check_tier("tier1", tf, dir_val, route_val, regime_val, sg_val, conf_val):
+            # Check Tier-1 only if it has locked combos today
+            has_tier1 = len(self.tier_data.get("tier1", [])) > 0
+            if has_tier1 and self._check_tier("tier1", tf, dir_val, route_val, regime_val, sg_val, conf_val):
                 return "Tier-1"
             
-            # ====== TIER-2: 6D → 5D → 4D (STOP at 4D) ======
-            if self._check_tier("tier2", tf, dir_val, route_val, regime_val, sg_val, conf_val):
+            # Check Tier-2 only if it has locked combos today
+            has_tier2 = len(self.tier_data.get("tier2", [])) > 0
+            if has_tier2 and self._check_tier("tier2", tf, dir_val, route_val, regime_val, sg_val, conf_val):
                 return "Tier-2"
             
-            # ====== TIER-3: 6D → 5D → 4D → 3D (STOP at 3D) ======
-            if self._check_tier("tier3", tf, dir_val, route_val, regime_val, sg_val, conf_val):
+            # Check Tier-3 only if it has locked combos today
+            has_tier3 = len(self.tier_data.get("tier3", [])) > 0
+            if has_tier3 and (self._check_tier("tier3", tf, dir_val, route_val, regime_val, sg_val, conf_val) or 
+                              self._check_tier_3d_only("tier3", tf, dir_val, route_val, regime_val, sg_val)):
                 return "Tier-3"
             
-            # Check 3D for Tier-3 (below 4D)
-            if self._check_tier_3d_only("tier3", tf, dir_val, route_val, regime_val, sg_val):
-                return "Tier-3"
-            
-            # ====== TIER-X: Everything else ======
+            # Signal doesn't match any locked combo for today → Tier-X (REJECT)
             return "Tier-X"
         
         except Exception as e:
