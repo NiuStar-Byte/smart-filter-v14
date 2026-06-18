@@ -4,6 +4,53 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
+## 🔴 **CRITICAL LOCKED DECISION - SINGLE SOURCE OF TRUTH (2026-06-18 11:38 GMT+7)**
+
+### **FINAL DECISION - CANNOT BE CHANGED**
+
+**ONLY ONE SIGNAL FILE WILL BE USED: `COMPLETE_SIGNALS.jsonl`**
+
+**NO EXCEPTIONS. NO FALLBACKS. NO OTHER FILES.**
+
+### All Writing Operations
+- ✅ main.py: Write signals to **COMPLETE_SIGNALS.jsonl** ONLY (via _signal_store)
+- ✅ pec_executor_persistent.py: Update closures in **COMPLETE_SIGNALS.jsonl** ONLY
+- ✅ All other services: Write to **COMPLETE_SIGNALS.jsonl** ONLY
+
+### All Reading Operations
+- ✅ pec_post_deployment_tracker_v2.py: Read from **COMPLETE_SIGNALS.jsonl** ONLY
+- ✅ MTF_alignment_comparison_tracker_v2.py: Read from **COMPLETE_SIGNALS.jsonl** ONLY
+- ✅ All other trackers: Read from **COMPLETE_SIGNALS.jsonl** ONLY
+- ✅ Dedup cache (main.py): Load from **COMPLETE_SIGNALS.jsonl** ONLY
+
+### Banned Files (NEVER USE AGAIN)
+- ❌ SIGNALS_MASTER.jsonl - RETIRED
+- ❌ SENT_SIGNALS.jsonl - ARCHIVED (read-only, no new writes)
+- ❌ SIGNALS_CANONICAL.jsonl - NEVER USE
+- ❌ ALL_SIGNALS.jsonl - NEVER USE
+- ❌ Any other signal file variant - NEVER USE
+
+### Configuration
+- **pec_config.py**: `SIGNALS_JSONL_PATH = "/Users/geniustarigan/.openclaw/workspace/COMPLETE_SIGNALS.jsonl"`
+- **All trackers**: Use COMPLETE_SIGNALS.jsonl path directly in code
+- **All services**: Read/write COMPLETE_SIGNALS.jsonl
+
+### Verification (2026-06-18 11:38 GMT+7)
+- ✅ main.py updated (removed signals_master_writer, sent_signal_tracker)
+- ✅ pec_config.py updated (SIGNALS_JSONL_PATH → COMPLETE_SIGNALS.jsonl)
+- ✅ pec_post_deployment_tracker_v2.py updated (reads COMPLETE_SIGNALS.jsonl)
+- ✅ MTF_alignment_comparison_tracker_v2.py updated (reads COMPLETE_SIGNALS.jsonl)
+- ✅ tier_lookup.py updated (LOCKED COMBOS ONLY, no cascade)
+- ✅ Dedup cache updated (loads from COMPLETE_SIGNALS.jsonl)
+- ✅ All changes committed to GitHub
+
+### Future Rule
+**ANY CODE CHANGE that introduces a new signal file or reads/writes to any file OTHER than COMPLETE_SIGNALS.jsonl is FORBIDDEN.**
+
+This decision is LOCKED. Do not revert. Do not change. PERIOD.
+
+---
+
 ## ✅ **DIMENSIONAL ENFORCEMENT COMPLETED - BOTH TRACKERS VALIDATED (2026-04-01 07:11-12:56 GMT+7)**
 
 **Status:** ✅ **100% COMPLIANCE VERIFIED** - All tier assignments enforce dimensional cascade rules consistently

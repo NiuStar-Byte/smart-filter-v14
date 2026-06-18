@@ -27,7 +27,7 @@ class PersistentExecutor:
         self.executor = PECExecutor()
         self.update_interval = 5 * 60  # 5 minutes in seconds
         self.workspace_root = "/Users/geniustarigan/.openclaw/workspace"
-        self.signals_master_path = os.path.join(self.workspace_root, 'SIGNALS_CANONICAL.jsonl')  # Read from canonical source
+        self.signals_master_path = os.path.join(self.workspace_root, 'COMPLETE_SIGNALS.jsonl')  # SINGLE SOURCE OF TRUTH
         self.startup_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
     def log(self, msg: str, level: str = "INFO"):
