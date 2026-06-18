@@ -45,12 +45,11 @@ class MTFv2ComparisonTracker:
     
     def __init__(self):
         self.results_file = '/Users/geniustarigan/.openclaw/workspace/smart-filter-v14-main/MTF_ALIGNMENT_RESULTS.jsonl'
-        self.master_file = '/Users/geniustarigan/.openclaw/workspace/SIGNALS_MASTER.jsonl'  # Current dataset WITH closure data
+        self.master_file = '/Users/geniustarigan/.openclaw/workspace/COMPLETE_SIGNALS.jsonl'  # SINGLE SOURCE OF TRUTH - WITH closure data
         
     def load_signals(self) -> List[dict]:
-        """Load all signals from ALL_SIGNALS.jsonl (complete historical dataset with 75K+ closed signals)"""
-        # ALL_SIGNALS contains full history from day 1 (needed for baseline metrics)
-        # Not the truncated SIGNALS_MASTER (only recent 17K)
+        """Load all signals from COMPLETE_SIGNALS.jsonl (SINGLE SOURCE OF TRUTH with closure data)"""
+        # COMPLETE_SIGNALS.jsonl contains current active signals + all closed signals with full metrics
         signals = []
         try:
             with open(self.master_file, 'r') as f:
@@ -60,7 +59,7 @@ class MTFv2ComparisonTracker:
                             signals.append(json.loads(line))
                         except:
                             pass
-            print(f"✅ Loaded {len(signals)} signals from SIGNALS_MASTER.jsonl (closure data already applied)", flush=True)
+            print(f"✅ Loaded {len(signals)} signals from COMPLETE_SIGNALS.jsonl (SINGLE SOURCE OF TRUTH)", flush=True)
             return signals
         except FileNotFoundError:
             print(f"❌ File not found: {self.master_file}", flush=True)

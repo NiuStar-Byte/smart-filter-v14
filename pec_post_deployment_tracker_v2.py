@@ -3,7 +3,7 @@
 POST-DEPLOYMENT TRACKER V2 - Direction Determination by COUNT instead of WEIGHTS (2026-04-12 01:15 GMT+7)
 
 Purpose: Track signal performance AFTER direction-by-count deployment
-Source: SIGNALS_CANONICAL.jsonl (FULL HISTORY - canonical merged source: SENT + COMPLETE + MASTER)
+Source: COMPLETE_SIGNALS.jsonl (SINGLE SOURCE OF TRUTH - main.py writes, pec_executor_persistent updates)
 Cut-off: 2026-04-12T08:15:00Z (01:15 GMT+7 2026-04-12 deployment timestamp - onwards only)
 
 Code Changes Applied:
@@ -77,8 +77,8 @@ class PostDeploymentTracker:
     def __init__(self, signals_file=None):
         if signals_file is None:
             workspace = "/Users/geniustarigan/.openclaw/workspace"
-            # USE CURRENT SIGNALS FILE - merged with full history
-            signals_file = os.path.join(workspace, "SIGNALS_CANONICAL.jsonl")  # Use canonical merged source
+            # USE SINGLE SOURCE OF TRUTH - COMPLETE_SIGNALS.jsonl
+            signals_file = os.path.join(workspace, "COMPLETE_SIGNALS.jsonl")  # Single source of truth
         
         self.signals_file = signals_file
         self.signals = []
@@ -86,8 +86,8 @@ class PostDeploymentTracker:
     
     def load_signals(self):
         """
-        Load signals from SIGNALS_CANONICAL.jsonl with FILE-LEVEL LOCKING
-        ===============================================================
+        Load signals from COMPLETE_SIGNALS.jsonl with FILE-LEVEL LOCKING
+        ================================================================
         Uses shared lock (LOCK_SH) to:
         - Allow multiple trackers to read simultaneously
         - Prevent reads during pec_executor_persistent writes
@@ -792,7 +792,7 @@ class PostDeploymentTracker:
         report.append("")
         report.append("🔍 DEBUG INFORMATION - DATA SOURCE & VALIDATION")
         report.append("─" * 200)
-        report.append(f"  Signal Source: SIGNALS_CANONICAL.jsonl (CANONICAL - merged all sources)")
+        report.append(f"  Signal Source: COMPLETE_SIGNALS.jsonl (SINGLE SOURCE OF TRUTH)")
         report.append(f"  Signals Loaded: {len(self.signals):,} total")
         report.append(f"  Deployment Window: {utc_to_gmt7(DEPLOYMENT_CUTOFF_UTC)} onwards (COUNT-BASED DIRECTION FIX)")
         report.append(f"  Observation Window: From deployment until now")
