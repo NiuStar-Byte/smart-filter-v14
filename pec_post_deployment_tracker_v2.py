@@ -1694,40 +1694,7 @@ class PostDeploymentTracker:
                 for combo in tier_combos[:5]:  # Show top 5 combos per tier
                     report.append(f"  {combo['dimension']}: ✓ {combo['name']:<90} | WR: {combo['wr']*100:5.1f}% | P&L: ${combo['pnl']:+8.2f} | Avg: ${combo['avg_pnl']:+.2f} | Closed: {combo['closed']}")
                 
-                # Append qualifying combos to SIGNAL_TIERS_APPEND.jsonl for daily tier refresh
-                # Add tier name to each combo
-                for combo in tier_combos:
-                    combo['tier'] = tier_name
-                    if 'id' not in combo:
-                        # Auto-generate id if missing
-                        combo['id'] = f"{combo['dimension']}_{combo['name'].replace(' ', '_')}"
-                
-                # Import config for date metadata
-                try:
-                    from tier_refresh_config import get_today_gmt7, get_valid_from_gmt7, get_data_cutoff_utc
-                    
-                    # Check for manual override environment variables
-                    combo_target_date_env = os.environ.get('COMBO_TARGET_DATE')
-                    if combo_target_date_env:
-                        # Manual override: parse target date
-                        try:
-                            today_gmt7 = datetime.strptime(combo_target_date_env, '%Y-%m-%d')
-                            print(f"[INFO] Using COMBO_TARGET_DATE override: {combo_target_date_env}", flush=True)
-                        except:
-                            today_gmt7 = get_today_gmt7()
-                            print(f"[WARN] Invalid COMBO_TARGET_DATE format, using current date", flush=True)
-                    else:
-                        today_gmt7 = get_today_gmt7()
-                    
-                    valid_from = get_valid_from_gmt7(today_gmt7)
-                    data_through = get_data_cutoff_utc(today_gmt7)
-                    
-                    print(f"[INFO] Combo metadata: valid_from={valid_from.isoformat()}Z, data_through={data_through.isoformat()}Z", flush=True)
-                    
-                    # Append combos with daily refresh metadata
-                    self.append_tier_combos_to_file(tier_combos, valid_from, data_through)
-                except Exception as e:
-                    print(f"[TIER-APPEND-ERROR] Failed to append combos: {str(e)}", flush=True)
+                # REMOVED: Tier combo appending handled separately via LOCKED_COMBOS_TODAY.py
             else:
                 report.append("  (No qualifying combos yet for this tier in post-deployment signals)")
             report.append("")
