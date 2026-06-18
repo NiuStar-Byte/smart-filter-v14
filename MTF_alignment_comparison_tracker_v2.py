@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """
-MTF Alignment Comparison Tracker v2
-Compares POST-MTF (original: with partial band) vs POST-MTF-ENHANCED (v2: 4h daily MTF, no partial)
-Same format & structure as MTF_alignment_comparison_tracker.py (v1)
-Windows: Extended observation period (35 days) from May 10 - June 14 2026 for better closure tracking
-Last updated: 2026-06-01
+MTF Alignment Comparison Tracker v2 - FRESH START (2026-06-18)
+Observation Window: June 18 2026 00:00 GMT+7 onwards (fresh baseline, no historical comparison)
+Last updated: 2026-06-18
 """
 
 import json
@@ -22,26 +20,12 @@ class MTFv2ComparisonTracker:
     """Compare POST-MTF original vs POST-MTF-ENHANCED alignment performance"""
     
     # ============================================================================
-    # OBSERVATION WINDOW DEFINITION (CRITICAL FOR BAND TRACKING ACCURACY)
+    # OBSERVATION WINDOW DEFINITION (FRESH START - 2026-06-18)
     # ============================================================================
-    # REQUIREMENT: All signals in v2 window MUST have mtf_alignment_band field
-    # 
-    # START: May 10 2026 14:15 GMT+7 = When mtf_alignment_band FIRST deployed
-    # - Before this time: Signals DON'T have mtf_alignment_band field (incomplete)
-    # - From this time: 100% of signals have mtf_alignment_band + mtf_alignment_score
-    #
-    # END:   June 14 2026 14:15 GMT+7 = 35 days after START (extended for more closures)
-    # - Allows maximum signal closure window and better MTF band performance statistics
-    #
-    # POST-MTF (v1):       Apr 8 07:57 - May 8 21:07 GMT+7 (30 days, baseline)
-    # POST-MTF-ENHANCED:   May 10 14:15 - June 14 14:15 GMT+7 (35 days, 100% instrumented, extended for closure rates)
+    # Observation Window: June 18 2026 00:00 GMT+7 onwards (FRESH START - NO HISTORICAL COMPARISON)
     
-    POST_START_1 = "2026-04-08T00:57:00"  # 2026-04-08 07:57 GMT+7 (UTC) - full deployment start
-    POST_END_1 = "2026-05-08T14:07:00"    # 2026-05-08 21:07 GMT+7 (UTC) - deployment complete (baseline reference)
-    
-    # REVISED: Start v2 window from when mtf_alignment_band field was deployed to signals
-    POST_START_2 = "2026-05-10T07:15:00"  # 2026-05-10 14:15 GMT+7 (UTC) - MTF band field deployed
-    POST_END_2 = "2026-06-14T07:15:00"    # 2026-06-14 14:15 GMT+7 (UTC) - 35 days observation (extended to June 14 for more closures & signal volume)
+    POST_START_2 = "2026-06-17T17:00:00"  # 2026-06-18 00:00 GMT+7 (UTC) - FRESH START WINDOW
+    POST_END_2 = None  # Ongoing (no end date - continuous observation)
     
     def __init__(self):
         self.results_file = '/Users/geniustarigan/.openclaw/workspace/smart-filter-v14-main/MTF_ALIGNMENT_RESULTS.jsonl'
@@ -217,17 +201,14 @@ class MTFv2ComparisonTracker:
         }
     
     def run_comparison(self):
-        """Run full v2 comparison"""
+        """Run fresh start observation (2026-06-18 onwards)"""
         
         print('\n' + '=' * 110)
-        print('MTF ALIGNMENT COMPARISON TRACKER v2 - POST-MTF vs POST-MTF-ENHANCED (REVISED WINDOW - 21 DAYS)')
+        print('MTF ALIGNMENT TRACKER v2 - FRESH START OBSERVATION (2026-06-18 00:00 GMT+7)')
         print('=' * 110)
-        print('\n📋 METHODOLOGY (v2 COMPARISON - WINDOW EXTENDED):')
-        print('  • POST-MTF (baseline): Apr 8 07:57 - May 8 21:07 GMT+7 (30 days, completed deployment)')
-        print('  • POST-MTF-ENHANCED (v2 EXTENDED): May 10 14:15 - June 14 14:15 GMT+7 (35 days, extended for better closure rates)')
-        print('  • MTF band field deployed: May 10 2026 14:15 GMT+7')
-        print('  • Window extended: June 14 to allow more signals to close and validate v2 performance vs v1')
-        print('  • Measures: Real-time impact of MTF band assignment on signal quality (strong/weak/conflict/neutral)\n')
+        print('\n📋 OBSERVATION WINDOW:')
+        print('  • Fresh Start: June 18 2026 00:00 GMT+7 onwards')
+        print('  • No historical comparison\n')
         
         signals = self.load_signals()
         mtf_data = self.load_mtf_results()
@@ -236,27 +217,13 @@ class MTFv2ComparisonTracker:
             print("❌ No signals loaded")
             return False
         
-        # POST-MTF (original, full deployment baseline - COMPLETED)
-        print('\n🔍 Analyzing POST-MTF Window (Baseline - 30 Days Complete)')
+        # FRESH START WINDOW (v2, 2026-06-18 onwards with mtf_alignment_band instrumentation)
+        print('\n🔍 Analyzing Fresh Start Window (2026-06-18 00:00 GMT+7 onwards)')
         print('-' * 110)
-        print(f'Period: 2026-04-08 07:57 → 2026-05-08 21:07 GMT+7 (full deployment, original config) ✅ COMPLETE')
-        
-        post1_signals = self.filter_window(signals, self.POST_START_1, self.POST_END_1)
-        post1_metrics = self.calculate_metrics(post1_signals, mtf_data, 'POST-MTF')
-        
-        print(f"✅ Metrics calculated")
-        print(f"   Signals fired: {post1_metrics['signals_fired']}")
-        print(f"   Signals closed: {post1_metrics['signals_closed']}")
-        print(f"   WR: {post1_metrics['wr']:.2f}%")
-        print(f"   P&L: ${post1_metrics['p_l']:,.2f}")
-        
-        # POST-MTF-ENHANCED (v2, revised window with mtf_alignment_band instrumentation)
-        print('\n🔍 Analyzing POST-MTF-ENHANCED Window (REVISED - All Signals Instrumented with MTF Band)')
-        print('-' * 110)
-        print(f'Period: 2026-05-10 14:15 → 2026-06-14 14:15 GMT+7 (v2 live, extended observation for better closure rates) 🔄 IN PROGRESS')
+        print(f'Period: 2026-06-18 00:00 onwards (fresh start, all signals instrumented with MTF band) 🔄 IN PROGRESS')
         
         post2_signals = self.filter_window(signals, self.POST_START_2, self.POST_END_2)
-        post2_metrics = self.calculate_metrics(post2_signals, mtf_data, 'POST-MTF-ENHANCED')
+        post2_metrics = self.calculate_metrics(post2_signals, mtf_data, 'FRESH_START')
         
         # Calculate real metrics from v2 signals
         v2_open = len([s for s in post2_signals if s.get('status') == 'OPEN'])

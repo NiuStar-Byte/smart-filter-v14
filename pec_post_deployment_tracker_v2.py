@@ -1,21 +1,12 @@
 #!/usr/bin/env python3
 """
-POST-DEPLOYMENT TRACKER V2 - Direction Determination by COUNT instead of WEIGHTS (2026-04-12 01:15 GMT+7)
+POST-DEPLOYMENT TRACKER V2 - FRESH START OBSERVATION (2026-06-18 00:00 GMT+7)
 
-Purpose: Track signal performance AFTER direction-by-count deployment
+Purpose: Track signal performance from fresh start baseline
 Source: COMPLETE_SIGNALS.jsonl (SINGLE SOURCE OF TRUTH - main.py writes, pec_executor_persistent updates)
-Cut-off: 2026-04-12T08:15:00Z (01:15 GMT+7 2026-04-12 deployment timestamp - onwards only)
+Cut-off: 2026-06-18T00:00:00Z (2026-06-18 00:00 GMT+7 - FRESH START ONWARDS ONLY)
 
-Code Changes Applied:
-- PRIMARY: smart_filter.py get_signal_direction() - changed from WEIGHTED SCORES to FILTER COUNT
-- RATIONALE: Direction should be based on HOW MANY filters pass, not their weights
-- WEIGHTS NOW AFFECT ONLY: Confidence calculation (not direction selection)
-
-Protocol: Each code deployment creates NEW tracker with same source, different cut-off.
-This prevents silent drift by isolating code changes from market conditions.
-
-Pre-Deployment Baseline: pec_post_deployment_tracker.py (locked, <= 2026-04-12T08:15:00Z)
-Post-Deployment Baseline: this tracker (new, >= 2026-04-12T08:15:00Z - COUNT-BASED DIRECTION)
+Observation Window: 2026-06-18 00:00 GMT+7 onwards (fresh baseline, no historical comparison)
 """
 
 import json
@@ -39,8 +30,8 @@ except ImportError:
     }
 
 # DEPLOYMENT CUT-OFF TIMESTAMP (START - Fresh Start baseline)
-# 2026-06-14 00:00 GMT+7 (FRESH START OBSERVATION WINDOW)
-_default_cutoff = '2026-06-13T17:00:00'
+# 2026-06-18 00:00 GMT+7 (FRESH START OBSERVATION WINDOW - RESET)
+_default_cutoff = '2026-06-17T17:00:00'  # 2026-06-18 00:00 GMT+7
 DEPLOYMENT_CUTOFF_UTC = datetime.fromisoformat(_default_cutoff)
 TZ_OFFSET = timedelta(hours=7)  # GMT+7
 
@@ -817,32 +808,7 @@ class PostDeploymentTracker:
         report.append("=" * 200)
         report.append("")
         
-        # ===== LAYER 1: BASELINE COMPARISON (3 FIXES) =====
-        report.append("")
-        report.append("📊 LAYER 1: BASELINE COMPARISON - 3 FIXES DEPLOYED (Apr 13 2026)")
-        report.append("=" * 200)
-        report.append("")
-        report.append("FIXES DEPLOYED (Apr 13 21:19 GMT+7):")
-        report.append("  1. Momentum Filter (ENHANCED - CROSSOVER)           - Deployed 13:58 GMT+7 | Expected: +1.6pp")
-        report.append("  2. Candle Confirmation (TRIPLE-CORRECTED)          - Deployed 20:57 GMT+7 | Expected: +1.3pp")
-        report.append("  3. Support/Resistance v3-PRO (INSTITUTIONAL)       - Deployed 21:19 GMT+7 | Expected: +4.5pp")
-        report.append("")
-        report.append("  CUMULATIVE EXPECTED IMPACT: +7.4pp WR (from 29.81% baseline → ~37%+)")
-        report.append("")
-        report.append("BASELINE (Apr 12 2026 - Pre-Fix):")
-        report.append("  • WR: 29.81%")
-        report.append("  • TP_HIT: 4,409 (9.6%)")
-        report.append("  • SL_HIT: 12,919 (23.4%)")
-        report.append("  • TIMEOUT: 18,221 (33.0%)")
-        report.append("  • STALE_TIMEOUT: 17,488 (31.7%)")
-        report.append("  • OPEN: 706 (1.3%)")
-        report.append("  • Total: 54,743 signals")
-        report.append("")
-        report.append("MEASUREMENT WINDOW: Apr 13 21:19 → Apr 19 21:19 (6 days)")
-        report.append("VERDICT DATE: Apr 19 2026 21:19 GMT+7")
-        report.append("")
-        report.append("=" * 200)
-        report.append("")
+        # REMOVED: OLD HISTORICAL COMPARISON SECTION (Apr 2026) - NOW USING FRESH START FROM 2026-06-18
         
         if not self.signals:
             report.append("⏳ No post-deployment signals yet (still accumulating)")
