@@ -88,6 +88,32 @@ watch -n 5 /Users/geniustarigan/.openclaw/workspace/monitor_pec.sh
 
 ---
 
+## ✅ **ASTERDEX ENTRY POSTER FIXED - SINGLE SOURCE ENFORCEMENT (2026-06-18 14:37 GMT+7)**
+
+### **Issue Found & Fixed**
+**Problem:** asterdex_entry_poster.py was looking for SIGNALS_MASTER.jsonl but signals now only written to COMPLETE_SIGNALS.jsonl
+
+**Errors seen:**
+```
+[2026-06-18 07:55:03] [ENTRY_POSTER] SIGNALS_MASTER not found: /Users/geniustarigan/.openclaw/workspace/COMPLETE_SIGNALS.jsonl
+```
+
+**Root Cause:** asterdex_config.py hardcoded to read from SIGNALS_MASTER.jsonl (old file, no longer used)
+
+**Fixes Applied:**
+1. ✅ Updated `SIGNALS_MASTER_PATH = "/Users/geniustarigan/.openclaw/workspace/COMPLETE_SIGNALS.jsonl"` (single source of truth)
+2. ✅ Updated `TIER_FILTER = [1]` (only Tier-1 signals today per locked combos)
+3. ✅ Restarted asterdex_entry_poster with .env credentials sourced
+4. ✅ Confirmed: No more "SIGNALS_MASTER not found" errors
+5. ✅ Confirmed: Reading from COMPLETE_SIGNALS.jsonl successfully
+
+**File Modified:**
+- `/Users/geniustarigan/.openclaw/workspace/smart-filter-v14-main/smart-filter-v14-asterdex-integration/asterdex_config.py`
+
+**Status:** ✅ OPERATIONAL - asterdex_entry_poster now posts Tier-1 signals only
+
+---
+
 ## 🔒 **LOCKED COMBOS ENFORCEMENT - STRICT DAILY PROTOCOL (2026-06-18 14:24 GMT+7)**
 
 ### **CRITICAL GUARANTEES (LOCKED - NO EXCEPTIONS)**

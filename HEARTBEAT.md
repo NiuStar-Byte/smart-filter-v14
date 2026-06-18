@@ -21,6 +21,20 @@
 
 ---
 
+## ✅ **ASTERDEX ENTRY POSTING (2026-06-18 14:37 GMT+7) - TIER-1 ONLY**
+
+**Status:** ✅ Running with fixes applied
+- Reads from: COMPLETE_SIGNALS.jsonl (single source of truth)
+- Filter: TIER_FILTER=[1] (only Tier-1 signals, locked combos enforcement)
+- Running instances: 2+ processes
+
+**Daily Checklist:**
+- [ ] Verify TIER_FILTER matches LOCKED_COMBOS_TODAY.py
+- [ ] No "SIGNALS_MASTER not found" errors in logs
+- [ ] Entry posts only for Tier-1 signals
+
+---
+
 ## 🔒 **LOCKED COMBOS DAILY ENFORCEMENT (2026-06-18 14:24 GMT+7) - STRICT MODE**
 
 **GUARANTEE #1: main.py STRICTLY FOLLOWS locked_today_combos (NO CACHING)**
