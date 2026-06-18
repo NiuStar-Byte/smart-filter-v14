@@ -1,0 +1,58 @@
+
+========================================================================================================================================================================================================
+📊 POST-DEPLOYMENT TRACKER (DIRECTION based on PASSED Counts instead of PASSED Weights)
+========================================================================================================================================================================================================
+
+Deployment Cut-off: 2026-06-14 00:00:00 GMT+7 onwards [COUNT-BASED DIRECTION]
+Report Generated: 2026-06-18 11:18:33 GMT+7
+
+🔍 DEBUG INFORMATION - DATA SOURCE & VALIDATION
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Signal Source: SIGNALS_CANONICAL.jsonl (CANONICAL - merged all sources)
+  Signals Loaded: 0 total
+  Deployment Window: 2026-06-14 00:00:00 GMT+7 onwards (COUNT-BASED DIRECTION FIX)
+  Observation Window: From deployment until now
+  Signal Status Tracked: TP_HIT, SL_HIT, TIMEOUT, OPEN, REJECTED_NOT_SENT_TELEGRAM, STALE_TIMEOUT
+  Measurement Focus: Direction Determination (PASSED Filter Counts vs PASSED Filter Weights)
+  Environment Variables: COMBO_TARGET_DATE, COMBO_END_CUTOFF_UTC (if set)
+  Fallback: Uses tier_config.py if environment variables not set
+
+⚠️  DATA QUALITY NOTE - Signal Exclusions
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+The following signals are COMPLETELY EXCLUDED from all metrics:
+
+  1. STALE_TIMEOUT: Signals timed out >5 hours after firing
+     → Exceeds design window → Excluded from all aggregates
+
+  2. REJECTED_NOT_SENT_TELEGRAM: Never sent to traders
+     → Failed validation → Excluded from all aggregates
+
+METRICS include: TP_HIT, SL_HIT, TIMEOUT (within window), OPEN
+========================================================================================================================================================================================================
+
+
+📊 LAYER 1: BASELINE COMPARISON - 3 FIXES DEPLOYED (Apr 13 2026)
+========================================================================================================================================================================================================
+
+FIXES DEPLOYED (Apr 13 21:19 GMT+7):
+  1. Momentum Filter (ENHANCED - CROSSOVER)           - Deployed 13:58 GMT+7 | Expected: +1.6pp
+  2. Candle Confirmation (TRIPLE-CORRECTED)          - Deployed 20:57 GMT+7 | Expected: +1.3pp
+  3. Support/Resistance v3-PRO (INSTITUTIONAL)       - Deployed 21:19 GMT+7 | Expected: +4.5pp
+
+  CUMULATIVE EXPECTED IMPACT: +7.4pp WR (from 29.81% baseline → ~37%+)
+
+BASELINE (Apr 12 2026 - Pre-Fix):
+  • WR: 29.81%
+  • TP_HIT: 4,409 (9.6%)
+  • SL_HIT: 12,919 (23.4%)
+  • TIMEOUT: 18,221 (33.0%)
+  • STALE_TIMEOUT: 17,488 (31.7%)
+  • OPEN: 706 (1.3%)
+  • Total: 54,743 signals
+
+MEASUREMENT WINDOW: Apr 13 21:19 → Apr 19 21:19 (6 days)
+VERDICT DATE: Apr 19 2026 21:19 GMT+7
+
+========================================================================================================================================================================================================
+
+⏳ No post-deployment signals yet (still accumulating)

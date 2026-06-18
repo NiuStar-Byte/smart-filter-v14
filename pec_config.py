@@ -214,8 +214,9 @@ BATCH_SIZES = {
 # ============================================================================
 
 # Path to signals JSONL file
-# FIX 2026-03-06 00:14 GMT+7: Use workspace root, not relative path in submodule
-SIGNALS_JSONL_PATH = os.getenv("SIGNALS_JSONL_PATH", "/Users/geniustarigan/.openclaw/workspace/SENT_SIGNALS.jsonl")
+# CRITICAL: SINGLE SOURCE OF TRUTH - COMPLETE_SIGNALS.jsonl ONLY
+# main.py writes here, pec_executor_persistent reads+writes closures here
+SIGNALS_JSONL_PATH = os.getenv("SIGNALS_JSONL_PATH", "/Users/geniustarigan/.openclaw/workspace/COMPLETE_SIGNALS.jsonl")
 
 # ============================================================================
 # LOGGING & TRACKING

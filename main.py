@@ -46,7 +46,7 @@ from signal_tracking_enhanced import get_signal_tracker
 from ohlcv_fetch_safe import safe_fetch_ohlcv_by_tf, check_tf_data_available, should_skip_symbol
 from signal_logger import SignalLogger
 from signal_sent_tracker import get_signal_sent_tracker  # PEC: Track SENT signals only
-from signals_master_writer import get_signals_master_writer  # Write to SIGNALS_MASTER.jsonl (single source of truth)
+# REMOVED: signals_master_writer - use ONLY _signal_store which writes to COMPLETE_SIGNALS.jsonl
 from mtf_alignment_analyzer import MTFAlignmentAnalyzer  # MTF analysis for ALL timeframes
 from mtf_alignment_config import ALIGNMENT_LABELS  # MTF band labels for Telegram display
 from pathlib import Path
@@ -160,28 +160,9 @@ except Exception as e:
     _signal_store_ready = False
     print(f"[ERROR] Signal store init failed: {e}. Signals will fire to Telegram only.", flush=True)
 
-# === INITIALIZE SENT SIGNAL TRACKER (PEC) ===
-try:
-    # Use workspace root, not submodule directory
-    sent_signals_path = "/Users/geniustarigan/.openclaw/workspace/SENT_SIGNALS.jsonl"
-    _sent_signal_tracker = get_signal_sent_tracker(sent_signals_path)
-    _sent_tracker_ready = True
-    print(f"[INIT] Sent signal tracker ready: {os.path.abspath(sent_signals_path)}", flush=True)
-except Exception as e:
-    _sent_tracker_ready = False
-    print(f"[ERROR] Sent signal tracker init failed: {e}. PEC will not have execution data.", flush=True)
+                                        # REMOVED: # REMOVED: _sent_signal_tracker - use COMPLETE_SIGNALS.jsonl as single source of truth instead
 
-# === INITIALIZE SIGNALS_MASTER WRITER (Single Source of Truth) ===
-try:
-    # Write to WORKSPACE ROOT (shared with all instances)
-    # CRITICAL FIX (2026-06-14 17:15): Write to COMPLETE_SIGNALS.jsonl (unified source - same as pec_executor & trackers)
-    signals_master_path = "/Users/geniustarigan/.openclaw/workspace/COMPLETE_SIGNALS.jsonl"
-    _signals_master_writer = get_signals_master_writer(signals_master_path)
-    _master_writer_ready = True
-    print(f"[INIT] Signals Master writer ready: {os.path.abspath(signals_master_path)}", flush=True)
-except Exception as e:
-    _master_writer_ready = False
-    print(f"[ERROR] Signals Master writer init failed: {e}. SIGNALS_MASTER.jsonl will not be updated.", flush=True)
+# REMOVED: _signals_master_writer - signals written via _signal_store to COMPLETE_SIGNALS.jsonl (single source of truth)
 
 # === INITIALIZE MTF ALIGNMENT ANALYZER (For all timeframes) ===
 try:
@@ -705,18 +686,18 @@ _dedup_cache = None
 _dedup_cache_time = None
 
 def load_dedup_cache():
-    """Load SENT_SIGNALS.jsonl ONCE per cycle into memory"""
+    """Load COMPLETE_SIGNALS.jsonl ONCE per cycle into memory (SINGLE SOURCE OF TRUTH)"""
     global _dedup_cache, _dedup_cache_time
 
-    sent_signals_path = "/Users/geniustarigan/.openclaw/workspace/SENT_SIGNALS.jsonl"
+    complete_signals_path = "/Users/geniustarigan/.openclaw/workspace/COMPLETE_SIGNALS.jsonl"
     _dedup_cache = []
     _dedup_cache_time = datetime.now(pytz.UTC)
 
-    if not os.path.exists(sent_signals_path):
+    if not os.path.exists(complete_signals_path):
         return  # File doesn't exist yet
 
     try:
-        with open(sent_signals_path, 'r') as f:
+        with open(complete_signals_path, 'r') as f:
             for line in f:
                 if not line.strip():
                     continue
@@ -724,7 +705,7 @@ def load_dedup_cache():
                     _dedup_cache.append(json.loads(line))
                 except json.JSONDecodeError:
                     continue
-        print(f"[DEDUP] Loaded {len(_dedup_cache)} signals into cache (instead of reading file 603 times!)", flush=True)
+        print(f"[DEDUP] Loaded {len(_dedup_cache)} signals from COMPLETE_SIGNALS.jsonl into cache", flush=True)
     except Exception as e:
         print(f"[DEDUP-LOAD-ERROR] {e}", flush=True)
         _dedup_cache = []
@@ -788,7 +769,7 @@ def run_cycle():
     # IN-MEMORY DEDUP: Track signals sent in THIS CYCLE (prevents intra-cycle duplicates)
     signals_sent_this_cycle = set()
 
-    # NOTE: Deduplication now uses SENT_SIGNALS.jsonl with per-timeframe windows
+    # NOTE: Deduplication uses COMPLETE_SIGNALS.jsonl (SINGLE SOURCE OF TRUTH) with per-timeframe windows
     # PLUS in-memory set for same-cycle duplicates (see is_duplicate_signal function above)
 
     for idx, symbol in enumerate(TOKENS, start=1):
@@ -1256,7 +1237,7 @@ def run_cycle():
 
                                         # Log to SENT_SIGNALS for PEC tracking
                                         try:
-                                            _sent_signal_tracker.log_sent_signal(
+                                        # REMOVED: _sent_signal_tracker.log_sent_signal(
                                                 signal_uuid=signal_uuid,
                                                 symbol=symbol_val,
                                                 timeframe="15min",
@@ -1284,7 +1265,7 @@ def run_cycle():
                                                 # Convert MTF score to band for storage
                                                 mtf_band = convert_mtf_score_to_band(mtf_score)
                                                 try:
-                                                    _signals_master_writer.write_signal({
+                                                # REMOVED: _signals_master_writer.write_signal({
                                                         'signal_uuid': signal_uuid,
                                                         'symbol': symbol_val,
                                                         'timeframe': '15min',
@@ -1770,7 +1751,7 @@ def run_cycle():
                         # Signal must persist with complete metadata regardless of Telegram delivery
                         if _master_writer_ready:
                             try:
-                                _signals_master_writer.write_signal({
+                                                # REMOVED: _signals_master_writer.write_signal({
                                     'signal_uuid': signal_uuid,
                                     'symbol': symbol_val,
                                     'timeframe': '30min',
@@ -1847,7 +1828,7 @@ def run_cycle():
 
                                     # Log to SENT_SIGNALS for PEC tracking
                                     try:
-                                        _sent_signal_tracker.log_sent_signal(
+                                        # REMOVED: _sent_signal_tracker.log_sent_signal(
                                             signal_uuid=signal_uuid,
                                             symbol=symbol_val,
                                             timeframe="30min",
@@ -2321,7 +2302,7 @@ def run_cycle():
 
                                     # Log to SENT_SIGNALS for PEC tracking
                                     try:
-                                        _sent_signal_tracker.log_sent_signal(
+                                        # REMOVED: _sent_signal_tracker.log_sent_signal(
                                             signal_uuid=signal_uuid,
                                             symbol=symbol_val,
                                             timeframe="1h",
@@ -2347,7 +2328,7 @@ def run_cycle():
                                         # Also write to SIGNALS_MASTER.jsonl (single source of truth)
                                         if _master_writer_ready:
                                             try:
-                                                _signals_master_writer.write_signal({
+                                                # REMOVED: _signals_master_writer.write_signal({
                                                     'signal_uuid': signal_uuid,
                                                     'symbol': symbol_val,
                                                     'timeframe': '1h',
@@ -2773,7 +2754,7 @@ def run_cycle():
                                     logger.signal_sent(symbol_val, "2h", signal_uuid[:12])
 
                                     try:
-                                        _sent_signal_tracker.log_sent_signal(
+                                        # REMOVED: _sent_signal_tracker.log_sent_signal(
                                             signal_uuid=signal_uuid,
                                             symbol=symbol_val,
                                             timeframe="2h",
@@ -2798,7 +2779,7 @@ def run_cycle():
                                         )
                                         if _master_writer_ready:
                                             try:
-                                                _signals_master_writer.write_signal({
+                                                # REMOVED: _signals_master_writer.write_signal({
                                                     'signal_uuid': signal_uuid,
                                                     'symbol': symbol_val,
                                                     'timeframe': '2h',
@@ -3066,7 +3047,7 @@ def run_cycle():
                                         logger.signal_sent(symbol_val, "4h", signal_uuid[:12])
 
                                         try:
-                                            _sent_signal_tracker.log_sent_signal(
+                                        # REMOVED: _sent_signal_tracker.log_sent_signal(
                                                 signal_uuid=signal_uuid,
                                                 symbol=symbol_val,
                                                 timeframe="4h",
@@ -3095,7 +3076,7 @@ def run_cycle():
                                                     # CRITICAL FIX: Ensure symbol_val is defined before write attempt
                                                     if 'symbol_val' not in locals():
                                                         symbol_val = symbol
-                                                    _signals_master_writer.write_signal({
+                                                # REMOVED: _signals_master_writer.write_signal({
                                                         'signal_uuid': signal_uuid,
                                                         'symbol': symbol_val or symbol,
                                                         'timeframe': '4h',
@@ -3176,8 +3157,8 @@ def run_cycle():
     logger.cycle_summary()
 
     # Print SENT_SIGNALS summary for PEC tracking
-    if _sent_tracker_ready:
-        stats = _sent_signal_tracker.get_summary_stats()
+        # REMOVED: if _sent_tracker_ready:
+                                        # REMOVED: stats = _sent_signal_tracker.get_summary_stats()
         if stats:
             print("\n" + "="*70, flush=True)
             print("PEC SIGNAL TRACKING SUMMARY (for Position Entry Confidence):", flush=True)

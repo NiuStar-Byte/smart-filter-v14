@@ -1,0 +1,168 @@
+[2026-06-18 08:12:48 GMT+7] [INFO] 
+================================================================================
+[2026-06-18 08:12:48 GMT+7] [INFO] 🚀 SYSTEM STARTUP VERIFICATION
+[2026-06-18 08:12:48 GMT+7] [INFO]    Time: 2026-06-18 08:12:48 GMT+7
+[2026-06-18 08:12:48 GMT+7] [INFO]    Workspace: /Users/geniustarigan/.openclaw/workspace
+[2026-06-18 08:12:48 GMT+7] [INFO] ================================================================================
+
+[2026-06-18 08:12:48 GMT+7] [INFO] ================================================================================
+[2026-06-18 08:12:48 GMT+7] [INFO] CHECKING CRITICAL TRACKER FILES
+[2026-06-18 08:12:48 GMT+7] [INFO] ================================================================================
+[2026-06-18 08:12:48 GMT+7] [INFO] ✅ pec_post_deployment_tracker.py
+[2026-06-18 08:12:48 GMT+7] [INFO] ✅ pec_post_deployment_tracker_v2.py
+[2026-06-18 08:12:48 GMT+7] [INFO] ✅ pec_enhanced_reporter.py
+[2026-06-18 08:12:48 GMT+7] [INFO] ✅ MTF_alignment_comparison_tracker_v2.py
+[2026-06-18 08:12:48 GMT+7] [INFO] ✅ validate_tiers_all.py
+[2026-06-18 08:12:48 GMT+7] [INFO] ✅ manual_daily_combo_refresh.py
+[2026-06-18 08:12:48 GMT+7] [INFO] ✅ filter_effectiveness_analyzer_detailed.py
+[2026-06-18 08:12:48 GMT+7] [INFO] ✅ asterdex_live_tracker_baseline_v2.py
+[2026-06-18 08:12:48 GMT+7] [INFO] ✅ asterdex_snapshot_detailed.py
+[2026-06-18 08:12:48 GMT+7] [INFO] ✅ pec_executor_persistent.py
+[2026-06-18 08:12:48 GMT+7] [INFO] 
+✅ All 10 critical files present
+
+[2026-06-18 08:12:48 GMT+7] [INFO] ================================================================================
+[2026-06-18 08:12:48 GMT+7] [INFO] CHECKING CRITICAL SERVICES
+[2026-06-18 08:12:48 GMT+7] [INFO] ================================================================================
+[2026-06-18 08:12:48 GMT+7] [INFO] ✅ Signal Generation (smart-filter) (main.py) - RUNNING
+[2026-06-18 08:12:48 GMT+7] [INFO] ✅ Position Closure (PEC) (pec_executor_persistent.py) - RUNNING
+[2026-06-18 08:12:48 GMT+7] [INFO] ✅ Asterdex Data Fetcher (asterdex_realtime_fetcher.py) - RUNNING
+[2026-06-18 08:12:48 GMT+7] [INFO] ✅ Entry Posting (Asterdex) (asterdex_entry_poster.py) - RUNNING
+[2026-06-18 08:12:48 GMT+7] [ERROR] ❌ XAUT Tributary (xaut_daemon.py) - NOT RUNNING
+[2026-06-18 08:12:48 GMT+7] [INFO] ✅ Mac Keep-Awake Service (caffeinate) - RUNNING
+[2026-06-18 08:12:48 GMT+7] [ERROR] 
+⚠️ CRITICAL: 1 services not running!
+[2026-06-18 08:12:48 GMT+7] [WARN] Attempting to start missing services...
+[2026-06-18 08:12:48 GMT+7] [INFO] 🚀 Starting XAUT Tributary...
+[2026-06-18 08:12:48 GMT+7] [ERROR] ❌ Cannot start xaut_daemon.py - file not found
+[2026-06-18 08:12:48 GMT+7] [INFO] 
+================================================================================
+[2026-06-18 08:12:48 GMT+7] [WARN] ⚠️ STARTUP VERIFICATION COMPLETED WITH WARNINGS
+[2026-06-18 08:12:48 GMT+7] [INFO] ================================================================================
+
+[2026-06-18 09:12:48 GMT+7] [INFO] 
+================================================================================
+[2026-06-18 09:12:48 GMT+7] [INFO] 🚀 SYSTEM STARTUP VERIFICATION
+[2026-06-18 09:12:48 GMT+7] [INFO]    Time: 2026-06-18 09:12:48 GMT+7
+[2026-06-18 09:12:48 GMT+7] [INFO]    Workspace: /Users/geniustarigan/.openclaw/workspace
+[2026-06-18 09:12:48 GMT+7] [INFO] ================================================================================
+
+[2026-06-18 09:12:48 GMT+7] [INFO] ================================================================================
+[2026-06-18 09:12:48 GMT+7] [INFO] CHECKING CRITICAL TRACKER FILES
+[2026-06-18 09:12:48 GMT+7] [INFO] ================================================================================
+[2026-06-18 09:12:48 GMT+7] [INFO] ✅ pec_post_deployment_tracker.py
+[2026-06-18 09:12:48 GMT+7] [INFO] ✅ pec_post_deployment_tracker_v2.py
+[2026-06-18 09:12:48 GMT+7] [INFO] ✅ pec_enhanced_reporter.py
+[2026-06-18 09:12:48 GMT+7] [INFO] ✅ MTF_alignment_comparison_tracker_v2.py
+[2026-06-18 09:12:48 GMT+7] [INFO] ✅ validate_tiers_all.py
+[2026-06-18 09:12:48 GMT+7] [INFO] ✅ manual_daily_combo_refresh.py
+[2026-06-18 09:12:48 GMT+7] [INFO] ✅ filter_effectiveness_analyzer_detailed.py
+[2026-06-18 09:12:48 GMT+7] [INFO] ✅ asterdex_live_tracker_baseline_v2.py
+[2026-06-18 09:12:48 GMT+7] [INFO] ✅ asterdex_snapshot_detailed.py
+[2026-06-18 09:12:48 GMT+7] [INFO] ✅ pec_executor_persistent.py
+[2026-06-18 09:12:48 GMT+7] [INFO] 
+✅ All 10 critical files present
+
+[2026-06-18 09:12:48 GMT+7] [INFO] ================================================================================
+[2026-06-18 09:12:48 GMT+7] [INFO] CHECKING CRITICAL SERVICES
+[2026-06-18 09:12:48 GMT+7] [INFO] ================================================================================
+[2026-06-18 09:12:48 GMT+7] [INFO] ✅ Signal Generation (smart-filter) (main.py) - RUNNING
+[2026-06-18 09:12:48 GMT+7] [INFO] ✅ Position Closure (PEC) (pec_executor_persistent.py) - RUNNING
+[2026-06-18 09:12:48 GMT+7] [INFO] ✅ Asterdex Data Fetcher (asterdex_realtime_fetcher.py) - RUNNING
+[2026-06-18 09:12:48 GMT+7] [INFO] ✅ Entry Posting (Asterdex) (asterdex_entry_poster.py) - RUNNING
+[2026-06-18 09:12:48 GMT+7] [ERROR] ❌ XAUT Tributary (xaut_daemon.py) - NOT RUNNING
+[2026-06-18 09:12:48 GMT+7] [INFO] ✅ Mac Keep-Awake Service (caffeinate) - RUNNING
+[2026-06-18 09:12:48 GMT+7] [ERROR] 
+⚠️ CRITICAL: 1 services not running!
+[2026-06-18 09:12:48 GMT+7] [WARN] Attempting to start missing services...
+[2026-06-18 09:12:48 GMT+7] [INFO] 🚀 Starting XAUT Tributary...
+[2026-06-18 09:12:48 GMT+7] [ERROR] ❌ Cannot start xaut_daemon.py - file not found
+[2026-06-18 09:12:48 GMT+7] [INFO] 
+================================================================================
+[2026-06-18 09:12:48 GMT+7] [WARN] ⚠️ STARTUP VERIFICATION COMPLETED WITH WARNINGS
+[2026-06-18 09:12:48 GMT+7] [INFO] ================================================================================
+
+[2026-06-18 10:12:48 GMT+7] [INFO] 
+================================================================================
+[2026-06-18 10:12:48 GMT+7] [INFO] 🚀 SYSTEM STARTUP VERIFICATION
+[2026-06-18 10:12:48 GMT+7] [INFO]    Time: 2026-06-18 10:12:48 GMT+7
+[2026-06-18 10:12:48 GMT+7] [INFO]    Workspace: /Users/geniustarigan/.openclaw/workspace
+[2026-06-18 10:12:48 GMT+7] [INFO] ================================================================================
+
+[2026-06-18 10:12:48 GMT+7] [INFO] ================================================================================
+[2026-06-18 10:12:48 GMT+7] [INFO] CHECKING CRITICAL TRACKER FILES
+[2026-06-18 10:12:48 GMT+7] [INFO] ================================================================================
+[2026-06-18 10:12:48 GMT+7] [INFO] ✅ pec_post_deployment_tracker.py
+[2026-06-18 10:12:48 GMT+7] [INFO] ✅ pec_post_deployment_tracker_v2.py
+[2026-06-18 10:12:48 GMT+7] [INFO] ✅ pec_enhanced_reporter.py
+[2026-06-18 10:12:48 GMT+7] [INFO] ✅ MTF_alignment_comparison_tracker_v2.py
+[2026-06-18 10:12:48 GMT+7] [INFO] ✅ validate_tiers_all.py
+[2026-06-18 10:12:48 GMT+7] [INFO] ✅ manual_daily_combo_refresh.py
+[2026-06-18 10:12:48 GMT+7] [INFO] ✅ filter_effectiveness_analyzer_detailed.py
+[2026-06-18 10:12:48 GMT+7] [INFO] ✅ asterdex_live_tracker_baseline_v2.py
+[2026-06-18 10:12:48 GMT+7] [INFO] ✅ asterdex_snapshot_detailed.py
+[2026-06-18 10:12:48 GMT+7] [INFO] ✅ pec_executor_persistent.py
+[2026-06-18 10:12:48 GMT+7] [INFO] 
+✅ All 10 critical files present
+
+[2026-06-18 10:12:48 GMT+7] [INFO] ================================================================================
+[2026-06-18 10:12:48 GMT+7] [INFO] CHECKING CRITICAL SERVICES
+[2026-06-18 10:12:48 GMT+7] [INFO] ================================================================================
+[2026-06-18 10:12:48 GMT+7] [INFO] ✅ Signal Generation (smart-filter) (main.py) - RUNNING
+[2026-06-18 10:12:48 GMT+7] [INFO] ✅ Position Closure (PEC) (pec_executor_persistent.py) - RUNNING
+[2026-06-18 10:12:48 GMT+7] [INFO] ✅ Asterdex Data Fetcher (asterdex_realtime_fetcher.py) - RUNNING
+[2026-06-18 10:12:48 GMT+7] [INFO] ✅ Entry Posting (Asterdex) (asterdex_entry_poster.py) - RUNNING
+[2026-06-18 10:12:48 GMT+7] [ERROR] ❌ XAUT Tributary (xaut_daemon.py) - NOT RUNNING
+[2026-06-18 10:12:48 GMT+7] [INFO] ✅ Mac Keep-Awake Service (caffeinate) - RUNNING
+[2026-06-18 10:12:48 GMT+7] [ERROR] 
+⚠️ CRITICAL: 1 services not running!
+[2026-06-18 10:12:48 GMT+7] [WARN] Attempting to start missing services...
+[2026-06-18 10:12:48 GMT+7] [INFO] 🚀 Starting XAUT Tributary...
+[2026-06-18 10:12:48 GMT+7] [ERROR] ❌ Cannot start xaut_daemon.py - file not found
+[2026-06-18 10:12:48 GMT+7] [INFO] 
+================================================================================
+[2026-06-18 10:12:48 GMT+7] [WARN] ⚠️ STARTUP VERIFICATION COMPLETED WITH WARNINGS
+[2026-06-18 10:12:48 GMT+7] [INFO] ================================================================================
+
+[2026-06-18 11:12:48 GMT+7] [INFO] 
+================================================================================
+[2026-06-18 11:12:48 GMT+7] [INFO] 🚀 SYSTEM STARTUP VERIFICATION
+[2026-06-18 11:12:48 GMT+7] [INFO]    Time: 2026-06-18 11:12:48 GMT+7
+[2026-06-18 11:12:48 GMT+7] [INFO]    Workspace: /Users/geniustarigan/.openclaw/workspace
+[2026-06-18 11:12:48 GMT+7] [INFO] ================================================================================
+
+[2026-06-18 11:12:48 GMT+7] [INFO] ================================================================================
+[2026-06-18 11:12:48 GMT+7] [INFO] CHECKING CRITICAL TRACKER FILES
+[2026-06-18 11:12:48 GMT+7] [INFO] ================================================================================
+[2026-06-18 11:12:48 GMT+7] [INFO] ✅ pec_post_deployment_tracker.py
+[2026-06-18 11:12:48 GMT+7] [INFO] ✅ pec_post_deployment_tracker_v2.py
+[2026-06-18 11:12:48 GMT+7] [INFO] ✅ pec_enhanced_reporter.py
+[2026-06-18 11:12:48 GMT+7] [INFO] ✅ MTF_alignment_comparison_tracker_v2.py
+[2026-06-18 11:12:48 GMT+7] [INFO] ✅ validate_tiers_all.py
+[2026-06-18 11:12:48 GMT+7] [INFO] ✅ manual_daily_combo_refresh.py
+[2026-06-18 11:12:48 GMT+7] [INFO] ✅ filter_effectiveness_analyzer_detailed.py
+[2026-06-18 11:12:48 GMT+7] [INFO] ✅ asterdex_live_tracker_baseline_v2.py
+[2026-06-18 11:12:48 GMT+7] [INFO] ✅ asterdex_snapshot_detailed.py
+[2026-06-18 11:12:48 GMT+7] [INFO] ✅ pec_executor_persistent.py
+[2026-06-18 11:12:48 GMT+7] [INFO] 
+✅ All 10 critical files present
+
+[2026-06-18 11:12:48 GMT+7] [INFO] ================================================================================
+[2026-06-18 11:12:48 GMT+7] [INFO] CHECKING CRITICAL SERVICES
+[2026-06-18 11:12:48 GMT+7] [INFO] ================================================================================
+[2026-06-18 11:12:48 GMT+7] [INFO] ✅ Signal Generation (smart-filter) (main.py) - RUNNING
+[2026-06-18 11:12:48 GMT+7] [INFO] ✅ Position Closure (PEC) (pec_executor_persistent.py) - RUNNING
+[2026-06-18 11:12:48 GMT+7] [INFO] ✅ Asterdex Data Fetcher (asterdex_realtime_fetcher.py) - RUNNING
+[2026-06-18 11:12:48 GMT+7] [INFO] ✅ Entry Posting (Asterdex) (asterdex_entry_poster.py) - RUNNING
+[2026-06-18 11:12:48 GMT+7] [ERROR] ❌ XAUT Tributary (xaut_daemon.py) - NOT RUNNING
+[2026-06-18 11:12:48 GMT+7] [INFO] ✅ Mac Keep-Awake Service (caffeinate) - RUNNING
+[2026-06-18 11:12:48 GMT+7] [ERROR] 
+⚠️ CRITICAL: 1 services not running!
+[2026-06-18 11:12:48 GMT+7] [WARN] Attempting to start missing services...
+[2026-06-18 11:12:48 GMT+7] [INFO] 🚀 Starting XAUT Tributary...
+[2026-06-18 11:12:48 GMT+7] [ERROR] ❌ Cannot start xaut_daemon.py - file not found
+[2026-06-18 11:12:48 GMT+7] [INFO] 
+================================================================================
+[2026-06-18 11:12:48 GMT+7] [WARN] ⚠️ STARTUP VERIFICATION COMPLETED WITH WARNINGS
+[2026-06-18 11:12:48 GMT+7] [INFO] ================================================================================
+
