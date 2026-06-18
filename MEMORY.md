@@ -4,16 +4,26 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
-## 🔴 **FRESH START OBSERVATION WINDOW RESET (2026-06-18 11:51 GMT+7)**
+## 🔴 **FRESH START BASELINE LOCKED (2026-06-18 12:16 GMT+7)**
 
 ### **OBSERVATION WINDOW LOCKED TO: 2026-06-18 00:00 GMT+7 ONWARDS**
 
-**ALL tracker cutoff dates updated:**
-- ✅ pec_post_deployment_tracker_v2.py: DEPLOYMENT_CUTOFF_UTC = 2026-06-17T17:00:00 (2026-06-18 00:00 GMT+7)
-- ✅ MTF_alignment_comparison_tracker_v2.py: POST_START_2 = 2026-06-17T17:00:00 (2026-06-18 00:00 GMT+7)
-- ✅ Removed all old historical sections (Apr 2026 baselines, June 14 comparisons)
+**Baseline Metrics (as of 2026-06-18 12:16 GMT+7):**
+- ✅ Total Signals Fired: 544 unique signals
+- ✅ Time Window: 2026-06-18 07:55:13 - 12:12:38 GMT+7
+- ✅ Hourly breakdown:
+  - 07:00-08:00: 30 signals (IMMUTABLE)
+  - 08:00-09:00: 122 signals (IMMUTABLE)
+  - 09:00-10:00: 82 signals (IMMUTABLE)
+  - 10:00-11:00: 139 signals (IMMUTABLE)
+  - 11:00-12:00: 120 signals (IMMUTABLE)
+  - 12:00-13:00: 51 signals (accumulating)
 
-**NO MORE HISTORICAL COMPARISONS - FRESH BASELINE ONLY**
+**Signal Growth Target:** Continue growing - NO MORE DECREASES
+
+**Source:** COMPLETE_SIGNALS.jsonl (SINGLE SOURCE OF TRUTH) - NO OTHER FILES USED
+
+**Code Lock:** pec_post_deployment_tracker_v2.py UNCHANGED. NO CODE MODIFICATIONS WITHOUT EXPLICIT APPROVAL.
 
 ---
 

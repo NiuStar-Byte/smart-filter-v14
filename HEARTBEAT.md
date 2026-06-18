@@ -21,6 +21,24 @@
 
 ---
 
+## 📊 SIGNAL GROWTH MONITORING (2026-06-18 BASELINE)
+
+**Baseline Locked: 544 unique signals as of 2026-06-18 12:16 GMT+7**
+
+**Target:** Signal count must NEVER DECREASE. Only grow.
+
+**Monitor:**
+- Daily total signal count (must be >= 544 by end of 2026-06-18)
+- No data loss or signal drops
+- COMPLETE_SIGNALS.jsonl is the ONLY source of truth
+
+**Alert Triggers:**
+- Signal count drops below 544
+- Any attempt to use other signal files (SIGNALS_MASTER, SENT_SIGNALS, etc.)
+- Code changes without explicit approval
+
+---
+
 # Keep this file empty (or with only comments) to skip heartbeat API calls.
 
 # Add tasks below when you want the agent to check something periodically.
