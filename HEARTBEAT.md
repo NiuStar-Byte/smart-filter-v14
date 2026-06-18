@@ -57,6 +57,34 @@
 
 ---
 
-# Keep this file empty (or with only comments) to skip heartbeat API calls.
+# HEARTBEAT CHECKLIST - 2026-06-18 ONWARDS
 
-# Add tasks below when you want the agent to check something periodically.
+## 📌 CRITICAL - Check on every heartbeat
+- [ ] **Signal growth:** `grep -c '"status": "OPEN"' COMPLETE_SIGNALS.jsonl` should ALWAYS be >= last check
+  - **Rule:** OPEN count can only STAY SAME or GROW, NEVER DECREASE
+  - If it decreases: STOP main.py immediately, investigate data corruption
+  
+- [ ] **Executor status:** `pgrep -c pec_executor_persistent` should be running (3+ processes normal)
+  - If 0: Restart with: `python3 pec_executor_persistent.py &`
+
+- [ ] **Single source of truth:** COMPLETE_SIGNALS.jsonl is the ONLY file being read/written
+  - Never touch: SIGNALS_MASTER.jsonl, SENT_SIGNALS.jsonl, SIGNALS_CANONICAL.jsonl, ALL_SIGNALS.jsonl (banned forever)
+
+## 🔍 Quick Status Command
+```bash
+# Copy-paste this for live monitoring (every 5 seconds):
+watch -n 5 /Users/geniustarigan/.openclaw/workspace/monitor_pec.sh
+```
+
+## 📊 What to Look For in Monitor Output
+- 🔵 **OPEN signals:** Must be stable or growing (never decrease)
+- ✅ **TP_HIT:** Profitable closures - target is 50%+ of closed trades
+- ❌ **SL_HIT:** Stop loss closures - monitor ratio (TP:SL ideally > 1:1)
+- ⏱️  **PEC-TIMEOUT:** Should stay low (closed signals expired naturally, not executed)
+- ✅ **Processes:** Should show "3 process(es)" running normally
+
+## 🚨 Alert Conditions
+1. **OPEN count decreased:** Data corruption, STOP main.py, investigate
+2. **No running processes:** Executor crashed, check logs, restart
+3. **Reading from banned files:** Code violation, revert changes
+4. **Tier assignment not matching LOCKED_COMBOS_TODAY:** Tier assignment broken

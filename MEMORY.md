@@ -4,6 +4,41 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
+## 🎯 **MONITORING & VERIFICATION - 2026-06-18 13:02 GMT+7**
+
+### **Live Progress Monitor Command**
+```bash
+# Run continuously every 5 seconds:
+watch -n 5 /Users/geniustarigan/.openclaw/workspace/monitor_pec.sh
+
+# Or run once:
+./monitor_pec.sh
+```
+
+**What It Shows:**
+- 🔵 OPEN signals count (must only grow or stay same, NEVER decrease)
+- ✅ TP_HIT closures (profitable)
+- ❌ SL_HIT closures (stopped)
+- ⏱️  PEC-TIMEOUT (expired naturally)
+- ⏰ STALE_TIMEOUT (timed out while stale)
+- 🔧 Process status (pec_executor_persistent.py running count)
+- 📊 Total signals in COMPLETE_SIGNALS.jsonl
+
+**Current Status (2026-06-18 13:02 GMT+7):**
+- ✅ COMPLETE_SIGNALS.jsonl is single source of truth (717 lines)
+- ✅ 411 OPEN signals (growing from 544 baseline)
+- ✅ 127 TP_HIT, 142 SL_HIT (closures active)
+- ✅ 3 pec_executor_persistent processes running
+- ✅ All closures write-back to COMPLETE_SIGNALS.jsonl confirmed
+
+### **Golden Rule: SIGNAL GROWTH ONLY**
+- ✅ Baseline: 544 unique signals (2026-06-18 12:16 GMT+7)
+- ✅ Monitor: OPEN signal count >= previous check (ALWAYS)
+- ❌ If count decreases: STOP system, investigate corruption immediately
+- 📈 Expected: Steady growth as new signals fire throughout day
+
+---
+
 ## 🔴 **FRESH START BASELINE LOCKED (2026-06-18 12:16 GMT+7)**
 
 ### **OBSERVATION WINDOW LOCKED TO: 2026-06-18 00:00 GMT+7 ONWARDS**

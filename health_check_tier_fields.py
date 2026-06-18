@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 class TierFieldHealthCheck:
-    def __init__(self, signals_file="SIGNALS_MASTER.jsonl"):
+    def __init__(self, signals_file="COMPLETE_SIGNALS.jsonl"):
         self.signals_file = signals_file
         self.results = {
             "timestamp": datetime.utcnow().isoformat(),
@@ -158,7 +158,7 @@ class TierFieldHealthCheck:
 if __name__ == "__main__":
     import sys
     workspace = "/Users/geniustarigan/.openclaw/workspace"
-    signals_file = os.path.join(workspace, "SIGNALS_MASTER.jsonl")
+    signals_file = os.path.join(workspace, "COMPLETE_SIGNALS.jsonl")
     
     checker = TierFieldHealthCheck(signals_file)
     results = checker.check_file(last_n=100)
