@@ -32,6 +32,9 @@ class TierLookupComplete:
         """
         MANDATORY: Load TODAY's locked combos from LOCKED_COMBOS_TODAY.py
         NO FALLBACK. NO DIMENSIONAL CASCADE. ONLY LOCKED COMBOS.
+        
+        CRITICAL: Uses importlib.reload() to bypass Python's module cache
+        Ensures we always get the LATEST version from disk, not cached version
         """
         try:
             workspace = "/Users/geniustarigan/.openclaw/workspace"
@@ -44,10 +47,15 @@ class TierLookupComplete:
                 self.using_locked_combos = True
                 return
             
-            # Import LOCKED_COMBOS_TODAY.py
+            # Import LOCKED_COMBOS_TODAY.py with forced reload
             import sys
+            import importlib
             sys.path.insert(0, workspace)
             try:
+                # Force reload to bypass Python's module cache
+                if 'LOCKED_COMBOS_TODAY' in sys.modules:
+                    importlib.reload(sys.modules['LOCKED_COMBOS_TODAY'])
+                
                 from LOCKED_COMBOS_TODAY import get_locked_combos
                 locked_combos = get_locked_combos()
                 

@@ -21,6 +21,19 @@
 
 ---
 
+## 🚨 **CRITICAL: TIER LOOKUP MODULE CACHE BUG - FIXED (2026-06-18 13:32 GMT+7)**
+
+**Issue:** Tier-3 signals firing when only Tier-1 locked today  
+**Root Cause:** Python module import cache (old LOCKED_COMBOS_TODAY still in memory)  
+**Status:** ✅ FIXED with importlib.reload() in tier_lookup.py  
+**Action Required:** RESTART main.py to clear old cache  
+```bash
+pkill -f "main.py"
+python3 /Users/geniustarigan/.openclaw/workspace/main.py &
+```
+
+---
+
 ## 📊 SIGNAL GROWTH MONITORING & TODAY'S LOCKED COMBOS (2026-06-18)
 
 **Baseline Locked: 544 unique signals as of 2026-06-18 12:16 GMT+7**

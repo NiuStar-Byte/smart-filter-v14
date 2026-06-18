@@ -88,6 +88,41 @@ watch -n 5 /Users/geniustarigan/.openclaw/workspace/monitor_pec.sh
 
 ---
 
+## 🚨 **CRITICAL FIX: TIER LOOKUP MODULE CACHE BUG (2026-06-18 13:32 GMT+7)**
+
+### **The Problem**
+Tier-3 signals were still firing even though only 1 Tier-1 combo is locked for today. ROOT CAUSE: Python's module import cache!
+
+**What was happening:**
+1. main.py starts, imports LOCKED_COMBOS_TODAY.py
+2. Python caches the module in sys.modules
+3. We update LOCKED_COMBOS_TODAY.py on disk (1 Tier-1 combo)
+4. main.py tries to reload but gets CACHED old version (9 combos with 4 Tier-1, 4 Tier-2, 1 Tier-3)
+5. Result: Tier-3 signals still fire because old cached combos still exist in memory
+
+### **The Fix**
+Updated both tier_lookup.py files (workspace root + smart-filter-v14-main submodule):
+```python
+# Before: from LOCKED_COMBOS_TODAY import get_locked_combos  ❌ Uses cache!
+# After:  
+import importlib
+if 'LOCKED_COMBOS_TODAY' in sys.modules:
+    importlib.reload(sys.modules['LOCKED_COMBOS_TODAY'])  ✅ Forces disk reload!
+```
+
+**Applied to:**
+- ✅ `/Users/geniustarigan/.openclaw/workspace/tier_lookup.py` (line 36-42)
+- ✅ `/Users/geniustarigan/.openclaw/workspace/smart-filter-v14-main/tier_lookup.py` (line 36-42)
+
+### **MUST RESTART main.py**
+Old processes have OLD module cache. Need fresh start to use new reload code:
+```bash
+pkill -f "main.py"
+python3 main.py &
+```
+
+---
+
 ## ✅ **DAILY COMBO REFRESH - FIXED & UPDATED (2026-06-18 13:22 GMT+7)**
 
 ### **Issue Found & Fixed**
