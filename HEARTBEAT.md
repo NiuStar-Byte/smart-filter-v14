@@ -21,7 +21,7 @@
 
 ---
 
-## 📊 SIGNAL GROWTH MONITORING (2026-06-18 BASELINE)
+## 📊 SIGNAL GROWTH MONITORING & TODAY'S LOCKED COMBOS (2026-06-18)
 
 **Baseline Locked: 544 unique signals as of 2026-06-18 12:16 GMT+7**
 
@@ -31,6 +31,15 @@
 - Daily total signal count (must be >= 544 by end of 2026-06-18)
 - No data loss or signal drops
 - COMPLETE_SIGNALS.jsonl is the ONLY source of truth
+
+**Today's Locked Combos (2026-06-18 13:22 GMT+7):**
+- Generated from: PEC_POST_DEPLOYMENT_TRACKER_v2_2026-06-17_23-44-14.txt (newest yesterday report)
+- Expires: 2026-06-19 00:00:00 GMT+7
+- **TOTAL: 1 COMBO**
+  - **Tier-1:** 1 combo (6D SHORT)
+    - `30min_SHORT_TREND CONTINUATION_BEAR_LOW_ALTS_HIGH`
+  - **Tier-2:** 0 combos
+  - **Tier-3:** 0 combos
 
 **Alert Triggers:**
 - Signal count drops below 544
@@ -62,14 +71,15 @@
 - ✅ Created and verified working
 - ✅ Tracks OPEN, TP_HIT, SL_HIT, timeouts, process status
 
-**Hourly Backup Scripts:**
-- ✅ `hourly_backup_complete_signals.sh` - Creates dual backups:
-  - `.jsonl` backups: Last 24 hourly snapshots (history)
-  - `.txt` backups: Last 5 hourly snapshots only (sliding window)
+**Hourly Backup Scripts (2026-06-18 13:16 GMT+7):**
+- ✅ `hourly_backup_complete_signals.sh` - Creates dual-format backups:
+  - `.jsonl` backups: Last 24 hourly snapshots (full history for long-term recovery)
+  - `.txt` backups: Last 5 hourly snapshots only (sliding window for quick access)
   - Format: `COMPLETE_SIGNALS_hourly_backup_YYYY-MM-DD_HHMM.txt`
-  - Example: `COMPLETE_SIGNALS_hourly_backup_2026-06-18_1400.txt`
-- ✅ All signals backed up with complete record attributes (100%)
-- ✅ Rotation working: Creates at top of each hour, deletes oldest when >5 exist
+  - Example pattern: `COMPLETE_SIGNALS_hourly_backup_2026-06-18_1400.txt` → `1500` → `1600` → `1700` → `1800` → (next creates 1900, deletes 1400)
+- ✅ All 743 signals backed up with complete record attributes (100% field completeness)
+- ✅ Rotation mechanism tested & verified: Creates at top of each hour, auto-deletes oldest when >5 .txt files exist
+- ✅ Both backup types preserve: symbol, timeframe, tier, status, symbol_group, confidence_level, closed_at, pnl_usd, entry_price, tp_target, sl_target, all filters
 
 **Status: ALL SYSTEMS OPERATIONAL & VERIFIED STABLE**
 

@@ -88,6 +88,35 @@ watch -n 5 /Users/geniustarigan/.openclaw/workspace/monitor_pec.sh
 
 ---
 
+## ✅ **DAILY COMBO REFRESH - FIXED & UPDATED (2026-06-18 13:22 GMT+7)**
+
+### **Issue Found & Fixed**
+**Problem:** `manual_daily_combo_refresh.py` was failing to find yesterday's reports
+- Script pattern: `PEC_POST_DEPLOYMENT_TRACKER_YYYY-MM-DD_*.txt`
+- Actual filenames: `PEC_POST_DEPLOYMENT_TRACKER_v2_YYYY-MM-DD_*.txt` (missing `_v2_` in pattern)
+- Also had typo: `today_date` vs `today_date_str`
+
+**Fix Applied (2026-06-18 13:21-13:22 GMT+7):**
+- ✅ Updated pattern to include `_v2_` in filename
+- ✅ Fixed variable name typo (`today_date_str`)
+- ✅ Now successfully finds 12 reports from 2026-06-17
+- ✅ Uses newest report: `PEC_POST_DEPLOYMENT_TRACKER_v2_2026-06-17_23-44-14.txt`
+
+### **Today's Locked Combos (2026-06-18)**
+- Generated: 2026-06-18 13:22:00 GMT+7
+- Expires: 2026-06-19 00:00:00 GMT+7
+- Source: PEC_POST_DEPLOYMENT_TRACKER_v2_2026-06-17_23-44-14.txt
+- **TOTAL LOCKED: 1 COMBO**
+  - **Tier-1 (1 combo):** 6D SHORT `30min_SHORT_TREND CONTINUATION_BEAR_LOW_ALTS_HIGH` (WR: 2.9%, P&L: -$329.07)
+  - **Tier-2:** 0 combos
+  - **Tier-3:** 0 combos
+
+**Saved files:**
+- `/Users/geniustarigan/.openclaw/workspace/LOCKED_COMBOS_TODAY.py` (Python code, synced to submodule)
+- `/Users/geniustarigan/.openclaw/workspace/TODAY_LOCKED_COMBOS_2026-06-18.txt` (validation text)
+
+---
+
 ## 🔴 **FRESH START BASELINE LOCKED (2026-06-18 12:16 GMT+7)**
 
 ### **OBSERVATION WINDOW LOCKED TO: 2026-06-18 00:00 GMT+7 ONWARDS**

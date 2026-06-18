@@ -39,8 +39,8 @@ def main():
     reports_dir = Path("/Users/geniustarigan/.openclaw/workspace/pec_reports")
     
     # Find all report files from YESTERDAY
-    # Format: PEC_POST_DEPLOYMENT_TRACKER_YYYY-MM-DD_HH-MM-SS.txt
-    pattern = f"PEC_POST_DEPLOYMENT_TRACKER_{yesterday.strftime('%Y-%m-%d')}_*.txt"
+    # Format: PEC_POST_DEPLOYMENT_TRACKER_v2_YYYY-MM-DD_HH-MM-SS.txt
+    pattern = f"PEC_POST_DEPLOYMENT_TRACKER_v2_{yesterday.strftime('%Y-%m-%d')}_*.txt"
     yesterday_reports = sorted(reports_dir.glob(pattern))
     
     print(f"📋 Looking for reports from: {yesterday.strftime('%Y-%m-%d')}")
@@ -367,7 +367,7 @@ LOCKED_COMBOS = [
     
     with open(txt_file, 'w') as f:
         f.write("="*100 + "\n")
-        f.write(f"TODAY'S LOCKED COMBOS - {today_date}\n")
+        f.write(f"TODAY'S LOCKED COMBOS - {today_date_str}\n")
         f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S GMT+7')}\n")
         f.write(f"Source Report: {newest_report.name}\n")
         f.write("="*100 + "\n\n")
