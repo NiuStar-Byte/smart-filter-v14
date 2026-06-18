@@ -696,6 +696,7 @@ DEDUP_WINDOWS = {
     "15min": 1200,   # 20 minutes in seconds
     "30min": 2400,   # 40 minutes in seconds
     "1h": 4800,      # 80 minutes in seconds
+    "2h": 1800,      # 30 minutes in seconds (2h bar cooldown is 600s, dedup window ~3x)
     "4h": 43200      # 43200 seconds = 3 bars (12 hours) in seconds (PHASE 2 ADD)
 }
 
@@ -2506,6 +2507,12 @@ def run_cycle():
 
                     last2h = last_sent.get(key2h, 0)
                     if now - last2h >= COOLDOWN["2h"]:
+                        # CRITICAL: Deduplication check (prevent duplicate within DEDUP_WINDOWS)
+                        signal_type_2h = res2h.get("bias", "UNKNOWN")
+                        if is_duplicate_signal(symbol, "2h", signal_type_2h):
+                            print(f"[WARN] Signal {symbol} (2h) REJECTED - duplicate within 1800s. NOT sending Telegram alert.", flush=True)
+                            continue
+                        
                         numbered_signal = f"{idx}.D"
 
                         log_orderbook_and_density(symbol)
@@ -2901,6 +2908,11 @@ def run_cycle():
                         last4h = last_sent.get(key4h, 0)
 
                         if now - last4h >= COOLDOWN["4h"]:
+                            # CRITICAL: Deduplication check (prevent duplicate within DEDUP_WINDOWS)
+                            if is_duplicate_signal(symbol, "4h", bias):
+                                print(f"[WARN] Signal {symbol} (4h) REJECTED - duplicate within 43200s. NOT sending Telegram alert.", flush=True)
+                                continue
+                            
                             numbered_signal = f"{idx}.E"
 
                             try:
