@@ -43,9 +43,9 @@ class TierValidator:
     def __init__(self, hours=168):  # DEFAULT: 7 days (168 hours) - optimized for RAM (Apr 22 2026)
         self.hours = hours
         self.workspace = '/Users/geniustarigan/.openclaw/workspace'
-        # Read SIGNALS_MASTER.jsonl which has tier field + recent signals
+        # Read COMPLETE_SIGNALS.jsonl (SINGLE SOURCE OF TRUTH) which has tier field + recent signals
         # Filter to ONLY recently fired signals (past N hours)
-        self.signals_file = f'{self.workspace}/SIGNALS_MASTER.jsonl'
+        self.signals_file = f'{self.workspace}/COMPLETE_SIGNALS.jsonl'
         self.tiers_file = f'{self.workspace}/SIGNAL_TIERS_APPEND.jsonl'
         
         # All fields to validate

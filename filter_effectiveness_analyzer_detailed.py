@@ -18,13 +18,13 @@ from collections import defaultdict
 from datetime import datetime
 import sys
 
-SIGNALS_MASTER = "/Users/geniustarigan/.openclaw/workspace/SIGNALS_MASTER.jsonl"
+SIGNALS_FILE = "/Users/geniustarigan/.openclaw/workspace/COMPLETE_SIGNALS.jsonl"
 
 def load_signals():
-    """Load all signals from SIGNALS_MASTER.jsonl"""
+    """Load all signals from COMPLETE_SIGNALS.jsonl (SINGLE SOURCE OF TRUTH)"""
     signals = []
     try:
-        with open(SIGNALS_MASTER, 'r') as f:
+        with open(SIGNALS_FILE, 'r') as f:
             for line in f:
                 try:
                     signal = json.loads(line.strip())
@@ -32,7 +32,7 @@ def load_signals():
                 except json.JSONDecodeError:
                     continue
     except FileNotFoundError:
-        print(f"ERROR: Cannot find {SIGNALS_MASTER}")
+        print(f"ERROR: Cannot find {SIGNALS_FILE}")
         exit(1)
     return signals
 
@@ -110,7 +110,7 @@ def main():
     print("FILTER EFFECTIVENESS ANALYZER - DETAILED")
     print("=" * 100)
     print(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S GMT+7')}")
-    print(f"Source: {SIGNALS_MASTER}")
+    print(f"Source: {SIGNALS_FILE}")
     print("")
     
     # Load signals and analyze

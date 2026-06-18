@@ -10,21 +10,21 @@ import os
 from datetime import datetime, timezone, timedelta
 
 LEDGER_FILE = "/Users/geniustarigan/.openclaw/workspace/HOURLY_SIGNAL_LEDGER.jsonl"
-SENT_SIGNALS_FILE = "/Users/geniustarigan/.openclaw/workspace/SENT_SIGNALS.jsonl"
+SIGNALS_FILE = "/Users/geniustarigan/.openclaw/workspace/COMPLETE_SIGNALS.jsonl"  # SINGLE SOURCE OF TRUTH
 
 def get_hour_key(hour_dt):
     """Get unique key for an hour: YYYY-MM-DD_HH"""
     return hour_dt.strftime("%Y-%m-%d_%H")
 
 def count_signals_in_hour(hour_start, hour_end):
-    """Count signals fired within [hour_start, hour_end)"""
+    """Count signals fired within [hour_start, hour_end) from COMPLETE_SIGNALS.jsonl"""
     count = 0
     
-    if not os.path.exists(SENT_SIGNALS_FILE):
+    if not os.path.exists(SIGNALS_FILE):
         return count
     
     try:
-        with open(SENT_SIGNALS_FILE, 'r') as f:
+        with open(SIGNALS_FILE, 'r') as f:
             for line in f:
                 if not line.strip():
                     continue
