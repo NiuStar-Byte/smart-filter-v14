@@ -39,6 +39,24 @@
 
 ---
 
+## ✅ **CRITICAL SYSTEMS VERIFIED (2026-06-18 12:22-12:41 GMT+7)**
+
+**PEC Executor Persistent:**
+- ✅ Properly targeting OPEN signals in COMPLETE_SIGNALS.jsonl
+- ✅ Generating full closures (status, exit_price, P&L, closed_at)
+- ✅ Atomic write-back to COMPLETE_SIGNALS.jsonl confirmed
+- ✅ Field completeness: symbol_group, confidence_level, all closure fields present
+
+**MTF Alignment Tracker v2:**
+- ✅ Fixed open-ended window filtering (end=None handling)
+- ✅ Removed old comparison logic
+- ✅ Fresh start baseline: 643 fired, 282 closed, 48.09% WR
+- ✅ Tracker running successfully
+
+**Status: ALL SYSTEMS OPERATIONAL**
+
+---
+
 # Keep this file empty (or with only comments) to skip heartbeat API calls.
 
 # Add tasks below when you want the agent to check something periodically.
