@@ -126,32 +126,121 @@ class SignalStore:
             print(f"[SignalStore] Dedup check error (allowing signal): {e}", flush=True)
             return False
     
+    def _ensure_field_completeness(self, signal_dict: Dict) -> Dict:
+        """
+        CRITICAL: Ensure ALL signal fields are present with proper defaults.
+        This prevents any missing field issues in the future.
+        
+        Returns:
+            signal_dict with all fields guaranteed present
+        """
+        
+        # === COMPLETE FIELD SPECIFICATION ===
+        # All fields that MUST exist in every signal
+        required_fields = {
+            # Core identification
+            'uuid': 'UNKNOWN_UUID',
+            'symbol': 'UNKNOWN',
+            'timeframe': 'UNKNOWN',
+            
+            # Signal type & direction
+            'signal_type': 'UNKNOWN',
+            'direction': 'UNKNOWN',
+            
+            # Timing
+            'fired_time_utc': datetime.now(timezone.utc).isoformat(),
+            
+            # Price & targets
+            'entry_price': 0.0,
+            'tp_target': 0.0,
+            'sl_target': 0.0,
+            'tp_pct': 0.0,
+            'sl_pct': 0.0,
+            
+            # Risk metrics
+            'achieved_rr': 0.0,
+            'fib_ratio': None,
+            'atr_value': 0.0,
+            
+            # Scoring
+            'score': 0,
+            'max_score': 20,
+            'confidence': 0.0,
+            
+            # Analysis
+            'route': 'NONE',
+            'regime': 'UNKNOWN',
+            
+            # Gatekeepers
+            'passed_gatekeepers': 0,
+            'max_gatekeepers': 0,
+            
+            # Filters
+            'passed_filters': [],
+            'failed_filters': [],
+            'passed_filter_count': 0,
+            'failed_filter_count': 0,
+            
+            # Telegram
+            'telegram_msg_id': '',
+            
+            # MTF Analysis
+            'mtf_alignment_band': 'UNKNOWN',
+            'mtf_alignment_score': 0,
+            
+            # === CRITICAL: Tier & Signal Classification ===
+            'status': 'OPEN',  # Will be updated by PEC executor
+            'symbol_group': 'UNKNOWN',  # e.g., LOW_ALTS, HIGH_ALTS, MAJORS
+            'confidence_level': 'UNKNOWN',  # HIGH, MID, LOW
+            'tier': 'Tier-X',  # Will be updated based on locked combos
+            
+            # === PEC Executor Fields (added later) ===
+            'closed_at': None,
+            'actual_exit_price': None,
+            'pnl_usd': None,
+        }
+        
+        # Ensure all required fields exist, preserving provided values
+        for field, default_value in required_fields.items():
+            if field not in signal_dict or signal_dict[field] is None:
+                signal_dict[field] = default_value
+        
+        # Type validation & safe casting for critical numeric fields
+        try:
+            signal_dict['entry_price'] = float(signal_dict.get('entry_price', 0.0))
+            signal_dict['tp_target'] = float(signal_dict.get('tp_target', 0.0))
+            signal_dict['sl_target'] = float(signal_dict.get('sl_target', 0.0))
+            signal_dict['tp_pct'] = float(signal_dict.get('tp_pct', 0.0))
+            signal_dict['sl_pct'] = float(signal_dict.get('sl_pct', 0.0))
+            signal_dict['achieved_rr'] = float(signal_dict.get('achieved_rr', 0.0))
+            signal_dict['atr_value'] = float(signal_dict.get('atr_value', 0.0))
+            signal_dict['score'] = int(signal_dict.get('score', 0))
+            signal_dict['max_score'] = int(signal_dict.get('max_score', 20))
+            signal_dict['confidence'] = float(signal_dict.get('confidence', 0.0))
+            signal_dict['passed_gatekeepers'] = int(signal_dict.get('passed_gatekeepers', 0))
+            signal_dict['max_gatekeepers'] = int(signal_dict.get('max_gatekeepers', 0))
+            signal_dict['passed_filter_count'] = int(signal_dict.get('passed_filter_count', 0))
+            signal_dict['failed_filter_count'] = int(signal_dict.get('failed_filter_count', 0))
+            signal_dict['mtf_alignment_score'] = int(signal_dict.get('mtf_alignment_score', 0))
+        except (ValueError, TypeError) as e:
+            print(f"[SignalStore] WARNING: Type casting error for numeric fields: {e}", flush=True)
+        
+        # Ensure list fields are lists
+        if not isinstance(signal_dict.get('passed_filters'), list):
+            signal_dict['passed_filters'] = []
+        if not isinstance(signal_dict.get('failed_filters'), list):
+            signal_dict['failed_filters'] = []
+        
+        return signal_dict
+
     def append_signal(self, signal_dict: Dict) -> Optional[str]:
         """
         Append a complete signal to JSONL file.
         
+        ENSURES ALL FIELDS ARE PRESENT (Option A - Comprehensive Field Completeness)
+        
         Args:
-            signal_dict: Complete signal data including:
-                - uuid: Unique signal ID
-                - symbol: Trading pair (e.g., BTC-USDT)
-                - timeframe: Market timeframe (15min, 30min, 1h)
-                - signal_type: LONG or SHORT
-                - fired_time_utc: When signal was fired (ISO format)
-                - entry_price: Entry price at signal time
-                - tp_target: Take profit target price
-                - sl_target: Stop loss target price
-                - tp_pct: TP as percentage of entry
-                - sl_pct: SL as percentage of entry
-                - achieved_rr: Risk-reward ratio
-                - fib_ratio: Fibonacci level used for TP (if applicable)
-                - atr_value: ATR at signal time
-                - score: Filter score (0-20)
-                - max_score: Maximum possible score
-                - confidence: Confidence percentage (0-100)
-                - route: Trade route/confirmation
-                - regime: Market regime (UPTREND, DOWNTREND, RANGE, etc.)
-                - passed_gatekeepers: Number of gatekeepers passed
-                - max_gatekeepers: Total gatekeepers
+            signal_dict: Signal data (will be auto-completed with missing fields)
         
         Returns:
             signal_uuid if successful, None if failed
@@ -173,6 +262,10 @@ class SignalStore:
             if self._check_duplicate(signal_dict):
                 return None  # Reject duplicate, don't store
             
+            # === CRITICAL: ENSURE FIELD COMPLETENESS ===
+            # This guarantees NO missing fields in future signals
+            signal_dict = self._ensure_field_completeness(signal_dict)
+            
             # Add metadata
             signal_dict['stored_at_utc'] = datetime.now(timezone.utc).isoformat()
             signal_dict['version'] = '1.0'
@@ -182,11 +275,19 @@ class SignalStore:
                 json.dump(signal_dict, f)
                 f.write('\n')
             
-            print(f"[SignalStore] Signal stored: {signal_dict['uuid'][:8]}... ({signal_dict['symbol']} {signal_dict['timeframe']} {signal_dict['signal_type']})", flush=True)
+            # Log completion with field summary
+            symbol = signal_dict.get('symbol', 'UNKNOWN')
+            timeframe = signal_dict.get('timeframe', 'UNKNOWN')
+            signal_type = signal_dict.get('signal_type', 'UNKNOWN')
+            status = signal_dict.get('status', 'UNKNOWN')
+            tier = signal_dict.get('tier', 'UNKNOWN')
+            print(f"[SignalStore] ✅ Signal stored: {symbol} {timeframe} {signal_type} | status={status} tier={tier}", flush=True)
             return signal_dict['uuid']
         
         except Exception as e:
             print(f"[SignalStore] ERROR appending signal: {e}", flush=True)
+            import traceback
+            traceback.print_exc()
             return None
     
     def load_all_signals(self) -> List[Dict]:

@@ -28,6 +28,13 @@ from kucoin_data import get_live_entry_price, DEFAULT_SLIPPAGE
 from kucoin_data import get_ohlcv
 from smart_filter import SmartFilter, MIN_SCORE
 from telegram_alert import send_telegram_alert, send_telegram_file
+
+# STRICT DEDUP - Prevent same symbol+timeframe firing twice in close time range
+try:
+    from strict_dedup import is_exact_duplicate
+except ImportError:
+    def is_exact_duplicate(sig):
+        return False  # Fallback if module not available
 from tier_lookup import get_signal_tier
 from symbol_classifier import classify_symbol
 from kucoin_orderbook import get_order_wall_delta
@@ -522,6 +529,12 @@ def create_and_store_signal(symbol, timeframe, signal_type, fired_time_utc, entr
             "mtf_alignment_band": mtf_band,
             "mtf_alignment_score": int(mtf_alignment_score) if mtf_alignment_score is not None else 0,
         }
+
+        # STRICT DEDUP: Check for exact duplicate (same symbol + timeframe + fired_time)
+        # Prevents signals like BTC-USDT 1h from firing twice in the same millisecond
+        if is_exact_duplicate(signal_data):
+            print(f"[STRICT_DEDUP] ❌ EXACT DUPLICATE BLOCKED: {symbol} {timeframe} @ {signal_data['fired_time_utc']}", flush=True)
+            return None  # Don't store duplicate
 
         # Use global store (pre-initialized)
         stored_uuid = _signal_store.append_signal(signal_data)
