@@ -4,6 +4,19 @@ Master index organized by PROJECT. Each project has dedicated sections for quick
 
 ---
 
+## 🔴 **FRESH START OBSERVATION WINDOW RESET (2026-06-18 11:51 GMT+7)**
+
+### **OBSERVATION WINDOW LOCKED TO: 2026-06-18 00:00 GMT+7 ONWARDS**
+
+**ALL tracker cutoff dates updated:**
+- ✅ pec_post_deployment_tracker_v2.py: DEPLOYMENT_CUTOFF_UTC = 2026-06-17T17:00:00 (2026-06-18 00:00 GMT+7)
+- ✅ MTF_alignment_comparison_tracker_v2.py: POST_START_2 = 2026-06-17T17:00:00 (2026-06-18 00:00 GMT+7)
+- ✅ Removed all old historical sections (Apr 2026 baselines, June 14 comparisons)
+
+**NO MORE HISTORICAL COMPARISONS - FRESH BASELINE ONLY**
+
+---
+
 ## 🔴 **CRITICAL LOCKED DECISION - SINGLE SOURCE OF TRUTH (2026-06-18 11:38 GMT+7)**
 
 ### **FINAL DECISION - CANNOT BE CHANGED**
