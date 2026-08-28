@@ -9,13 +9,13 @@
 
 # Group A: Regular signals (all tiers)
 # Bot: NewAlertCrypto | LOCKED & VERIFIED
-BOT_TOKEN = "8380427467:AAHyfjM1Xlvu4msEc0YzQHWIqUXwv359f_Q"
-CHAT_ID = "-1002857433223"  # ALL signals → Regular group
+BOT_TOKEN = "Something"
+CHAT_ID = "-100xxx"  # ALL signals → Regular group
 
 # Group B: Tier-based routing (Tier-1/2/3 only)
 # Bot: CryptoAlertTierBot | LOCKED & VERIFIED
-TIER_BOT_TOKEN = "7595594927:AAGV_osHromQn26-cMyIdubvtwCafqyHW84"
-TIER_CHAT_ID = "-5138225741"  # Tier-1/2/3 signals → Tier group
+TIER_BOT_TOKEN = "Anything"
+TIER_CHAT_ID = "-513yyy"  # Tier-1/2/3 signals → Tier group
 
 # Optional: Channel ID if sending to a channel instead
 CHANNEL_ID = None  # Set to channel ID if using channel instead of chat
